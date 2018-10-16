@@ -140,7 +140,7 @@ class StartMain(object):
         :return: 
         '''
         # 创建MAX_THREAD_SIZE个线程池
-        pool = threadpool.ThreadPool(int(settings.ZHIWANG_PERIODOCAL_SPIDER_THREAD))
+        pool = threadpool.ThreadPool(len(url_list))
         # 创建handle函数为线程, 传入音乐人信息列表
         requests = threadpool.makeRequests(self.handle, url_list)
         # 将所有要执行的线程扔进线程池并执行线程
@@ -221,8 +221,8 @@ class StartMain(object):
 if __name__ == '__main__':
 
     main = StartMain()
-    po = Pool(4)
-    for i in range(4):
+    po = Pool(int(settings.ZHIWANG_PERIODOCAL_SPIDER_PROCESS))
+    for i in range(int(settings.ZHIWANG_PERIODOCAL_SPIDER_PROCESS)):
         po.apply_async(func=main.run)
     po.close()
     po.join()
