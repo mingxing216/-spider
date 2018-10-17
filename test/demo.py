@@ -18,32 +18,18 @@ import settings
 
 from utils import redis_dbutils
 
-# def inputdata():
-#     for i in range(1000):
-#         redis_dbutils.saveSet('comlieted', i)
-#
-# inputdata()
+redis_host = '60.195.249.104'
+redis_port = 6379
+redis_pass = 'spider'
 
-# def demo():
-#     while True:
-#         a = redis_dbutils.spop(key='comlieted', lockname='spop_demo')
-#         if a:
-#             print(a)
-#         else:
-#             break
-#
-# po = Pool(4)
-# for i in range(4):
-#     po.apply_async(func=demo)
-#
-# po.close()
-# po.join()
+sr = StrictRedis(host=redis_host, port=redis_port, password=redis_pass)
 
-def article_qikan_queue_1():
-    datas = redis_dbutils.smembers('article_qikan_queue_2')
-    for data in datas:
-        data = data.decode('utf-8')
-        with open('redis_article_qikan_queue_2.txt', 'a') as f:
-            f.write(data + '\n')
+data = sr.smembers('proxy')
 
-article_qikan_queue_1()
+with open('../config/redis_article_qikan_queue_2.txt', 'r') as f:
+    datas = f.readlines()
+
+for i in datas:
+    i = re.sub(r'\n', '', i)
+    sr.sadd('article_qikan_queue_2', i)
+    print(i)

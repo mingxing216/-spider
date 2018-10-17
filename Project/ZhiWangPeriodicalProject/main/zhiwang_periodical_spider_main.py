@@ -136,7 +136,7 @@ class StartMain(object):
 
             # 数据入库
             mysql_server.saveOrUpdate(sha, title, return_data)
-            logging.info('{}: OK'.format(return_data))
+            logging.info('{}: OK'.format(sha))
 
     def spiderRun(self, url_list):
         '''
@@ -145,7 +145,7 @@ class StartMain(object):
         :return: 
         '''
         # 创建MAX_THREAD_SIZE个线程池
-        pool = threadpool.ThreadPool(len(url_list))
+        pool = threadpool.ThreadPool(10)
         # 创建handle函数为线程, 传入音乐人信息列表
         requests = threadpool.makeRequests(self.handle, url_list)
         # 将所有要执行的线程扔进线程池并执行线程

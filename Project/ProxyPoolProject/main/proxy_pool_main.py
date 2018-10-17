@@ -70,9 +70,9 @@ if __name__ == '__main__':
     while True:
         p1 = Process(target=accountBalance)
         p2 = Process(target=maintainProxyPool)
-        p1.start()
+        # p1.start()
         p2.start()
-        p1.join()
+        # p1.join()
         p2.join()
 
         time.sleep(2)
