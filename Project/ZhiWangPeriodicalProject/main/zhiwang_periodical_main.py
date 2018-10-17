@@ -151,9 +151,7 @@ class SpiderMain(object):
 
                         else:
 
-                            #     break
-
-                            # break
+                            continue
 
 
 if __name__ == '__main__':
