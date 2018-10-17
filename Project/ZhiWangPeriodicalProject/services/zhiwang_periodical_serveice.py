@@ -162,14 +162,17 @@ class zhiwangPeriodocalService(object):
         resp = bytes(bytearray(html, encoding='utf-8'))
         html_etree = etree.HTML(resp)
         dd_list = html_etree.xpath("//dd")
-        for dd in dd_list:
-            href_url = dd.xpath("./span[@class='name']/a/@href")[0]
-            # Common/RedirectPage?sfield=FN&dbCode=CJFD&filename=SHGJ2018Z2022&tableName=CJFDPREP&url=
-            href_url = re.findall(r"dbCode=(.*?)&url=", href_url)[0]
-            url = index_url + href_url
-            return_list.append({'url': url, 'qiKanUrl': qiKanUrl, 'xueKeLeiBie': xuekeleibie})
+        if dd_list:
+            for dd in dd_list:
+                href_url = dd.xpath("./span[@class='name']/a/@href")[0]
+                # Common/RedirectPage?sfield=FN&dbCode=CJFD&filename=SHGJ2018Z2022&tableName=CJFDPREP&url=
+                href_url = re.findall(r"dbCode=(.*?)&url=", href_url)[0]
+                url = index_url + href_url
+                return_list.append({'url': url, 'qiKanUrl': qiKanUrl, 'xueKeLeiBie': xuekeleibie})
 
-        return return_list
+            return return_list
+        else:
+            return return_list
 
     # 判断参考文献类型页面是否正确
     def _judgeHtml(self, divlist, div_number, keyword):
@@ -191,7 +194,6 @@ class zhiwangPeriodocalService(object):
         except:
 
             return False
-
 
     # 获取期刊名称
     def getQiKanMingCheng(self, html):

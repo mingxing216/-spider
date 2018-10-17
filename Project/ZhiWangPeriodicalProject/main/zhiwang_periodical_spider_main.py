@@ -47,8 +47,8 @@ class StartMain(object):
             return_data['qiKanMingCheng'] = server.getQiKanMingCheng(article_html)
             # 获取关联文档
             return_data['guanLianWenDang'] = {}
-            # 获取参考文献
-            return_data['guanLianCanKaoWenXian'] = server.getGuanLianCanKaoWenXian(url=text_url)
+            # # 获取参考文献
+            # return_data['guanLianCanKaoWenXian'] = server.getGuanLianCanKaoWenXian(url=text_url)
 
             # 获取文章种子sha1加密
             return_data['sha'] = hashlib.sha1(text_url.encode('utf-8')).hexdigest()
@@ -185,8 +185,9 @@ class StartMain(object):
                 article_list_html = spider.getRespForGet(articleUrl)
                 # 获取文章种子列表
                 article_url_list = server.getArticleUrlList(article_list_html, qiKanUrl, xueKeLeiBie)
-                # 抓取数据
-                self.spiderRun(article_url_list)
+                if article_url_list:
+                    # 抓取数据
+                    self.spiderRun(article_url_list)
 
         # 将当前任务存入已抓取队列
         redis_dbutils.saveSet('completed', qiKanUrlSha1)
