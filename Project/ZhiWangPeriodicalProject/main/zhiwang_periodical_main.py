@@ -45,11 +45,14 @@ class SpiderMain(object):
             if page >= 2:
                 data['pageindex'] = page
                 # 生成期刊主页任务队列
-                # 获取列表页html源码
-                column_list_html = spider.getRespForPost(url=self.column_list_url, data=data)
-                if column_list_html is not None:
-                    # 生成期刊主页任务队列
-                    server.createTaskQueue(column_list_html, column_name, redis_name, redis_name2)
+                for i in range(10):
+                    # 获取列表页html源码
+                    column_list_html = spider.getRespForPost(url=self.column_list_url, data=data)
+                    if len(column_list_html) < 300:
+                        continue
+                    else:
+                        # 生成期刊主页任务队列
+                        server.createTaskQueue(column_list_html, column_name, redis_name, redis_name2)
 
     def run(self):
         # 模块对象
