@@ -39,5 +39,11 @@ from utils import redis_dbutils
 # po.close()
 # po.join()
 
-a = '<?xml version="1.0" encoding="utf-16"?>'
-print(len(a))
+def article_qikan_queue_1():
+    datas = redis_dbutils.smembers('article_qikan_queue_2')
+    for data in datas:
+        data = data.decode('utf-8')
+        with open('redis_article_qikan_queue_2.txt', 'a') as f:
+            f.write(data + '\n')
+
+article_qikan_queue_1()

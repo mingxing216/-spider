@@ -45,14 +45,11 @@ class SpiderMain(object):
             if page >= 2:
                 data['pageindex'] = page
                 # 生成期刊主页任务队列
-                for i in range(10):
-                    # 获取列表页html源码
-                    column_list_html = spider.getRespForPost(url=self.column_list_url, data=data)
-                    if len(column_list_html) < 400:
-                        continue
-                    else:
-                        # 生成期刊主页任务队列
-                        server.createTaskQueue(column_list_html, column_name, redis_name, redis_name2)
+                # 获取列表页html源码
+                column_list_html = spider.getRespForPost(url=self.column_list_url, data=data)
+                if column_list_html is not None:
+                    # 生成期刊主页任务队列
+                    server.createTaskQueue(column_list_html, column_name, redis_name, redis_name2)
 
     def run(self):
         # 模块对象
@@ -76,82 +73,83 @@ class SpiderMain(object):
                         'productcode': 'CJFD',
                         'ClickIndex': column_number + 1
                     }
-                    for i in range(10):
-                        column_html = spider.getRespForPost(url=self.column_url, data=column_url_data)
-                        if len(column_html) > 400:
-                            # 获取当前栏目下所有子栏目请求参数
-                            request_datas = server.getColumnSunData(column_html)
-                            for request_data in request_datas:
-                                if request_data['has_next'] is True:
-                                    # 生成请求参数
-                                    searchstatejson = ('{"StateID":"","Platfrom":"","QueryTime":"","Account":"knavi",'
-                                                       '"ClientToken":"","Language":"","CNode":{"PCode":"CJFD","SMode":"",'
-                                                       '"OperateT":""},"QNode":{"SelectT":"","Select_Fields":"","S_DBCodes":"",'
-                                                       '"QGroup":[{"Key":"Navi","Logic":1,"Items":[],'
-                                                       '"ChildItems":[{"Key":"Journal","Logic":1,"Items":[{"Key":1,"Title":"",'
-                                                       '"Logic":1,"Name":"%s","Operate":"","Value":"%s?","ExtendType":0,'
-                                                       '"ExtendValue":"","Value2":""}],"ChildItems":[]}]}],"OrderBy":"OTA|DESC",'
-                                                       '"GroupBy":"","Additon":""}}' % (request_data['name'], request_data['value']))
-                                    column_list_url_data = {
-                                        'SearchStateJson': searchstatejson,
-                                        # 'displaymode': 1,
-                                        'pageindex': 1, # 当前页数
-                                        'pagecount': self.pagecount, # 每页显示数量
-                                        # 'index': 1
-                                    }
-                                    # 获取列表页html源码
-                                    column_list_html = spider.getRespForPost(url=self.column_list_url, data=column_list_url_data)
-                                    if len(column_list_html) > 400:
-                                        if i == 1: # 第一个栏目的存法
-                                            # 抓取文章用的期刊队列
-                                            redis_key1 = 'article_qikan_queue_1'
-                                            # 抓取期刊用的期刊队列
-                                            redis_key2 = 'qikan_queue_1'
-                                            # 生成期刊主页任务队列， 获取总期刊数
-                                            qikan_number = server.createTaskQueue(column_list_html,
-                                                                                  request_data['column_name'],
-                                                                                  redis_key1, redis_key2)
-                                            # 生成总页数
-                                            page_number = int(qikan_number) / int(self.pagecount)
-                                            if page_number > int(page_number):
-                                                page_number = int(page_number) + 1
-                                                # 翻页抓取
-                                                self.next_page(self.column_list_url, column_list_url_data, page_number,
-                                                               spider, server, request_data['column_name'],
-                                                               redis_key1, redis_key2)
-                                            else:
-                                                page_number = int(page_number)
-                                                # 翻页抓取
-                                                self.next_page(self.column_list_url, column_list_url_data, page_number,
-                                                               spider, server, request_data['column_name'],
-                                                               redis_key1, redis_key2)
-                                        if i == column_numbers: # 最后一个栏目的存法
-                                            # 抓取文章用的期刊队列
-                                            redis_key1 = 'article_qikan_queue_2'
-                                            # 抓取期刊用的期刊队列
-                                            redis_key2 = 'qikan_queue_2'
-                                            # 生成期刊主页任务队列， 获取总期刊数
-                                            qikan_number = server.createTaskQueue(column_list_html,
-                                                                                  request_data['column_name'],
-                                                                                  redis_key1, redis_key2)
-                                            # 生成总页数
-                                            page_number = int(qikan_number) / int(self.pagecount)
-                                            if page_number > int(page_number):
-                                                page_number = int(page_number) + 1
-                                                # 翻页抓取
-                                                self.next_page(self.column_list_url, column_list_url_data, page_number,
-                                                               spider, server, request_data['column_name'],
-                                                               redis_key1, redis_key2)
-                                            else:
-                                                page_number = int(page_number)
-                                                # 翻页抓取
-                                                self.next_page(self.column_list_url, column_list_url_data, page_number,
-                                                               spider, server, request_data['column_name'],
-                                                               redis_key1, redis_key2)
+                    column_html = spider.getRespForPost(url=self.column_url, data=column_url_data)
+                    if column_html is not None:
+                        # 获取当前栏目下所有子栏目请求参数
+                        request_datas = server.getColumnSunData(column_html)
+                        print(request_datas)
+                        for request_data in request_datas:
+                            if request_data['has_next'] is True:
+                                # 生成请求参数
+                                searchstatejson = ('{"StateID":"","Platfrom":"","QueryTime":"","Account":"knavi",'
+                                                   '"ClientToken":"","Language":"","CNode":{"PCode":"CJFD","SMode":"",'
+                                                   '"OperateT":""},"QNode":{"SelectT":"","Select_Fields":"","S_DBCodes":"",'
+                                                   '"QGroup":[{"Key":"Navi","Logic":1,"Items":[],'
+                                                   '"ChildItems":[{"Key":"Journal","Logic":1,"Items":[{"Key":1,"Title":"",'
+                                                   '"Logic":1,"Name":"%s","Operate":"","Value":"%s?","ExtendType":0,'
+                                                   '"ExtendValue":"","Value2":""}],"ChildItems":[]}]}],"OrderBy":"OTA|DESC",'
+                                                   '"GroupBy":"","Additon":""}}' % (request_data['name'], request_data['value']))
+                                column_list_url_data = {
+                                    'SearchStateJson': searchstatejson,
+                                    # 'displaymode': 1,
+                                    'pageindex': 1, # 当前页数
+                                    'pagecount': self.pagecount, # 每页显示数量
+                                    # 'index': 1
+                                }
+                                # 获取列表页html源码
+                                column_list_html = spider.getRespForPost(url=self.column_list_url, data=column_list_url_data)
+                                if column_list_html is not None:
+                                    if i == 1: # 第一个栏目的存法
+                                        # 抓取文章用的期刊队列
+                                        redis_key1 = 'article_qikan_queue_1'
+                                        # 抓取期刊用的期刊队列
+                                        redis_key2 = 'qikan_queue_1'
+                                        # 生成期刊主页任务队列， 获取总期刊数
+                                        qikan_number = server.createTaskQueue(column_list_html,
+                                                                              request_data['column_name'],
+                                                                              redis_key1, redis_key2)
+                                        # 生成总页数
+                                        page_number = int(qikan_number) / int(self.pagecount)
+                                        if page_number > int(page_number):
+                                            page_number = int(page_number) + 1
+                                            # 翻页抓取
+                                            self.next_page(self.column_list_url, column_list_url_data, page_number,
+                                                           spider, server, request_data['column_name'],
+                                                           redis_key1, redis_key2)
+                                        else:
+                                            page_number = int(page_number)
+                                            # 翻页抓取
+                                            self.next_page(self.column_list_url, column_list_url_data, page_number,
+                                                           spider, server, request_data['column_name'],
+                                                           redis_key1, redis_key2)
+                                    if i == column_numbers: # 最后一个栏目的存法
+                                        # 抓取文章用的期刊队列
+                                        redis_key1 = 'article_qikan_queue_2'
+                                        # 抓取期刊用的期刊队列
+                                        redis_key2 = 'qikan_queue_2'
+                                        # 生成期刊主页任务队列， 获取总期刊数
+                                        qikan_number = server.createTaskQueue(column_list_html,
+                                                                              request_data['column_name'],
+                                                                              redis_key1, redis_key2)
+                                        # 生成总页数
+                                        page_number = int(qikan_number) / int(self.pagecount)
+                                        if page_number > int(page_number):
+                                            page_number = int(page_number) + 1
+                                            # 翻页抓取
+                                            self.next_page(self.column_list_url, column_list_url_data, page_number,
+                                                           spider, server, request_data['column_name'],
+                                                           redis_key1, redis_key2)
+                                        else:
+                                            page_number = int(page_number)
+                                            # 翻页抓取
+                                            self.next_page(self.column_list_url, column_list_url_data, page_number,
+                                                           spider, server, request_data['column_name'],
+                                                           redis_key1, redis_key2)
 
-                        else:
 
-                            continue
+                        #     break
+
+                        # break
 
 
 if __name__ == '__main__':

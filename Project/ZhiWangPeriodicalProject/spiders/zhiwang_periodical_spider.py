@@ -38,10 +38,6 @@ class SpiderMain(object):
             proxydata = redis_dbutils.srandmember(settings.REDIS_PROXY_KEY, 1)
             if proxydata:
                 proxy = proxydata[0]
-                # proxies = {
-                #     'http': '{}'.format('http://' + proxy),
-                #     'https': '{}'.format('https://' + proxy)
-                # }
                 proxies = {
                     'http': '{}'.format(proxy),
                     'https': '{}'.format(proxy)
@@ -69,23 +65,30 @@ class SpiderMain(object):
                 resp = requests.get(url=url, headers=self.headers, proxies=proxies, timeout=10)
                 if resp.status_code == 200:
                     response = resp.content.decode('utf-8')
+                    # if len(response) < 500:
+                    #     self.logging.error('网页获取异常')
+                    #     with open('error.html', 'w') as f:
+                    #         f.write(response)
+                    #     time.sleep(0.1)
+                    #     continue
+
                     return response
 
                 else:
-                    self.logging.error('Request fails')
+                    self.logging.error('HTTP异常返回码： {}'.format(resp.status_code))
                     time.sleep(1)
                     continue
 
             except ConnectTimeout and ReadTimeout:
                 self.logging.error('Connect Timeout')
                 self.delProxy(proxies)
-                time.sleep(1)
+                time.sleep(0.5)
                 continue
 
             except ConnectionError:
                 self.logging.error('Proxy ConnectionError！！！')
                 self.delProxy(proxies)
-                time.sleep(1)
+                time.sleep(0.5)
                 continue
 
 
@@ -97,24 +100,30 @@ class SpiderMain(object):
                 resp = requests.post(url=url, data=data, headers=self.headers, proxies=proxies, timeout=10)
                 if resp.status_code == 200:
                     response = resp.content.decode('utf-8')
+                    # if len(response) < 500:
+                    #     self.logging.error('网页获取异常')
+                    #     with open('error.html', 'w') as f:
+                    #         f.write(response)
+                    #     continue
+
                     return response
 
                 else:
-                    self.logging.error('Request fails')
+                    self.logging.error('HTTP异常返回码： {}'.format(resp.status_code))
                     time.sleep(1)
                     continue
 
             except ConnectTimeout and ReadTimeout:
                 self.logging.error('Connect Timeout')
                 self.delProxy(proxies)
-                time.sleep(1)
+                time.sleep(0.5)
                 continue
 
             except ConnectionError as e:
                 print(e)
                 self.logging.error('Proxy ConnectionError！！！')
                 self.delProxy(proxies)
-                time.sleep(1)
+                time.sleep(0.5)
                 continue
 
 

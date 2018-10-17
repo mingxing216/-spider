@@ -29,6 +29,10 @@ class StartMain(object):
     def __init__(self):
         # 期刊时间列表种子
         self.qiKanTimeListUrl = 'http://navi.cnki.net/knavi/JournalDetail/GetJournalYearList?pcode={}&pykm={}&pIdx=0'
+        # 第一根栏目名
+        self.first_name = 'article_qikan_queue_1'
+        # 最后根栏目名
+        self.last_name = 'article_qikan_queue_2'
 
     def handle(self, urldata):
         return_data = {}
@@ -132,7 +136,7 @@ class StartMain(object):
 
             # 数据入库
             mysql_server.saveOrUpdate(sha, title, return_data)
-            logging.info('{}: OK'.format(sha))
+            logging.info('{}: OK'.format(return_data))
 
     def spiderRun(self, url_list):
         '''
@@ -168,7 +172,7 @@ class StartMain(object):
         qiKanUrlSha1 = hashlib.sha1(qiKanUrl.encode('utf-8')).hexdigest()
         # 查询当前任务是否已抓取过
         if redis_dbutils.sismember('completed', qiKanUrlSha1):
-
+            logging.error('当前期刊已被抓取过， 放弃抓取！！')
             return
         # 生成单个知网期刊的时间列表种子
         qiKanTimeListUrl, pcode, pykm = server.qiKanTimeListUrl(qiKanUrl, self.qiKanTimeListUrl)
@@ -203,20 +207,20 @@ class StartMain(object):
         spider = zhiwang_periodical_spider.SpiderMain()
         while True:
             # 从redis获取任务
-            redis_key = 'article_qikan_queue_1'
+            redis_key = self.first_name
             index_url_data = redis_dbutils.queue_spop(key=redis_key, lockname='zhiwang_article_lock')
             # 如果当前队列有数据
             if index_url_data:
                 # 任务处理
                 self.task_processing(redis_key, index_url_data, server, spider)
             else:
-                redis_key = 'article_qikan_queue_2'
+                redis_key = self.last_name
                 index_url_data = redis_dbutils.queue_spop(key=redis_key, lockname='zhiwang_article_lock')
                 if index_url_data:
                     # 任务处理
                     self.task_processing(redis_key, index_url_data, server, spider)
                 else:
-                    logging.error('redis don\'t have task!!')
+                    logging.error('redis队列空！！！600秒后重新尝试获取')
                     time.sleep(600)
                     continue
 

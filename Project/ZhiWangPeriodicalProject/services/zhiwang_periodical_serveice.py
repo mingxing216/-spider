@@ -9,10 +9,13 @@ from lxml import html
 from urllib import parse
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
+from log import log
 from utils import redis_dbutils
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 
 etree = html.etree
+logname = 'zhiwang_periodical'
+logging = log.ILog(logname)
 
 class zhiwangPeriodocalService(object):
     def __init__(self):
@@ -45,6 +48,7 @@ class zhiwangPeriodocalService(object):
         li_list = html_etree.xpath("//li")
         for li in li_list:
             column_name = li.xpath("./span[@class='refirstcol']/a/@title")[0]
+            print(column_name)
             dd_list = li.xpath("./dl[@class='resecondlayer']/dd")
             for dd in dd_list:
                 data = {}
@@ -91,6 +95,8 @@ class zhiwangPeriodocalService(object):
             redis_dbutils.saveSet(redis_name, queue_data)
             # 生成期刊抓取任务队列
             redis_dbutils.saveSet(redis_name2, queue_data)
+
+            logging.info(queue_data)
         # 总期刊数
         qikan_number = re.findall(r"(\d+)", html_etree.xpath("//div[@class='pagenav']/text()")[0])[0]
 
