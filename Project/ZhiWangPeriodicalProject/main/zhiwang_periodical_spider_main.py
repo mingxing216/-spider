@@ -33,7 +33,7 @@ class StartMain(object):
     def handle(self, urldata):
         return_data = {}
         text_url = urldata['url']
-        # text_url = 'http://kns.cnki.net/kcms/detail/detail.aspx?dbCode=CJFD&filename=JCJG2018S1063&tableName=CJFDTEMP'
+        # text_url = 'http://kns.cnki.net/kcms/detail/detail.aspx?dbCode=CJFD&filename=JAXG201704006&tableName=CJFDLAST2017'
         urldata_qiKanUrl = urldata['qiKanUrl']
         # 服务对象
         server = zhiwang_periodical_serveice.zhiwangPeriodocalService()
@@ -49,6 +49,7 @@ class StartMain(object):
             return_data['guanLianWenDang'] = {}
             # 获取参考文献
             return_data['guanLianCanKaoWenXian'] = server.getGuanLianCanKaoWenXian(url=text_url)
+
             # 获取文章种子sha1加密
             return_data['sha'] = hashlib.sha1(text_url.encode('utf-8')).hexdigest()
             # 获取时间【年】
@@ -149,6 +150,7 @@ class StartMain(object):
         pool.wait()
         # for url in url_list:
         #     self.handle(url)
+        #     break
 
     def task_processing(self, redis_key, index_url_data, server, spider):
         '''
@@ -201,14 +203,14 @@ class StartMain(object):
         while True:
             # 从redis获取任务
             redis_key = 'article_qikan_queue_1'
-            index_url_data = redis_dbutils.spop(key=redis_key, lockname='zhiwang_article_lock')
+            index_url_data = redis_dbutils.queue_spop(key=redis_key, lockname='zhiwang_article_lock')
             # 如果当前队列有数据
             if index_url_data:
                 # 任务处理
                 self.task_processing(redis_key, index_url_data, server, spider)
             else:
                 redis_key = 'article_qikan_queue_2'
-                index_url_data = redis_dbutils.spop(key=redis_key, lockname='zhiwang_article_lock')
+                index_url_data = redis_dbutils.queue_spop(key=redis_key, lockname='zhiwang_article_lock')
                 if index_url_data:
                     # 任务处理
                     self.task_processing(redis_key, index_url_data, server, spider)
@@ -216,7 +218,6 @@ class StartMain(object):
                     logging.error('redis don\'t have task!!')
                     time.sleep(600)
                     continue
-
 
 if __name__ == '__main__':
 

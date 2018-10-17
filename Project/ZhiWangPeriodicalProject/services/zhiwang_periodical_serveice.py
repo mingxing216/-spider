@@ -64,50 +64,6 @@ class zhiwangPeriodocalService(object):
 
         return return_data
 
-
-        # dd_list = html_etree.xpath("//dd")
-        # return_data = []
-        # # 用于判断根栏目下的栏目是否还有栏目， 因为页面规则不一样
-        # if dd_list:
-        #     for dd in dd_list:
-        #         data = {}
-        #         data['title'] = dd.xpath("./a/@title")[0]
-        #         onclick_data = dd.xpath("./a/@onclick")[0]
-        #         data_tuple = re.findall(r"(\(.*\))", onclick_data)[0]  # 数据元祖
-        #         data_tuple = "(" + ''.join(re.findall(r"[^()]", data_tuple)) + ")"
-        #         try:
-        #             data_tuple = eval(data_tuple)
-        #             data['name'] = data_tuple[1]
-        #             data['value'] = data_tuple[2]
-        #             data['has_next'] = True
-        #             data['sun_column_name'] = data_tuple[3]
-        #             return_data.append(data)
-        #         except:
-        #
-        #             continue
-        # else:
-        #     # 当前只获取第一个和最后一个根栏目， 它们都有子栏目， 所以这里暂时注销掉
-        #     li_list = html_etree.xpath("//li")
-        #     if li_list:
-        #         for li in li_list:
-        #             data = {}
-        #             data['title'] = li.xpath("./span/a/@title")[0]
-        #             onclick_data = li.xpath("./span/a/@onclick")[0]
-        #             data_tuple = re.findall(r"(\(.*\))", onclick_data)[0]  # 数据元祖
-        #             data_tuple = "(" + ''.join(re.findall(r"[^()]", data_tuple)) + ")"
-        #             try:
-        #                 data_tuple = eval(data_tuple)
-        #                 data['name'] = data_tuple[1]
-        #                 data['value'] = data_tuple[2]
-        #                 data['has_next'] = False
-        #                 data['sun_column_name'] = data_tuple[3]
-        #                 return_data.append(data)
-        #             except:
-        #
-        #                 continue
-        #
-        # return return_data
-
     def createTaskQueue(self, html, column_name, redis_name, redis_name2):
         '''
         生成期刊主页任务队列， 获取总期刊数
@@ -215,6 +171,28 @@ class zhiwangPeriodocalService(object):
 
         return return_list
 
+    # 判断参考文献类型页面是否正确
+    def _judgeHtml(self, divlist, div_number, keyword):
+        '''
+        :param divlist: div标签列表
+        :param div_number: 指定的div标签索引位置
+        :param keyword: 判断关键字
+        :return: 
+        '''
+        try:
+            div = divlist[div_number]
+            type_name = div.xpath("./div[@class='dbTitle']/text()")[0]
+            if keyword in type_name:
+
+                return True
+            else:
+
+                return False
+        except:
+
+            return False
+
+
     # 获取期刊名称
     def getQiKanMingCheng(self, html):
         resp = bytes(bytearray(html, encoding='utf-8'))
@@ -283,6 +261,8 @@ class zhiwangPeriodocalService(object):
 
                 # 题录
                 if '题录' in shiTiLeiXing:
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '题录'
                     # pass
                     # 翻页获取
                     for page in range(page_number):
@@ -295,33 +275,43 @@ class zhiwangPeriodocalService(object):
                                                '&catalogName='
                                                '&CurDBCode={}'
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
-                        # 获取该页html
-                        leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
-                        leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
-                        html_etree = etree.HTML(leiXingResp)
-                        leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
-                        if leiXingDivList:
-                            leiXingDiv = leiXingDivList[i]
-                            li_list = leiXingDiv.xpath(".//li")
-                            if li_list:
-                                for li in li_list:
-                                    data = {}
-                                    try:
-                                        data["实体类型"] = "题录"
-                                    except:
-                                        data["实体类型"] = ""
-                                    try:
-                                        data["其它信息"] = "".join(re.findall(r"[^&nbsp\r\n\s]", li.xpath("./text()")[0]))
-                                    except:
-                                        data["其他信息"] = ""
-                                    try:
-                                        data["标题"] = ''.join(re.findall(r"[^&nbsp\r\n\s]", li.xpath("./a/text()")[0]))
-                                    except:
-                                        data["标题"] = ""
+                        for get_number in range(20):
+                            # 获取该页html
+                            leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
+                            leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
+                            html_etree = etree.HTML(leiXingResp)
+                            leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
+                            # 判断参考文献类型页面是否正确
+                            status = self._judgeHtml(leiXingDivList, i, keyword)
+                            if status is True:
+                                leiXingDiv = leiXingDivList[i]
+                                li_list = leiXingDiv.xpath(".//li")
+                                if li_list:
+                                    for li in li_list:
+                                        data = {}
+                                        try:
+                                            data["实体类型"] = "题录"
+                                        except:
+                                            data["实体类型"] = ""
+                                        try:
+                                            data["其它信息"] = re.sub(r'\r\n\s*', '', li.xpath("./text()")[0])
+                                        except:
+                                            data["其他信息"] = ""
+                                        try:
+                                            data["标题"] = re.sub(r'\r\n\s*', '', li.xpath("./a/text()")[0])
+                                        except:
+                                            data["标题"] = ""
 
-                                    return_data.append(data)
+                                        return_data.append(data)
+                                    break
+
+                            else:
+
+                                continue
 
                 elif '学术期刊' in shiTiLeiXing:
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '学术期刊'
                     # pass
                     # 翻页获取
                     for page in range(page_number):
@@ -334,41 +324,49 @@ class zhiwangPeriodocalService(object):
                                                '&catalogName='
                                                '&CurDBCode={}'
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
-                        # 获取该页html
-                        leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
-                        leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
-                        html_etree = etree.HTML(leiXingResp)
-                        leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
-                        if leiXingDivList:
-                            leiXingDiv = leiXingDivList[i]
-                            li_list = leiXingDiv.xpath(".//li")
-                            if li_list:
-                                for li in li_list:
-                                    data = {}
-                                    try:
-                                        data['年卷期'] = ''.join(re.findall(r"[^&nbsp\r\n\s]", li.xpath("./a[3]/text()")[0]))
-                                    except:
-                                        data['年卷期'] = ""
-                                    try:
-                                        data['实体类型'] = '期刊论文'
-                                    except:
-                                        data['实体类型'] = ""
-                                    try:
-                                        data['作者'] = ''.join(re.findall(r"[^&nbsp\r\n\s]", li.xpath("./text()")[0]))
-                                    except:
-                                        data['作者'] = ""
-                                    try:
-                                        data['标题'] = li.xpath("./a[@target='kcmstarget']/text()")[0]
-                                    except:
-                                        data['标题'] = ""
-                                    try:
-                                        data['刊名'] = li.xpath("./a[2]/text()")[0]
-                                    except:
-                                        data['刊名'] = ""
+                        for get_number in range(20):
+                            # 获取该页html
+                            leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
+                            leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
+                            html_etree = etree.HTML(leiXingResp)
+                            leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
+                            # 判断参考文献类型页面是否正确
+                            status = self._judgeHtml(leiXingDivList, i, keyword)
+                            if status is True:
+                                leiXingDiv = leiXingDivList[i]
+                                li_list = leiXingDiv.xpath(".//li")
+                                if li_list:
+                                    for li in li_list:
+                                        data = {}
+                                        try:
+                                            data['年卷期'] = ''.join(re.findall(r"[^&nbsp\r\n\s]", li.xpath("./a[3]/text()")[0]))
+                                        except:
+                                            data['年卷期'] = ""
+                                        try:
+                                            data['实体类型'] = '期刊论文'
+                                        except:
+                                            data['实体类型'] = ""
+                                        try:
+                                            data['作者'] = re.sub(r'\r\n\s*', '', li.xpath("./text()")[0])
+                                        except:
+                                            data['作者'] = ""
+                                        try:
+                                            data['标题'] = re.sub(r'\r\n\s*', '', li.xpath("./a[@target='kcmstarget']/text()")[0])
+                                        except:
+                                            data['标题'] = ""
+                                        try:
+                                            data['刊名'] = re.sub(r'\r\n\s*', '', li.xpath("./a[2]/text()")[0])
+                                        except:
+                                            data['刊名'] = ""
 
-                                    return_data.append(data)
+                                        return_data.append(data)
+                                    break
+                            else:
+                                continue
 
                 elif '国际期刊' in shiTiLeiXing:
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '国际期刊'
                     # pass
                     # 翻页获取
                     for page in range(page_number):
@@ -381,50 +379,58 @@ class zhiwangPeriodocalService(object):
                                                '&catalogName='
                                                '&CurDBCode={}'
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
-                        # 获取该页html
-                        leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
-                        leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
-                        html_etree = etree.HTML(leiXingResp)
-                        leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
-                        if leiXingDivList:
-                            leiXingDiv = leiXingDivList[i]
-                            li_list = leiXingDiv.xpath(".//li")
-                            if li_list:
-                                for li in li_list:
-                                    data = {}
-                                    try:
-                                        data['标题'] = ''.join(re.findall(r"[^&nbsp\r\n\s]", li.xpath("./a/text()")[0]))
-                                    except:
-                                        data['标题'] = ""
-                                    try:
-                                        data['实体类型'] = '外文文献'
-                                    except:
-                                        data['实体类型'] = ""
-                                    try:
+                        for get_number in range(20):
+                            # 获取该页html
+                            leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
+                            leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
+                            html_etree = etree.HTML(leiXingResp)
+                            leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
+                            # 判断参考文献类型页面是否正确
+                            status = self._judgeHtml(leiXingDivList, i, keyword)
+                            if status is True:
+                                leiXingDiv = leiXingDivList[i]
+                                li_list = leiXingDiv.xpath(".//li")
+                                if li_list:
+                                    for li in li_list:
+                                        data = {}
                                         try:
-                                            year = str(re.findall(r"(\d{4})", li.xpath("./text()")[0])[0])
+                                            data['标题'] = re.sub(r'\r\n\s*', '', li.xpath("./a/text()")[0])
                                         except:
-                                            year = ""
+                                            data['标题'] = ""
                                         try:
-                                            qi = str(re.findall(r"(\(.*\))", li.xpath("./text()")[0])[0])
+                                            data['实体类型'] = '外文文献'
                                         except:
-                                            qi = ""
-                                        if year and qi:
-                                            data['年卷期'] = year + qi
-                                        elif year and qi == "":
-                                            data['年卷期'] = year
-                                        elif year == "" and qi:
-                                            data['年卷期'] = year
-                                        else:
+                                            data['实体类型'] = ""
+                                        try:
+                                            try:
+                                                year = str(re.findall(r"(\d{4})", li.xpath("./text()")[0])[0])
+                                            except:
+                                                year = ""
+                                            try:
+                                                qi = str(re.findall(r"(\(.*\))", li.xpath("./text()")[0])[0])
+                                            except:
+                                                qi = ""
+                                            if year and qi:
+                                                data['年卷期'] = year + qi
+                                            elif year and qi == "":
+                                                data['年卷期'] = year
+                                            elif year == "" and qi:
+                                                data['年卷期'] = year
+                                            else:
+                                                data['年卷期'] = ""
+                                        except:
                                             data['年卷期'] = ""
-                                    except:
-                                        data['年卷期'] = ""
 
-                                    #TODO 作者和刊名无法区分
+                                        #TODO 作者和刊名无法区分
 
-                                    return_data.append(data)
+                                        return_data.append(data)
+                                    break
+                            else:
+                                continue
 
                 elif '图书' in shiTiLeiXing:
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '图书'
                     # pass
                     # 翻页获取
                     for page in range(page_number):
@@ -437,33 +443,42 @@ class zhiwangPeriodocalService(object):
                                                '&catalogName='
                                                '&CurDBCode={}'
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
-                        # 获取该页html
-                        leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
-                        leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
-                        html_etree = etree.HTML(leiXingResp)
-                        leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
-                        if leiXingDivList:
-                            leiXingDiv = leiXingDivList[i]
-                            li_list = leiXingDiv.xpath(".//li")
-                            if li_list:
-                                for li in li_list:
-                                    data = {}
-                                    try:
-                                        data['实体类型'] = '图书'
-                                    except:
-                                        data['实体类型'] = ""
-                                    try:
-                                        data['其它信息'] = re.sub('.*\[M\]\.', '', ''.join(re.findall(r"[^&nbsp\r\n\s]", li.xpath("./text()")[0])))
-                                    except:
-                                        data['其他信息'] = ""
-                                    try:
-                                        data['标题'] = re.findall(r"(.*)\[M\]", ''.join(re.findall(r"[^&nbsp\r\n\s]", li.xpath("./text()")[0])))[0]
-                                    except:
-                                        data['标题'] = ""
+                        for get_number in range(20):
+                            # 获取该页html
+                            leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
+                            leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
+                            html_etree = etree.HTML(leiXingResp)
+                            leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
+                            # 判断参考文献类型页面是否正确
+                            status = self._judgeHtml(leiXingDivList, i, keyword)
+                            if status is True:
+                                leiXingDiv = leiXingDivList[i]
+                                li_list = leiXingDiv.xpath(".//li")
+                                if li_list:
+                                    for li in li_list:
+                                        data = {}
+                                        try:
+                                            data['实体类型'] = '图书'
+                                        except:
+                                            data['实体类型'] = ""
+                                        try:
+                                            data['其它信息'] = re.sub(r'\r\n\s*', '', li.xpath("./text()")[0])
+                                        except:
+                                            data['其他信息'] = ""
+                                        try:
+                                            data['标题'] = re.sub(r'\r\n\s*', '', li.xpath("./text()")[0])
+                                        except:
+                                            data['标题'] = ""
 
-                                    return_data.append(data)
+                                        return_data.append(data)
+                                    break
+
+                            else:
+                                continue
 
                 elif '学位' in shiTiLeiXing:
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '图书'
                     # pass
                     # 翻页获取
                     for page in range(page_number):
@@ -476,42 +491,51 @@ class zhiwangPeriodocalService(object):
                                                '&catalogName='
                                                '&CurDBCode={}'
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
-                        # 获取该页html
-                        leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
-                        leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
-                        html_etree = etree.HTML(leiXingResp)
-                        leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
-                        if leiXingDivList:
-                            leiXingDiv = leiXingDivList[i]
-                            li_list = leiXingDiv.xpath(".//li")
-                            if li_list:
-                                for li in li_list:
-                                    data = {}
-                                    try:
-                                        data['标题'] = ''.join(re.findall(r"[^&nbsp\r\n\s]", li.xpath("./a[@target='kcmstarget']/text()")[0]))
-                                    except:
-                                        data['标题'] = ""
-                                    try:
-                                        data['实体类型'] = '学位论文'
-                                    except:
-                                        data['实体类型'] = ""
-                                    try:
-                                        re_time = re.compile("\d{4}")
-                                        data['时间'] = [re.findall(re_time, time)[0] for time in li.xpath(".//text()") if re.findall(re_time, time)][0]
-                                    except:
-                                        data['时间'] = ""
-                                    try:
-                                        data['作者'] = ''.join(re.findall(r"[^\s]", re.findall(r"\[D\]\.(.*)\.", li.xpath("./text()")[0])[0]))
-                                    except:
-                                        data['作者'] = ""
-                                    try:
-                                        data['机构'] = li.xpath("./a[2]/text()")[0]
-                                    except:
-                                        data['机构'] = ""
+                        for get_number in range(20):
+                            # 获取该页html
+                            leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
+                            leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
+                            html_etree = etree.HTML(leiXingResp)
+                            leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
+                            # 判断参考文献类型页面是否正确
+                            status = self._judgeHtml(leiXingDivList, i, keyword)
+                            if status is True:
+                                leiXingDiv = leiXingDivList[i]
+                                li_list = leiXingDiv.xpath(".//li")
+                                if li_list:
+                                    for li in li_list:
+                                        data = {}
+                                        try:
+                                            data['标题'] = re.sub(r'\r\n\s*', '', li.xpath("./a[@target='kcmstarget']/text()")[0])
+                                        except:
+                                            data['标题'] = ""
+                                        try:
+                                            data['实体类型'] = '学位论文'
+                                        except:
+                                            data['实体类型'] = ""
+                                        try:
+                                            re_time = re.compile("\d{4}")
+                                            data['时间'] = [re.findall(re_time, time)[0] for time in li.xpath(".//text()") if re.findall(re_time, time)][0]
+                                        except:
+                                            data['时间'] = ""
+                                        try:
+                                            data['作者'] = re.sub(r'\r\n\s*', '', re.findall(r"\[D\]\.(.*)\.", li.xpath("./text()")[0])[0])
+                                        except:
+                                            data['作者'] = ""
+                                        try:
+                                            data['机构'] = re.sub(r'\r\n\s*', '', li.xpath("./a[2]/text()")[0])
+                                        except:
+                                            data['机构'] = ""
 
-                                    return_data.append(data)
+                                        return_data.append(data)
+                                    break
+
+                            else:
+                                continue
 
                 elif '标准' in shiTiLeiXing:
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '图书'
                     # pass
                     # 翻页获取
                     for page in range(page_number):
@@ -524,47 +548,54 @@ class zhiwangPeriodocalService(object):
                                                '&catalogName='
                                                '&CurDBCode={}'
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
-                        # 获取该页html
-                        leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
-                        leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
-                        html_etree = etree.HTML(leiXingResp)
-                        leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
-                        if leiXingDivList:
-                            leiXingDiv = leiXingDivList[i]
-                            li_list = leiXingDiv.xpath(".//li")
-                            if li_list:
-                                for li in li_list:
-                                    data = {}
-                                    try:
-                                        data['标准号'] = ''.join(re.findall(r"[^\r\n\s\.]", li.xpath("./text()")[0]))
-                                    except:
-                                        data['标准号'] = ''
-                                    try:
-                                        data['标题'] = ''.join(re.findall(r"[^\r\n\s\.]", li.xpath("./a/text()")[0]))
-                                    except:
-                                        data['标题'] = ''
-                                    try:
-                                        data['时间'] = ''.join(re.findall(r"[^\r\n\s\.\[S\]]", li.xpath("./text()")[1]))
-                                    except:
-                                        data['时间'] = ''
-                                    try:
-                                        data['实体类型'] = '标准类型'
-                                    except:
-                                        data['实体类型'] = ""
-                                    try:
-                                        url = li.xpath("./a/@href")[0]
-                                        # 去掉amp;
-                                        url = re.sub('amp;', '', url)
-                                        # dbcode替换成dbname
-                                        url = re.sub('dbcode', 'dbname', url)
-                                        # 截取参数部分
-                                        url = re.findall(r"detail\.aspx\?(.*)", url)[0]
-                                        # 拼接url
-                                        data['url'] = 'http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?' + url
-                                    except:
-                                        data['url'] = ''
+                        for get_number in range(20):
+                            # 获取该页html
+                            leiXingResp = spider.getRespForGet(url=qiKanLunWenIndexUrl)
+                            leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
+                            html_etree = etree.HTML(leiXingResp)
+                            leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
+                            # 判断参考文献类型页面是否正确
+                            status = self._judgeHtml(leiXingDivList, i, keyword)
+                            if status is True:
+                                leiXingDiv = leiXingDivList[i]
+                                li_list = leiXingDiv.xpath(".//li")
+                                if li_list:
+                                    for li in li_list:
+                                        data = {}
+                                        try:
+                                            data['标准号'] = re.sub(r'\r\n\s*', '', li.xpath("./text()")[0])
+                                        except:
+                                            data['标准号'] = ''
+                                        try:
+                                            data['标题'] = re.sub(r'\r\n\s*', '', li.xpath("./a/text()")[0])
+                                        except:
+                                            data['标题'] = ''
+                                        try:
+                                            data['时间'] = re.sub(r'\r\n\s*', '', li.xpath("./text()")[1])
+                                        except:
+                                            data['时间'] = ''
+                                        try:
+                                            data['实体类型'] = '标准类型'
+                                        except:
+                                            data['实体类型'] = ""
+                                        try:
+                                            url = li.xpath("./a/@href")[0]
+                                            # 去掉amp;
+                                            url = re.sub('amp;', '', url)
+                                            # dbcode替换成dbname
+                                            url = re.sub('dbcode', 'dbname', url)
+                                            # 截取参数部分
+                                            url = re.findall(r"detail\.aspx\?(.*)", url)[0]
+                                            # 拼接url
+                                            data['url'] = 'http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?' + url
+                                        except:
+                                            data['url'] = ''
 
-                                    return_data.append(data)
+                                        return_data.append(data)
+                                    break
+
+                            else:
+                                continue
 
         return return_data
 

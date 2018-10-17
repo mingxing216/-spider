@@ -83,7 +83,7 @@ def redisLock(func):
 
 # 获取并删除一个set元素【分布式】
 @redisLock
-def spop(**kwargs):
+def queue_spop(**kwargs):
     '''
     获取并删除集合中的一个元素
     :param kwargs: 
