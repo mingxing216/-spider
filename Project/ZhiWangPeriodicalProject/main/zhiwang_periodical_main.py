@@ -48,7 +48,7 @@ class SpiderMain(object):
                 for i in range(10):
                     # 获取列表页html源码
                     column_list_html = spider.getRespForPost(url=self.column_list_url, data=data)
-                    if len(column_list_html) < 300:
+                    if len(column_list_html) < 400:
                         continue
                     else:
                         # 生成期刊主页任务队列
@@ -101,7 +101,7 @@ class SpiderMain(object):
                                     }
                                     # 获取列表页html源码
                                     column_list_html = spider.getRespForPost(url=self.column_list_url, data=column_list_url_data)
-                                    if column_list_html is not None:
+                                    if len(column_list_html) > 400:
                                         if i == 1: # 第一个栏目的存法
                                             # 抓取文章用的期刊队列
                                             redis_key1 = 'article_qikan_queue_1'
