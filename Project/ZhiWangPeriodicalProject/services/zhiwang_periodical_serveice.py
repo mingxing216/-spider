@@ -72,6 +72,9 @@ class zhiwangPeriodocalService(object):
         '''
         resp = bytes(bytearray(html, encoding='utf-8'))
         html_etree = etree.HTML(resp)
+        if html_etree is None:
+            with open('none.html', 'w') as f:
+                f.write(str(html))
         li_list = html_etree.xpath("//ul[@class='list_tab']/li")
         i = 0
         for li in li_list:
