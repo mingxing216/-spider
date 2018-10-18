@@ -16,6 +16,22 @@ logname = 'zhiwang_periodical'
 logging = log.ILog(logname)
 
 
+def getStatus(sha):
+    '''
+    查询当前文章是否被抓取过
+    :param sha: 文章url sha1加密
+    :return: True or False
+    '''
+    sql_server = mysql_dbutils.DBUtils_PyMysql()
+    select_sql = "select * from ss_paper where `sha` = '%s'" % sha
+    status = sql_server.get_results(select_sql)
+    if status:
+
+        return False
+    else:
+
+        return True
+
 # 存储数据入库
 def saveOrUpdate(sha, title, data):
     '''
@@ -24,33 +40,48 @@ def saveOrUpdate(sha, title, data):
     return: 是否存储成功
     '''
     sql_server = mysql_dbutils.DBUtils_PyMysql()
-    select_sql = "select * from ss_paper where `sha` = '%s'" % sha
-    status = sql_server.get_results(select_sql)
-    if status:
-        last_updated = timeutils.strDateToTime(timeutils.get_yyyy_mm_dd_hh_mm_ss())
-        insert_data = pymysql.escape_string(data)
-        sql = ("update ss_paper set `memo` = '%s', `last_updated` = '%s'" % (insert_data, last_updated))
-        try:
-            sql_server.insertInTo(sql)
+    cat = 'paper'
+    clazz = '论文_期刊论文'
+    date_created = timeutils.strDateToTime(timeutils.get_yyyy_mm_dd_hh_mm_ss())
+    insert_data = pymysql.escape_string(data)
+    sql = ("insert into "
+           "ss_paper"
+           "(`sha`, `title`, `cat`, `clazz`, `memo`, `date_created`) "
+           "VALUES "
+           "('%s', '%s', '%s', '%s', '%s', '%s')" % (sha, title, cat, clazz, insert_data, date_created))
+    try:
+        sql_server.insertInTo(sql)
 
-        except:
-            logging.info('update error')
-
-    else:
-        cat = 'paper'
-        clazz = '论文_期刊论文'
-        date_created = timeutils.strDateToTime(timeutils.get_yyyy_mm_dd_hh_mm_ss())
-        insert_data = pymysql.escape_string(data)
-        sql = ("insert into "
-               "ss_paper"
-               "(`sha`, `title`, `cat`, `clazz`, `memo`, `date_created`) "
-               "VALUES "
-               "('%s', '%s', '%s', '%s', '%s', '%s')" % (sha, title, cat, clazz, insert_data, date_created))
-        try:
-            sql_server.insertInTo(sql)
-
-        except:
-            logging.info('insert_into error')
+    except:
+        logging.info('insert_into error')
+    # select_sql = "select * from ss_paper where `sha` = '%s'" % sha
+    # status = sql_server.get_results(select_sql)
+    # if status:
+    #     pass
+    #     # last_updated = timeutils.strDateToTime(timeutils.get_yyyy_mm_dd_hh_mm_ss())
+    #     # insert_data = pymysql.escape_string(data)
+    #     # sql = ("update ss_paper set `memo` = '%s', `last_updated` = '%s'" % (insert_data, last_updated))
+    #     # try:
+    #     #     sql_server.insertInTo(sql)
+    #     #
+    #     # except:
+    #     #     logging.info('update error')
+    #
+    # else:
+    #     cat = 'paper'
+    #     clazz = '论文_期刊论文'
+    #     date_created = timeutils.strDateToTime(timeutils.get_yyyy_mm_dd_hh_mm_ss())
+    #     insert_data = pymysql.escape_string(data)
+    #     sql = ("insert into "
+    #            "ss_paper"
+    #            "(`sha`, `title`, `cat`, `clazz`, `memo`, `date_created`) "
+    #            "VALUES "
+    #            "('%s', '%s', '%s', '%s', '%s', '%s')" % (sha, title, cat, clazz, insert_data, date_created))
+    #     try:
+    #         sql_server.insertInTo(sql)
+    #
+    #     except:
+    #         logging.info('insert_into error')
 
 
 

@@ -16,6 +16,8 @@ import psutil
 import gc
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
+from multiprocessing import Queue
+
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
@@ -25,9 +27,10 @@ from Project.ZhiWangPeriodicalProject.services import zhiwang_periodical_serveic
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.dao import mysql_server
 
-logname = 'zhiwang_periodical'
-logging = log.ILog(logname)
+LOGNAME = 'zhiwang_periodical'
+LOGGING = log.ILog(LOGNAME)
 
+ARTICLE_Q = Queue()
 
 class StartMain(object):
     def __init__(self):
@@ -41,108 +44,113 @@ class StartMain(object):
     def handle(self, urldata):
         return_data = {}
         text_url = urldata['url']
-        # text_url = 'http://kns.cnki.net/kcms/detail/detail.aspx?dbCode=CJFD&filename=JAXG201704006&tableName=CJFDLAST2017'
-        urldata_qiKanUrl = urldata['qiKanUrl']
-        # 服务对象
-        server = zhiwang_periodical_serveice.zhiwangPeriodocalService()
-        # 爬虫对象
-        spider = zhiwang_periodical_spider.SpiderMain()
-        # 获取文章页html源码
-        article_html = spider.getRespForGet(url=text_url)
-        if article_html:
-            # ========================获取数据==========================
-            # 获取期刊名称
-            return_data['qiKanMingCheng'] = server.getQiKanMingCheng(article_html)
-            # 获取关联文档
-            return_data['guanLianWenDang'] = {}
-            # # 获取参考文献
-            # return_data['guanLianCanKaoWenXian'] = server.getGuanLianCanKaoWenXian(url=text_url)
+        sha = hashlib.sha1(text_url.encode('utf-8')).hexdigest()
+        # 查询当前文章是否被抓取过
+        status = mysql_server.getStatus(sha)
+        if status:
+            # text_url = 'http://kns.cnki.net/kcms/detail/detail.aspx?dbCode=CJFD&filename=JAXG201704006&tableName=CJFDLAST2017'
+            urldata_qiKanUrl = urldata['qiKanUrl']
+            # 服务对象
+            server = zhiwang_periodical_serveice.zhiwangPeriodocalService()
+            # 爬虫对象
+            spider = zhiwang_periodical_spider.SpiderMain()
+            # 获取文章页html源码
+            article_html = spider.getRespForGet(url=text_url)
+            if article_html:
+                # ========================获取数据==========================
+                # 获取期刊名称
+                return_data['qiKanMingCheng'] = server.getQiKanMingCheng(article_html)
+                # 获取关联文档
+                return_data['guanLianWenDang'] = {}
+                # 获取参考文献
+                return_data['guanLianCanKaoWenXian'] = server.getGuanLianCanKaoWenXian(url=text_url)
+                # 获取文章种子sha1加密
+                return_data['sha'] = sha
+                # 获取时间【年】
+                return_data['shiJian'] = server.getshiJian(article_html)
+                # 获取页数
+                return_data['yeShu'] = server.getYeShu(article_html)
+                # 获取关联图书期刊
+                return_data['guanLianTuShuQiKan'] = server.getGuanLianTuShuQiKan(urldata_qiKanUrl)
+                #获取作者
+                return_data['zuoZhe'] = server.getZuoZhe(article_html)
+                # 获取文章标题
+                return_data['title'] = server.getArticleTitle(article_html)
+                # 获取关联企业机构
+                return_data['guanLianQiYeJiGou'] = server.getGuanLianQiYeJiGou(article_html)
+                # 获取下载PDF下载链接
+                return_data['xiaZai'] = server.getXiaZai(article_html)
+                # 类别
+                return_data['ss'] = '论文'
+                # 获取关键词
+                return_data['guanJianCi'] = server.getGuanJianCi(article_html)
+                # 获取作者单位
+                return_data['zuoZheDanWei'] = server.getZuoZheDanWei(article_html)
+                # 生成key字段
+                return_data['key'] = text_url
+                # 获取大小
+                return_data['daXiao'] = server.getDaXiao(article_html)
+                # 获取在线阅读地址
+                return_data['zaiXianYueDu'] = server.getZaiXianYueDu(article_html)
+                # 获取分类号
+                return_data['zhongTuFenLeiHao'] = server.getZhongTuFenLeiHao(article_html)
+                # 获取下载次数
+                return_data['xiaZaiCiShu'] = server.getXiaZaiCiShu(article_html)
+                # 生成ws字段
+                return_data['ws'] = '中国知网'
+                # 生成url字段
+                return_data['url'] = text_url
+                # 生成biz字段
+                return_data['biz'] = '文献大数据'
+                # 获取关联人物
+                return_data['guanLianRenWu'] = server.getGuanLianRenWu(article_html)
+                # 生成ref字段
+                return_data['ref'] = text_url
+                # 获取期号
+                return_data['qiHao'] = server.getQiHao(article_html)
+                # 获取引证文献
+                # return_data['guanLianYinZhengWenXian'] = server.getGuanLianYinZhengWenXian(url=text_url)
+                # 获取所在页码
+                return_data['suoZaiYeMa'] = server.getSuoZaiYeMa(article_html)
+                # 获取摘要
+                return_data['zhaiYao'] = server.getZhaiYao(article_html)
+                # 生成es字段
+                return_data['ex'] = '期刊论文'
+                # 生成clazz字段
+                return_data['clazz'] = '论文_期刊论文'
+                # 获取基金
+                return_data['jiJin'] = server.getJiJin(article_html)
+                # 获取文内图片
+                return_data['wenNeiTuPian'] = server.getWenNeiTuPian(article_html, text_url)
+                # 获取doi
+                return_data['shuZiDuiXiangBiaoShiFu'] = server.getDoi(article_html)
+                # 生成来源分类字段
+                return_data['laiYuanFenLei'] = ''
+                # 生成学科类别分类
+                return_data['xueKeLeiBie'] = urldata['xueKeLeiBie']
 
-            # 获取文章种子sha1加密
-            return_data['sha'] = hashlib.sha1(text_url.encode('utf-8')).hexdigest()
-            # 获取时间【年】
-            return_data['shiJian'] = server.getshiJian(article_html)
-            # 获取页数
-            return_data['yeShu'] = server.getYeShu(article_html)
-            # 获取关联图书期刊
-            return_data['guanLianTuShuQiKan'] = server.getGuanLianTuShuQiKan(urldata_qiKanUrl)
-            #获取作者
-            return_data['zuoZhe'] = server.getZuoZhe(article_html)
-            # 获取文章标题
-            return_data['title'] = server.getArticleTitle(article_html)
-            # 获取关联企业机构
-            return_data['guanLianQiYeJiGou'] = server.getGuanLianQiYeJiGou(article_html)
-            # 获取下载PDF下载链接
-            return_data['xiaZai'] = server.getXiaZai(article_html)
-            # 类别
-            return_data['ss'] = '论文'
-            # 获取关键词
-            return_data['guanJianCi'] = server.getGuanJianCi(article_html)
-            # 获取作者单位
-            return_data['zuoZheDanWei'] = server.getZuoZheDanWei(article_html)
-            # 生成key字段
-            return_data['key'] = text_url
-            # 获取大小
-            return_data['daXiao'] = server.getDaXiao(article_html)
-            # 获取在线阅读地址
-            return_data['zaiXianYueDu'] = server.getZaiXianYueDu(article_html)
-            # 获取分类号
-            return_data['zhongTuFenLeiHao'] = server.getZhongTuFenLeiHao(article_html)
-            # 获取下载次数
-            return_data['xiaZaiCiShu'] = server.getXiaZaiCiShu(article_html)
-            # 生成ws字段
-            return_data['ws'] = '中国知网'
-            # 生成url字段
-            return_data['url'] = text_url
-            # 生成biz字段
-            return_data['biz'] = '文献大数据'
-            # 获取关联人物
-            return_data['guanLianRenWu'] = server.getGuanLianRenWu(article_html)
-            # 生成ref字段
-            return_data['ref'] = text_url
-            # 获取期号
-            return_data['qiHao'] = server.getQiHao(article_html)
-            # 获取引证文献
-            # return_data['guanLianYinZhengWenXian'] = server.getGuanLianYinZhengWenXian(url=text_url)
-            # 获取所在页码
-            return_data['suoZaiYeMa'] = server.getSuoZaiYeMa(article_html)
-            # 获取摘要
-            return_data['zhaiYao'] = server.getZhaiYao(article_html)
-            # 生成es字段
-            return_data['ex'] = '期刊论文'
-            # 生成clazz字段
-            return_data['clazz'] = '论文_期刊论文'
-            # 获取基金
-            return_data['jiJin'] = server.getJiJin(article_html)
-            # 获取文内图片
-            return_data['wenNeiTuPian'] = server.getWenNeiTuPian(article_html, text_url)
-            # 获取doi
-            return_data['shuZiDuiXiangBiaoShiFu'] = server.getDoi(article_html)
-            # 生成来源分类字段
-            return_data['laiYuanFenLei'] = ''
-            # 生成学科类别分类
-            return_data['xueKeLeiBie'] = urldata['xueKeLeiBie']
+                # 生成关联人物url队列
+                for man_url in return_data["guanLianRenWu"]:
+                    url = man_url['url']
+                    redis_dbutils.saveSet('qikanrenwu', url)
 
-            # 生成关联人物url队列
-            for man_url in return_data["guanLianRenWu"]:
-                url = man_url['url']
-                redis_dbutils.saveSet('qikanrenwu', url)
+                # 生成关联企业机构url队列
+                for jiGou in return_data["guanLianQiYeJiGou"]:
+                    url = jiGou['url']
+                    redis_dbutils.saveSet('qikanjigou', url)
 
-            # 生成关联企业机构url队列
-            for jiGou in return_data["guanLianQiYeJiGou"]:
-                url = jiGou['url']
-                redis_dbutils.saveSet('qikanjigou', url)
+                title = return_data['title']
 
-            sha = return_data['sha']
-            title = return_data['title']
+                return_data = json.dumps(return_data)
 
-            return_data = json.dumps(return_data)
+                # 数据入库
+                mysql_server.saveOrUpdate(sha, title, return_data)
+                LOGGING.info('{}: OK'.format(sha))
 
-            # 数据入库
-            mysql_server.saveOrUpdate(sha, title, return_data)
-            logging.info('{}: OK'.format(sha))
+        else:
+            LOGGING.info('{}: 已被抓取过'.format(sha))
 
-    def spiderRun(self, url_list):
+    def spiderRun(self):
         '''
         抓取文章数据
         :param url_list: 文章种子列表
@@ -157,12 +165,27 @@ class StartMain(object):
         # # 等待所有线程执行完毕再继续下一步
         # pool.wait()
 
-        po = ThreadPool(len(url_list))
-        for i in url_list:
-            po.apply_async(func=self.handle, args=(i,))
+        time.sleep(300)
+        while True:
+            url_list = []
+            if ARTICLE_Q.qsize() != 0:
+                print(ARTICLE_Q.qsize())
+                for url_number in range(100):
+                    article_url = ARTICLE_Q.get()
+                    url_list.append(article_url)
+                    if ARTICLE_Q.qsize() == 0:
+                        break
 
-        po.close()
-        po.join()
+                po = ThreadPool(len(url_list))
+                for i in url_list:
+                    po.apply_async(func=self.handle, args=(i,))
+
+                po.close()
+                po.join()
+            else:
+                LOGGING.error('ARTICLE_Q队列空！！！尝试重新获取')
+                time.sleep(1)
+                continue
 
 
     def task_processing(self, redis_key, index_url_data, server, spider):
@@ -179,10 +202,10 @@ class StartMain(object):
         qiKanUrl = url_data['url']
         xueKeLeiBie = url_data['column_name']
         qiKanUrlSha1 = hashlib.sha1(qiKanUrl.encode('utf-8')).hexdigest()
-        # 查询当前任务是否已抓取过
-        if redis_dbutils.sismember('completed', qiKanUrlSha1):
-            logging.error('当前期刊已被抓取过， 放弃抓取！！')
-            return
+        # # 查询当前任务是否已抓取过
+        # if redis_dbutils.sismember('completed', qiKanUrlSha1):
+        #     LOGGING.error('当前期刊已被抓取过， 放弃抓取！！')
+        #     return
         # 生成单个知网期刊的时间列表种子
         qiKanTimeListUrl, pcode, pykm = server.qiKanTimeListUrl(qiKanUrl, self.qiKanTimeListUrl)
         # 获取期刊时间列表页html源码
@@ -199,15 +222,18 @@ class StartMain(object):
                 # 获取文章种子列表
                 article_url_list = server.getArticleUrlList(article_list_html, qiKanUrl, xueKeLeiBie)
                 if article_url_list:
-                    # 抓取数据
-                    self.spiderRun(article_url_list)
+                    # # 抓取数据
+                    # self.spiderRun(article_url_list)
+                    for article_url in article_url_list:
+                        ARTICLE_Q.put(article_url)
+                        LOGGING.info('文章url已队列至ARTICLE_Q....')
 
-        # 将当前任务存入已抓取队列
-        redis_dbutils.saveSet('completed', qiKanUrlSha1)
-        # 队列中删除已完成任务
-        redis_dbutils.srem(redis_key, url_data)
+        # # 将当前任务存入已抓取队列
+        # redis_dbutils.saveSet('completed', qiKanUrlSha1)
+        # # 队列中删除已完成任务
+        # redis_dbutils.srem(redis_key, url_data)
 
-        logging.info('The current task is completed: {}'.format(qiKanUrlSha1))
+        LOGGING.info('The current task is completed: {}'.format(qiKanUrlSha1))
 
     def run(self):
         # 服务对象
@@ -229,7 +255,7 @@ class StartMain(object):
                     # 任务处理
                     self.task_processing(redis_key, index_url_data, server, spider)
                 else:
-                    logging.error('redis队列空！！！600秒后重新尝试获取')
+                    LOGGING.error('redis队列空！！！600秒后重新尝试获取')
                     time.sleep(600)
                     continue
 
@@ -240,5 +266,6 @@ if __name__ == '__main__':
     po = Pool(int(settings.ZHIWANG_PERIODOCAL_SPIDER_PROCESS))
     for i in range(int(settings.ZHIWANG_PERIODOCAL_SPIDER_PROCESS)):
         po.apply_async(func=main.run)
+        po.apply_async(func=main.spiderRun)
     po.close()
     po.join()
