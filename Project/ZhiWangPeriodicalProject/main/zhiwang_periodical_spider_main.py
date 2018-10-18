@@ -6,12 +6,16 @@
 import sys
 import os
 import time
+import threading
 import threadpool
 import pprint
 import hashlib
 import json
 import hashlib
+import psutil
+import gc
 from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
@@ -144,17 +148,22 @@ class StartMain(object):
         :param url_list: 文章种子列表
         :return: 
         '''
-        # 创建MAX_THREAD_SIZE个线程池
-        pool = threadpool.ThreadPool(10)
-        # 创建handle函数为线程, 传入音乐人信息列表
-        requests = threadpool.makeRequests(self.handle, url_list)
-        # 将所有要执行的线程扔进线程池并执行线程
-        [pool.putRequest(req) for req in requests]
-        # 等待所有线程执行完毕再继续下一步
-        pool.wait()
-        # for url in url_list:
-        #     self.handle(url)
-        #     break
+        # # 创建MAX_THREAD_SIZE个线程池
+        # pool = threadpool.ThreadPool(len(url_list))
+        # # 创建handle函数为线程, 传入音乐人信息列表
+        # requests = threadpool.makeRequests(self.handle, url_list)
+        # # 将所有要执行的线程扔进线程池并执行线程
+        # [pool.putRequest(req) for req in requests]
+        # # 等待所有线程执行完毕再继续下一步
+        # pool.wait()
+
+        po = ThreadPool(len(url_list))
+        for i in url_list:
+            po.apply_async(func=self.handle, args=(i,))
+
+        po.close()
+        po.join()
+
 
     def task_processing(self, redis_key, index_url_data, server, spider):
         '''
@@ -223,6 +232,7 @@ class StartMain(object):
                     logging.error('redis队列空！！！600秒后重新尝试获取')
                     time.sleep(600)
                     continue
+
 
 if __name__ == '__main__':
 

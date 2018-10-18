@@ -9,27 +9,26 @@ import redis
 import threading
 import random
 import time
+import gc
+import psutil
+import threadpool
 from redis import StrictRedis
 from urllib.parse import urlparse
 from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 
 from utils import redis_dbutils
 
-redis_host = '60.195.249.104'
-redis_port = 6379
-redis_pass = 'spider'
+def func(url, ga):
+    print(url)
+    print(ga)
 
-sr = StrictRedis(host=redis_host, port=redis_port, password=redis_pass)
+po = ThreadPool(2)
+for i in range(2):
+    po.apply_async(func=func, args=(1, 2))
+po.close()
+po.join()
 
-data = sr.smembers('proxy')
-
-with open('../config/redis_article_qikan_queue_2.txt', 'r') as f:
-    datas = f.readlines()
-
-for i in datas:
-    i = re.sub(r'\n', '', i)
-    sr.sadd('article_qikan_queue_2', i)
-    print(i)
