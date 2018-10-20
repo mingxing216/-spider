@@ -16,6 +16,7 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
 from utils import user_agents
 from utils import redis_dbutils
+from utils import timeutils
 from log import log
 
 class SpiderMain(object):
@@ -62,15 +63,25 @@ class SpiderMain(object):
         for i in range(10):
             proxies = self.getProxy()
             try:
+                begin_time = time.time()
                 resp = requests.get(url=url, headers=self.headers, proxies=proxies, timeout=10)
                 if resp.status_code == 200:
+                    # 代理请求时间
+                    out_time = time.time() - begin_time
+                    # 当前代理
+                    proxy = proxies['http']
+                    try:
+                        # 响应大小
+                        content_length = resp.headers['Content-Length']
+                    except:
+                        content_length = 0
+                    self.logging.info('芝麻代理: {proxy}, 响应时间: {out_time}, 响应大小: {content_length}'
+                                      .format(proxy=proxy,
+                                              out_time=out_time,
+                                              content_length=content_length))
+
                     response = resp.content.decode('utf-8')
-                    # if len(response) < 500:
-                    #     self.logging.error('网页获取异常')
-                    #     with open('error.html', 'w') as f:
-                    #         f.write(response)
-                    #     time.sleep(0.1)
-                    #     continue
+
 
                     return response
 
@@ -81,14 +92,16 @@ class SpiderMain(object):
 
             except ConnectTimeout and ReadTimeout:
                 self.logging.error('Connect Timeout')
-                self.delProxy(proxies)
-                time.sleep(0.5)
+                if (i + 1) % 2 == 0:
+                    self.delProxy(proxies)
+                time.sleep(0.2)
                 continue
 
             except ConnectionError:
                 self.logging.error('Proxy ConnectionError！！！')
-                self.delProxy(proxies)
-                time.sleep(0.5)
+                if (i + 1) % 2 == 0:
+                    self.delProxy(proxies)
+                time.sleep(0.2)
                 continue
 
 
@@ -97,14 +110,24 @@ class SpiderMain(object):
         for i in range(10):
             proxies = self.getProxy()
             try:
+                begin_time = timeutils.get_current_millis()
                 resp = requests.post(url=url, data=data, headers=self.headers, proxies=proxies, timeout=10)
                 if resp.status_code == 200:
+                    # 代理请求时间
+                    out_time = timeutils.get_current_millis() - begin_time
+                    # 当前代理
+                    proxy = proxies['http']
+                    try:
+                        # 响应大小
+                        content_length = resp.headers['Content-Length']
+                    except:
+                        content_length = 0
+                    self.logging.info('芝麻代理: {proxy}, 响应时间: {out_time}, 响应大小: {content_length}'
+                                      .format(proxy=proxy,
+                                              out_time=out_time,
+                                              content_length=content_length))
+
                     response = resp.content.decode('utf-8')
-                    # if len(response) < 500:
-                    #     self.logging.error('网页获取异常')
-                    #     with open('error.html', 'w') as f:
-                    #         f.write(response)
-                    #     continue
 
                     return response
 
@@ -115,15 +138,16 @@ class SpiderMain(object):
 
             except ConnectTimeout and ReadTimeout:
                 self.logging.error('Connect Timeout')
-                self.delProxy(proxies)
-                time.sleep(0.5)
+                if (i + 1) % 2 == 0:
+                    self.delProxy(proxies)
+                time.sleep(0.2)
                 continue
 
             except ConnectionError as e:
-                print(e)
                 self.logging.error('Proxy ConnectionError！！！')
-                self.delProxy(proxies)
-                time.sleep(0.5)
+                if (i + 1) % 2 == 0:
+                    self.delProxy(proxies)
+                time.sleep(0.2)
                 continue
 
 

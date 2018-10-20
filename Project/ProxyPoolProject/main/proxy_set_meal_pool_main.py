@@ -30,15 +30,6 @@ def setMealProxyNumber():
         logging.info('Set meal have proxy: {}'.format(proxy_number))
 
 
-# def setMealExpiryTime():
-#     '''
-#     当前套餐到期时间
-#     '''
-#     logname = 'setMealProxyNumber'
-#     logging = log.ILog(logname)
-#     server = proxy_service.ProxyServices()
-#
-
 def maintainProxyPool():
     '''
     代理池维护
@@ -62,11 +53,11 @@ def maintainProxyPool():
 
 if __name__ == '__main__':
     while True:
-        p1 = Process(target=setMealProxyNumber)
+        # p1 = Process(target=setMealProxyNumber)
         p2 = Process(target=maintainProxyPool)
-        p1.start()
+        # p1.start()
         p2.start()
-        p1.join()
+        # p1.join()
         p2.join()
 
         time.sleep(2)

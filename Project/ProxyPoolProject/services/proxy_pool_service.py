@@ -10,8 +10,9 @@ import settings
 class ProxyServices(object):
 
     def __init__(self):
-        self.neek = settings.NEEK
-        self.appkey = settings.APPKEY
+        # self.neek = settings.NEEK
+        # self.appkey = settings.APPKEY
+        pass
 
     def createAccountBalanceApi(self, neek, appkey):
         '''
@@ -69,16 +70,16 @@ class ProxyServices(object):
 
         return proxy_number
 
-    def srandmemberProxy(self, key, num=1):
-        '''
-        从代理池随机获取代理IP
-        :param key: 集合名
-        :param num: 获取数量
-        :return: 代理IP
-        '''
-        proxy = redis_dbutils.srandmemberProxy(key, num)[0]
-
-        return proxy
+    # def srandmemberProxy(self, key, num=1):
+    #     '''
+    #     从代理池随机获取代理IP
+    #     :param key: 集合名
+    #     :param num: 获取数量
+    #     :return: 代理IP
+    #     '''
+    #     proxy = redis_dbutils.srandmemberProxy(key, num)[0]
+    #
+    #     return proxy
 
 
 class ProxySetMealServices(object):
@@ -113,7 +114,7 @@ class ProxySetMealServices(object):
              '&pb=45'
              '&mr=1' # 去重方式（1:360天去重 2:单日去重 3:不去重）
              '&regions='.format(num, protocol, pack))
-        # print(url)
+        print(url)
         r = requests.get(url)
         if r.status_code == 200:
             text = r.text
@@ -155,16 +156,16 @@ class ProxySetMealServices(object):
 
         return proxy_number
 
-    def srandmemberProxy(self, key, num=1):
-        '''
-        从代理池随机获取代理IP
-        :param key: 集合名
-        :param num: 获取数量
-        :return: 代理IP
-        '''
-        proxy = redis_dbutils.srandmemberProxy(key, num)[0]
-
-        return proxy
+    # def srandmemberProxy(self, key, num=1):
+    #     '''
+    #     从代理池随机获取代理IP
+    #     :param key: 集合名
+    #     :param num: 获取数量
+    #     :return: 代理IP
+    #     '''
+    #     proxy = redis_dbutils.srandmemberProxy(key, num)[0]
+    #
+    #     return proxy
 
 
 

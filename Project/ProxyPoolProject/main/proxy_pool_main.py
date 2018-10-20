@@ -20,23 +20,23 @@ logname = 'proxy_pool_main'
 logging = log.ILog(logname)
 
 
-def accountBalance():
-    '''
-    监控账户余额
-    '''
-
-    # 必要参数
-    neek = settings.NEEK
-    appkey = settings.APPKEY
-
-    # 模块对象
-    service = proxy_pool_service.ProxyServices()
-    spider = proxy_pool_spider
-
-    # 主体逻辑
-    api = service.createAccountBalanceApi(neek, appkey)
-    balance = spider.balanceSpider(api)
-    # logging.info('Account balance is {} RMB'.format(balance))
+# def accountBalance():
+#     '''
+#     监控账户余额
+#     '''
+#
+#     # 必要参数
+#     neek = settings.NEEK
+#     appkey = settings.APPKEY
+#
+#     # 模块对象
+#     service = proxy_pool_service.ProxyServices()
+#     spider = proxy_pool_spider
+#
+#     # 主体逻辑
+#     api = service.createAccountBalanceApi(neek, appkey)
+#     balance = spider.balanceSpider(api)
+#     # logging.info('Account balance is {} RMB'.format(balance))
 
 
 def maintainProxyPool():
@@ -53,7 +53,6 @@ def maintainProxyPool():
 
     # 主体逻辑
     proxy_number = service.getProxyPoolLen(redis_key)
-
     if proxy_number < int(redis_proxy_number):
         get_proxy_num = int(redis_proxy_number) - proxy_number
         proxys = service.getZhiMaProxy(get_proxy_num)
@@ -68,7 +67,7 @@ def maintainProxyPool():
 
 if __name__ == '__main__':
     while True:
-        p1 = Process(target=accountBalance)
+        # p1 = Process(target=accountBalance)
         p2 = Process(target=maintainProxyPool)
         # p1.start()
         p2.start()

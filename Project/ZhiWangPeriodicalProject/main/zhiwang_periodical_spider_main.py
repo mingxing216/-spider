@@ -6,14 +6,8 @@
 import sys
 import os
 import time
-import threading
-import threadpool
-import pprint
-import hashlib
 import json
 import hashlib
-import psutil
-import gc
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Queue
@@ -30,7 +24,7 @@ from Project.ZhiWangPeriodicalProject.dao import mysql_server
 LOGNAME = 'zhiwang_periodical'
 LOGGING = log.ILog(LOGNAME)
 
-ARTICLE_Q = Queue()
+ARTICLE_Q = Queue(10000)
 
 class StartMain(object):
     def __init__(self):
@@ -145,7 +139,7 @@ class StartMain(object):
 
                 # 数据入库
                 mysql_server.saveOrUpdate(sha, title, return_data)
-                LOGGING.info('{}: OK'.format(sha))
+                # LOGGING.info('{}: OK'.format(sha))
 
         else:
             LOGGING.info('{}: 已被抓取过'.format(sha))
@@ -165,11 +159,10 @@ class StartMain(object):
         # # 等待所有线程执行完毕再继续下一步
         # pool.wait()
 
-        time.sleep(300)
+        # time.sleep(300)
         while True:
             url_list = []
             if ARTICLE_Q.qsize() != 0:
-                print(ARTICLE_Q.qsize())
                 for url_number in range(100):
                     article_url = ARTICLE_Q.get()
                     url_list.append(article_url)
@@ -183,7 +176,7 @@ class StartMain(object):
                 po.close()
                 po.join()
             else:
-                LOGGING.error('ARTICLE_Q队列空！！！尝试重新获取')
+                # LOGGING.error('ARTICLE_Q队列空！！！尝试重新获取')
                 time.sleep(1)
                 continue
 
@@ -226,7 +219,7 @@ class StartMain(object):
                     # self.spiderRun(article_url_list)
                     for article_url in article_url_list:
                         ARTICLE_Q.put(article_url)
-                        LOGGING.info('文章url已队列至ARTICLE_Q....')
+                        # LOGGING.info('文章url已队列至ARTICLE_Q....')
 
         # # 将当前任务存入已抓取队列
         # redis_dbutils.saveSet('completed', qiKanUrlSha1)

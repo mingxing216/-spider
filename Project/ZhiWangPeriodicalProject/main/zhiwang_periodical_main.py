@@ -77,7 +77,6 @@ class SpiderMain(object):
                     if column_html is not None:
                         # 获取当前栏目下所有子栏目请求参数
                         request_datas = server.getColumnSunData(column_html)
-                        print(request_datas)
                         for request_data in request_datas:
                             if request_data['has_next'] is True:
                                 # 生成请求参数
@@ -154,6 +153,6 @@ class SpiderMain(object):
 
 if __name__ == '__main__':
     main = SpiderMain()
-    begin_time = time.time()
+    # begin_time = time.time()
     main.run()
-    print(time.time() - begin_time)
+    # print(time.time() - begin_time)
