@@ -1488,6 +1488,78 @@ class zhiwangPeriodocalService(object):
             return ""
 
 
+class ZhiWangJiGouService(object):
+    '''
+    知网期刊论文关联机构服务层
+    '''
+    def __init__(self):
+        pass
+
+    # 获取sha
+    def getSha1(self, url):
+
+        return hashlib.sha1(url.encode('utf-8')).hexdigest()
+
+    # 获取机构名
+    def getJiGouName(self, html):
+        resp = bytes(bytearray(html, encoding='utf-8'))
+        html_etree = etree.HTML(resp)
+        try:
+            name = html_etree.xpath("//h2[@class='name']/text()")[0]
+        except:
+            name = ''
+
+        return name
+
+    # 获取曾用名
+    def getCengYongMing(self, html):
+        try:
+            name = re.findall(r"<p><label>曾用名：</label>(.*)</p>", html)[0]
+        except:
+            name = ''
+
+        return name
+
+    # 获取地域
+    def getDiyu(self, html):
+        try:
+            addr = re.findall(r"<p><label>地域：</label>(.*)</p>", html)[0]
+        except:
+            addr = ''
+
+        return addr
+
+    # 获取官网地址
+    def getGuanWangDiZhi(self, html):
+        try:
+            url = re.findall(r'<label>官方网址：</label><a target="_blank" href=".*">(.*)</a>', html)[0]
+        except:
+            url = ''
+
+        return url
+
+    # 获取图片
+    def getTuPian(self, html):
+        resp = bytes(bytearray(html, encoding='utf-8'))
+        html_etree = etree.HTML(resp)
+        try:
+            p_list = html_etree.xpath("//div[@class='aboutIntro']/p")
+            for p in p_list:
+                try:
+                    url = p.xpath("./img/@src")[0]
+                    return url
+                except:
+                    continue
+
+            url = ''
+
+            return url
+        except:
+            url = ''
+
+            return url
+
+
 if __name__ == '__main__':
     main = zhiwangPeriodocalService()
     # main.run()

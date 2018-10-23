@@ -16,7 +16,7 @@ from multiprocessing import Queue
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
 from log import log
-from utils import redis_dbutils
+from utils import redispool_utils
 from Project.ZhiWangPeriodicalProject.services import zhiwang_periodical_serveice
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.dao import mysql_server
@@ -24,7 +24,14 @@ from Project.ZhiWangPeriodicalProject.dao import mysql_server
 LOGNAME = 'zhiwang_periodical'
 LOGGING = log.ILog(LOGNAME)
 
-ARTICLE_Q = Queue(10000)
+ARTICLE_Q = Queue(1000)
+
+# 服务对象
+server = zhiwang_periodical_serveice.zhiwangPeriodocalService()
+# 爬虫对象
+spider = zhiwang_periodical_spider.SpiderMain()
+# redis对象
+redis_client = redispool_utils.createRedisPool()
 
 class StartMain(object):
     def __init__(self):
@@ -126,12 +133,12 @@ class StartMain(object):
                 # 生成关联人物url队列
                 for man_url in return_data["guanLianRenWu"]:
                     url = man_url['url']
-                    redis_dbutils.saveSet('qikanrenwu', url)
+                    redispool_utils.sadd(redis_client=redis_client, key='qikanrenwu', value=url)
 
                 # 生成关联企业机构url队列
                 for jiGou in return_data["guanLianQiYeJiGou"]:
                     url = jiGou['url']
-                    redis_dbutils.saveSet('qikanjigou', url)
+                    redispool_utils.sadd(redis_client=redis_client, key='qikanjigou', value=url)
 
                 title = return_data['title']
 
@@ -139,7 +146,6 @@ class StartMain(object):
 
                 # 数据入库
                 mysql_server.saveOrUpdate(sha, title, return_data)
-                # LOGGING.info('{}: OK'.format(sha))
 
         else:
             LOGGING.info('{}: 已被抓取过'.format(sha))
@@ -180,7 +186,6 @@ class StartMain(object):
                 time.sleep(1)
                 continue
 
-
     def task_processing(self, redis_key, index_url_data, server, spider):
         '''
         任务处理及抓取分配函数 
@@ -190,15 +195,12 @@ class StartMain(object):
         :param spider: 爬虫对象
         :return: 
         '''
-        url_data = index_url_data.decode('utf-8')
-        url_data = eval(url_data)
+        # url_data = index_url_data.decode('utf-8')
+        url_data = eval(index_url_data)
+        print(url_data)
         qiKanUrl = url_data['url']
         xueKeLeiBie = url_data['column_name']
         qiKanUrlSha1 = hashlib.sha1(qiKanUrl.encode('utf-8')).hexdigest()
-        # # 查询当前任务是否已抓取过
-        # if redis_dbutils.sismember('completed', qiKanUrlSha1):
-        #     LOGGING.error('当前期刊已被抓取过， 放弃抓取！！')
-        #     return
         # 生成单个知网期刊的时间列表种子
         qiKanTimeListUrl, pcode, pykm = server.qiKanTimeListUrl(qiKanUrl, self.qiKanTimeListUrl)
         # 获取期刊时间列表页html源码
@@ -215,35 +217,25 @@ class StartMain(object):
                 # 获取文章种子列表
                 article_url_list = server.getArticleUrlList(article_list_html, qiKanUrl, xueKeLeiBie)
                 if article_url_list:
-                    # # 抓取数据
-                    # self.spiderRun(article_url_list)
+
                     for article_url in article_url_list:
                         ARTICLE_Q.put(article_url)
-                        # LOGGING.info('文章url已队列至ARTICLE_Q....')
 
-        # # 将当前任务存入已抓取队列
-        # redis_dbutils.saveSet('completed', qiKanUrlSha1)
-        # # 队列中删除已完成任务
-        # redis_dbutils.srem(redis_key, url_data)
 
         LOGGING.info('The current task is completed: {}'.format(qiKanUrlSha1))
 
     def run(self):
-        # 服务对象
-        server = zhiwang_periodical_serveice.zhiwangPeriodocalService()
-        # 爬虫对象
-        spider = zhiwang_periodical_spider.SpiderMain()
         while True:
             # 从redis获取任务
             redis_key = self.first_name
-            index_url_data = redis_dbutils.queue_spop(key=redis_key, lockname='zhiwang_article_lock')
+            index_url_data = redispool_utils.queue_spop(redis_client=redis_client, key=redis_key, lockname='zhiwang_article_lock')
             # 如果当前队列有数据
             if index_url_data:
                 # 任务处理
                 self.task_processing(redis_key, index_url_data, server, spider)
             else:
                 redis_key = self.last_name
-                index_url_data = redis_dbutils.queue_spop(key=redis_key, lockname='zhiwang_article_lock')
+                index_url_data = redispool_utils.queue_spop(redis_client=redis_client, key=redis_key, lockname='zhiwang_article_lock')
                 if index_url_data:
                     # 任务处理
                     self.task_processing(redis_key, index_url_data, server, spider)
