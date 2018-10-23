@@ -40,9 +40,9 @@ from utils import mysql_dbutils
 
 
 def get_connection():
-    conn = pymysql.connect(host='60.195.249.105',
-                           user='spider',
-                           password='spider',
+    conn = pymysql.connect(host='127.0.0.1',
+                           user='root',
+                           password='rockerfm520',
                            database=settings.DB_NAME,
                            port=3306,
                            charset="utf8mb4",
@@ -51,7 +51,7 @@ def get_connection():
 
 conn = get_connection()
 cur = conn.cursor()
-sql = 'select memo from ss_paper where sha = "0c0fdafc8abc20c252df86e2c0652e9061aea79a"'
+sql = 'select * from ss_institute where sha = "e4cdf4a7b733e8bca76b56c0048a0deea7c0dbb3"'
 cur.execute(sql)
 ret = cur.fetchall()
 cur.close()

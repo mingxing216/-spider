@@ -32,7 +32,7 @@ def getStatus(sha):
 
         return True
 
-# 存储数据入库
+# 论文存储数据入库
 def saveOrUpdate(sha, title, data):
     '''
     存储数据入库
@@ -54,34 +54,34 @@ def saveOrUpdate(sha, title, data):
 
     except:
         logging.info('insert_into error')
-    # select_sql = "select * from ss_paper where `sha` = '%s'" % sha
-    # status = sql_server.get_results(select_sql)
-    # if status:
-    #     pass
-    #     # last_updated = timeutils.strDateToTime(timeutils.get_yyyy_mm_dd_hh_mm_ss())
-    #     # insert_data = pymysql.escape_string(data)
-    #     # sql = ("update ss_paper set `memo` = '%s', `last_updated` = '%s'" % (insert_data, last_updated))
-    #     # try:
-    #     #     sql_server.insertInTo(sql)
-    #     #
-    #     # except:
-    #     #     logging.info('update error')
-    #
-    # else:
-    #     cat = 'paper'
-    #     clazz = '论文_期刊论文'
-    #     date_created = timeutils.strDateToTime(timeutils.get_yyyy_mm_dd_hh_mm_ss())
-    #     insert_data = pymysql.escape_string(data)
-    #     sql = ("insert into "
-    #            "ss_paper"
-    #            "(`sha`, `title`, `cat`, `clazz`, `memo`, `date_created`) "
-    #            "VALUES "
-    #            "('%s', '%s', '%s', '%s', '%s', '%s')" % (sha, title, cat, clazz, insert_data, date_created))
-    #     try:
-    #         sql_server.insertInTo(sql)
-    #
-    #     except:
-    #         logging.info('insert_into error')
+
+# 关联机构存储入库
+def saveJiGou(sha, title, data):
+    '''
+    存储论文关联机构数据入库
+    :param data: 爬虫输出数据
+    :return: 
+    '''
+    sql_server = mysql_dbutils.DBUtils_PyMysql()
+    date_created = timeutils.strDateToTime(timeutils.get_yyyy_mm_dd_hh_mm_ss())
+    insert_data = pymysql.escape_string(data)
+    cat = 'institute'
+    clazz = '机构_论文作者机构'
+    # 查询数据库是否存在当前数据
+    select_sql = ("select sha from ss_institute where sha = '{}'".format(sha))
+    data = sql_server.get_results(select_sql)
+    if not data:
+        # 存储数据
+        insert_sql = ("insert into "
+                      "ss_institute"
+                      "(`sha`, `title`, `cat`, `clazz`, `memo`, `date_created`) "
+                      "VALUES "
+                      "('%s', '%s', '%s', '%s', '%s', '%s')" % (sha, title, cat, clazz, insert_data, date_created))
+        try:
+            sql_server.insertInTo(insert_sql)
+
+        except:
+            logging.info('insert_into error')
 
 
 
