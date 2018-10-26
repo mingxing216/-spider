@@ -13,30 +13,13 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
 from log import log
 from Project.ProxyPoolProject.services import proxy_pool_service
-from Project.ProxyPoolProject.spiders import proxy_pool_spider
-from utils import redis_dbutils
+from utils import redispool_utils
 
 logname = 'proxy_pool_main'
 logging = log.ILog(logname)
 
-
-# def accountBalance():
-#     '''
-#     监控账户余额
-#     '''
-#
-#     # 必要参数
-#     neek = settings.NEEK
-#     appkey = settings.APPKEY
-#
-#     # 模块对象
-#     service = proxy_pool_service.ProxyServices()
-#     spider = proxy_pool_spider
-#
-#     # 主体逻辑
-#     api = service.createAccountBalanceApi(neek, appkey)
-#     balance = spider.balanceSpider(api)
-#     # logging.info('Account balance is {} RMB'.format(balance))
+# redis对象
+redis_client = redispool_utils.createRedisPool()
 
 
 def maintainProxyPool():
@@ -52,14 +35,14 @@ def maintainProxyPool():
     service = proxy_pool_service.ProxyServices()
 
     # 主体逻辑
-    proxy_number = service.getProxyPoolLen(redis_key)
+    proxy_number = service.getProxyPoolLen(redis_client=redis_client, key=redis_key)
     if proxy_number < int(redis_proxy_number):
         get_proxy_num = int(redis_proxy_number) - proxy_number
         proxys = service.getZhiMaProxy(get_proxy_num)
         if proxys is not None:
             for proxy_dict in proxys:
                 proxy = 'socks5://%s:%s' % (proxy_dict['ip'], proxy_dict['port'])
-                redis_dbutils.saveSet(redis_key, proxy)
+                redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
                 logging.info('Save proxy in redis: {}'.format(proxy))
         else:
             logging.error('Get proxy failed!!!')

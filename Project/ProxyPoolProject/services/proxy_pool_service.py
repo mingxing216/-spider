@@ -4,7 +4,8 @@ import os
 import requests
 import json
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from utils import redis_dbutils
+# from utils import redis_dbutils
+from utils import redispool_utils
 import settings
 
 class ProxyServices(object):
@@ -60,26 +61,15 @@ class ProxyServices(object):
         return None
 
 
-    def getProxyPoolLen(self, key):
+    def getProxyPoolLen(self,redis_client, key):
         '''
         获取代理池内代理数量
         :param key: redis中存储代理ip的集合名
         :return: 代理数量
         '''
-        proxy_number = redis_dbutils.getSetNumber(key)
+        proxy_number = redispool_utils.scard(redis_client=redis_client, key=key)
 
         return proxy_number
-
-    # def srandmemberProxy(self, key, num=1):
-    #     '''
-    #     从代理池随机获取代理IP
-    #     :param key: 集合名
-    #     :param num: 获取数量
-    #     :return: 代理IP
-    #     '''
-    #     proxy = redis_dbutils.srandmemberProxy(key, num)[0]
-    #
-    #     return proxy
 
 
 class ProxySetMealServices(object):
@@ -114,7 +104,6 @@ class ProxySetMealServices(object):
              '&pb=45'
              '&mr=1' # 去重方式（1:360天去重 2:单日去重 3:不去重）
              '&regions='.format(num, protocol, pack))
-        print(url)
         r = requests.get(url)
         if r.status_code == 200:
             text = r.text
@@ -146,26 +135,13 @@ class ProxySetMealServices(object):
 
         return None
 
-    def getProxyPoolLen(self, key):
+    def getProxyPoolLen(self,redis_client, key):
         '''
         获取代理池内代理数量
         :param key: redis中存储代理ip的集合名
         :return: 代理数量
         '''
-        proxy_number = redis_dbutils.getSetNumber(key)
+        proxy_number = redispool_utils.scard(redis_client=redis_client, key=key)
 
         return proxy_number
-
-    # def srandmemberProxy(self, key, num=1):
-    #     '''
-    #     从代理池随机获取代理IP
-    #     :param key: 集合名
-    #     :param num: 获取数量
-    #     :return: 代理IP
-    #     '''
-    #     proxy = redis_dbutils.srandmemberProxy(key, num)[0]
-    #
-    #     return proxy
-
-
 
