@@ -10,6 +10,7 @@ DB_PORT=3306
 DB_USER='spider'
 DB_PASS='spider'
 DB_NAME='spider'
+DB_POOL_NUMBER = 10
 
 # redis
 REDIS_HOST='60.195.249.105'
