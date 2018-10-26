@@ -10,8 +10,19 @@ import time
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from log import log
+from utils import redispool_utils
+from utils import mysqlpool_utils
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
-from Project.ZhiWangPeriodicalProject.services import zhiwang_periodical_serveice
+from Project.ZhiWangPeriodicalProject.services import serveice
+
+# 服务对象
+server = serveice.zhiwangPeriodocalService()
+# 爬虫对象
+spider = zhiwang_periodical_spider.SpiderMain()
+# redis对象
+redis_client = redispool_utils.createRedisPool()
+# mysql对象
+mysql_client = mysqlpool_utils.createMysqlPool()
 
 logname = 'zhiwang_periodical'
 logging = log.ILog(logname)
@@ -46,21 +57,18 @@ class SpiderMain(object):
                 data['pageindex'] = page
                 # 生成期刊主页任务队列
                 # 获取列表页html源码
-                column_list_html = spider.getRespForPost(url=self.column_list_url, data=data)
+                column_list_html = spider.getRespForPost(redis_client=redis_client, url=self.column_list_url, data=data)
                 if column_list_html is not None:
                     # 生成期刊主页任务队列
                     server.createTaskQueue(column_list_html, column_name, redis_name, redis_name2)
 
     def run(self):
-        # 模块对象
-        spider = zhiwang_periodical_spider.SpiderMain()
-        server = zhiwang_periodical_serveice.zhiwangPeriodocalService()
         # 获取首页源码
         index_url_data = {
             'productcode': 'CJFD',
             'index': 1
         }
-        index_html = spider.getRespForPost(url=self.index_url, data=index_url_data)
+        index_html = spider.getRespForPost(redis_client=redis_client, url=self.index_url, data=index_url_data)
         if index_html is not None:
             # 获取根栏目数量
             column_numbers = server.getColumnNumber(index_html)
@@ -73,7 +81,7 @@ class SpiderMain(object):
                         'productcode': 'CJFD',
                         'ClickIndex': column_number + 1
                     }
-                    column_html = spider.getRespForPost(url=self.column_url, data=column_url_data)
+                    column_html = spider.getRespForPost(redis_client=redis_client, url=self.column_url, data=column_url_data)
                     if column_html is not None:
                         # 获取当前栏目下所有子栏目请求参数
                         request_datas = server.getColumnSunData(column_html)
@@ -96,7 +104,7 @@ class SpiderMain(object):
                                     # 'index': 1
                                 }
                                 # 获取列表页html源码
-                                column_list_html = spider.getRespForPost(url=self.column_list_url, data=column_list_url_data)
+                                column_list_html = spider.getRespForPost(redis_client=redis_client, url=self.column_list_url, data=column_list_url_data)
                                 if column_list_html is not None:
                                     if i == 1: # 第一个栏目的存法
                                         # 抓取文章用的期刊队列

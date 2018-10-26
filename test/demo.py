@@ -51,7 +51,7 @@ def get_connection():
 
 conn = get_connection()
 cur = conn.cursor()
-sql = 'select * from ss_institute where sha = "e4cdf4a7b733e8bca76b56c0048a0deea7c0dbb3"'
+sql = 'select * from ss_institute where sha = "22870d0509ea2d1863a7831302225ce1bb0a2aea"'
 cur.execute(sql)
 ret = cur.fetchall()
 cur.close()
@@ -59,15 +59,3 @@ conn.close()
 
 for data in ret:
     print(data['memo'])
-
-
-# i = 1
-# for i in range(12):
-#     if (i + 1) % 3 == 0:
-#         print('yes: {}'.format(i))
-#
-#     else:
-#         print('no: {}'.format(i))
-
-
-

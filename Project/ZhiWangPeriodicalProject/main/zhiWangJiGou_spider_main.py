@@ -14,20 +14,25 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
 from log import log
 from utils import redispool_utils
-from Project.ZhiWangPeriodicalProject.spiders import zhiwang_jigou_spider
-from Project.ZhiWangPeriodicalProject.services import zhiwang_periodical_serveice
-from Project.ZhiWangPeriodicalProject.dao import mysql_server
+from utils import mysqlpool_utils
+# from Project.ZhiWangPeriodicalProject.spiders import zhiwang_jigou_spider
+from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
+from Project.ZhiWangPeriodicalProject.services import serveice
+from Project.ZhiWangPeriodicalProject.dao import sql_dao
 
 logname = 'zhiWangJiGou_spider'
 logging = log.ILog(logname)
 
+
+# 爬虫对象
+# spider = zhiwang_jigou_spider.SpiderMain()
+spider = zhiwang_periodical_spider.SpiderMain()
+# 服务对象
+server = serveice.ZhiWangJiGouService()
 # redis对象
 redis_client = redispool_utils.createRedisPool()
-# 爬虫对象
-spider = zhiwang_jigou_spider.SpiderMain()
-# 服务对象
-server = zhiwang_periodical_serveice.ZhiWangJiGouService()
-
+# mysql对象
+mysql_client = mysqlpool_utils.createMysqlPool()
 
 
 class SpiderMain(object):
@@ -36,10 +41,11 @@ class SpiderMain(object):
 
     def handle(self, url):
         return_data = {}
+        sha = server.getSha1(url)
         # 获取机构页html源码
-        index_html = spider.getRespForGet(url)
+        index_html = spider.getRespForGet(redis_client=redis_client, url=url)
         # 获取sha1
-        return_data['sha'] = server.getSha1(url)
+        return_data['sha'] = sha
         # 获取地域
         return_data['suoZaiDiNeiRong'] = server.getDiyu(index_html)
         # 生成ws字段
@@ -67,12 +73,11 @@ class SpiderMain(object):
         # 获取图片
         return_data['biaoShi'] = server.getTuPian(index_html)
 
-        sha = return_data['sha']
         title = return_data['title']
         return_data = json.dumps(return_data)
 
         # 数据入库
-        mysql_server.saveJiGou(sha, title, return_data)
+        sql_dao.saveJiGou(mysql_client=mysql_client, sha=sha, title=title, data=return_data)
 
 
     def spider_run(self, url_list):
@@ -85,9 +90,8 @@ class SpiderMain(object):
 
     def run(self):
         while True:
-            # # 获取机构任务(100个)
-            index_urls = redispool_utils.queue_spops(redis_client=redis_client, key='qikanjigou', lockname='spop_zhiWangJiGou', count=100)
-            # index_url = 'http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=in&skey=%E5%AE%89%E5%BE%BD%E7%90%86%E5%B7%A5%E5%A4%A7%E5%AD%A6&code=0167619'
+            # 获取机构任务(100个)
+            index_urls = redispool_utils.queue_spops(redis_client=redis_client, key='qikanjigou', lockname='spop_zhiwang_jigou', count=100)
             if index_urls:
                 self.spider_run(index_urls)
             else:
