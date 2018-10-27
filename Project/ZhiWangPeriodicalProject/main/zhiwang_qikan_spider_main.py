@@ -8,14 +8,14 @@ import os
 import hashlib
 import re
 import json
-from multiprocessing import Queue
+import multiprocessing
 from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from log import log
 from utils import redispool_utils
-# from utils import mysqlpool_utils
-from utils import mysql_dbutils
+from utils import mysqlpool_utils
+# from utils import mysql_dbutils
 from Project.ZhiWangPeriodicalProject.services import serveice
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.dao import sql_dao
@@ -27,12 +27,7 @@ logging = log.ILog(logname)
 server = serveice.ZhiWangQiKanService()
 # 爬虫对象
 spider = zhiwang_periodical_spider.SpiderMain()
-# redis对象
-redis_client = redispool_utils.createRedisPool()
-# mysql对象
-mysql_client = mysql_dbutils.DBUtils_PyMysql()
 
-url_q = Queue()
 
 class SpiderMain(object):
     def __init__(self):
@@ -46,9 +41,12 @@ class SpiderMain(object):
         self.last_data = []
         # 期刊总集合
         self.data = []
+        manager = multiprocessing.Manager()
+        # 期刊队列
+        self.url_q = manager.Queue()
 
 
-    def handel(self, url_data):
+    def handel(self,redis_client, mysql_client, url_data):
         # url_data = {'column_name': '社会科学II_初等教育', 'title': '第二课堂(C)', 'url': 'http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=DEKT'}
         return_data = {}
         url = url_data['url']
@@ -148,16 +146,18 @@ class SpiderMain(object):
             # 数据入库
             sql_dao.saveQiKan(mysql_client=mysql_client, sha=sha, title=title, data=return_data)
 
-    def spider_run(self, url_datas):
-        po = ThreadPool(50)
+    def spider_run(self, redis_client, mysql_client, url_datas):
+        po = ThreadPool(len(url_datas))
         for url_data in url_datas:
-            po.apply_async(func=self.handel, args=(url_data,))
+            po.apply_async(func=self.handel, args=(redis_client, mysql_client, url_data,))
 
         po.close()
         po.join()
 
     def itegrationOfData(self):
         '''整合redis队列数据'''
+        # redis对象
+        redis_client = redispool_utils.createRedisPool()
         # 获取第一个栏目集合数据
         datas_1 = redis_client.smembers(self.first_name)
         for data1 in datas_1:
@@ -196,23 +196,30 @@ class SpiderMain(object):
 
         # 生成任务队列
         for data in self.data:
-            url_q.put(data)
-        logging.info('队列已生成， 任务数量: {}'.format(url_q.qsize()))
+            self.url_q.put(data)
+        logging.info('队列已生成， 任务数量: {}'.format(self.url_q.qsize()))
 
     def run(self):
+        # redis对象
+        redis_client = redispool_utils.createRedisPool()
+        # mysql对象
+        mysql_client = mysqlpool_utils.createMysqlPool()
         while True:
             # 获取机构任务(100个)
             url_datas = []
             for i in range(100):
-                if url_q.qsize() == 0:
+                if self.url_q.qsize() == 0:
                     break
                 else:
-                    url_data = url_q.get()
+                    try:
+                        url_data = self.url_q.get_nowait()
+                    except:
+                        url_data = None
                     if url_data:
                         url_datas.append(url_data)
             if url_datas:
-                logging.info(url_q.qsize())
-                self.spider_run(url_datas)
+                logging.info(self.url_q.qsize())
+                self.spider_run(redis_client=redis_client, mysql_client=mysql_client, url_datas=url_datas)
             else:
                 logging.error('期刊队列任务结束')
                 break
@@ -221,4 +228,3 @@ if __name__ == '__main__':
     spidermain = SpiderMain()
     spidermain.itegrationOfData()
     spidermain.run()
-    url_q.close()

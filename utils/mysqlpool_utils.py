@@ -26,9 +26,9 @@ def createMysqlPool():
     # 创建mysql连接池
     pool = PooledDB(
                     pymysql,
-                    mincached=DB_POOL_MIN_NUMBER, # 最小连接数
-                    maxcached=DB_POOL_MAX_NUMBER, # 最大连接数
-                    maxconnections=DB_POOL_MAX_CONNECT,
+                    mincached=DB_POOL_MIN_NUMBER, # 最小空闲连接数
+                    maxcached=DB_POOL_MAX_NUMBER, # 最大空闲连接数
+                    maxconnections=DB_POOL_MAX_CONNECT, # 最大连接数
                     blocking=True,
                     host=DB_HOST,
                     user=DB_USER,
@@ -55,13 +55,6 @@ def _do_in_cursor(callback, pool):
     finally:
         if conn:
             conn.close()
-    # conn = pool.connection()
-    # cursor = conn.cursor()
-    # result = callback(cursor)
-    # conn.commit()
-    # cursor.close()
-    # conn.close()
-    # return result
 
 # 查询所有结果
 def get_results(connection, sql):

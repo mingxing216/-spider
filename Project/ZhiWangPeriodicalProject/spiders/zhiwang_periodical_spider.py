@@ -96,8 +96,8 @@ class SpiderMain(object):
                     time.sleep(0.2)
                     continue
 
-                except ConnectionError:
-                    self.logging.error('Proxy ConnectionError！！！')
+                except ConnectionError as e:
+                    self.logging.error(e)
                     if (i + 1) % 2 == 0:
                         self.delProxy(redis_client=redis_client, proxies=proxies)
                     time.sleep(0.2)

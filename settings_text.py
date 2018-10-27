@@ -10,11 +10,15 @@ DB_PORT=3306
 DB_USER='spider'
 DB_PASS='spider'
 DB_NAME='spider'
+DB_POOL_MIN_NUMBER=10 # 连接池空闲链接最小数目
+DB_POOL_MAX_NUMBER=10 # 连接池空闲链接最大数据
+DB_POOL_MAX_CONNECT=10 # 连接池最大连接数
 
 # redis
 REDIS_HOST='127.0.0.1'
 REDIS_PORT=6379
 REDIS_PASSWORD='spider'
+REDIS_POOL_MAX_NUMBER=10 # redis链接池最大连接数
 
 # MongoDB
 M_HOST='127.0.0.1'

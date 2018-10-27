@@ -9,16 +9,17 @@ import time
 import json
 import hashlib
 import threading
+import multiprocessing
+from multiprocessing import Lock
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
-
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
 from log import log
 from utils import redispool_utils
-# from utils import mysqlpool_utils
-from utils import mysql_dbutils
+from utils import mysqlpool_utils
+# from utils import mysql_dbutils
 from Project.ZhiWangPeriodicalProject.services import serveice
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.dao import sql_dao
@@ -30,10 +31,6 @@ LOGGING = log.ILog(LOGNAME)
 server = serveice.zhiwangPeriodocalService()
 # 爬虫对象
 spider = zhiwang_periodical_spider.SpiderMain()
-# redis对象
-redis_client = redispool_utils.createRedisPool()
-# mysql对象
-mysql_client = mysql_dbutils.DBUtils_PyMysql()
 
 
 class StartMain(object):
@@ -44,16 +41,19 @@ class StartMain(object):
         self.first_name = 'article_qikan_queue_1'
         # 最后根栏目名
         self.last_name = 'article_qikan_queue_2'
+        # Manager
+        manager = multiprocessing.Manager()
+        # 期刊任务队列
+        self.qikan_q = manager.Queue(500)
+        self.data = []
 
-    def handle(self, urldata):
+    def handle(self, redis_client, mysql_client, urldata):
         return_data = {}
         text_url = urldata['url']
         sha = hashlib.sha1(text_url.encode('utf-8')).hexdigest()
         # 查询当前文章是否被抓取过
         status = sql_dao.getStatus(mysql_client=mysql_client, sha=sha)
-        # print(status)
         if status:
-            # text_url = 'http://kns.cnki.net/kcms/detail/detail.aspx?filename=YCKJ201301009&dbcode=CJFD&dbname=CJFD2013&v='
             urldata_qiKanUrl = urldata['qiKanUrl']
             # 获取文章页html源码
             article_html = spider.getRespForGet(redis_client=redis_client, url=text_url)
@@ -209,21 +209,39 @@ class StartMain(object):
         else:
             LOGGING.info('{}: 已被抓取过'.format(sha))
 
-    def spiderRun(self, article_url_list):
+    def spiderRun(self):
         '''
         抓取文章数据
         :param url_list: 文章种子列表
         :return:
         '''
-        po = ThreadPool(len(article_url_list))
-        for i in article_url_list:
-            po.apply_async(func=self.handle, args=(i,))
+        # redis对象
+        redis_client = redispool_utils.createRedisPool()
+        # mysql连接池
+        mysql_client = mysqlpool_utils.createMysqlPool()
+        while True:
+            article_url_list = []
+            for i in range(100):
+                if self.qikan_q.qsize() != 0:
+                    try:
+                        a = self.qikan_q.get_nowait()
+                    except:
+                        break
+                    else:
+                        article_url_list.append(a)
+            if not article_url_list:
+                LOGGING.error('文章队列无数据')
+                time.sleep(10)
+                continue
 
-        po.close()
-        po.join()
-        LOGGING.info('全部线程已结束, 当前线程数量: {}'.format(threading.active_count()))
+            else:
+                thread_pool = ThreadPool(len(article_url_list))
+                for article_url in article_url_list:
+                    thread_pool.apply_async(func=self.handle, args=(redis_client, mysql_client, article_url))
+                thread_pool.close()
+                thread_pool.join()
 
-    def task_processing(self, redis_key, index_url_data):
+    def task_processing(self, redis_client, redis_key, index_url_data):
         '''
         任务处理及抓取分配函数
         :param redis_key: redis任务队列名
@@ -251,12 +269,14 @@ class StartMain(object):
                 # 获取文章种子列表
                 article_url_list = server.getArticleUrlList(article_list_html, qiKanUrl, xueKeLeiBie)
                 if article_url_list:
-                    LOGGING.info('已生成文章种子列表: {}'.format(len(article_url_list)))
-                    # 抓取文章数据
-                    self.spiderRun(article_url_list)
-                    LOGGING.info('当前文章种子列表任务执行完毕')
+                    for article_url in article_url_list:
+                        self.qikan_q.put(article_url)
+
+                    LOGGING.info('期刊任务队列数量: {}'.format(self.qikan_q.qsize()))
 
     def run(self):
+        # redis对象
+        redis_client = redispool_utils.createRedisPool()
         while True:
             # 从redis获取任务
             redis_key = self.first_name
@@ -265,7 +285,7 @@ class StartMain(object):
             # 如果当前队列有数据
             if index_url_data:
                 # 任务处理
-                self.task_processing(redis_key, index_url_data)
+                self.task_processing(redis_client=redis_client, redis_key=redis_key, index_url_data=index_url_data)
 
             else:
                 redis_key = self.last_name
@@ -273,7 +293,7 @@ class StartMain(object):
 
                 if index_url_data:
                     # 任务处理
-                    self.task_processing(redis_key, index_url_data)
+                    self.task_processing(redis_client=redis_client, redis_key=redis_key, index_url_data=index_url_data)
 
                 else:
                     LOGGING.error('redis队列空！！！600秒后重新尝试获取')
@@ -282,9 +302,11 @@ class StartMain(object):
 
 
 if __name__ == '__main__':
+
     main = StartMain()
-    po = Pool(int(settings.ZHIWANG_PERIODOCAL_SPIDER_PROCESS))
-    for i in range(int(settings.ZHIWANG_PERIODOCAL_SPIDER_PROCESS)):
+    po = Pool(int(settings.ZHIWANG_PERIODOCAL_SPIDER_PROCESS) * 2)
+    for i in range(int(settings.ZHIWANG_PERIODOCAL_SPIDER_PROCESS) * 2):
         po.apply_async(func=main.run)
+        po.apply_async(func=main.spiderRun)
     po.close()
     po.join()

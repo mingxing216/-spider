@@ -15,6 +15,7 @@ from utils import timeutils
 REDIS_HOST=settings.REDIS_HOST
 REDIS_PORT=settings.REDIS_PORT
 REDIS_PASSWORD=settings.REDIS_PASSWORD
+REDIS_POOL_MAX_NUMBER=settings.REDIS_POOL_MAX_NUMBER
 
 
 def createRedisPool():
@@ -22,7 +23,7 @@ def createRedisPool():
     创建redis连接池
     :return: redis对象
     '''
-    pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+    pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, max_connections=REDIS_POOL_MAX_NUMBER)
     redis_client = redis.StrictRedis(connection_pool=pool)
 
     return redis_client

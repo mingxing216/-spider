@@ -14,8 +14,8 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
 from log import log
 from utils import redispool_utils
-# from utils import mysqlpool_utils
-from utils import mysql_dbutils
+from utils import mysqlpool_utils
+# from utils import mysql_dbutils
 # from Project.ZhiWangPeriodicalProject.spiders import zhiwang_jigou_spider
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.services import serveice
@@ -30,17 +30,12 @@ logging = log.ILog(logname)
 spider = zhiwang_periodical_spider.SpiderMain()
 # 服务对象
 server = serveice.ZhiWangJiGouService()
-# redis对象
-redis_client = redispool_utils.createRedisPool()
-# mysql对象
-mysql_client = mysql_dbutils.DBUtils_PyMysql()
-
 
 class SpiderMain(object):
     def __init__(self):
         pass
 
-    def handle(self, url):
+    def handle(self, redis_client, mysql_client, url):
         return_data = {}
         sha = server.getSha1(url)
         # 获取机构页html源码
@@ -81,20 +76,24 @@ class SpiderMain(object):
         sql_dao.saveJiGou(mysql_client=mysql_client, sha=sha, title=title, data=return_data)
 
 
-    def spider_run(self, url_list):
+    def spider_run(self,redis_client, mysql_client, url_list):
         po = ThreadPool(len(url_list))
         for url in url_list:
-            po.apply_async(func=self.handle, args=(url,))
+            po.apply_async(func=self.handle, args=(redis_client, mysql_client, url))
 
         po.close()
         po.join()
 
     def run(self):
+        # redis对象
+        redis_client = redispool_utils.createRedisPool()
+        # mysql对象
+        mysql_client = mysqlpool_utils.createMysqlPool()
         while True:
             # 获取机构任务(100个)
             index_urls = redispool_utils.queue_spops(redis_client=redis_client, key='qikanjigou', lockname='spop_zhiwang_jigou', count=100)
             if index_urls:
-                self.spider_run(index_urls)
+                self.spider_run(redis_client=redis_client, mysql_client=mysql_client, url_list=index_urls)
             else:
                 logging.error('机构队列无任务， 程序睡眠300秒')
                 time.sleep(300)
