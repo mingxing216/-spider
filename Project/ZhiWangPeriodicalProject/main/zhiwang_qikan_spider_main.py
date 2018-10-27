@@ -14,7 +14,8 @@ from multiprocessing.dummy import Pool as ThreadPool
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from log import log
 from utils import redispool_utils
-from utils import mysqlpool_utils
+# from utils import mysqlpool_utils
+from utils import mysql_dbutils
 from Project.ZhiWangPeriodicalProject.services import serveice
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.dao import sql_dao
@@ -29,7 +30,7 @@ spider = zhiwang_periodical_spider.SpiderMain()
 # redis对象
 redis_client = redispool_utils.createRedisPool()
 # mysql对象
-mysql_client = mysqlpool_utils.createMysqlPool()
+mysql_client = mysql_dbutils.DBUtils_PyMysql()
 
 url_q = Queue()
 

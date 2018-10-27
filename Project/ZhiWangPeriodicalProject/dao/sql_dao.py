@@ -10,7 +10,8 @@ import json
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from log import log
-from utils import mysqlpool_utils
+# from utils import mysqlpool_utils
+from utils import mysql_dbutils
 from utils import timeutils
 
 logname = 'zhiwang_periodical'
@@ -24,7 +25,7 @@ def getStatus(mysql_client, sha):
     :return: True or False
     '''
     sql = "select sha from ss_paper where `sha` = '%s'" % sha
-    status = mysqlpool_utils.get_results(connection=mysql_client, sql=sql)
+    status = mysql_client.get_results(sql=sql)
     if status:
 
         return False
@@ -51,7 +52,7 @@ def saveOrUpdate(mysql_client, sha, title, data):
     }
 
     try:
-        mysqlpool_utils.insert_one(connection=mysql_client, table=table, data=savedata)
+        mysql_client.insert_one(table=table, data=savedata)
 
     except:
         logging.info('insert_into error')
@@ -76,10 +77,10 @@ def saveRenWu(mysql_client, sha, title, data):
     # 查询sql
     sql = "select memo from {} WHERE sha = '{}'".format(table, sha)
     # 查询库中是否含有此数据
-    status = mysqlpool_utils.get_result(mysql_client, sql=sql)
+    status = mysql_client.get_results(sql=sql)
     if not status:
         # 存储数据
-        mysqlpool_utils.insert_one(connection=mysql_client, table=table, data=savedata)
+        mysql_client.insert_one(table=table, data=savedata)
     else:
         select_data = eval(status['memo'])
         # 数据库中的所在单位列表
@@ -100,7 +101,7 @@ def saveRenWu(mysql_client, sha, title, data):
             savedata['memo'] = pymysql.escape_string(json.dumps(select_data))
             savedata.pop('date_created')
             savedata['last_updated'] = timeutils.strDateToTime(timeutils.get_yyyy_mm_dd_hh_mm_ss())
-            mysqlpool_utils.update(connection=mysql_client, table=table, data=savedata, where="sha='{}'".format(sha))
+            mysql_client.update(table=table, data=savedata, where="sha='{}'".format(sha))
 
         except Exception as e:
             print(e)
@@ -124,21 +125,21 @@ def saveJiGou(mysql_client, sha, title, data):
     }
     # 查询数据库是否存在当前数据
     select_sql = ("select sha from ss_institute where sha = '{}'".format(sha))
-    status = mysqlpool_utils.get_results(connection=mysql_client, sql=select_sql)
+    status = mysql_client.get_results(sql=select_sql)
     if status:
         savedata.pop('date_created')
         savedata['last_updated'] = date_created
         # 更新数据
-        mysqlpool_utils.update(connection=mysql_client, table=table, data=savedata, where='sha = {}'.format(sha))
+        mysql_client.update(table=table, data=savedata, where='sha = {}'.format(sha))
 
     else:
-        mysqlpool_utils.insert_one(connection=mysql_client, table=table, data=savedata)
+        mysql_client.insert_one(table=table, data=savedata)
         logging.info('存储成功')
 
 # 查看当前期刊是否被抓取过【期刊爬虫】
 def selectQiKanStatus(mysql_client, sha):
     select_sql = "select sha from ss_magazine where `sha` = '%s'" % sha
-    status = mysqlpool_utils.get_results(connection=mysql_client, sql=select_sql)
+    status = mysql_client.get_results(sql=select_sql)
     if status:
 
         return False
@@ -165,12 +166,12 @@ def saveQiKan(mysql_client, sha, title, data):
 
     # 查询数据库是否存在当前数据
     select_sql = ("select sha from ss_magazine where sha = '{}'".format(sha))
-    data = mysqlpool_utils.get_results(connection=mysql_client, sql=select_sql)
+    data = mysql_client.get_results(sql=select_sql)
     if not data:
         # 存储数据
 
         try:
-            mysqlpool_utils.insert_one(connection=mysql_client, table=table, data=savedata)
+            mysql_client.insert_one(table=table, data=savedata)
 
             logging.info('insert_into OK')
 

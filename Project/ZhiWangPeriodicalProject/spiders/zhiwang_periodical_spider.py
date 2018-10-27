@@ -59,8 +59,8 @@ class SpiderMain(object):
 
     def getRespForGet(self, redis_client, url):
         # get
-        while True:
-        # for i in range(20):
+        # while True:
+        for i in range(20):
             proxies = self.getProxy(redis_client)
             if proxies:
                 try:
@@ -76,18 +76,31 @@ class SpiderMain(object):
 
                         continue
 
+                # except ConnectTimeout and ReadTimeout:
+                #     self.logging.error('Connect Timeout')
+                #     self.delProxy(redis_client=redis_client, proxies=proxies)
+                #     time.sleep(0.2)
+                #
+                #     continue
+                #
+                # except ConnectionError:
+                #     self.logging.error('Proxy ConnectionError！！！')
+                #     self.delProxy(redis_client=redis_client, proxies=proxies)
+                #     time.sleep(0.2)
+                #
+                #     continue
                 except ConnectTimeout and ReadTimeout:
                     self.logging.error('Connect Timeout')
-                    self.delProxy(redis_client=redis_client, proxies=proxies)
+                    if (i + 1) % 2 == 0:
+                        self.delProxy(redis_client=redis_client, proxies=proxies)
                     time.sleep(0.2)
-
                     continue
 
                 except ConnectionError:
                     self.logging.error('Proxy ConnectionError！！！')
-                    self.delProxy(redis_client=redis_client, proxies=proxies)
+                    if (i + 1) % 2 == 0:
+                        self.delProxy(redis_client=redis_client, proxies=proxies)
                     time.sleep(0.2)
-
                     continue
 
             else:
@@ -97,8 +110,8 @@ class SpiderMain(object):
 
     def getRespForPost(self, redis_client, url, data):
         # post
-        while True:
-        # for i in range(10):
+        # while True:
+        for i in range(20):
             proxies = self.getProxy(redis_client)
             if proxies:
                 try:
@@ -114,18 +127,31 @@ class SpiderMain(object):
 
                         continue
 
+                # except ConnectTimeout and ReadTimeout:
+                #     self.logging.error('Connect Timeout')
+                #     self.delProxy(redis_client=redis_client, proxies=proxies)
+                #     time.sleep(0.2)
+                #
+                #     continue
+                #
+                # except ConnectionError:
+                #     self.logging.error('Proxy ConnectionError！！！')
+                #     self.delProxy(redis_client=redis_client, proxies=proxies)
+                #     time.sleep(0.2)
+                #
+                #     continue
                 except ConnectTimeout and ReadTimeout:
                     self.logging.error('Connect Timeout')
-                    self.delProxy(redis_client=redis_client, proxies=proxies)
+                    if (i + 1) % 2 == 0:
+                        self.delProxy(redis_client=redis_client, proxies=proxies)
                     time.sleep(0.2)
-
                     continue
 
                 except ConnectionError:
                     self.logging.error('Proxy ConnectionError！！！')
-                    self.delProxy(redis_client=redis_client, proxies=proxies)
+                    if (i + 1) % 2 == 0:
+                        self.delProxy(redis_client=redis_client, proxies=proxies)
                     time.sleep(0.2)
-
                     continue
 
             else:

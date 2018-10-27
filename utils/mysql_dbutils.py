@@ -24,88 +24,194 @@ class DBUtils_PyMysql(object):
                                cursorclass=pymysql.cursors.DictCursor)
         return conn
 
-    def get_result(self, sql):
-        '''
-        查询满足条件的一条数据
-        :param sql: sql语句
-        :return: 字典类型查询结果
-        '''
-        conn = self.get_connection()
-        cur = conn.cursor()
-        cur.execute(sql)
-        ret = cur.fetchone()
-        cur.close()
-        conn.close()
+    def _do_in_cursor(self, func):
+        conn = None
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            result = func(cursor)
+            conn.commit()
+            cursor.close()
+            return result
 
-        return ret
+        finally:
+            if conn:
+                conn.close()
 
+    # 查询所有结果
     def get_results(self, sql):
         '''
-        查询满足条件的所有数据
-        :param sql: sql语句
-        :return: 字典类型查询结果
+        :param connection: 链接池对象
+        :param sql: sql查询语句
+        :return: [{}, {}, {}...]
         '''
-        conn = self.get_connection()
-        cur = conn.cursor()
-        cur.execute(sql)
-        ret = cur.fetchall()
-        cur.close()
-        conn.close()
 
-        return ret
+        def run(cursor):
+            try:
+                cursor.execute(sql)
+                res = cursor.fetchall()
+                return res
+            except:
 
-    def insertOne(self, sql):
+                return []
+
+        return self._do_in_cursor(run)
+
+    # 查询一个结果
+    def get_result(self, sql):
         '''
-        插入一条数据， 并返回被插入数据的主键ID
-        :param sql: sql语句
-        :return: 被插入数据的主键ID
+        :param connection: 连接池对象
+        :param sql: sql查询语句
+        :return: {}
         '''
-        conn = self.get_connection()
-        cur = conn.cursor()
-        ret = cur.execute(sql)
-        if ret != 0:
-            keyword_id = cur.lastrowid
-            conn.commit()
-            cur.close()
-            conn.close()
 
-            return keyword_id
+        def run(cursor):
+            try:
+                cursor.execute(sql)
+                res = cursor.fetchone()
+                return res
+            except:
 
-        else:
-            conn.rollback()
-            cur.close()
-            conn.close()
+                return {}
 
-    def insertInTo(self, sql):
+        return self._do_in_cursor(run)
+
+    # 插入一条数据
+    def insert_one(self, table, data):
         '''
-        插入数据， 不返回结果
-        :param sql: 存储sql语句
+        :param connection: 连接池对象
+        :param table: 表名
+        :param data: 要插入的数据｛key: value｝
         '''
-        conn = self.get_connection()
-        cur = conn.cursor()
-        ret = cur.execute(sql)
-        if ret != 0:
-            conn.commit()
-            cur.close()
-            conn.close()
-        else:
-            conn.rollback()
-            cur.close()
-            conn.close()
 
-    def update(self, sql):
-        '''
-        更新数据
-        :param sql: sql语句
-        '''
-        conn = self.get_connection()
-        cur = conn.cursor()
-        ret = cur.execute(sql)
-        if ret != 0:
-            conn.commit()
+        def run(cursor):
+            name = []
+            value = []
 
-        else:
-            conn.rollback()
-        cur.close()
-        conn.close()
-        return int(ret)
+            for key in data:
+                name.append(key)
+                value.append(data[key])
+
+            sql = "insert into {table}(`{name}`) VALUES ('{value}')".format(table='`' + table + '`',
+                                                                            name='`,`'.join(str(n) for n in name),
+                                                                            value='\',\''.join(
+                                                                                str(v) for v in value))
+
+            cursor.execute(sql)
+
+        return self._do_in_cursor(run)
+
+    # 更新数据
+    def update(self, table, data, where):
+        '''
+        :param connection: 链接池对象
+        :param table: 表名
+        :param data: 要修改的数据　{key: value}
+        :param where: 判断语句
+        '''
+
+        def run(cursor):
+            updates = []
+
+            for key in data:
+                index = "{}='{}'".format(key, data[key])
+                updates.append(index)
+
+            sql = "update `{}` set {} WHERE {}".format(table, ','.join(updates), where)
+
+            cursor.execute(sql)
+
+        return self._do_in_cursor(run)
+
+
+if __name__ == '__main__':
+    du = DBUtils_PyMysql()
+    data = du.get_result('select * from ss_paper where sha = "0019f7b069e8fa17a6693db3ebc46ba5cee588ff"')
+    print(data)
+
+
+    # def get_result(self, sql):
+    #     '''
+    #     查询满足条件的一条数据
+    #     :param sql: sql语句
+    #     :return: 字典类型查询结果
+    #     '''
+    #     conn = self.get_connection()
+    #     cur = conn.cursor()
+    #     cur.execute(sql)
+    #     ret = cur.fetchone()
+    #     cur.close()
+    #     conn.close()
+    #
+    #     return ret
+    #
+    # def get_results(self, sql):
+    #     '''
+    #     查询满足条件的所有数据
+    #     :param sql: sql语句
+    #     :return: 字典类型查询结果
+    #     '''
+    #     conn = self.get_connection()
+    #     cur = conn.cursor()
+    #     cur.execute(sql)
+    #     ret = cur.fetchall()
+    #     cur.close()
+    #     conn.close()
+    #
+    #     return ret
+    #
+    # def insertOne(self, sql):
+    #     '''
+    #     插入一条数据， 并返回被插入数据的主键ID
+    #     :param sql: sql语句
+    #     :return: 被插入数据的主键ID
+    #     '''
+    #     conn = self.get_connection()
+    #     cur = conn.cursor()
+    #     ret = cur.execute(sql)
+    #     if ret != 0:
+    #         keyword_id = cur.lastrowid
+    #         conn.commit()
+    #         cur.close()
+    #         conn.close()
+    #
+    #         return keyword_id
+    #
+    #     else:
+    #         conn.rollback()
+    #         cur.close()
+    #         conn.close()
+    #
+    # def insertInTo(self, sql):
+    #     '''
+    #     插入数据， 不返回结果
+    #     :param sql: 存储sql语句
+    #     '''
+    #     conn = self.get_connection()
+    #     cur = conn.cursor()
+    #     ret = cur.execute(sql)
+    #     if ret != 0:
+    #         conn.commit()
+    #         cur.close()
+    #         conn.close()
+    #     else:
+    #         conn.rollback()
+    #         cur.close()
+    #         conn.close()
+    #
+    # def update(self, sql):
+    #     '''
+    #     更新数据
+    #     :param sql: sql语句
+    #     '''
+    #     conn = self.get_connection()
+    #     cur = conn.cursor()
+    #     ret = cur.execute(sql)
+    #     if ret != 0:
+    #         conn.commit()
+    #
+    #     else:
+    #         conn.rollback()
+    #     cur.close()
+    #     conn.close()
+    #     return int(ret)

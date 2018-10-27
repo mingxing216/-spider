@@ -17,7 +17,8 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
 from log import log
 from utils import redispool_utils
-from utils import mysqlpool_utils
+# from utils import mysqlpool_utils
+from utils import mysql_dbutils
 from Project.ZhiWangPeriodicalProject.services import serveice
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.dao import sql_dao
@@ -32,7 +33,8 @@ spider = zhiwang_periodical_spider.SpiderMain()
 # redis对象
 redis_client = redispool_utils.createRedisPool()
 # mysql对象
-mysql_client = mysqlpool_utils.createMysqlPool()
+mysql_client = mysql_dbutils.DBUtils_PyMysql()
+
 
 class StartMain(object):
     def __init__(self):
@@ -48,7 +50,8 @@ class StartMain(object):
         text_url = urldata['url']
         sha = hashlib.sha1(text_url.encode('utf-8')).hexdigest()
         # 查询当前文章是否被抓取过
-        status = sql_dao.getStatus(mysql_client, sha)
+        status = sql_dao.getStatus(mysql_client=mysql_client, sha=sha)
+        # print(status)
         if status:
             # text_url = 'http://kns.cnki.net/kcms/detail/detail.aspx?filename=YCKJ201301009&dbcode=CJFD&dbname=CJFD2013&v='
             urldata_qiKanUrl = urldata['qiKanUrl']
@@ -189,6 +192,7 @@ class StartMain(object):
 
                     input_data = json.dumps(insert_renwu_data)
 
+
                     # 存入关联人物数据库
                     sql_dao.saveRenWu(mysql_client=mysql_client, sha=renwu_sha, title=renwu_title, data=input_data)
                     # break
@@ -209,7 +213,7 @@ class StartMain(object):
         '''
         抓取文章数据
         :param url_list: 文章种子列表
-        :return: 
+        :return:
         '''
         po = ThreadPool(len(article_url_list))
         for i in article_url_list:
@@ -221,10 +225,10 @@ class StartMain(object):
 
     def task_processing(self, redis_key, index_url_data):
         '''
-        任务处理及抓取分配函数 
+        任务处理及抓取分配函数
         :param redis_key: redis任务队列名
         :param index_url_data: 获取到的任务数据
-        :return: 
+        :return:
         '''
         url_data = eval(index_url_data)
         qiKanUrl = url_data['url']
@@ -247,7 +251,7 @@ class StartMain(object):
                 # 获取文章种子列表
                 article_url_list = server.getArticleUrlList(article_list_html, qiKanUrl, xueKeLeiBie)
                 if article_url_list:
-                    LOGGING.info('已生成文章种子列表: {}'.format(article_url_list))
+                    LOGGING.info('已生成文章种子列表: {}'.format(len(article_url_list)))
                     # 抓取文章数据
                     self.spiderRun(article_url_list)
                     LOGGING.info('当前文章种子列表任务执行完毕')

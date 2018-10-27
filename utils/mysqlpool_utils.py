@@ -17,14 +17,19 @@ DB_PORT=settings.DB_PORT
 DB_USER=settings.DB_USER
 DB_PASS=settings.DB_PASS
 DB_NAME=settings.DB_NAME
-DB_POOL_NUMBER = settings.DB_POOL_NUMBER
+DB_POOL_MIN_NUMBER=settings.DB_POOL_MIN_NUMBER
+DB_POOL_MAX_NUMBER=settings.DB_POOL_MAX_NUMBER
+DB_POOL_MAX_CONNECT=settings.DB_POOL_MAX_CONNECT
 
 
 def createMysqlPool():
     # 创建mysql连接池
     pool = PooledDB(
                     pymysql,
-                    DB_POOL_NUMBER, # 最大连接数
+                    mincached=DB_POOL_MIN_NUMBER, # 最小连接数
+                    maxcached=DB_POOL_MAX_NUMBER, # 最大连接数
+                    maxconnections=DB_POOL_MAX_CONNECT,
+                    blocking=True,
                     host=DB_HOST,
                     user=DB_USER,
                     passwd=DB_PASS,
@@ -50,6 +55,13 @@ def _do_in_cursor(callback, pool):
     finally:
         if conn:
             conn.close()
+    # conn = pool.connection()
+    # cursor = conn.cursor()
+    # result = callback(cursor)
+    # conn.commit()
+    # cursor.close()
+    # conn.close()
+    # return result
 
 # 查询所有结果
 def get_results(connection, sql):
