@@ -235,7 +235,7 @@ class StartMain(object):
                 continue
 
             else:
-                thread_pool = ThreadPool(len(article_url_list))
+                thread_pool = ThreadPool()
                 for article_url in article_url_list:
                     thread_pool.apply_async(func=self.handle, args=(redis_client, mysql_client, article_url))
                 thread_pool.close()

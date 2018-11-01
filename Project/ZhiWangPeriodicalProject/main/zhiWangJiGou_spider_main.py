@@ -77,7 +77,7 @@ class SpiderMain(object):
 
 
     def spider_run(self,redis_client, mysql_client, url_list):
-        po = ThreadPool(len(url_list))
+        po = ThreadPool()
         for url in url_list:
             po.apply_async(func=self.handle, args=(redis_client, mysql_client, url))
 
@@ -97,6 +97,7 @@ class SpiderMain(object):
             else:
                 logging.error('机构队列无任务， 程序睡眠300秒')
                 time.sleep(300)
+            break
 
 
 if __name__ == '__main__':

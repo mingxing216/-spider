@@ -24,6 +24,11 @@ import settings
 
 from utils import redis_dbutils
 from utils import mysql_dbutils
+from utils import redispool_utils
+
+redis_client = redispool_utils.createRedisPool()
+
+
 
 # def saddredis():
 #     redis_client = StrictRedis(host='60.195.249.105', port=6379, password='spider')
@@ -39,26 +44,26 @@ from utils import mysql_dbutils
 # saddredis()
 
 
-def get_connection():
-    conn = pymysql.connect(host='127.0.0.1',
-                           user='root',
-                           password='rockerfm520',
-                           database=settings.DB_NAME,
-                           port=3306,
-                           charset="utf8mb4",
-                           cursorclass=pymysql.cursors.DictCursor)
-    return conn
-
-conn = get_connection()
-cur = conn.cursor()
-sql = 'select * from ss_magazine where sha = "0001e4dba766bfacff637ad2ca71192fa6557544"'
-cur.execute(sql)
-ret = cur.fetchall()
-cur.close()
-conn.close()
-
-for data in ret:
-    print(data['memo'])
+# def get_connection():
+#     conn = pymysql.connect(host='127.0.0.1',
+#                            user='root',
+#                            password='rockerfm520',
+#                            database=settings.DB_NAME,
+#                            port=3306,
+#                            charset="utf8mb4",
+#                            cursorclass=pymysql.cursors.DictCursor)
+#     return conn
+#
+# conn = get_connection()
+# cur = conn.cursor()
+# sql = 'select * from ss_magazine where sha = "0001e4dba766bfacff637ad2ca71192fa6557544"'
+# cur.execute(sql)
+# ret = cur.fetchall()
+# cur.close()
+# conn.close()
+#
+# for data in ret:
+#     print(data['memo'])
 
 
 
