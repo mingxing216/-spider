@@ -97,7 +97,6 @@ class SpiderMain(object):
             else:
                 logging.error('机构队列无任务， 程序睡眠300秒')
                 time.sleep(300)
-            break
 
 
 if __name__ == '__main__':
