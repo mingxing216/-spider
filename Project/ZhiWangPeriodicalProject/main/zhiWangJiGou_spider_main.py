@@ -77,7 +77,7 @@ class SpiderMain(object):
 
 
     def spider_run(self,redis_client, mysql_client, url_list):
-        po = ThreadPool()
+        po = ThreadPool(10)
         for url in url_list:
             po.apply_async(func=self.handle, args=(redis_client, mysql_client, url))
 

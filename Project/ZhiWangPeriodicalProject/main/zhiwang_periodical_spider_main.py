@@ -230,12 +230,12 @@ class StartMain(object):
                     else:
                         article_url_list.append(a)
             if not article_url_list:
-                LOGGING.error('文章队列无数据')
+                LOGGING.error('文章队列无数据: {}'.format(self.qikan_q.qsize()))
                 time.sleep(10)
                 continue
 
             else:
-                thread_pool = ThreadPool()
+                thread_pool = ThreadPool(10)
                 for article_url in article_url_list:
                     thread_pool.apply_async(func=self.handle, args=(redis_client, mysql_client, article_url))
                 thread_pool.close()
@@ -258,7 +258,7 @@ class StartMain(object):
         qikanTimeListHtml = spider.getRespForGet(redis_client=redis_client, url=qiKanTimeListUrl)
         # 获取期刊【年】、【期】
         qiKanTimeList = server.getQiKanTimeList(qikanTimeListHtml)
-
+        LOGGING.info(qiKanTimeList)
         # 循环获取指定年、期页文章列表页种子
         for qikan_year in qiKanTimeList:
             # 获取文章列表页种子
