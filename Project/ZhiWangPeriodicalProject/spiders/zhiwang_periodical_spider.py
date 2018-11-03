@@ -67,7 +67,7 @@ class SpiderMain(object):
                     resp = requests.get(url=url, headers=self.headers, proxies=proxies, timeout=10)
                     if resp.status_code == 200:
                         response = resp.content.decode('utf-8')
-
+                        resp.close()
                         return response
 
                     else:
@@ -118,7 +118,7 @@ class SpiderMain(object):
                     resp = requests.post(url=url, data=data, headers=self.headers, proxies=proxies, timeout=10)
                     if resp.status_code == 200:
                         response = resp.content.decode('utf-8')
-
+                        resp.close()
                         return response
 
                     else:

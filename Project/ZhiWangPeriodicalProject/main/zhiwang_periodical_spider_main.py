@@ -138,10 +138,10 @@ class StartMain(object):
                     data['name'] = man['name']
                     return_data['guanLianRenWu'].append(data)
 
-                # 生成关联人物url队列
-                for man_url in return_data["guanLianRenWu"]:
-                    url = man_url['url']
-                    redispool_utils.sadd(redis_client=redis_client, key='qikanrenwu', value=url)
+                # # 生成关联人物url队列
+                # for man_url in return_data["guanLianRenWu"]:
+                #     url = man_url['url']
+                #     redispool_utils.sadd(redis_client=redis_client, key='qikanrenwu', value=url)
 
                 # 生成关联企业机构url队列
                 for jiGou in return_data["guanLianQiYeJiGou"]:
