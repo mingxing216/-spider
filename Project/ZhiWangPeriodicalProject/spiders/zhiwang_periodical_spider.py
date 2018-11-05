@@ -90,6 +90,13 @@ class SpiderMain(object):
                     time.sleep(0.2)
                     continue
 
+                except Exception as e:
+                    logging.error(e)
+                    if (i + 1) % 2 == 0:
+                        self.delProxy(redis_client=redis_client, proxies=proxies)
+                    time.sleep(0.2)
+                    continue
+
             else:
                 logging.error('未获取到代理IP')
 
@@ -122,6 +129,13 @@ class SpiderMain(object):
                     continue
 
                 except ConnectionError as e:
+                    logging.error(e)
+                    if (i + 1) % 2 == 0:
+                        self.delProxy(redis_client=redis_client, proxies=proxies)
+                    time.sleep(0.2)
+                    continue
+
+                except Exception as e:
                     logging.error(e)
                     if (i + 1) % 2 == 0:
                         self.delProxy(redis_client=redis_client, proxies=proxies)
