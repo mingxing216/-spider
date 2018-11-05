@@ -24,8 +24,9 @@ from Project.ZhiWangPeriodicalProject.services import serveice
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.dao import sql_dao
 
-LOGNAME = 'zhiwang_periodical'
-LOGGING = log.ILog(LOGNAME)
+log_file_dir = 'zhiwang_periodical_spider_main'
+LOGNAME = '<期刊_论文爬虫>'
+LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 # 服务对象
 server = serveice.zhiwangPeriodocalService()
@@ -56,7 +57,9 @@ class StartMain(object):
         if status:
             urldata_qiKanUrl = urldata['qiKanUrl']
             # 获取文章页html源码
-            article_html = spider.getRespForGet(redis_client=redis_client, url=text_url)
+            article_html = spider.getRespForGet(redis_client=redis_client,
+                                                url=text_url,
+                                                logging=LOGGING)
             if article_html:
                 # ========================获取数据==========================
                 # 获取期刊名称
@@ -64,7 +67,10 @@ class StartMain(object):
                 # 获取关联文档
                 return_data['guanLianWenDang'] = {}
                 # 获取参考文献
-                return_data['guanLianCanKaoWenXian'] = server.getGuanLianCanKaoWenXian(redis_client=redis_client, spider=spider, url=text_url)
+                return_data['guanLianCanKaoWenXian'] = server.getGuanLianCanKaoWenXian(redis_client=redis_client,
+                                                                                       spider=spider,
+                                                                                       url=text_url,
+                                                                                       logging=LOGGING)
                 # 获取文章种子sha1加密
                 return_data['sha'] = sha
                 # 获取时间【年】
@@ -120,7 +126,11 @@ class StartMain(object):
                 # 获取基金
                 return_data['jiJin'] = server.getJiJin(article_html)
                 # 获取文内图片
-                return_data['wenNeiTuPian'] = server.getWenNeiTuPian(redis_client=redis_client, spider=spider, html=article_html, url=text_url)
+                return_data['wenNeiTuPian'] = server.getWenNeiTuPian(redis_client=redis_client,
+                                                                     spider=spider,
+                                                                     html=article_html,
+                                                                     url=text_url,
+                                                                     logging=LOGGING)
                 # 获取doi
                 return_data['shuZiDuiXiangBiaoShiFu'] = server.getDoi(article_html)
                 # 生成来源分类字段
@@ -128,7 +138,11 @@ class StartMain(object):
                 # 生成学科类别分类
                 return_data['xueKeLeiBie'] = urldata['xueKeLeiBie']
                 # 获取关联人物
-                guanLianRenWu_Data = server.getGuanLianRenWu(redis_client=redis_client, spider=spider, html=article_html, year=return_data['shiJian'])
+                guanLianRenWu_Data = server.getGuanLianRenWu(redis_client=redis_client,
+                                                             spider=spider,
+                                                             html=article_html,
+                                                             year=return_data['shiJian'],
+                                                             logging=LOGGING)
                 return_data['guanLianRenWu'] = []
                 for man in guanLianRenWu_Data:
                     data = {}
@@ -203,7 +217,7 @@ class StartMain(object):
                 return_data = json.dumps(return_data)
 
                 # 数据入库
-                sql_dao.saveOrUpdate(mysql_client=mysql_client, sha=sha, title=title, data=return_data)
+                sql_dao.saveOrUpdate(mysql_client=mysql_client, sha=sha, title=title, data=return_data, logging=LOGGING)
                 LOGGING.info('数据已保存: {}'.format(sha))
 
         else:
@@ -255,17 +269,16 @@ class StartMain(object):
         # 生成单个知网期刊的时间列表种子
         qiKanTimeListUrl, pcode, pykm = server.qiKanTimeListUrl(qiKanUrl, self.qiKanTimeListUrl)
         # 获取期刊时间列表页html源码
-        qikanTimeListHtml = spider.getRespForGet(redis_client=redis_client, url=qiKanTimeListUrl)
+        qikanTimeListHtml = spider.getRespForGet(redis_client=redis_client, url=qiKanTimeListUrl, logging=LOGGING)
         # 获取期刊【年】、【期】
         qiKanTimeList = server.getQiKanTimeList(qikanTimeListHtml)
-        LOGGING.info(qiKanTimeList)
         # 循环获取指定年、期页文章列表页种子
         for qikan_year in qiKanTimeList:
             # 获取文章列表页种子
             articleListUrl = server.getArticleListUrl(qikan_year, pcode, pykm)
             for articleUrl in articleListUrl:
                 # 获取文章列表页html源码
-                article_list_html = spider.getRespForGet(redis_client=redis_client, url=articleUrl)
+                article_list_html = spider.getRespForGet(redis_client=redis_client, url=articleUrl, logging=LOGGING)
                 # 获取文章种子列表
                 article_url_list = server.getArticleUrlList(article_list_html, qiKanUrl, xueKeLeiBie)
                 if article_url_list:
@@ -281,7 +294,7 @@ class StartMain(object):
             # 从redis获取任务
             redis_key = self.first_name
             index_url_data = redispool_utils.queue_spop(redis_client=redis_client, key=redis_key, lockname='zhiwang_article_lock')
-
+            # print(index_url_data)
             # 如果当前队列有数据
             if index_url_data:
                 # 任务处理
@@ -299,6 +312,7 @@ class StartMain(object):
                     LOGGING.error('redis队列空！！！600秒后重新尝试获取')
                     time.sleep(600)
                     continue
+            # break
 
 
 if __name__ == '__main__':

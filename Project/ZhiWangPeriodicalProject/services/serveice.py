@@ -11,8 +11,8 @@ from log import log
 from utils import redis_dbutils
 
 etree = html.etree
-logname = 'zhiwang_periodical'
-logging = log.ILog(logname)
+# logname = 'zhiwang_periodical'
+# logging = log.ILog(logname)
 
 class zhiwangPeriodocalService(object):
     def __init__(self):
@@ -48,6 +48,7 @@ class zhiwangPeriodocalService(object):
             dd_list = li.xpath("./dl[@class='resecondlayer']/dd")
             for dd in dd_list:
                 data = {}
+                data['column_name2'] = dd.xpath("./a/@title")[0]
                 data['column_name'] = column_name + '_' + dd.xpath("./a/@title")[0]
                 onclick_data = dd.xpath("./a/@onclick")[0]
                 data_tuple = re.findall(r"(\(.*\))", onclick_data)[0]  # 数据元祖
@@ -57,6 +58,7 @@ class zhiwangPeriodocalService(object):
                     data['name'] = data_tuple[1]
                     data['value'] = data_tuple[2]
                     data['has_next'] = True
+                    data['column_name1'] = column_name
                     return_data.append(data)
                 except:
 
@@ -64,15 +66,19 @@ class zhiwangPeriodocalService(object):
 
         return return_data
 
-    def createTaskQueue(self, html, column_name, redis_name, redis_name2):
+    def createTaskQueue(self, html, column_name, redis_name, redis_name2, logging, requests_data):
         '''
         生成期刊主页任务队列， 获取总期刊数
         :param html: 期刊列表页源码
         :return: 总期刊数
         '''
+        column_name1 = requests_data['column_name1']
+        column_name2 = requests_data['column_name2']
         resp = bytes(bytearray(html, encoding='utf-8'))
         html_etree = etree.HTML(resp)
         li_list = html_etree.xpath("//ul[@class='list_tab']/li")
+        # 总期刊数
+        qikan_number = re.findall(r"(\d+)", html_etree.xpath("//div[@class='pagenav']/text()")[0])[0]
         i = 0
         for li in li_list:
             queue_data = {}
@@ -87,14 +93,16 @@ class zhiwangPeriodocalService(object):
             queue_data["column_name"] = column_name
             queue_data["title"] = title
             queue_data["url"] = url
+            # queue_data["column_name1"] = column_name1
+            # queue_data["column_name2"] = column_name2
+            # queue_data["qikan_number"] = qikan_number
             # 生成期刊文章对应的期刊url队列
             redis_dbutils.saveSet(redis_name, queue_data)
             # 生成期刊抓取任务队列
             redis_dbutils.saveSet(redis_name2, queue_data)
 
-            logging.info(queue_data)
-        # 总期刊数
-        qikan_number = re.findall(r"(\d+)", html_etree.xpath("//div[@class='pagenav']/text()")[0])[0]
+            logging.info('栏目名: {} | 子栏目名: {} | 期刊数量: {} | 组合栏目名: {} | 期刊名: {} | 期刊url: {}'
+                         .format(column_name1, column_name2, qikan_number, column_name, title, url))
 
         return qikan_number
 
@@ -210,7 +218,7 @@ class zhiwangPeriodocalService(object):
             return ""
 
     # 获取关联参考文献
-    def getGuanLianCanKaoWenXian(self,redis_client, spider, url):
+    def getGuanLianCanKaoWenXian(self,redis_client, spider, url, logging):
 
         return_data = []
 
@@ -242,7 +250,7 @@ class zhiwangPeriodocalService(object):
         # ================================================
         canKaoUrl = index_url.format(filename, dbcode, dbname)
         # 获取参考文献页源码
-        canKaoHtml = spider.getRespForGet(redis_client=redis_client, url=canKaoUrl)
+        canKaoHtml = spider.getRespForGet(redis_client=redis_client, url=canKaoUrl, logging=logging)
         resp = bytes(bytearray(canKaoHtml, encoding='utf-8'))
         html_etree = etree.HTML(resp)
         div_list = html_etree.xpath("//div[@class='essayBox']")
@@ -280,7 +288,7 @@ class zhiwangPeriodocalService(object):
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
                         for get_number in range(20):
                             # 获取该页html
-                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl)
+                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl, logging=logging)
                             leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
                             html_etree = etree.HTML(leiXingResp)
                             leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
@@ -329,7 +337,7 @@ class zhiwangPeriodocalService(object):
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
                         for get_number in range(20):
                             # 获取该页html
-                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl)
+                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl, logging=logging)
                             leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
                             html_etree = etree.HTML(leiXingResp)
                             leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
@@ -385,7 +393,7 @@ class zhiwangPeriodocalService(object):
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
                         for get_number in range(20):
                             # 获取该页html
-                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl)
+                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl, logging=logging)
                             leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
                             html_etree = etree.HTML(leiXingResp)
                             leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
@@ -455,7 +463,7 @@ class zhiwangPeriodocalService(object):
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
                         for get_number in range(20):
                             # 获取该页html
-                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl)
+                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl, logging=logging)
                             leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
                             html_etree = etree.HTML(leiXingResp)
                             leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
@@ -503,7 +511,7 @@ class zhiwangPeriodocalService(object):
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
                         for get_number in range(20):
                             # 获取该页html
-                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl)
+                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl, logging=logging)
                             leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
                             html_etree = etree.HTML(leiXingResp)
                             leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
@@ -560,7 +568,7 @@ class zhiwangPeriodocalService(object):
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
                         for get_number in range(20):
                             # 获取该页html
-                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl)
+                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl, logging=logging)
                             leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
                             html_etree = etree.HTML(leiXingResp)
                             leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
@@ -625,7 +633,7 @@ class zhiwangPeriodocalService(object):
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
                         for get_number in range(20):
                             # 获取该页html
-                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl)
+                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl, logging=logging)
                             leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
                             html_etree = etree.HTML(leiXingResp)
                             leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
@@ -685,7 +693,7 @@ class zhiwangPeriodocalService(object):
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
                         for get_number in range(20):
                             # 获取该页html
-                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl)
+                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl, logging=logging)
                             leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
                             html_etree = etree.HTML(leiXingResp)
                             leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
@@ -740,7 +748,7 @@ class zhiwangPeriodocalService(object):
                                                '&page={}'.format(filename, dbcode, dbname, CurDBCode, page + 1))
                         for get_number in range(20):
                             # 获取该页html
-                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl)
+                            leiXingResp = spider.getRespForGet(redis_client=redis_client, url=qiKanLunWenIndexUrl, logging=logging)
                             # leiXingResp = bytes(bytearray(leiXingResp, encoding='utf-8'))
                             html_etree = etree.HTML(leiXingResp)
                             leiXingDivList = html_etree.xpath("//div[@class='essayBox']")
@@ -1319,8 +1327,8 @@ class zhiwangPeriodocalService(object):
             return ""
 
     # [私有方法]获取关联人物所在公司
-    def _getCompany(self, redis_client, spider, url):
-        response = spider.getRespForGet(redis_client=redis_client, url=url)
+    def _getCompany(self, redis_client, spider, url, logging):
+        response = spider.getRespForGet(redis_client=redis_client, url=url, logging=logging)
         resp = bytes(bytearray(response, encoding='utf-8'))
         html_etree = etree.HTML(resp)
         company = html_etree.xpath("//p[@class='orgn']/a/text()")[0]
@@ -1341,7 +1349,7 @@ class zhiwangPeriodocalService(object):
         return {'company_name': company, 'company_url': url, 'company_sha': sha}
 
     # 获取关联人物
-    def getGuanLianRenWu(self,redis_client, spider, html, year):
+    def getGuanLianRenWu(self,redis_client, spider, html, year, logging):
         return_data = []
         resp = bytes(bytearray(html, encoding='utf-8'))
         html_etree = etree.HTML(resp)
@@ -1359,7 +1367,7 @@ class zhiwangPeriodocalService(object):
                 sha1 = hashlib.sha1(url.encode('utf-8')).hexdigest()
                 name = a.xpath("./text()")[0]
                 # 获取人物当前所在单位
-                company_data = self._getCompany(redis_client=redis_client, spider=spider, url=url)
+                company_data = self._getCompany(redis_client=redis_client, spider=spider, url=url, logging=logging)
                 suoZaiDanWei = {"所在单位": company_data['company_name'], "时间":{"v": year['Y'], "u": "年"},
                                 "单位url": company_data['company_url'], "单位sha1": company_data['company_sha']}
 
@@ -1457,7 +1465,7 @@ class zhiwangPeriodocalService(object):
             return return_data
 
     # 获取文内图片
-    def getWenNeiTuPian(self, redis_client, spider, html, url):
+    def getWenNeiTuPian(self, redis_client, spider, html, url, logging):
         resp = bytes(bytearray(html, encoding='utf-8'))
         html_etree = etree.HTML(resp)
         data = html_etree.xpath("//a[@class='btn-note']/@href")
@@ -1466,7 +1474,7 @@ class zhiwangPeriodocalService(object):
             # 图片参数url
             page_data_url = 'http://image.cnki.net/getimage.ashx?fnbyIdAndName={}'.format(fnbyIdAndName)
             # 获取图片参数
-            resp = spider.getRespForGet(redis_client=redis_client, url=page_data_url)
+            resp = spider.getRespForGet(redis_client=redis_client, url=page_data_url, logging=logging)
             resp = re.findall(r"var oJson={'IDs':(.*)}", resp)
             # resp = eval(re.findall(r'var oJson=({.*})', resp)[0])['IDs']
             if len(resp[0]) > 5:

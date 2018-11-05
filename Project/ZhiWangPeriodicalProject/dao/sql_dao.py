@@ -9,13 +9,8 @@ import pymysql
 import json
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from log import log
 from utils import mysqlpool_utils
-# from utils import mysql_dbutils
 from utils import timeutils
-
-logname = 'zhiwang_periodical'
-logging = log.ILog(logname)
 
 
 def getStatus(mysql_client, sha):
@@ -34,7 +29,7 @@ def getStatus(mysql_client, sha):
         return True
 
 # 论文存储数据入库
-def saveOrUpdate(mysql_client, sha, title, data):
+def saveOrUpdate(mysql_client, sha, title, data, logging):
     '''
     存储数据入库
     :param data: 爬虫发来的数据 
@@ -107,7 +102,7 @@ def saveRenWu(mysql_client, sha, title, data):
             print(e)
 
 # 关联机构存储入库
-def saveJiGou(mysql_client, sha, title, data):
+def saveJiGou(mysql_client, sha, title, data, logging):
     '''
     存储论文关联机构数据入库
     :param data: 爬虫输出数据
@@ -148,7 +143,7 @@ def selectQiKanStatus(mysql_client, sha):
         return True
 
 # 关联期刊存储入库
-def saveQiKan(mysql_client, sha, title, data):
+def saveQiKan(mysql_client, sha, title, data, logging):
     '''
     存储论文关联期刊数据入库
     :param data: 爬虫输出数据

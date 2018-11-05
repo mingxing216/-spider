@@ -21,8 +21,9 @@ from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.services import serveice
 from Project.ZhiWangPeriodicalProject.dao import sql_dao
 
-logname = 'zhiWangJiGou_spider'
-logging = log.ILog(logname)
+log_file_dir = 'zhiWangJiGou_spider_main'
+LOGNAME = '<期刊_机构爬虫>'
+LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
 # 爬虫对象
@@ -39,7 +40,7 @@ class SpiderMain(object):
         return_data = {}
         sha = server.getSha1(url)
         # 获取机构页html源码
-        index_html = spider.getRespForGet(redis_client=redis_client, url=url)
+        index_html = spider.getRespForGet(redis_client=redis_client, url=url, logging=LOGGING)
         # 获取sha1
         return_data['sha'] = sha
         # 获取地域
@@ -73,7 +74,7 @@ class SpiderMain(object):
         return_data = json.dumps(return_data)
 
         # 数据入库
-        sql_dao.saveJiGou(mysql_client=mysql_client, sha=sha, title=title, data=return_data)
+        sql_dao.saveJiGou(mysql_client=mysql_client, sha=sha, title=title, data=return_data, logging=LOGGING)
 
 
     def spider_run(self,redis_client, mysql_client, url_list):
@@ -95,7 +96,7 @@ class SpiderMain(object):
             if index_urls:
                 self.spider_run(redis_client=redis_client, mysql_client=mysql_client, url_list=index_urls)
             else:
-                logging.error('机构队列无任务， 程序睡眠300秒')
+                LOGGING.error('机构队列无任务， 程序睡眠300秒')
                 time.sleep(300)
 
 

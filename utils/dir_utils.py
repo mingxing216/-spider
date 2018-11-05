@@ -57,3 +57,7 @@ def getDirFiles(path):
 
     return file_name_list
 
+# 创建文件夹
+def createDir(path):
+    os.mkdir(path)
+

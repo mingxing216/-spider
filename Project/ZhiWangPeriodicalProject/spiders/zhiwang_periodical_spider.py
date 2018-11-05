@@ -20,8 +20,8 @@ from log import log
 
 class SpiderMain(object):
     def __init__(self):
-        logname = 'zhiwang_periodical'
-        self.logging = log.ILog(logname)
+        # logname = 'zhiwang_periodical'
+        # self.logging = log.ILog(logname)
         self.headers = {
             'Host': 'navi.cnki.net',
             'Upgrade-Insecure-Requests': '1',
@@ -29,7 +29,7 @@ class SpiderMain(object):
             'User-Agent': random.sample(user_agents.ua_for_win, 1)[0]
         }
 
-    def getProxy(self, redis_client):
+    def getProxy(self, redis_client, logging):
         '''
         随机获取代理IP
         :return: 代理IP
@@ -45,7 +45,7 @@ class SpiderMain(object):
 
                 return proxies
             else:
-                self.logging.error('代理池代理获取失败')
+                logging.error('代理池代理获取失败')
                 time.sleep(1)
                 continue
 
@@ -57,11 +57,11 @@ class SpiderMain(object):
         proxy = proxies['http']
         redispool_utils.srem(redis_client=redis_client, key=settings.REDIS_PROXY_KEY, value=proxy)
 
-    def getRespForGet(self, redis_client, url):
+    def getRespForGet(self, redis_client, url, logging):
         # get
         # while True:
         for i in range(20):
-            proxies = self.getProxy(redis_client)
+            proxies = self.getProxy(redis_client, logging)
             if proxies:
                 try:
                     resp = requests.get(url=url, headers=self.headers, proxies=proxies, timeout=10)
@@ -71,48 +71,35 @@ class SpiderMain(object):
                         return response
 
                     else:
-                        self.logging.error('HTTP异常返回码： {}'.format(resp.status_code))
+                        logging.error('HTTP异常返回码： {}'.format(resp.status_code))
                         time.sleep(1)
 
                         continue
 
-                # except ConnectTimeout and ReadTimeout:
-                #     self.logging.error('Connect Timeout')
-                #     self.delProxy(redis_client=redis_client, proxies=proxies)
-                #     time.sleep(0.2)
-                #
-                #     continue
-                #
-                # except ConnectionError:
-                #     self.logging.error('Proxy ConnectionError！！！')
-                #     self.delProxy(redis_client=redis_client, proxies=proxies)
-                #     time.sleep(0.2)
-                #
-                #     continue
-                except ConnectTimeout and ReadTimeout:
-                    self.logging.error('Connect Timeout')
+                except ConnectTimeout or ReadTimeout:
+                    logging.error('Connect Timeout')
                     if (i + 1) % 2 == 0:
                         self.delProxy(redis_client=redis_client, proxies=proxies)
                     time.sleep(0.2)
                     continue
 
                 except ConnectionError as e:
-                    self.logging.error(e)
+                    logging.error(e)
                     if (i + 1) % 2 == 0:
                         self.delProxy(redis_client=redis_client, proxies=proxies)
                     time.sleep(0.2)
                     continue
 
             else:
-                self.logging.error('未获取到代理IP')
+                logging.error('未获取到代理IP')
 
                 continue
 
-    def getRespForPost(self, redis_client, url, data):
+    def getRespForPost(self, redis_client, url, data, logging):
         # post
         # while True:
         for i in range(20):
-            proxies = self.getProxy(redis_client)
+            proxies = self.getProxy(redis_client, logging)
             if proxies:
                 try:
                     resp = requests.post(url=url, data=data, headers=self.headers, proxies=proxies, timeout=10)
@@ -122,40 +109,27 @@ class SpiderMain(object):
                         return response
 
                     else:
-                        self.logging.error('HTTP异常返回码： {}'.format(resp.status_code))
+                        logging.error('HTTP异常返回码： {}'.format(resp.status_code))
                         time.sleep(1)
 
                         continue
 
-                # except ConnectTimeout and ReadTimeout:
-                #     self.logging.error('Connect Timeout')
-                #     self.delProxy(redis_client=redis_client, proxies=proxies)
-                #     time.sleep(0.2)
-                #
-                #     continue
-                #
-                # except ConnectionError:
-                #     self.logging.error('Proxy ConnectionError！！！')
-                #     self.delProxy(redis_client=redis_client, proxies=proxies)
-                #     time.sleep(0.2)
-                #
-                #     continue
-                except ConnectTimeout and ReadTimeout:
-                    self.logging.error('Connect Timeout')
+                except ConnectTimeout or ReadTimeout:
+                    logging.error('Connect Timeout')
                     if (i + 1) % 2 == 0:
                         self.delProxy(redis_client=redis_client, proxies=proxies)
                     time.sleep(0.2)
                     continue
 
-                except ConnectionError:
-                    self.logging.error('Proxy ConnectionError！！！')
+                except ConnectionError as e:
+                    logging.error(e)
                     if (i + 1) % 2 == 0:
                         self.delProxy(redis_client=redis_client, proxies=proxies)
                     time.sleep(0.2)
                     continue
 
             else:
-                self.logging.error('未获取到代理IP')
+                logging.error('未获取到代理IP')
                 continue
 
 if __name__ == '__main__':

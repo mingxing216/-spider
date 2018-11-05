@@ -25,9 +25,9 @@ redis_client = redispool_utils.createRedisPool()
 # mysql对象
 mysql_client = mysql_dbutils.DBUtils_PyMysql()
 
-logname = 'zhiwang_periodical'
-logging = log.ILog(logname)
-
+log_file_dir = 'zhiwang_periodical_main'
+logname = '<期刊论文队列生成程序>'
+logging = log.ILog(log_file_dir, logname)
 
 class SpiderMain(object):
     def __init__(self):
@@ -40,7 +40,7 @@ class SpiderMain(object):
         self.pagecount = 21
 
     # 翻页
-    def next_page(self, url, data, page_number, spider, server, column_name, redis_name, redis_name2):
+    def next_page(self, url, data, page_number, spider, server, column_name, redis_name, redis_name2, requests_data):
         '''
         翻页抓取
         :param url: 列表页url
@@ -58,10 +58,10 @@ class SpiderMain(object):
                 data['pageindex'] = page
                 # 生成期刊主页任务队列
                 # 获取列表页html源码
-                column_list_html = spider.getRespForPost(redis_client=redis_client, url=self.column_list_url, data=data)
+                column_list_html = spider.getRespForPost(redis_client=redis_client, url=self.column_list_url, data=data, logging=logging)
                 if column_list_html is not None:
                     # 生成期刊主页任务队列
-                    server.createTaskQueue(column_list_html, column_name, redis_name, redis_name2)
+                    server.createTaskQueue(column_list_html, column_name, redis_name, redis_name2, logging=logging, requests_data=requests_data)
 
     def run(self):
         # 获取首页源码
@@ -69,7 +69,7 @@ class SpiderMain(object):
             'productcode': 'CJFD',
             'index': 1
         }
-        index_html = spider.getRespForPost(redis_client=redis_client, url=self.index_url, data=index_url_data)
+        index_html = spider.getRespForPost(redis_client=redis_client, url=self.index_url, data=index_url_data, logging=logging)
         if index_html is not None:
             # 获取根栏目数量
             column_numbers = server.getColumnNumber(index_html)
@@ -82,11 +82,13 @@ class SpiderMain(object):
                         'productcode': 'CJFD',
                         'ClickIndex': column_number + 1
                     }
-                    column_html = spider.getRespForPost(redis_client=redis_client, url=self.column_url, data=column_url_data)
+                    column_html = spider.getRespForPost(redis_client=redis_client, url=self.column_url, data=column_url_data, logging=logging)
                     if column_html is not None:
                         # 获取当前栏目下所有子栏目请求参数
                         request_datas = server.getColumnSunData(column_html)
+                        lanmu_number = 0
                         for request_data in request_datas:
+                            lanmu_number += 1
                             if request_data['has_next'] is True:
                                 # 生成请求参数
                                 searchstatejson = ('{"StateID":"","Platfrom":"","QueryTime":"","Account":"knavi",'
@@ -105,7 +107,7 @@ class SpiderMain(object):
                                     # 'index': 1
                                 }
                                 # 获取列表页html源码
-                                column_list_html = spider.getRespForPost(redis_client=redis_client, url=self.column_list_url, data=column_list_url_data)
+                                column_list_html = spider.getRespForPost(redis_client=redis_client, url=self.column_list_url, data=column_list_url_data, logging=logging)
                                 if column_list_html is not None:
                                     if i == 1: # 第一个栏目的存法
                                         # 抓取文章用的期刊队列
@@ -115,7 +117,10 @@ class SpiderMain(object):
                                         # 生成期刊主页任务队列， 获取总期刊数
                                         qikan_number = server.createTaskQueue(column_list_html,
                                                                               request_data['column_name'],
-                                                                              redis_key1, redis_key2)
+                                                                              redis_key1,
+                                                                              redis_key2,
+                                                                              logging=logging,
+                                                                              requests_data=request_data)
                                         # 生成总页数
                                         page_number = int(qikan_number) / int(self.pagecount)
                                         if page_number > int(page_number):
@@ -123,13 +128,13 @@ class SpiderMain(object):
                                             # 翻页抓取
                                             self.next_page(self.column_list_url, column_list_url_data, page_number,
                                                            spider, server, request_data['column_name'],
-                                                           redis_key1, redis_key2)
+                                                           redis_key1, redis_key2, requests_data=request_data)
                                         else:
                                             page_number = int(page_number)
                                             # 翻页抓取
                                             self.next_page(self.column_list_url, column_list_url_data, page_number,
                                                            spider, server, request_data['column_name'],
-                                                           redis_key1, redis_key2)
+                                                           redis_key1, redis_key2, requests_data=request_data)
                                     if i == column_numbers: # 最后一个栏目的存法
                                         # 抓取文章用的期刊队列
                                         redis_key1 = 'article_qikan_queue_2'
@@ -138,7 +143,10 @@ class SpiderMain(object):
                                         # 生成期刊主页任务队列， 获取总期刊数
                                         qikan_number = server.createTaskQueue(column_list_html,
                                                                               request_data['column_name'],
-                                                                              redis_key1, redis_key2)
+                                                                              redis_key1,
+                                                                              redis_key2,
+                                                                              requests_data=request_data,
+                                                                              logging=logging)
                                         # 生成总页数
                                         page_number = int(qikan_number) / int(self.pagecount)
                                         if page_number > int(page_number):
@@ -146,13 +154,13 @@ class SpiderMain(object):
                                             # 翻页抓取
                                             self.next_page(self.column_list_url, column_list_url_data, page_number,
                                                            spider, server, request_data['column_name'],
-                                                           redis_key1, redis_key2)
+                                                           redis_key1, redis_key2, requests_data=request_data)
                                         else:
                                             page_number = int(page_number)
                                             # 翻页抓取
                                             self.next_page(self.column_list_url, column_list_url_data, page_number,
                                                            spider, server, request_data['column_name'],
-                                                           redis_key1, redis_key2)
+                                                           redis_key1, redis_key2, requests_data=request_data)
 
 
                         #     break

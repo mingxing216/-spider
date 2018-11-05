@@ -20,8 +20,9 @@ from Project.ZhiWangPeriodicalProject.services import serveice
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.dao import sql_dao
 
-logname = 'zhiWang_QiKan_Spider'
-logging = log.ILog(logname)
+log_file_dir = 'zhiwang_qikan_spider_main'
+LOGNAME = '<期刊_期刊爬虫>'
+LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 # 服务对象
 server = serveice.ZhiWangQiKanService()
@@ -64,7 +65,7 @@ class SpiderMain(object):
         status = sql_dao.selectQiKanStatus(mysql_client=mysql_client, sha=sha)
         if status:
             # 获取期刊页html源码
-            html = spider.getRespForGet(redis_client=redis_client, url=url)
+            html = spider.getRespForGet(redis_client=redis_client, url=url, logging=LOGGING)
             # 生成ss字段
             return_data['ss'] = '期刊'
             # 生成ws字段
@@ -144,10 +145,10 @@ class SpiderMain(object):
             title = return_data['title']
             return_data = json.dumps(return_data)
             # 数据入库
-            sql_dao.saveQiKan(mysql_client=mysql_client, sha=sha, title=title, data=return_data)
+            sql_dao.saveQiKan(mysql_client=mysql_client, sha=sha, title=title, data=return_data, logging=LOGGING)
 
     def spider_run(self, redis_client, mysql_client, url_datas):
-        po = ThreadPool(len(url_datas))
+        po = ThreadPool(10)
         for url_data in url_datas:
             po.apply_async(func=self.handel, args=(redis_client, mysql_client, url_data,))
 
@@ -183,7 +184,7 @@ class SpiderMain(object):
                     name = first_column_name + '|' + last_column_name
                     first_data['column_name'] = name
                     self.data.append(first_data)
-                    break
+
 
             # 获取总集合内元素数量
             data_number_two = len(self.data)
@@ -197,7 +198,7 @@ class SpiderMain(object):
         # 生成任务队列
         for data in self.data:
             self.url_q.put(data)
-        logging.info('队列已生成， 任务数量: {}'.format(self.url_q.qsize()))
+        LOGGING.info('队列已生成， 任务数量: {}'.format(self.url_q.qsize()))
 
     def run(self):
         # redis对象
@@ -218,10 +219,10 @@ class SpiderMain(object):
                     if url_data:
                         url_datas.append(url_data)
             if url_datas:
-                logging.info(self.url_q.qsize())
+                LOGGING.info(self.url_q.qsize())
                 self.spider_run(redis_client=redis_client, mysql_client=mysql_client, url_datas=url_datas)
             else:
-                logging.error('期刊队列任务结束')
+                LOGGING.error('期刊队列任务结束')
                 break
 
 if __name__ == '__main__':
