@@ -9,10 +9,10 @@ import pprint
 import time
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from log import log
-from utils import redispool_utils
-# from utils import mysqlpool_utils
-from utils import mysql_dbutils
+from Log import log
+from Utils import redispool_utils
+# from Utils import mysqlpool_utils
+from Utils import mysql_dbutils
 from Project.ZhiWangPeriodicalProject.spiders import zhiwang_periodical_spider
 from Project.ZhiWangPeriodicalProject.services import serveice
 

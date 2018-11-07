@@ -7,12 +7,12 @@ from lxml import html
 from urllib import parse
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from log import log
-from utils import redis_dbutils
+from Log import log
+from Utils import redis_dbutils
 
 etree = html.etree
 # logname = 'zhiwang_periodical'
-# logging = log.ILog(logname)
+# logging = Log.ILog(logname)
 
 class zhiwangPeriodocalService(object):
     def __init__(self):

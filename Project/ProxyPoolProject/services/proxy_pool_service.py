@@ -4,8 +4,8 @@ import os
 import requests
 import json
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-# from utils import redis_dbutils
-from utils import redispool_utils
+# from Utils import redis_dbutils
+from Utils import redispool_utils
 import settings
 
 class ProxyServices(object):

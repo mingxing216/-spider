@@ -11,12 +11,13 @@ from multiprocessing import Process
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
-from log import log
+from Log import log
 from Project.ProxyPoolProject.services import proxy_pool_service
-from utils import redispool_utils
+from Utils import redispool_utils
 
-logname = 'proxy_pool_main'
-logging = log.ILog(logname)
+log_file_dir = 'proxy_pool_main'  # LOG日志存放路径
+LOGNAME = '<按次提取代理>'  # LOG名
+LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 # redis对象
 redis_client = redispool_utils.createRedisPool()
@@ -43,9 +44,9 @@ def maintainProxyPool():
             for proxy_dict in proxys:
                 proxy = 'socks5://%s:%s' % (proxy_dict['ip'], proxy_dict['port'])
                 redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
-                logging.info('Save proxy in redis: {}'.format(proxy))
+                LOGGING.info('Save proxy in redis: {}'.format(proxy))
         else:
-            logging.error('Get proxy failed!!!')
+            LOGGING.error('Get proxy failed!!!')
 
 
 if __name__ == '__main__':

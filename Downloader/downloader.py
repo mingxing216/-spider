@@ -1,33 +1,24 @@
 # -*-coding:utf-8-*-
 
 '''
-知网期刊爬虫
+下载器
 '''
+
 import sys
 import os
-import random
 import time
 import requests
 from requests.exceptions import ConnectTimeout
 from requests.exceptions import ConnectionError
 from requests.exceptions import ReadTimeout
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
+sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
-from Utils import user_agents
 from Utils import redispool_utils
-from Log import log
 
-class SpiderMain(object):
-    def __init__(self):
-        # logname = 'zhiwang_periodical'
-        # self.logging = Log.ILog(logname)
-        self.headers = {
-            'Host': 'navi.cnki.net',
-            'Upgrade-Insecure-Requests': '1',
-            'Referer': 'http://navi.cnki.net/KNavi/Journal.html',
-            'User-Agent': random.sample(user_agents.ua_for_win, 1)[0]
-        }
+class Downloads(object):
+    def __init__(self, headers):
+        self.headers = headers
 
     def getProxy(self, redis_client, logging):
         '''
@@ -59,7 +50,6 @@ class SpiderMain(object):
 
     def getRespForGet(self, redis_client, url, logging):
         # get
-        # while True:
         for i in range(20):
             proxies = self.getProxy(redis_client, logging)
             if proxies:
@@ -104,7 +94,6 @@ class SpiderMain(object):
 
     def getRespForPost(self, redis_client, url, data, logging):
         # post
-        # while True:
         for i in range(20):
             proxies = self.getProxy(redis_client, logging)
             if proxies:
@@ -145,8 +134,3 @@ class SpiderMain(object):
             else:
                 logging.error('未获取到代理IP')
                 continue
-
-if __name__ == '__main__':
-    main = SpiderMain()
-    print(main.getRespForGet('https://ip.cn/'))
-    # main.getRespForGet('http://www.baidu.com')

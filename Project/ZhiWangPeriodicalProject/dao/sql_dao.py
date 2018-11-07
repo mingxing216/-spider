@@ -9,8 +9,8 @@ import pymysql
 import json
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from utils import mysqlpool_utils
-from utils import timeutils
+from Utils import mysqlpool_utils
+from Utils import timeutils
 
 
 def getStatus(mysql_client, sha):
