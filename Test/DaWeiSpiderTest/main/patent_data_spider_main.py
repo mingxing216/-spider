@@ -224,11 +224,12 @@ class SpiderMain(object):
 if __name__ == '__main__':
     mobile_pool_key = sys.argv[1]
     s_main = SpiderMain()
-    po = ThreadPool(1)
-    for i in range(1):
-        po.apply_async(func=s_main.run, args=(mobile_pool_key, ))
-    po.close()
-    po.join()
+    s_main.run(mobile_pool_key=mobile_pool_key)
+    # po = ThreadPool(1)
+    # for i in range(1):
+    #     po.apply_async(func=s_main.run, args=(mobile_pool_key, ))
+    # po.close()
+    # po.join()
     # p1 = Process(target=s_main.run)
     # p2 = Process(target=s_main.run)
     # p3 = Process(target=s_main.run)

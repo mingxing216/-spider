@@ -62,19 +62,19 @@ class SpiderMain(object):
             proxy = self.server.getProxy() # 代理IP
             LOGGING.info('当前ua: {}'.format(ua))
             LOGGING.info('当前代理: {}'.format(proxy))
-
             # 获取大为账号参数响应
             user_guid_resp = self.download.getUserGuid_resp(user=user, proxy=proxy, ua=ua)
             if user_guid_resp is None:
                 LOGGING.error('获取大为账号GUID响应失败')
                 # 将innojoy账号扔回redis
-                self.dao.saveInnojoyMobile_redis(redis_client=redis_cli, value=user)
+                self.server.saveInnojoyMobileToUrlSpider(redis_client=redis_cli, value=user)
                 continue
             user_guid = self.server.getUserGuid(resp=user_guid_resp) # 大为账号GUID
             if user_guid is None:
                 LOGGING.error('提取大为账号GUID失败')
                 # 将innojoy账号扔回redis
-                self.dao.saveInnojoyMobile_redis(redis_client=redis_cli, value=user)
+                self.server.saveInnojoyMobileToUrlSpider(redis_client=redis_cli, value=user)
+                continue
 
             # 获取专利分类接口响应
             patent_type_resp = self.download.getPatentType_resp(guid=user_guid, proxy=proxy, ua=ua)
@@ -85,7 +85,7 @@ class SpiderMain(object):
             if sic_list is None:
                 LOGGING.error('提取专利分类失败')
                 # 将innojoy账号扔回redis
-                self.dao.saveInnojoyMobile_redis(redis_client=redis_cli, value=user)
+                self.server.saveInnojoyMobileToUrlSpider(redis_client=redis_cli, value=user)
 
 
             # 获取地区分类接口响应
@@ -97,7 +97,7 @@ class SpiderMain(object):
             if region_list is None:
                 LOGGING.error('提取地区分类参数失败')
                 # 将innojoy账号扔回redis
-                self.dao.saveInnojoyMobile_redis(redis_client=redis_cli, value=user)
+                self.server.saveInnojoyMobileToUrlSpider(redis_client=redis_cli, value=user)
 
             for sic in sic_list:
                 if sic_list.index(sic) != self.sic_number:
@@ -110,11 +110,11 @@ class SpiderMain(object):
                     # 获取第一页响应
                     one_page_resp = self.download.getPageResp(sic=sic, region=region, page=1, proxy=proxy, ua=ua,
                                                               guid=user_guid, page_guid='')
-                    LOGGING.info('首页响应：' + '\n' + str(one_page_resp) + '\n')
+                    # LOGGING.info('首页响应：' + '\n' + str(one_page_resp) + '\n')
                     if one_page_resp is None:
                         self.error = 1
                         # 将innojoy账号扔回redis
-                        self.dao.saveInnojoyMobile_redis(redis_client=redis_cli, value=user)
+                        self.server.saveInnojoyMobileToUrlSpider(redis_client=redis_cli, value=user)
                         break
                     one_page_resp_dict = json.loads(one_page_resp)
                     one_ReturnValue = one_page_resp_dict['ReturnValue']
@@ -138,11 +138,11 @@ class SpiderMain(object):
                         LOGGING.info('当前正在抓取第{}个专利分类下的{}地区分类的第{}页'.format(self.sic_number + 1, self.region_number + 1, self.page))
                         # 获取当前页响应
                         page_resp = self.download.getPageResp(sic=sic, region=region, page=self.page, proxy=proxy, ua=ua,  guid=user_guid, page_guid=self.page_guid)
-                        LOGGING.info('当前页响应：' + '\n' + str(page_resp) + '\n')
+                        # LOGGING.info('当前页响应：' + '\n' + str(page_resp) + '\n')
                         if page_resp is None:
                             self.error = 1
                             # 将innojoy账号扔回redis
-                            self.dao.saveInnojoyMobile_redis(redis_client=redis_cli, value=user)
+                            self.server.saveInnojoyMobileToUrlSpider(redis_client=redis_cli, value=user)
                             break
                         # 获取响应状态
                         page_resp_dict = json.loads(page_resp)
@@ -151,7 +151,7 @@ class SpiderMain(object):
                             value = page_resp_dict['ErrorInfo']
                             if value == 'verification':
                                 # 将innojoy账号扔回redis
-                                self.dao.saveInnojoyMobile_redis(redis_client=redis_cli, value=user)
+                                self.server.saveInnojoyMobileToUrlSpider(redis_client=redis_cli, value=user)
                                 self.error = value
                                 break
                             LOGGING.error(value)

@@ -146,6 +146,10 @@ class ApiServeice(object):
 
         return mobile
 
+    # 将innojoy账号存回redis数据库【仅种子爬虫用】
+    def saveInnojoyMobileToUrlSpider(self, redis_client, value):
+        redispool_utils.sadd(redis_client=redis_client, key=self.innojoy_mobilepool_url_spider, value=value)
+
     # 从redis获取innojoy账号
     def getInnojoyMobiles(self, redis_client):
         try:

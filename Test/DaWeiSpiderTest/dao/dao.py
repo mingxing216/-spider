@@ -29,7 +29,8 @@ class Dao(object):
         # 查询redis账号池内有多少账号
         mobile_num = redispool_utils.scard(redis_client=redis_client, key=key)
         # 从redis账号池内获取全部账号
-        mobile_list = redispool_utils.smembers(redis_client=redis_client, key=key)
+        mobile_list = redispool_utils.queue_spops(redis_client=redis_client, key=key, count=mobile_num, lockname=str(key) + '_lock')
+        # mobile_list = redispool_utils.smembers(redis_client=redis_client, key=key)
 
         return mobile_list
 
