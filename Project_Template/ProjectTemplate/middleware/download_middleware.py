@@ -10,6 +10,7 @@ import random
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
 from Utils import user_agents
+from Utils import proxy_utils
 
 class Download_Middleware():
     def __init__(self):
@@ -29,10 +30,19 @@ class Download_Middleware():
         redis_client = kwargs['redis_client']
         url = kwargs['url']
         logging = kwargs['logging']
-        resp = self.downloading.getRespForGet(redis_client=redis_client, url=url, logging=logging)
 
-        if resp:
-            return resp
+        for i in range(20):
+            # 获取短效代理ip
+            proxies = proxy_utils.getProxy(redis_client=redis_client, logging=logging)
+            resp = self.downloading.newGetRespForGet(url=url, logging=logging, proxies=proxies)
+
+            if resp:
+                return resp
+
+            if (i + 1) % 2 == 0:
+                proxy_utils.delProxy(redis_client=redis_client, proxies=proxies)
+
+
 
 
 

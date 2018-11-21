@@ -53,36 +53,38 @@ def redisLock(func):
                 now = timeutils.get_current_millis()
                 # 获取当前redis设置的锁时间戳
                 now_redis_lock = redis_client.get(lockname)
-                # 如果当前时间戳小于锁设置时间， 解锁
-                if int(now) < int(now_redis_lock):
-                    redis_client.delete(lockname)
+                if now_redis_lock:
+                    # 如果当前时间戳小于锁设置时间， 解锁
+                    if int(now) < int(now_redis_lock):
+                        redis_client.delete(lockname)
 
-                return data
+                    return data
             # 如果返回0， 代表抢锁失败
             if lock_status == 0:
                 # 获取redis中锁的过期时间
                 redis_lock_out = redis_client.get(lockname)
                 # 判断这个锁是否已超时, 如果当前时间大于锁时间， 说明锁已超时
-                if now > int(redis_lock_out):
-                    # 生成锁时间【当前时间戳 + 锁有效时间】
-                    lock_time_out = now + EXPIRY
-                    # 抢锁
-                    old_lock_time = redis_client.getset(lockname, lock_time_out)
-                    # 判断抢锁后返回的时间是否与之前获取的锁过期时间相等， 相等说明抢锁成功
-                    if int(old_lock_time) == int(redis_lock_out):
-                        data = func(*args, **kwargs)
-                        # 获取当前时间戳
-                        now = timeutils.get_current_millis()
-                        # 获取当前redis设置的锁时间戳
-                        now_redis_lock = redis_client.get(lockname)
-                        # 如果当前时间戳小于锁设置时间， 解锁
-                        if int(now) < int(now_redis_lock):
-                            redis_client.delete(lockname)
+                if redis_lock_out:
+                    if now > int(redis_lock_out):
+                        # 生成锁时间【当前时间戳 + 锁有效时间】
+                        lock_time_out = now + EXPIRY
+                        # 抢锁
+                        old_lock_time = redis_client.getset(lockname, lock_time_out)
+                        # 判断抢锁后返回的时间是否与之前获取的锁过期时间相等， 相等说明抢锁成功
+                        if int(old_lock_time) == int(redis_lock_out):
+                            data = func(*args, **kwargs)
+                            # 获取当前时间戳
+                            now = timeutils.get_current_millis()
+                            # 获取当前redis设置的锁时间戳
+                            now_redis_lock = redis_client.get(lockname)
+                            # 如果当前时间戳小于锁设置时间， 解锁
+                            if int(now) < int(now_redis_lock):
+                                redis_client.delete(lockname)
 
-                        return data
-                    else:
-                        # 抢锁失败， 重新再抢
-                        continue
+                            return data
+                        else:
+                            # 抢锁失败， 重新再抢
+                            continue
 
     return wrapper
 
@@ -129,6 +131,24 @@ def queue_spops(**kwargs):
 
     return return_data
 
+# 设置值
+def redis_set(redis_client, key, value):
+    redis_client.set(key, value)
+
+# 获取值
+def get(redis_client, key):
+    data = redis_client.get(key)
+
+    return data
+
+def delete(redis_client, key):
+    '''
+    删除redis集合
+    :param redis_client: 连接池
+    :param key: key
+    '''
+    redis_client.delete(key)
+
 def lrange(redis_client, key, start, end):
     '''
     获取列表类型内容
@@ -154,6 +174,16 @@ def lpush(redis_client, key, value):
     len_list = redis_client.lpush(key, value)
 
     return len_list # 列表中的元素数量
+
+def lrem(redis_client, key, count, value):
+    '''
+    删除列表中的count个value元素
+    :param redis_client: redis连接池对象
+    :param key: key
+    :param count: 删除个数
+    :param value: value
+    '''
+    redis_client.lrem(key, count, value)
 
 def scard(redis_client, key):
     '''

@@ -62,3 +62,7 @@ def getDirFiles(path):
 def createDir(path):
     os.mkdir(path)
 
+
+# 根据文件名删除文件
+def deleteFile(path):
+    os.remove(path=path)

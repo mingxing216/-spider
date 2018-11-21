@@ -89,3 +89,30 @@ CREATE TABLE `ss_people` (
   PRIMARY KEY (`sha`),
   KEY `idx_update` (`last_updated`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPRESSED COMMENT='人物';
+
+
+-- ----------------------------
+-- Table ss_innojoy_mobile
+-- ----------------------------
+DROP TABLE IF EXISTS `ss_innojoy_mobile`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `ss_innojoy_mobile` (
+  `mobile` bigint(20) unsigned NOT NULL,
+  `date_created` datetime DEFAULT NULL,
+  `del` int(11) DEFAULT NULL,
+  PRIMARY KEY (`mobile`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- ----------------------------
+-- Table ss_innojoy_patent_url
+-- ----------------------------
+DROP TABLE IF EXISTS `ss_innojoy_patent_url`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `ss_innojoy_patent_url` (
+  `url` varchar(255) NOT NULL,
+  `del` enum('0','1') DEFAULT '0',
+  PRIMARY KEY (`url`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -17,9 +17,330 @@ import settings
 from Utils import redispool_utils
 
 class Downloads(object):
-    def __init__(self, headers):
+    def __init__(self, headers, logging):
         self.headers = headers
+        self.logging = logging
 
+    def newGetRespForGet(self, url, proxies=None, cookies=None):
+        '''
+        requests get请求下载器 
+        :param url: url
+        :param proxies: 代理IP
+        :return: 响应结果
+        '''
+        try:
+            resp = requests.get(url=url, headers=self.headers, proxies=proxies, timeout=20, cookies=cookies)
+            if resp.status_code == 200:
+                response = resp.content.decode('utf-8')
+                resp.close()
+                return response
+
+            else:
+                self.logging.error('HTTP异常返回码： {}'.format(resp.status_code))
+                time.sleep(1)
+
+                return None
+
+        except ConnectTimeout or ReadTimeout:
+            self.logging.error('Connect Timeout')
+            # if (i + 1) % 2 == 0:
+            #     self.delProxy(redis_client=redis_client, proxies=proxies)
+            time.sleep(0.2)
+            return None
+
+        except ConnectionError as e:
+            self.logging.error(e)
+            # if (i + 1) % 2 == 0:
+            #     self.delProxy(redis_client=redis_client, proxies=proxies)
+            time.sleep(0.2)
+            return None
+
+        except Exception as e:
+            self.logging.error(e)
+            # if (i + 1) % 2 == 0:
+            #     self.delProxy(redis_client=redis_client, proxies=proxies)
+            time.sleep(0.2)
+            return None
+
+    def newGetRespForPost(self, url, data, proxies=None, cookies=None):
+        try:
+            resp = requests.post(url=url, data=data, headers=self.headers, proxies=proxies, timeout=20, cookies=cookies)
+            if resp.status_code == 200:
+                response = resp.content.decode('utf-8')
+                resp.close()
+                return response
+
+            else:
+                self.logging.error('HTTP异常返回码： {}'.format(resp.status_code))
+                time.sleep(1)
+
+                return None
+
+        except ConnectTimeout or ReadTimeout:
+            self.logging.error('Connect Timeout')
+            # if (i + 1) % 2 == 0:
+            #     self.delProxy(redis_client=redis_client, proxies=proxies)
+            time.sleep(0.2)
+            return None
+
+        except ConnectionError as e:
+            self.logging.error(e)
+            # if (i + 1) % 2 == 0:
+            #     self.delProxy(redis_client=redis_client, proxies=proxies)
+            time.sleep(0.2)
+            return None
+
+        except Exception as e:
+            self.logging.error(e)
+            # if (i + 1) % 2 == 0:
+            #     self.delProxy(redis_client=redis_client, proxies=proxies)
+            time.sleep(0.2)
+            return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # 以下功能为历史功能， 有项目在使用， 但不再维护
     def getProxy(self, redis_client, logging):
         '''
         随机获取代理IP
@@ -32,6 +353,26 @@ class Downloads(object):
                 proxies = {
                     'http': '{}'.format(proxy),
                     'https': '{}'.format(proxy)
+                }
+
+                return proxies
+            else:
+                logging.error('代理池代理获取失败')
+                time.sleep(1)
+                continue
+
+    def getLongProxy(self, redis_client, logging):
+        '''
+        随机获取代理IP
+        :return: 代理IP
+        '''
+        for i in range(10):
+            proxydata = redispool_utils.srandmember(redis_client=redis_client, key=settings.REDIS_LONG_PROXY_KEY, num=1)
+            if proxydata:
+                proxy = proxydata[0]
+                proxies = {
+                    'http': 'http://{}'.format(proxy),
+                    'https': 'https://{}'.format(proxy)
                 }
 
                 return proxies
@@ -134,3 +475,4 @@ class Downloads(object):
             else:
                 logging.error('未获取到代理IP')
                 continue
+
