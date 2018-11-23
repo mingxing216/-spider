@@ -44,6 +44,21 @@ ZHIWANG_PERIODOCAL_SPIDER_PROCESS = 4
 ZHIWANG_JIGOU_SPIDER_PROCESS = 1
 
 
+# 若快打码================================================
+r_username='15711294367'
+r_password='rockerfm520'
+r_soft_id=116272
+r_soft_key='c4f5ffd82a6f4cfeafdd8c062c0358ca'
+
+
+# 橙子短验API参数==========================================
+OrangeAPI_uid='y3138359'
+OrangeAPI_pwd='3138359'
+Orange_Pid=46808
+
+# ======================================================
+
+
 
 # # oss
 # ACCESSKEYID='LTAITx7i8MVIqSWh'

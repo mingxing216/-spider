@@ -7,6 +7,7 @@ import sys
 import time
 import json
 import requests
+import socket
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
@@ -105,27 +106,6 @@ def getProxy(redis_client, logging):
             continue
 
 
-def getLongProxy(redis_client, logging):
-    '''
-    随机获取代理池长效代理IP
-    :return: 代理IP
-    '''
-    for i in range(10):
-        proxydata = redispool_utils.srandmember(redis_client=redis_client, key=settings.REDIS_LONG_PROXY_KEY, num=1)
-        if proxydata:
-            proxy = proxydata[0]
-            proxies = {
-                'http': 'http://{}'.format(proxy),
-                'https': 'https://{}'.format(proxy)
-            }
-
-            return proxies
-        else:
-            logging.error('代理池代理获取失败')
-            time.sleep(1)
-            continue
-
-
 def delProxy(redis_client, proxies):
     '''
     删除代理池指定代理
@@ -133,3 +113,21 @@ def delProxy(redis_client, proxies):
     '''
     proxy = proxies['http']
     redispool_utils.srem(redis_client=redis_client, key=settings.REDIS_PROXY_KEY, value=proxy)
+
+
+def getLocalIP():
+    '''
+    获取本机IP
+    :return: 本机IP
+    '''
+    global s
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+        s.close()
+
+        return ip
+    except:
+        s.close()
+        return None

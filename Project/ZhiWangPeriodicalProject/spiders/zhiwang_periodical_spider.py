@@ -105,6 +105,8 @@ class SpiderMain(object):
     def getRespForPost(self, redis_client, url, data, logging):
         # post
         # while True:
+        print(url)
+        print(data)
         for i in range(20):
             proxies = self.getProxy(redis_client, logging)
             if proxies:
@@ -112,6 +114,7 @@ class SpiderMain(object):
                     resp = requests.post(url=url, data=data, headers=self.headers, proxies=proxies, timeout=10)
                     if resp.status_code == 200:
                         response = resp.content.decode('utf-8')
+                        print(response)
                         resp.close()
                         return response
 

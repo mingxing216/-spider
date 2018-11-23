@@ -49,7 +49,7 @@ class RClient(object):
 
 if __name__ == '__main__':
     rc = RClient('15711294367', 'rockerfm520', '116272', 'c4f5ffd82a6f4cfeafdd8c062c0358ca')
-    im = open('/home/master/Project/SpiderFrame/Test/DaWeiSpiderTest/services/../../../Static/Img/register_verify.png', 'rb').read()
+    im = open('/home/master/Project/SpiderFrame/Test/DaWeiSpiderProject/services/../../../Static/Img/register_verify.png', 'rb').read()
     r = rc.rk_create(im, 3000)
     print(r)
     print(r['Result'])
