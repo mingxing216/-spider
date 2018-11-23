@@ -125,7 +125,7 @@ class Dao(object):
         data = {"ip": "{}".format(proxy_utils.getLocalIP()),
                 "wid": "100",
                 "url": "{}".format(media_url),
-                "content": "{}".format(content),
+                "content": "{}".format(content.decode('utf-8')),
                 "type": "{}".format(type),
                 "ref": "",
                 "item": json.dumps(item)}
