@@ -324,12 +324,28 @@ class SpiderMain(object):
                     break
                 else:
                     # 判断当前分类是否已达到最后一个分类
-                    if self.region_number > len(region_list):
+                    if self.region_number == len(region_list):
                         self.sic_number += 1
                         # 同步当前专利分类索引到redis
                         self.dao.setInnojoySicNumber(redis_client=redis_cli, value=self.sic_number)
                     else:
                         break
+
+            if self.sic_number == len(sic_list):
+                # 初始化所有参数
+                self.sic_number = 0  # 当前专利分类索引
+                # 同步当前专利分类索引到redis
+                self.dao.setInnojoySicNumber(redis_client=redis_cli, value=self.sic_number)
+                self.region_number = 0  # 当前专利地区分类索引
+                # 同步当前专利地区分类索引到redis
+                self.dao.setInnojoyRegionNumber(redis_client=redis_cli, value=self.region_number)
+                self.page = 1  # 当前在抓页数
+                # 同步当前页数到redis
+                self.dao.setInnojoyPage(redis_client=redis_cli, value=self.page)
+                self.page_count = 0  # 总页数
+                self.page_guid = ""  # 下一页页码guid
+                self.error = ''
+
 
                 # break
 
