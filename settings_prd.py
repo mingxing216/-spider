@@ -58,6 +58,11 @@ Orange_Pid=46808
 
 # ======================================================
 
+# hbase存储爬虫输出数据
+SpiderDataSaveUrl='http://60.195.249.117:8090/hbaseserver/dat/getStructuredData?'
+# hbase存储爬虫输出多媒体文件
+SpiderMediaSaveUrl='http://60.195.249.117:8090/hbaseserver/dat/getMediaData?'
+
 # # oss
 # ACCESSKEYID='LTAITx7i8MVIqSWh'
 # ACCESSKEYSECRET='kwXFGPMeO4JtsTXs7Pa4zeJZhvsbaK'
