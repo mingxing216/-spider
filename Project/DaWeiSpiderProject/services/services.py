@@ -380,13 +380,12 @@ class ApiServeice(object):
         img_data_bs64 = base64.b64encode(img_data)
         # 保存图片
         sha = hashlib.sha1(down_url.encode('utf-8')).hexdigest()
-        print('图片sha: {}'.format(sha))
-        ip = re.findall(r"(\d+\.\d+\.\d+\.\d+)", proxy['http'])[0]
+        self.logging.info('图片sha: {}'.format(sha))
         item = {
             'pk': sha,
             'type': 'image'
         }
-        save_status = self.dao.saveInnojoyPatentImageToHbase(media_url=down_url, proxy=ip, content=img_data_bs64, type='image', item=item)
+        save_status = self.dao.saveInnojoyPatentImageToHbase(media_url=down_url, content=img_data_bs64, type='image', item=item)
         status_dict = json.loads(save_status)
         resultcode = status_dict['resultCode']
 

@@ -120,9 +120,9 @@ class Dao(object):
             self.logging.info('专利数据保存成功')
 
     # 存储专利图片到Hbase数据库
-    def saveInnojoyPatentImageToHbase(self, media_url, proxy, content, type, item):
+    def saveInnojoyPatentImageToHbase(self, media_url, content, type, item):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
-        data = {"ip": "{}".format(proxy),
+        data = {"ip": "{}".format(proxy_utils.getLocalIP()),
                 "wid": "100",
                 "url": "{}".format(media_url),
                 "ctn": "{}".format(content),
@@ -136,7 +136,6 @@ class Dao(object):
         }
         download = downloader.Downloads(logging=self.logging, headers=headers)
         resp = download.newGetRespForPost(url=url, data=data)
-        print('存储图片成功: {}'.format(resp))
         return resp
 
     # 存储专利数据到Hbase数据库
