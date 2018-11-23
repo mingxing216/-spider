@@ -125,11 +125,10 @@ class Dao(object):
         data = {"ip": "{}".format(proxy_utils.getLocalIP()),
                 "wid": "100",
                 "url": "{}".format(media_url),
-                "ctn": "{}".format(content),
+                "content": "{}".format(content),
                 "type": "{}".format(type),
                 "ref": "",
                 "item": json.dumps(item)}
-
 
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
