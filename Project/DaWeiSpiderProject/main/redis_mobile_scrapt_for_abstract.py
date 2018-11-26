@@ -20,8 +20,9 @@ class ScraptMain(object):
     # 从mysql获取innojoy账号
     def getInnojoyMobile(self, connection):
         # 获取今日日期
-        now_date = timeutils.get_yyyy_mm_dd() + ' ' + '00:00:00'
-        sql = 'select mobile from ss_innojoy_mobile where update_created != "{}" or update_created is null limit 1000;'.format(now_date)
+        start_date = timeutils.get_yyyy_mm_dd() + ' ' + '00:00:00'
+        end_date = timeutils.get_yyyy_mm_dd() + ' ' + '23:00:00'
+        sql = 'select * from ss_innojoy_mobile where update_created not BETWEEN "{}" and "{}" or update_created is NULL;'.format(start_date, end_date)
         mobiles_list = mysqlpool_utils.get_results(connection=connection, sql=sql)
 
         return mobiles_list
