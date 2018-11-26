@@ -17,7 +17,7 @@ from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Queue
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "")
+sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 
 from Utils import redis_dbutils
@@ -25,8 +25,6 @@ from Utils import mysql_dbutils
 from Utils import redispool_utils
 
 redis_client = redispool_utils.createRedisPool()
-
-print('hahahahahahah')
 
 
 
