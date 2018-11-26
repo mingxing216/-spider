@@ -10,8 +10,6 @@ import threading
 import random
 import time
 import gc
-import psutil
-import threadpool
 import pymysql
 from redis import StrictRedis
 from urllib.parse import urlparse
