@@ -11,8 +11,8 @@ from Utils import mysqlpool_utils
 
 
 class Dao(object):
-    def __init__(self):
-        pass
+    def __init__(self, logging):
+        self.logging = logging
 
     def demo(self, **kwargs):
         '''

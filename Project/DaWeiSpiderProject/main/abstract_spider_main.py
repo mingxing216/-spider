@@ -60,7 +60,7 @@ class SpiderMain(object):
                 # 获取语种
                 data['yuZhong'] = self.server.getPatentYuZhong(resp=patent)
                 # 获取下载链接
-                data['xiaZai'] = self.server.getXiaZaiLianJie(resp=patent)
+                data['xiaZaiLianJie'] = self.server.getXiaZaiLianJie(resp=patent)
                 # 获取申请号
                 data['shenQingHao'] = self.server.getShenQingHao(resp=patent)
                 # 获取申请日
@@ -127,6 +127,8 @@ class SpiderMain(object):
                 data['zhuanLiZhuangTai'] = self.server.getZhuanLiZhuangTai(resp=patent)
                 # 获取诉讼运营
                 data['suSongYunYing'] = self.server.getSuSongYunYing(resp=patent)
+                # 获取专利类型
+                data['zhuanLiLeiXing'] = self.server.getZhuanLiLeiXing(resp=patent)
                 # 生成专利url
                 data['url'] = self.server.createPatentUrl(resp=patent)
                 # 生成sha

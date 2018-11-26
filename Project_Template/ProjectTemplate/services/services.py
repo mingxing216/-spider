@@ -12,8 +12,8 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 etree = html.etree
 
 class Services(object):
-    def __init__(self):
-        pass
+    def __init__(self, logging):
+        self.logging = logging
 
 
     def demo(self, **kwargs):

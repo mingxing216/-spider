@@ -201,7 +201,8 @@ class ApiServeice(object):
     def getPatentYuZhong(self, resp):
         title = resp['TI']
         try:
-            yuZhong = re.findall(r".*?(\[.*\])", title)[0]
+            yuZhong_data = re.findall(r".*?(\[.*\])", title)[0]
+            yuZhong = re.sub(r'(\[|\])', '', yuZhong_data)
             return yuZhong
         except:
             return ""
@@ -235,7 +236,8 @@ class ApiServeice(object):
 
     # 获取申请日
     def getShenQingRi(self, resp):
-        shenQingRi = resp['AD']
+        shenQingRi_data = resp['AD']
+        shenQingRi = re.sub(r'(\.)', '-', shenQingRi_data) + ' ' + '00:00:00'
 
         return shenQingRi
 
@@ -247,7 +249,8 @@ class ApiServeice(object):
 
     # 获取公开日
     def getGongKaiRi(self, resp):
-        gongKaiRi = resp['PD']
+        gongKaiRi_data = resp['PD']
+        gongKaiRi = re.sub(r'(\.)', '-', gongKaiRi_data) + ' ' + '00:00:00'
 
         return gongKaiRi
 
@@ -277,67 +280,78 @@ class ApiServeice(object):
 
     # 获取申请人
     def getShenQingRen(self, resp):
-        shenQingRen = resp['PPA']
+        shenQingRen_data = resp['PPA']
+        shenQingRen = re.sub(r'(;|；)', '|', shenQingRen_data)
 
         return shenQingRen
 
     # 获取发明人
     def getFaMingRen(self, resp):
-        faMingRen = resp['INNTMS']
+        faMingRen_data = resp['INNTMS']
+        faMingRen = re.sub(r'(;|；)', '|', faMingRen_data)
 
         return faMingRen
 
     # 获取IPC分类号
     def getIpcFenLeiHao(self, resp):
-        ipcFenLeiHao = resp['SIC']
+        ipcFenLeiHao_data = resp['SIC']
+        ipcFenLeiHao = re.sub(r'(;|；)', '|', ipcFenLeiHao_data)
 
         return ipcFenLeiHao
 
     # 获取CPC分类号
     def getCpcFenLeiHao(self, resp):
-        cpcFenLeiHao = resp['CPC']
+        cpcFenLeiHao_data = resp['CPC']
+        cpcFenLeiHao = re.sub(r'(;|；)', '|', cpcFenLeiHao_data)
 
         return cpcFenLeiHao
 
     # 获取ECLA分类号
     def getEclaFenLeiHao(self, resp):
-        eclaFenLeiHao = resp['SEC']
+        eclaFenLeiHao_data = resp['SEC']
+        eclaFenLeiHao = re.sub(r'(;|；)', '|', eclaFenLeiHao_data)
 
         return eclaFenLeiHao
 
     # 获取NC分类号
     def getNcFenLeiHao(self, resp):
-        ncFenLeiHao = resp['SNC']
+        ncFenLeiHao_data = resp['SNC']
+        ncFenLeiHao = re.sub(r'(;|；)', '|', ncFenLeiHao_data)
 
         return ncFenLeiHao
 
     # 获取F-Term分类号
     def getFTermFenLeiHao(self, resp):
-        fTermFenLeiHao = resp['FTERM']
+        fTermFenLeiHao_data = resp['FTERM']
+        fTermFenLeiHao = re.sub(r'(;|；)', '|', fTermFenLeiHao_data)
 
         return fTermFenLeiHao
 
     # 获取优先权号
     def getYouXianQuanHao(self, resp):
-        youXianQuanHao = resp['PR']
+        youXianQuanHao_data = resp['PR']
+        youXianQuanHao = re.sub(r'(;|；)', '|', youXianQuanHao_data)
 
         return youXianQuanHao
 
     # 获取国际申请
     def getGuoJiShenQing(self, resp):
-        guoJiShenQing = resp['IAN']
+        guoJiShenQing_data = resp['IAN']
+        guoJiShenQing = re.sub(r'(;|；)', '|', guoJiShenQing_data)
 
         return guoJiShenQing
 
     # 获取国际公布
     def getGuoJiGongBu(self, resp):
-        guoJiGongBu = resp['IPN']
+        guoJiGongBu_data = resp['IPN']
+        guoJiGongBu = re.sub(r'(;|；)', '|', guoJiGongBu_data)
 
         return guoJiGongBu
 
     # 获取进入国家日期
     def getJinRuGuoJiaRiQi(self, resp):
-        jinRuGuoJiaRiQi = resp['DEN']
+        jinRuGuoJiaRiQi_data = resp['DEN']
+        jinRuGuoJiaRiQi = re.sub(r'(\.)', '-', jinRuGuoJiaRiQi_data) + ' ' + '00:00:00'
 
         return jinRuGuoJiaRiQi
 
@@ -349,7 +363,8 @@ class ApiServeice(object):
 
     # 获取代理人
     def getDaiLiRen(self, resp):
-        daiLiRen = resp['AGT']
+        daiLiRen_data = resp['AGT']
+        daiLiRen = re.sub(r'(;|；)', '|', daiLiRen_data)
 
         return daiLiRen
 
@@ -361,15 +376,22 @@ class ApiServeice(object):
 
     # 获取引证专利
     def getYinZhengZhuanLi(self, resp):
-        yinZhengZhuanLi = resp['REFP']
+        yinZhengZhuanLi_data = resp['REFP']
+        yinZhengZhuanLi = re.sub(r'(;|；)', '|', yinZhengZhuanLi_data)
 
         return yinZhengZhuanLi
 
     # 获取摘要
     def getZhaiYao(self, resp):
-        zhaiYao = resp['CD']
+        return_data = ""
+        zhaiYao_data = resp['CD']
+        zhaiYao_data_etree = etree.HTML(zhaiYao_data)
+        zhaiyao_html = zhaiYao_data_etree.xpath("//abstract[@lang]")
+        for html in zhaiyao_html:
+            zhaiYao = etree.tostring(html)
+            return_data = return_data + zhaiYao.decode('utf-8') + '\n'
 
-        return zhaiYao
+        return return_data
 
     # 获取标识
     def getBiaoShi(self, resp,  ua, proxy):
@@ -377,13 +399,16 @@ class ApiServeice(object):
         down_url = resp['MP']
         download = download_middleware.Download_Middleware(logging=self.logging)
         img_data = download.downImg(url=down_url, referer=referer, ua=ua)
+        # with open('{}.png'.format(hashlib.sha1(down_url.encode('utf-8')).hexdigest()), 'wb') as f:
+        #     f.write(img_data)
         img_data_bs64 = base64.b64encode(img_data)
         # 保存图片
         sha = hashlib.sha1(down_url.encode('utf-8')).hexdigest()
         self.logging.info('图片sha: {}'.format(sha))
         item = {
             'pk': sha,
-            'type': 'image'
+            'type': 'image',
+            'url': down_url
         }
         save_status = self.dao.saveInnojoyPatentImageToHbase(media_url=down_url, content=img_data_bs64, type='image', item=item)
         status_dict = json.loads(save_status)
@@ -438,8 +463,16 @@ class ApiServeice(object):
 
     # 获取诉讼运营
     def getSuSongYunYing(self, resp):
+        suSongYunYing_data = resp['GZSX']
+        suSongYunYing = re.sub(r'(;|；)', '|', suSongYunYing_data)
 
-        return ""
+        return suSongYunYing
+
+    # 获取专利类型
+    def getZhuanLiLeiXing(self, resp):
+        zhuanLiLeiXing = resp['PAT']
+
+        return zhuanLiLeiXing
 
     # 生成专利url
     def createPatentUrl(self, resp):
