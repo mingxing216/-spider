@@ -48,7 +48,6 @@ def getZhiMaProxy_Number(num, protocol=2, time=1):
 
     return None
 
-
 def getZhiMaProxy_SetMeal(set_meal, num, protocol=2, time=1):
     '''
     获取芝麻代理
@@ -84,7 +83,6 @@ def getZhiMaProxy_SetMeal(set_meal, num, protocol=2, time=1):
 
     return None
 
-
 def getProxy(redis_client, logging):
     '''
     随机获取代理池短效代理IP
@@ -105,7 +103,6 @@ def getProxy(redis_client, logging):
             time.sleep(1)
             continue
 
-
 def delProxy(redis_client, proxies):
     '''
     删除代理池指定代理
@@ -113,7 +110,6 @@ def delProxy(redis_client, proxies):
     '''
     proxy = proxies['http']
     redispool_utils.srem(redis_client=redis_client, key=settings.REDIS_PROXY_KEY, value=proxy)
-
 
 def getLocalIP():
     '''
@@ -131,3 +127,26 @@ def getLocalIP():
     except:
         s.close()
         return None
+
+# 获取阿布云动态版代理
+def getABuYunProxy():
+    proxyHost = "http-dyn.abuyun.com"
+    proxyPort = "9020"
+
+    # 代理隧道验证信息
+    proxyUser = "H1A955UYUR3S8RXD"
+    proxyPass = "6FD2F11DD2337CF0"
+
+    proxyMeta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
+      "host" : proxyHost,
+      "port" : proxyPort,
+      "user" : proxyUser,
+      "pass" : proxyPass,
+    }
+
+    proxies = {
+        "http"  : proxyMeta,
+        "https" : proxyMeta,
+    }
+    return proxies
+

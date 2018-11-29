@@ -97,6 +97,42 @@ class Downloads(object):
             time.sleep(0.2)
             return None
 
+    # 下载流媒体
+    def downMedia(self, url, proxies=None):
+        try:
+            resp = requests.get(url=url, headers=self.headers, proxies=proxies, timeout=20)
+            if resp.status_code == 200:
+                response = resp.content
+                resp.close()
+                return response
+
+            else:
+                self.logging.error('HTTP异常返回码： {}, 异常url: {}'.format(resp.status_code, url))
+                time.sleep(1)
+
+                return None
+
+        except ConnectTimeout or ReadTimeout:
+            self.logging.error('Connect Timeout')
+            # if (i + 1) % 2 == 0:
+            #     self.delProxy(redis_client=redis_client, proxies=proxies)
+            time.sleep(0.2)
+            return None
+
+        except ConnectionError as e:
+            self.logging.error(e)
+            # if (i + 1) % 2 == 0:
+            #     self.delProxy(redis_client=redis_client, proxies=proxies)
+            time.sleep(0.2)
+            return None
+
+        except Exception as e:
+            self.logging.error(e)
+            # if (i + 1) % 2 == 0:
+            #     self.delProxy(redis_client=redis_client, proxies=proxies)
+            time.sleep(0.2)
+            return None
+
 
 
 

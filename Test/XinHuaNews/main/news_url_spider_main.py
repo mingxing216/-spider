@@ -5,16 +5,19 @@
 '''
 import sys
 import os
+import json
+from multiprocessing.dummy import Pool as ThreadPool
 
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Log import log
 from Utils import redispool_utils
+from Utils import dir_utils
 from Test.XinHuaNews.middleware import download_middleware
 from Test.XinHuaNews.services import services
 
 log_file_dir = 'XinHuaNews'  # LOG日志存放路径
-LOGNAME = '<新华新闻爬虫>'  # LOG名
+LOGNAME = '<新华新闻种子爬虫>'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
@@ -23,9 +26,14 @@ class SpiderMain(object):
         self.download = download_middleware.Download_Middleware(logging=LOGGING)
         self.server = services.Services(logging=LOGGING)
         self.index_url = 'http://m.xinhuanet.com/'
+        self.file_path = os.path.dirname(__file__) + os.sep + "../../../" + "Static/txt/" + "XinHuaNewsUrl.txt"
+        try:
+            dir_utils.deleteFile(self.file_path)
+        except:
+            pass
 
     # 抓取模板1
-    def newsTemplate_1(self, redis_client, url, news_from_title):
+    def newsTemplate_1(self, redis_client, url, one_clazz):
         # 获取来源页html
         resp = self.download.getResponse(redis_client=redis_client, url=url)
         # 获取来源nid
@@ -44,14 +52,16 @@ class SpiderMain(object):
             # 获取首页API响应
             APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
             # 获取新闻种子列表
-            NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, news_from_title=news_from_title)
+            NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
             for NewUrl in NewUrlList:
                 LOGGING.info(NewUrl)
-                with open('url_data.txt', 'a') as f:
-                    f.write(str(NewUrl) + '\n')
+                with open(self.file_path, 'a') as f:
+                    datas = json.dumps(NewUrl)
+                    f.write(datas + '\n')
+                    # f.write(str(NewUrl) + '\n')
 
     # 抓取模板2
-    def newsTemplate_2(self, redis_client, url, news_from_title):
+    def newsTemplate_2(self, redis_client, url, one_clazz):
         jsAPI = 'http://www.xinhuanet.com/video/xinhuaradio/ej2018/scripts/home_mob.js'
         # 获取JS接口响应
         jsResp = self.download.getResponse(redis_client=redis_client, url=jsAPI)
@@ -71,23 +81,22 @@ class SpiderMain(object):
             # 获取首页API响应
             APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
             # 获取新闻种子列表
-            NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, news_from_title=news_from_title)
+            NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
             for NewUrl in NewUrlList:
                 LOGGING.info(NewUrl)
-                with open('url_data.txt', 'a') as f:
+                with open(self.file_path, 'a') as f:
                     f.write(str(NewUrl) + '\n')
 
     # 抓取模板3
-    def newsTemplate_3(self, redis_client, url, news_from_title):
+    def newsTemplate_3(self, redis_client, url, one_clazz):
         # 获取来源页html
         resp = self.download.getResponse(redis_client=redis_client, url=url)
         # 获取新闻种子列表
-        NewUrlList = self.server.getNewsUrlList_Template_3(resp=resp, news_from_title=news_from_title)
+        NewUrlList = self.server.getNewsUrlList_Template_3(resp=resp, one_clazz=one_clazz)
         for NewUrl in NewUrlList:
             LOGGING.info(NewUrl)
-            with open('url_data.txt', 'a') as f:
+            with open(self.file_path, 'a') as f:
                 f.write(str(NewUrl) + '\n')
-
 
     # 抓取模板4
     def newsTemplate_4(self, redis_client, news_from_title):
@@ -104,13 +113,13 @@ class SpiderMain(object):
 
             for NewUrl in NewUrlList:
                 LOGGING.info(NewUrl)
-                with open('url_data.txt', 'a') as f:
+                with open(self.file_path, 'a') as f:
                     f.write(str(NewUrl) + '\n')
 
             page += 1
 
     # 抓取模板5
-    def newsTemplate_5(self, redis_client, url, news_from_title):
+    def newsTemplate_5(self, redis_client, url, one_clazz):
         # 获取来源页响应
         resp = self.download.getResponse(redis_client=redis_client, url=url)
         # 获取栏目分类
@@ -136,15 +145,15 @@ class SpiderMain(object):
                 # 获取首页API响应
                 APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
                 # 获取新闻种子列表
-                NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, news_from_title=news_from_title)
+                NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
                 for NewUrl in NewUrlList:
-                    NewUrl['shuJuXinWenFenLeiMing'] = shuJuXinWenFenLeiMing
+                    NewUrl['last_from_title'] = shuJuXinWenFenLeiMing
                     LOGGING.info(NewUrl)
-                    with open('url_data.txt', 'a') as f:
+                    with open(self.file_path, 'a') as f:
                         f.write(str(NewUrl) + '\n')
 
     # 抓取模板6
-    def newsTemplate_6(self, redis_client, news_from_title):
+    def newsTemplate_6(self, redis_client, one_clazz):
         url = 'http://uav.xinhuanet.com/zx.htm'
         # 获取来源页响应
         resp = self.download.getResponse(redis_client=redis_client, url=url)
@@ -164,12 +173,94 @@ class SpiderMain(object):
             # 获取首页API响应
             APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
             # 获取新闻种子列表
-            NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, news_from_title=news_from_title)
+            NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
             for NewUrl in NewUrlList:
                 LOGGING.info(NewUrl)
-                with open('url_data.txt', 'a') as f:
+                with open(self.file_path, 'a') as f:
                     f.write(str(NewUrl) + '\n')
 
+    def handle(self, redis_client, news_from):
+        one_clazz = news_from['laiYuanTitle']
+        news_from_url = news_from['laiYuanUrl']
+
+        if one_clazz == '时政':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '财经':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '国际':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '娱乐':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '图片':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '军事':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '体育':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '教育':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '网评':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '港澳台':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '法治':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '社会':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '文化':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '时尚':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '旅游':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '健康':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '汽车':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '房产':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '美食':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '悦读':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '视频':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '新华社新闻':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        if one_clazz == '滚动新闻':
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        # if one_clazz == '人事':
+        #     self.newsTemplate_3(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        # if one_clazz == '思客':
+        #     self.newsTemplate_4(redis_client=redis_client, one_clazz=one_clazz)
+        # if one_clazz == '数据新闻':
+        #     self.newsTemplate_5(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        # if one_clazz == '无人机':
+        #     self.newsTemplate_6(redis_client=redis_client, one_clazz=one_clazz)
+        if (one_clazz == '北京' or
+                one_clazz == '吉林' or
+                one_clazz == '上海' or
+                one_clazz == '江苏' or
+                one_clazz == '安徽' or
+                one_clazz == '福建' or
+                one_clazz == '山东' or
+                one_clazz == '湖北' or
+                one_clazz == '湖南' or
+                one_clazz == '广东' or
+                one_clazz == '广西' or
+                one_clazz == '海南' or
+                one_clazz == '重庆' or
+                one_clazz == '四川' or
+                one_clazz == '贵州' or
+                one_clazz == '甘肃' or
+                one_clazz == '宁夏' or
+                one_clazz == '新疆' or
+                one_clazz == '内蒙古' or
+                one_clazz == '黑龙江' or
+                one_clazz == '云南'):
+            self.newsTemplate_1(redis_client=redis_client, url=news_from_url, one_clazz=one_clazz)
+        else:
+            pass
 
     def run(self):
         redis_client = redispool_utils.createRedisPool()
@@ -177,99 +268,12 @@ class SpiderMain(object):
         index_resp = self.download.getResponse(redis_client=redis_client, url=self.index_url)
         # 获取新闻来源列表
         news_from_list = self.server.getNewsFromList(resp=index_resp)
-        for news_from in news_from_list:
-            news_from_title = news_from['laiYuanTitle']
-            news_from_url = news_from['laiYuanUrl']
 
-            if news_from_title == '时政':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '财经':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '国际':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '娱乐':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '图片':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '社区':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '军事':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '体育':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '前沿':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '教育':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '网评':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '港澳台':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '法治':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '社会':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '文化':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '时尚':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '旅游':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '健康':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '汽车':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '房产':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '美食':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '悦读':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '视频':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '广播':
-                self.newsTemplate_2(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '科普':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '新华社新闻':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '滚动新闻':
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '学习进行时':
-                news_from_url = 'http://m.xinhuanet.com/xxjxs/index.htm'
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '人事':
-                self.newsTemplate_3(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '思客':
-                self.newsTemplate_4(redis_client=redis_client, news_from_title=news_from_title)
-            if news_from_title == '数据新闻':
-                self.newsTemplate_5(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            if news_from_title == '无人机':
-                self.newsTemplate_6(redis_client=redis_client, news_from_title=news_from_title)
-            if (news_from_title == '北京' or
-                    news_from_title == '吉林' or
-                    news_from_title == '上海' or
-                    news_from_title == '江苏' or
-                    news_from_title == '安徽' or
-                    news_from_title == '福建' or
-                    news_from_title == '山东' or
-                    news_from_title == '湖北' or
-                    news_from_title == '湖南' or
-                    news_from_title == '广东' or
-                    news_from_title == '广西' or
-                    news_from_title == '海南' or
-                    news_from_title == '重庆' or
-                    news_from_title == '四川' or
-                    news_from_title == '贵州' or
-                    news_from_title == '甘肃' or
-                    news_from_title == '宁夏' or
-                    news_from_title == '新疆' or
-                    news_from_title == '内蒙古' or
-                    news_from_title == '黑龙江' or
-                    news_from_title == '云南'):
-                self.newsTemplate_1(redis_client=redis_client, url=news_from_url, news_from_title=news_from_title)
-            else:
-                pass
+        threadpool = ThreadPool(4)
+        for news_from in news_from_list:
+            threadpool.apply_async(func=self.handle, args=(redis_client, news_from))
+        threadpool.close()
+        threadpool.join()
 
 
 if __name__ == '__main__':
