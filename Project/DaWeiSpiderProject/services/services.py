@@ -587,29 +587,29 @@ class Services(object):
     # 创建selenium driver
     def creatDriver(self, proxy, ua):
         # Chrom
-        # chromeOptions = webdriver.ChromeOptions()
-        # chromeOptions.add_argument("--proxy-server=http://%s" % proxy)
-        # chromeOptions.add_argument("--user-agent=%s" % ua)
-        # driver = webdriver.Chrome(chrome_options=chromeOptions)
-        # driver.set_window_size(1920, 1080)
-        # # driver.maximize_window()
-        # driver.implicitly_wait(10)
-        # driver.set_page_load_timeout(10)
-        #
-        # return driver
-
         chromeOptions = webdriver.ChromeOptions()
-
-        chromeOptions.set_headless()
         chromeOptions.add_argument("--proxy-server=http://%s" % proxy)
         chromeOptions.add_argument("--user-agent=%s" % ua)
-        chromeOptions.add_argument("lang=zh_CN.UTF-8")
         driver = webdriver.Chrome(chrome_options=chromeOptions)
         driver.set_window_size(1920, 1080)
+        # driver.maximize_window()
         driver.implicitly_wait(10)
         driver.set_page_load_timeout(10)
 
         return driver
+
+        # chromeOptions = webdriver.ChromeOptions()
+        #
+        # chromeOptions.set_headless()
+        # chromeOptions.add_argument("--proxy-server=http://%s" % proxy)
+        # chromeOptions.add_argument("--user-agent=%s" % ua)
+        # chromeOptions.add_argument("lang=zh_CN.UTF-8")
+        # driver = webdriver.Chrome(chrome_options=chromeOptions)
+        # driver.set_window_size(1440, 900)
+        # driver.implicitly_wait(10)
+        # driver.set_page_load_timeout(10)
+        #
+        # return driver
 
     # 判断selenium页面是否加载完成
     def judgeHtmlComplete(self, driver, xpath):

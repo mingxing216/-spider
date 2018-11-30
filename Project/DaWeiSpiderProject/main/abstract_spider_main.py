@@ -18,6 +18,7 @@ from Utils import create_ua_utils
 from Project.DaWeiSpiderProject.services import services
 from Project.DaWeiSpiderProject.middleware import download_middleware
 from Project.DaWeiSpiderProject.dao import dao
+from Project.DaWeiSpiderProject.main import register
 
 log_file_dir = 'DaWeiSpiderProject'  # LOG日志存放路径
 LOGNAME = '<大为专利种子抓取>'  # LOG名
@@ -29,6 +30,7 @@ class SpiderMain(object):
         self.index_url = 'http://www.innojoy.com/client/interface.aspx' # post请求url
         self.server = services.ApiServeice(logging=LOGGING)
         self.download = download_middleware.Download_Middleware(logging=LOGGING)
+        self.register = register.RegisterBaiTeng()
         self.dao = dao.Dao(logging=LOGGING)
         self.sic_number = 0 # 当前专利分类索引
         self.region_number = 0 # 当前专利地区分类索引
@@ -167,11 +169,12 @@ class SpiderMain(object):
             # 初始化下一页页码guid
             self.page_guid = self.dao.getInnojoyPageGuid(redis_client=redis_cli)
             self.error = '' # 初始化错误
-            # 获取innojoy账号
-            user = self.server.getInnojoyMobileToUrlSpider(redis_client=redis_cli)
+            # # 获取innojoy账号
+            # user = self.server.getInnojoyMobileToUrlSpider(redis_client=redis_cli)
+            user = self.register.registerBaiTeng()
             # user = '15246143021'
             if user is None:
-                LOGGING.info('redis队列无innojoy账号')
+                LOGGING.info('innojoy账号获取失败')
                 time.sleep(10)
                 continue
             ua = create_ua_utils.get_ua() # User_Agent

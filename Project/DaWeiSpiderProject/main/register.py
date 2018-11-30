@@ -124,14 +124,6 @@ class RegisterBaiTeng(object):
             # 判断是否注册成功
             register_ststus = register_driver.find_element_by_id('dialog-message-span').text
 
-            # if register_ststus == ' 验证码信息输入有误！' or register_ststus == ' 验证码已失效。 ':
-            #     LOGGING.info('图片验证码错误')
-            #     # 点击换验证码
-            #     register_driver.find_element_by_id('btn_Next').click()
-            #     time.sleep(0.3)
-            #     # 获取并输入验证码
-            #     img = self.server.get_or_input_img_verify(driver=register_driver)
-
             if register_ststus != '注册成功！':
                 LOGGING.info(register_ststus)
                 # 释放手机号
@@ -151,10 +143,6 @@ class RegisterBaiTeng(object):
 
             # 删除图片验证码
             os.remove(img)
-
-            # # 保存账号
-            # self.dao.saveInnojoyMobile(mysql_cli=mysql_client, data=mobile)
-            # LOGGING.info('账号保存成功')
 
             return mobile
 
