@@ -25,8 +25,9 @@ class Download_Middleware():
         downloading = downloader.Downloads(headers=headers, logging=self.logging)
 
         for i in range(20):
-            # 获取代理IP
+            # # 获取代理IP
             proxies = proxy_utils.getProxy(redis_client=redis_client, logging=self.logging)
+            # proxies = proxy_utils.getABuYunProxy()
 
             for down_num in range(2):
                 resp = downloading.newGetRespForGet(url=url, proxies=proxies)
@@ -47,8 +48,9 @@ class Download_Middleware():
         }
         downloading = downloader.Downloads(headers=headers, logging=self.logging)
         for i in range(2):
-            # 获取代理IP
+            # # 获取代理IP
             proxies = proxy_utils.getProxy(redis_client=redis_client, logging=self.logging)
+            # proxies = proxy_utils.getABuYunProxy()
 
             for down_num in range(2):
                 resp = downloading.newGetRespForPost(url=url, data=data, proxies=proxies)
@@ -69,13 +71,15 @@ class Download_Middleware():
         }
         downloading = downloader.Downloads(headers=headers, logging=self.logging)
         for i in range(20):
-            # 获取代理IP
+            # # 获取代理IP
             proxies = proxy_utils.getProxy(redis_client=redis_client, logging=self.logging)
+            # proxies = proxy_utils.getABuYunProxy()
 
             for down_num in range(2):
                 resp = downloading.downMedia(url=url, proxies=proxies)
                 if resp is None:
                     self.logging.error('流媒体内容获取失败， 重试')
+                    self.logging.error(url)
                     continue
 
                 return resp

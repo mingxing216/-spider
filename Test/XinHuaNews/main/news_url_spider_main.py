@@ -27,10 +27,7 @@ class SpiderMain(object):
         self.server = services.Services(logging=LOGGING)
         self.index_url = 'http://m.xinhuanet.com/'
         self.file_path = os.path.dirname(__file__) + os.sep + "../../../" + "Static/txt/" + "XinHuaNewsUrl.txt"
-        try:
-            dir_utils.deleteFile(self.file_path)
-        except:
-            pass
+
 
     # 抓取模板1
     def newsTemplate_1(self, redis_client, url, one_clazz):
@@ -263,6 +260,10 @@ class SpiderMain(object):
             pass
 
     def run(self):
+        try:
+            dir_utils.deleteFile(self.file_path)
+        except:
+            pass
         redis_client = redispool_utils.createRedisPool()
         # 获取首页html源码
         index_resp = self.download.getResponse(redis_client=redis_client, url=self.index_url)

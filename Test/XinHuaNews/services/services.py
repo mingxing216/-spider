@@ -7,6 +7,8 @@ import sys
 import os
 import re
 import json
+import base64
+import hashlib
 from lxml import html
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
@@ -107,14 +109,10 @@ class Services(object):
                     data['title'] = new_data['Title']
                 else:
                     data['title'] = ""
-                if new_data['keyword']:
-                    data['biaoQian'] = new_data['keyword']
-                else:
-                    data['biaoQian'] = ""
                 try:
-                    data['zhaiYaoTu'] = new_data['allPics'][0]
+                    data['biaoShi'] = new_data['allPics'][0]
                 except:
-                    data['zhaiYaoTu'] = ""
+                    data['biaoShi'] = ""
                 data['one_clazz'] = one_clazz
 
                 return_data.append(data)
@@ -231,6 +229,20 @@ class NewsDataSpiderServices(object):
     def __init__(self, logging):
         self.logging = logging
 
+    # 下载图片
+    def downImg(self, download, dao, redis_client, img_url):
+        img_resp = download.down_img(redis_client=redis_client, url=img_url)
+        img_data_bs64 = base64.b64encode(img_resp)
+        # 存储图片
+        sha = hashlib.sha1(img_url.encode('utf-8')).hexdigest()
+        # LOGGING.info('图片sha: {}'.format(sha))
+        item = {
+            'pk': sha,
+            'type': 'image',
+            'url': img_url
+        }
+        dao.saveImg(media_url=img_url, content=img_data_bs64, type='image', item=item)
+
     # 获取全部新闻种子数据
     def getUrlDataList(self, filepath):
         return_data = []
@@ -255,9 +267,30 @@ class NewsDataSpiderServices(object):
 
     # 模板1——获取正文
     def newsTemplate_1_ZhengWen(self, resp):
+        return_data = {}
         resp_etree = etree.HTML(resp)
-        if resp_etree.xpath("//div[@id='p-detail']"):
-            return etree.tostring(resp_etree.xpath("//div[@id='p-detail']")[0], encoding='utf-8').decode('utf-8')
+        page = 1
+        while 1:
+            # 获取第一页正文
+            if resp_etree.xpath("//div[@id='p-detail']"):
+                value = etree.tostring(resp_etree.xpath("//div[@id='p-detail']")[0], encoding='utf-8').decode('utf-8')
+                return_data['page{}'.format(page)] = value
+            else:
+                return None
+            # 判断是否含有下一页
+            if 
+
+
+
+    # 模板1——获取标签
+    def newsTemplate_1_BiaoQian(self, resp):
+        resp_etree = etree.HTML(resp)
+        if resp_etree.xpath("//meta[@name='keywords']/@content"):
+            data = ''.join(resp_etree.xpath("//meta[@name='keywords']/@content"))
+            return_data = re.sub(r"(,|，)", '|', re.sub(r'(\r|\n)', '', data))
+
+            return return_data
+
         else:
             return None
 

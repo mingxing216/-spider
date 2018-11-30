@@ -39,45 +39,47 @@ class SpiderMain(object):
         zhaiYao = new_url_data['zhaiYao']
         faBuShiJian = new_url_data['faBuShiJian']
         title = new_url_data['title']
-        biaoQian = new_url_data['biaoQian']
-        zhaiYaoTu = new_url_data['zhaiYaoTu']
+        biaoShi = new_url_data['biaoShi']
         # 查询新闻是否被抓取过, True(抓过)、False(未抓过)
         status = self.dao.new_status(mysql_client=mysql_client, new_url=new_url)
         if status is True:
             return
         # 获取新闻页html源码
         resp = self.download.getResponse(redis_client=redis_client, url=new_url)
+        # 下载标识
+        if biaoShi != '':
+            self.server.downImg(download=self.download, dao=self.dao, redis_client=redis_client, img_url=biaoShi)
         # 获取来源网站
         laiYuanWangZhan = self.server.newsTemplate_1_LaiYuanWangZhan(resp)
         if laiYuanWangZhan is None:
             laiYuanWangZhan = ''
             with open('没有来源网站的新闻.txt', 'a') as f:
                 f.write(new_url + '\n')
+
         # 获取正文
         zhengWen = self.server.newsTemplate_1_ZhengWen(resp)
         if zhengWen is None:
             zhengWen = ''
             with open('没有正文的新闻.txt', 'a') as f:
                 f.write(new_url + '\n')
+
+        # 获取标签
+        biaoQian = self.server.newsTemplate_1_BiaoQian(resp=resp)
+        if biaoQian is None:
+            biaoQian = ''
+            with open('没有标签的新闻.txt', 'a') as f:
+                f.write(new_url + '\n')
+
         # 获取组图列表url
         img_url_data = self.server.newsTemplate_1_ZuTu(resp=resp, new_url=new_url)
         if img_url_data:
             for img_url in img_url_data:
                 # 下载图片
-                img_resp = self.download.down_img(redis_client=redis_client, url=img_url)
-                img_data_bs64 = base64.b64encode(img_resp)
-                # 存储图片
-                sha = hashlib.sha1(img_url.encode('utf-8')).hexdigest()
-                # LOGGING.info('图片sha: {}'.format(sha))
-                item = {
-                    'pk': sha,
-                    'type': 'image',
-                    'url': img_url
-                }
-                self.dao.saveImg(media_url=img_url, content=img_data_bs64, type='image', item=item)
+                self.server.downImg(download=self.download, dao=self.dao, redis_client=redis_client, img_url=img_url)
         if img_url_data:
             # 替换正文中的图片url地址
             zhengWen = self.server.newsTemplate_1_UpdateZhengWen(zhengWen=zhengWen, img_url_list=img_url_data)
+
         # 获取责任编辑
         zeRenBianJi = self.server.newsTemplate_1_ZeRenBianJi(resp=resp, url=new_url)
         if zeRenBianJi is None:
@@ -99,7 +101,7 @@ class SpiderMain(object):
         # 生成sha
         sha = hashlib.sha1(new_url.encode('utf-8')).hexdigest()
         # 生成ss ——实体
-        ss = '新闻'
+        ss = '资讯'
         # 生成ws ——目标网站
         ws = '新华网'
         # 生成clazz ——层级关系
@@ -115,7 +117,7 @@ class SpiderMain(object):
         save_data['faBuShiJian'] = faBuShiJian
         save_data['title'] = title
         save_data['biaoQian'] = biaoQian
-        save_data['zhaiYaoTu'] = zhaiYaoTu
+        save_data['biaoShi'] = biaoShi
         save_data['laiYuanWangZhan'] = laiYuanWangZhan
         save_data['zhengWen'] = zhengWen
         save_data['zeRenBianJi'] = zeRenBianJi
@@ -133,12 +135,17 @@ class SpiderMain(object):
         save_data['biz'] = biz
         save_data['ref'] = ref
 
-        pprint.pprint(save_data)
+        LOGGING.info(sha)
+
+        # 存储数据
+        self.dao.saveData(save_data)
 
 
     def handle(self, redis_client, mysql_client, new_url_data):
         one_clazz = new_url_data['one_clazz']
-        if one_clazz == '时政':
+        # if one_clazz == '时政':
+        #     self.newsTemplate_1(redis_client=redis_client, mysql_client=mysql_client, new_url_data=new_url_data)
+        if one_clazz == '财经':
             self.newsTemplate_1(redis_client=redis_client, mysql_client=mysql_client, new_url_data=new_url_data)
 
     def run(self):
@@ -147,10 +154,8 @@ class SpiderMain(object):
         # 获取新闻种子数据
         new_url_data_list = self.server.getUrlDataList(filepath=self.file_path)
         for new_url_data in new_url_data_list:
-            if new_url_data['one_clazz'] == '时政':
-                self.handle(redis_client=redis_client, mysql_client=mysql_client, new_url_data=new_url_data)
-            else:
-                continue
+            self.handle(redis_client=redis_client, mysql_client=mysql_client, new_url_data=new_url_data)
+
         # threadpool = ThreadPool(1)
         # for new_url_data in new_url_data_list:
         #     threadpool.apply_async(func=self.handle, args=(redis_client, mysql_client, new_url_data))

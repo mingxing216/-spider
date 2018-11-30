@@ -51,7 +51,7 @@ class RegisterBaiTeng(object):
             # 随机生成User-Agent
             ua = create_ua_utils.get_ua()
             # 获取短效代理IP
-            proxy = self.server.getProxy(redis_client=redis_client, logging=LOGGING)
+            proxy = self.server.getProxy()
 
             # 创建driver
             register_driver = self.server.creatDriver(proxy=proxy, ua=ua)
@@ -124,13 +124,13 @@ class RegisterBaiTeng(object):
             # 判断是否注册成功
             register_ststus = register_driver.find_element_by_id('dialog-message-span').text
 
-            if register_ststus == ' 验证码信息输入有误！ ' or register_ststus == ' 验证码已失效。 ':
-                LOGGING.info('图片验证码错误')
-                # 点击换验证码
-                register_driver.find_element_by_id('btn_Next').click()
-                time.sleep(0.3)
-                # 获取并输入验证码
-                img = self.server.get_or_input_img_verify(driver=register_driver)
+            # if register_ststus == ' 验证码信息输入有误！' or register_ststus == ' 验证码已失效。 ':
+            #     LOGGING.info('图片验证码错误')
+            #     # 点击换验证码
+            #     register_driver.find_element_by_id('btn_Next').click()
+            #     time.sleep(0.3)
+            #     # 获取并输入验证码
+            #     img = self.server.get_or_input_img_verify(driver=register_driver)
 
             if register_ststus != '注册成功！':
                 LOGGING.info(register_ststus)
@@ -141,6 +141,7 @@ class RegisterBaiTeng(object):
                 # 删除图片验证码
                 os.remove(img)
                 time.sleep(5)
+
                 continue
 
             # 释放手机号
@@ -151,13 +152,14 @@ class RegisterBaiTeng(object):
             # 删除图片验证码
             os.remove(img)
 
-            # 保存账号
-            self.dao.saveInnojoyMobile(mysql_cli=mysql_client, data=mobile)
-            LOGGING.info('账号保存成功')
+            # # 保存账号
+            # self.dao.saveInnojoyMobile(mysql_cli=mysql_client, data=mobile)
+            # LOGGING.info('账号保存成功')
 
-            # return mobile
+            return mobile
 
 
 if __name__ == '__main__':
     main = RegisterBaiTeng()
-    main.registerBaiTeng()
+    mobile = main.registerBaiTeng()
+    print(mobile)

@@ -13,6 +13,35 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 from Utils import redispool_utils
 
+# 检测代理IP是否是高匿代理， 高匿返回True， 否则返回Fales
+def jianChaNiMingDu(proxy, logging):
+    local_ip = ''
+    proxy_ip = ''
+    proxies = {
+        'http': proxy,
+        'https': proxy
+    }
+    print(proxies)
+    # 获取本地IP
+    local_resp = requests.get('https://httpbin.org/get')
+    if local_resp.status_code == 200:
+        local_ip = json.loads(local_resp.content.decode('utf-8'))['origin']
+        logging.info('检测到本地IP: %s' % local_ip)
+
+    # 获取使用代理返回IP
+    proxy_resp = requests.get(url='https://httpbin.org/get', proxies=proxies)
+    if proxy_resp.status_code == 200:
+        proxy_ip = json.loads(proxy_resp.content.decode('utf-8'))['origin']
+        logging.info('检测到代理ip: %s' % proxy_ip)
+
+    # 判断代理是否高匿
+    if local_ip not in proxy_ip:
+
+        return True
+    else:
+
+        return False
+
 
 def getZhiMaProxy_Number(num, protocol=2, time=1):
     '''

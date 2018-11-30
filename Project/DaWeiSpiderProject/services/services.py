@@ -17,6 +17,7 @@ from selenium import webdriver
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
+from Log import log
 from Project.DaWeiSpiderProject.middleware import download_middleware
 from Project.DaWeiSpiderProject.dao import dao
 from Downloader import downloader
@@ -39,6 +40,23 @@ class ApiServeice(object):
     def getProxy(self):
         try:
             proxy = proxy_utils.getZhiMaProxy_SetMeal(set_meal=self.ZHIMA_SETMEAL, num=1)[0]
+        except Exception as e:
+            self.logging.error('未获取到代理IP')
+            self.getProxy()
+        else:
+            if proxy:
+                proxy_ip = "{}:{}".format(proxy['ip'], proxy['port'])
+                proxy = {
+                    'http': 'socks5://{}'.format(proxy_ip),
+                    'https': 'socks5://{}'.format(proxy_ip)
+                }
+
+                return proxy
+
+    # 从芝麻代理API获取一个短效IP——按次提取
+    def getProxy_one(self):
+        try:
+            proxy = proxy_utils.getZhiMaProxy_Number(num=1)[0]
         except Exception as e:
             self.logging.error('未获取到代理IP')
             self.getProxy()
@@ -551,37 +569,47 @@ class Services(object):
         return landing_data
 
     # 从芝麻代理接口获取一个短效代理IP【http协议】
-    def getProxy(self, redis_client, logging):
-        proxy = proxy_utils.getZhiMaProxy_Number(num=1, protocol=1)[0]
-        proxy = "{}:{}".format(proxy['ip'], proxy['port'])
+    def getProxy(self):
+        while 1:
+            proxy = proxy_utils.getZhiMaProxy_SetMeal(set_meal=settings.ZHIMA_SETMEAL, num=1, protocol=1)[0]
+            proxy = "{}:{}".format(proxy['ip'], proxy['port'])
 
-        return proxy
+            proxies = "http://{}".format(proxy)
+            # 检测代理是否高匿
+            status = proxy_utils.jianChaNiMingDu(proxy=proxies, logging=self.logging)
+            if status:
+
+                return proxy
+            else:
+                self.logging.error('代理不是高匿')
+                continue
 
     # 创建selenium driver
     def creatDriver(self, proxy, ua):
         # Chrom
+        # chromeOptions = webdriver.ChromeOptions()
+        # chromeOptions.add_argument("--proxy-server=http://%s" % proxy)
+        # chromeOptions.add_argument("--user-agent=%s" % ua)
+        # driver = webdriver.Chrome(chrome_options=chromeOptions)
+        # driver.set_window_size(1920, 1080)
+        # # driver.maximize_window()
+        # driver.implicitly_wait(10)
+        # driver.set_page_load_timeout(10)
+        #
+        # return driver
+
         chromeOptions = webdriver.ChromeOptions()
+
+        chromeOptions.set_headless()
         chromeOptions.add_argument("--proxy-server=http://%s" % proxy)
         chromeOptions.add_argument("--user-agent=%s" % ua)
+        chromeOptions.add_argument("lang=zh_CN.UTF-8")
         driver = webdriver.Chrome(chrome_options=chromeOptions)
         driver.set_window_size(1920, 1080)
         driver.implicitly_wait(10)
         driver.set_page_load_timeout(10)
 
         return driver
-
-        # chromeOptions = webdriver.ChromeOptions()
-        #
-        # chromeOptions.set_headless()
-        # chromeOptions.add_argument("--proxy-server=http://%s" % proxy)
-        # chromeOptions.add_argument("--user-agent=%s" % ua)
-        # chromeOptions.add_argument("lang=zh_CN.UTF-8")
-        # driver = webdriver.Chrome(chrome_options=chromeOptions)
-        # driver.set_window_size(1920, 1080)
-        # driver.implicitly_wait(10)
-        # driver.set_page_load_timeout(10)
-        #
-        # return driver
 
     # 判断selenium页面是否加载完成
     def judgeHtmlComplete(self, driver, xpath):
@@ -671,5 +699,15 @@ class Services(object):
         number = len(tr_list)
 
         return tr_list, number
+
+
+
+# log_file_dir = 'DaWeiSpiderProject'  # LOG日志存放路径
+# LOGNAME = '<大为专利账号注册>'  # LOG名
+# LOGGING = log.ILog(log_file_dir, LOGNAME)
+# if __name__ == '__main__':
+#     demo = Services(LOGGING)
+#     status = demo.getProxy()
+#     print(status)
 
 

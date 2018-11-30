@@ -12,6 +12,7 @@ import settings
 from Project.ProxyPoolProject.services import proxy_pool_service
 from Project.ProxyPoolProject.spiders import proxy_pool_spider
 from Utils import redispool_utils
+from Utils import proxy_utils
 from Log import log
 
 log_file_dir = 'proxy_set_mail_pool_main'  # LOG日志存放路径
@@ -20,17 +21,6 @@ LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 # redis对象
 redis_client = redispool_utils.createRedisPool()
-
-def setMealProxyNumber():
-    '''
-    当前套餐可用代理数量
-    '''
-    server = proxy_pool_service.ProxySetMealServices()
-    proxy_number = server.setMealProxyNumber()
-    if proxy_number < 10:
-        LOGGING.error('In the set meal, the number of agents is less than 10')
-    else:
-        LOGGING.info('Set meal have proxy: {}'.format(proxy_number))
 
 
 def maintainProxyPool():
@@ -48,19 +38,17 @@ def maintainProxyPool():
         if proxys is not None:
             for proxy_dict in proxys:
                 proxy = 'socks5://%s:%s' % (proxy_dict['ip'], proxy_dict['port'])
-                redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
-                LOGGING.info('Save proxy in redis: {}'.format(proxy))
+                # 检测代理是否高匿
+                proxy_stutus = proxy_utils.jianChaNiMingDu(proxy=proxy, logging=LOGGING)
+                if proxy_stutus:
+                    redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
+                    LOGGING.info('Save proxy in redis: {}'.format(proxy))
         else:
             LOGGING.error('Get proxy failed!!!')
 
 
 if __name__ == '__main__':
     while True:
-        # p1 = Process(target=setMealProxyNumber)
-        p2 = Process(target=maintainProxyPool)
-        # p1.start()
-        p2.start()
-        # p1.join()
-        p2.join()
+        maintainProxyPool()
 
         time.sleep(2)

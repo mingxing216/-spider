@@ -7,6 +7,7 @@ import sys
 import os
 import time
 import json
+import random
 import hashlib
 import pprint
 
@@ -156,11 +157,7 @@ class SpiderMain(object):
     def run(self):
         redis_cli = redispool_utils.createRedisPool() # redis连接池
         mysql_cli = mysqlpool_utils.createMysqlPool() # mysql连接池
-        ua = create_ua_utils.get_ua()  # User_Agent
-        proxy = {
-            'http': 'http://47.105.98.32:80',
-            'https': 'https://47.105.98.32:80'
-        }
+        # ua = create_ua_utils.get_ua()  # User_Agent
         while 1:
             # 初始化当前专利分类索引
             self.sic_number = self.dao.getInnojoySicNumber(redis_client=redis_cli)
@@ -178,8 +175,8 @@ class SpiderMain(object):
                 LOGGING.info('redis队列无innojoy账号')
                 time.sleep(10)
                 continue
-            # ua = create_ua_utils.get_ua() # User_Agent
-            # proxy = self.server.getProxy() # 代理IP
+            ua = create_ua_utils.get_ua() # User_Agent
+            proxy = self.server.getProxy_one() # 代理IP
             LOGGING.info('当前ua: {}'.format(ua))
             LOGGING.info('当前代理: {}'.format(proxy))
             # 获取大为账号参数响应
@@ -254,7 +251,7 @@ class SpiderMain(object):
                     # 同步下一页guid到redis数据库
                     self.dao.setInnojoyPageGuid(redis_client=redis_cli, value=self.page_guid)
 
-                    for ii in range(8):
+                    for ii in range(25):
                         LOGGING.info('当前正在抓取第{}个专利分类下的{}地区分类的第{}页'.format(self.sic_number + 1, self.region_number + 1, self.page))
                         # 获取当前页响应
                         page_resp = self.download.getPageResp(sic=sic, region=region, page=self.page, proxy=proxy, ua=ua,  guid=user_guid, page_guid=self.page_guid)
@@ -352,6 +349,10 @@ class SpiderMain(object):
                 self.page_guid = ""  # 下一页页码guid
                 self.error = ''
 
+
+            # sleep_time = random.randint(300, 600)
+            # LOGGING.info('程序睡眠{}秒'.format(sleep_time))
+            # time.sleep(sleep_time)
 
                 # break
 
