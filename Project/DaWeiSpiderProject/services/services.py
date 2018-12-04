@@ -25,6 +25,7 @@ from Utils import proxy_utils
 from Utils import dir_utils
 from Utils import RuoKuaiVerify
 from Utils import redispool_utils
+from Utils import timeutils
 
 etree = html.etree
 
@@ -39,7 +40,7 @@ class ApiServeice(object):
     # 从芝麻代理API获取一个短效代理IP
     def getProxy(self):
         try:
-            proxy = proxy_utils.getZhiMaProxy_SetMeal(set_meal=self.ZHIMA_SETMEAL, num=1)[0]
+            proxy = proxy_utils.getZhiMaProxy_SetMeal(set_meal=self.ZHIMA_SETMEAL, num=1, protocol=1)[0]
         except Exception as e:
             self.logging.error('未获取到代理IP')
             self.getProxy()
@@ -47,8 +48,8 @@ class ApiServeice(object):
             if proxy:
                 proxy_ip = "{}:{}".format(proxy['ip'], proxy['port'])
                 proxy = {
-                    'http': 'socks5://{}'.format(proxy_ip),
-                    'https': 'socks5://{}'.format(proxy_ip)
+                    'http': 'http://{}'.format(proxy_ip),
+                    'https': 'https://{}'.format(proxy_ip)
                 }
 
                 return proxy
@@ -70,8 +71,6 @@ class ApiServeice(object):
 
                 return proxy
 
-
-
     # 提取大为账号GUID
     def getUserGuid(self, resp):
         try:
@@ -79,6 +78,15 @@ class ApiServeice(object):
         except:
             self.logging.error('提取大为账号GUID - 响应转换dict失败。 响应内容: {}, 响应类型: {}'.format(resp, type(resp)))
             return None
+        # 获取响应状态码
+        ReturnValue = response['ReturnValue']
+        if ReturnValue == 1:
+            # 获取ErrorInfo
+            ErrorInfo = response['ErrorInfo']
+            if ErrorInfo == '账号不存在！':
+
+                return ErrorInfo
+        # 提取GUID数据
         try:
             GUID = response['Option']['GUID']
         except:
@@ -587,29 +595,29 @@ class Services(object):
     # 创建selenium driver
     def creatDriver(self, proxy, ua):
         # Chrom
-        chromeOptions = webdriver.ChromeOptions()
-        chromeOptions.add_argument("--proxy-server=http://%s" % proxy)
-        chromeOptions.add_argument("--user-agent=%s" % ua)
-        driver = webdriver.Chrome(chrome_options=chromeOptions)
-        driver.set_window_size(1920, 1080)
-        # driver.maximize_window()
-        driver.implicitly_wait(10)
-        driver.set_page_load_timeout(10)
-
-        return driver
-
         # chromeOptions = webdriver.ChromeOptions()
-        #
-        # chromeOptions.set_headless()
         # chromeOptions.add_argument("--proxy-server=http://%s" % proxy)
         # chromeOptions.add_argument("--user-agent=%s" % ua)
-        # chromeOptions.add_argument("lang=zh_CN.UTF-8")
         # driver = webdriver.Chrome(chrome_options=chromeOptions)
-        # driver.set_window_size(1440, 900)
+        # driver.set_window_size(1920, 1080)
+        # # driver.maximize_window()
         # driver.implicitly_wait(10)
         # driver.set_page_load_timeout(10)
         #
         # return driver
+
+        chromeOptions = webdriver.ChromeOptions()
+
+        chromeOptions.set_headless()
+        chromeOptions.add_argument("--proxy-server=http://%s" % proxy)
+        chromeOptions.add_argument("--user-agent=%s" % ua)
+        chromeOptions.add_argument("lang=zh_CN.UTF-8")
+        driver = webdriver.Chrome(chrome_options=chromeOptions)
+        driver.set_window_size(1440, 900)
+        driver.implicitly_wait(10)
+        driver.set_page_load_timeout(10)
+
+        return driver
 
     # 判断selenium页面是否加载完成
     def judgeHtmlComplete(self, driver, xpath):

@@ -23,9 +23,11 @@ class ScraptMain(object):
         start_date = timeutils.get_yyyy_mm_dd() + ' ' + '00:00:00'
         end_date = timeutils.get_yyyy_mm_dd() + ' ' + '23:00:00'
         sql = 'select * from ss_innojoy_mobile where update_created not BETWEEN "{}" and "{}" or update_created is NULL;'.format(start_date, end_date)
-        mobiles_list = mysqlpool_utils.get_results(connection=connection, sql=sql)
-
-        return mobiles_list
+        mobiles_list = mysqlpool_utils.get_result(connection=connection, sql=sql)
+        if mobiles_list:
+            return mobiles_list
+        else:
+            return None
 
     # 将mysql中账号的update_created字段设置为明日日期
     def update_created(self, connection, mobile):

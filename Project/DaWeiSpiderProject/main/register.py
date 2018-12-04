@@ -5,6 +5,7 @@
 import os
 import sys
 import time
+import re
 from selenium.webdriver.support.select import Select
 import random
 
@@ -33,9 +34,9 @@ class RegisterBaiTeng(object):
         self.random_str = ("圣诚杰安博彬宝斌超盛畅灿纯恩帆福富贵桂瀚豪翰皓弘恒海宏洪涵慧荷蕙航嘉俊君峻健和禾佳静娇娟净睛善康"
      "坤兰岚莲丽立亮伶俪明名铭美宁朋鹏琪芹清晴胜思顺舒森升潭婷伟文益宜韵阳运乐怡芸盈园翊智哲志振展忠昭真正雅悦莹娅欣勋轩旭新熙金真")
 
-    def registerBaiTeng(self):
-        redis_client = redispool_utils.createRedisPool()
-        mysql_client = mysqlpool_utils.createMysqlPool()
+    def registerBaiTeng(self, proxies):
+        # redis_client = redispool_utils.createRedisPool()
+        # mysql_client = mysqlpool_utils.createMysqlPool()
         while True:
             # 登录橙子API, 获取登录成功返回参数
             landing_data = self.server.landingAPI(uid=self.OrangeAPI_uid, pwd=self.OrangeAPI_pwd)
@@ -51,8 +52,9 @@ class RegisterBaiTeng(object):
             # 随机生成User-Agent
             ua = create_ua_utils.get_ua()
             # 获取短效代理IP
-            proxy = self.server.getProxy()
-
+            # proxy = self.server.getProxy()
+            proxy = re.findall(r"\d+\.\d+\.\d+\.\d+:\d+", proxies['http'])[0]
+            print(proxy)
             # 创建driver
             register_driver = self.server.creatDriver(proxy=proxy, ua=ua)
 
@@ -62,21 +64,21 @@ class RegisterBaiTeng(object):
             except:
                 LOGGING.info('访问超时')
                 register_driver.quit()
-                continue
+                return None
 
             # 判断注册页面是否加载完成
             status = self.server.judgeHtmlComplete(driver=register_driver, xpath="//img[@id='idChkImage']")
             if status is False:
                 LOGGING.info('页面加载失败')
                 register_driver.quit()
-                continue
+                return None
 
             # 获取一个橙子手机号
             mobile = self.server.getPhoneNumber(uid=Orange_Uid, pid=self.Orange_Pid, token=Orange_Token)
             if mobile == '余额不足，请充值':
                 LOGGING.info('橙子余额不足，请充值')
                 register_driver.quit()
-                continue
+                return '橙子余额不足，请充值'
             # 输入手机号
             register_driver.find_element_by_id('idMobilePhone').click()
             register_driver.find_element_by_id('idMobilePhone').send_keys(mobile)
@@ -116,8 +118,11 @@ class RegisterBaiTeng(object):
             # 输入手机短信验证码
             register_driver.find_element_by_id('sms_code').click()
             register_driver.find_element_by_id('sms_code').send_keys(mobile_verify_code)
-            # 获取并输入验证码
-            img = self.server.get_or_input_img_verify(driver=register_driver)
+            try:
+                # 获取并输入验证码
+                img = self.server.get_or_input_img_verify(driver=register_driver)
+            except:
+                return None
             # 点击注册
             register_driver.find_element_by_id('idSubmit').click()
             time.sleep(3)

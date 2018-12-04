@@ -14,11 +14,11 @@ from Downloader import downloader
 from Utils import user_agents
 from Utils import proxy_utils
 
+
 class Download_Middleware():
     def __init__(self, logging):
         self.logging = logging
         self.post_url = 'http://www.innojoy.com/client/interface.aspx'
-
 
     def getOrangeApiData(self, url):
         '''获取橙子API返回参数'''
@@ -130,43 +130,43 @@ class Download_Middleware():
         return resp
 
     # 获取当前专利页响应
-    def getPageResp(self, sic, region, page, proxy, ua, guid, page_guid):
+    def getPageResp(self, Query, Database, page, proxy, ua, guid, page_guid):
         headers = {
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'Accept-Encoding': 'gzip, deflate',
             'Accept-Language': 'zh-CN,zh;q=0.9',
-            'Connection': 'keep-alive',
-            'Content-Length': '1031',
+            'Content-Length': '332',
             'Content-Type': 'application/json',
             'Host': 'www.innojoy.com',
             'Origin': 'http://www.innojoy.com',
+            'Proxy-Connection': 'keep-alive',
             'Referer': 'http://www.innojoy.com/searchresult/default.html',
             'User-Agent': ua,
             'X-Requested-With': 'XMLHttpRequest'
         }
-        data = json.dumps(
-            {
-                'requestModule': 'PatentSearch',
-                'userId': guid,
-                'patentSearchConfig': {
-                    'Query': 'SIC=' + sic,
-                    'TreeQuery': '',
-                    'Database': region,
-                    'Action': 'Search',
-                    'DBOnly': 0,
-                    'Page': '{}'.format(page),
-                    'PageSize': '50',
-                    'GUID': page_guid,
-                    'Sortby': '',
-                    'AddOnes': '',
-                    'DelOnes': '',
-                    'RemoveOnes': '',
-                    'SmartSearch': '',
-                    'TrsField': ''
-                },
-                'language': 'zh'
-            }
-        )
+
+        data = json.dumps({
+            "requestModule": "PatentSearch",
+            "userId": guid,
+            "patentSearchConfig": {
+                "Query": "SIC='{}'".format(Query),
+                "TreeQuery": "",
+                "Database": "{}".format(Database),
+                "Action": "Search",
+                "DBOnly": 0,
+                "Page": "{}".format(page),
+                "PageSize": "50",
+                "GUID": "{}".format(page_guid),
+                "Sortby": "",
+                "AddOnes": "",
+                "DelOnes": "",
+                "RemoveOnes": "",
+                "SmartSearch": "",
+                "TrsField": ""
+            },
+            "language": "zh"
+        })
+
         downloading = downloader.Downloads(headers=headers, logging=self.logging)
         resp = downloading.newGetRespForPost(url=self.post_url, data=data, proxies=proxy)
 
@@ -206,5 +206,3 @@ class Download_Middleware():
         resp = downloading.newGetRespForPost(url=self.post_url, data=data, proxies=proxy)
 
         return resp
-
-

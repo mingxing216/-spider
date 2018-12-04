@@ -56,6 +56,18 @@ def _do_in_cursor(callback, pool):
         if conn:
             conn.close()
 
+# 执行一条sql语句
+def execute(connection, sql):
+    def run(cursor):
+        try:
+            res = cursor.execute(sql)
+            return res
+        except:
+
+            return None
+
+    return _do_in_cursor(run, connection)
+
 # 查询所有结果
 def get_results(connection, sql):
     '''
@@ -110,7 +122,7 @@ def insert_one(connection, table, data):
         sql = "insert into {table}(`{name}`) VALUES ('{value}')".format(table='`' + table + '`',
                                                                       name='`,`'.join(str(n) for n in name),
                                                                       value='\',\''.join(str(v) for v in value))
-
+        print(sql)
         cursor.execute(sql)
 
     return _do_in_cursor(run, connection)

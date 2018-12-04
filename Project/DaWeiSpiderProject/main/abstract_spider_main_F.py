@@ -30,7 +30,7 @@ class SpiderMain(object):
         self.index_url = 'http://www.innojoy.com/client/interface.aspx' # post请求url
         # 专利分类列表
         # self.patent_type_list = ["A%", "B%", "C%", "D%", "E%", "F%", "G%", "H%"]
-        self.patent_type_list = ["A%"]
+        self.patent_type_list = ["F%"]
         # 地区分类列表
         self.add_list = ['fmzl', 'syxx', 'wgzl', 'fmsq', 'twpat', 'hkpat', 'fmsq', 'wgzl', 'syxx', 'fmzl', 'usapp',
                          'uspat', 'uspat1', 'usdes', 'epapp', 'eppat', 'wopat', 'jpapp', 'jppat', 'jputi', 'krapp',
@@ -55,10 +55,10 @@ class SpiderMain(object):
         self.page_guid = "" # 下一页页码guid
         self.error = ''
         self.proxy = None # 代理IP
-        self.innojoy_page_guid = 'innojoy_page_guid_A'  # redis中保存下一页guid的建
-        self.innojoy_page_number = 'innojoy_page_number_A'  # redis中保存当前在抓页数的建
-        self.innojoy_region_number = 'innojoy_region_number_A'  # redis中保存当前专利地区分类索引的建
-        self.innojoy_sic_number = 'innojoy_sic_number_A'  # redis中保存专利分类索引的建
+        self.innojoy_page_guid = 'innojoy_page_guid_F'  # redis中保存下一页guid的建
+        self.innojoy_page_number = 'innojoy_page_number_F'  # redis中保存当前在抓页数的建
+        self.innojoy_region_number = 'innojoy_region_number_F'  # redis中保存当前专利地区分类索引的建
+        self.innojoy_sic_number = 'innojoy_sic_number_F'  # redis中保存专利分类索引的建
 
     # 获取专利摘要数据列表
     def getAbstractDataList(self, resp, ua, proxy):
