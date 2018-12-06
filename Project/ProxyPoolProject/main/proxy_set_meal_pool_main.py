@@ -38,11 +38,13 @@ def maintainProxyPool():
         if proxys is not None:
             for proxy_dict in proxys:
                 proxy = 'socks5://%s:%s' % (proxy_dict['ip'], proxy_dict['port'])
-                # 检测代理是否高匿
-                proxy_stutus = proxy_utils.jianChaNiMingDu(proxy=proxy, logging=LOGGING)
-                if proxy_stutus:
-                    redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
-                    LOGGING.info('Save proxy in redis: {}'.format(proxy))
+                # # 检测代理是否高匿
+                # proxy_stutus = proxy_utils.jianChaNiMingDu(proxy=proxy, logging=LOGGING)
+                # if proxy_stutus:
+                #     redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
+                #     LOGGING.info('Save proxy in redis: {}'.format(proxy))
+                redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
+                LOGGING.info('Save proxy in redis: {}'.format(proxy))
         else:
             LOGGING.error('Get proxy failed!!!')
 
@@ -51,4 +53,4 @@ if __name__ == '__main__':
     while True:
         maintainProxyPool()
 
-        time.sleep(2)
+        time.sleep(1)

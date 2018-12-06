@@ -117,3 +117,17 @@ CREATE TABLE `ss_innojoy_patent_url` (
   `del` enum('0','1') DEFAULT '0',
   PRIMARY KEY (`url`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- ----------------------------
+-- Table structure for ss_patent_wanfang
+-- ----------------------------
+DROP TABLE IF EXISTS `ss_patent_wanfang`;
+CREATE TABLE `ss_patent_wanfang` (
+  `url` varchar(200) NOT NULL,
+  `del` int(11) DEFAULT NULL,
+  `country` varchar(50) NOT NULL,
+  PRIMARY KEY (`url`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET FOREIGN_KEY_CHECKS = 1;

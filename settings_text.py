@@ -63,6 +63,13 @@ SpiderDataSaveUrl='http://60.195.249.89:8086/dataserver/dat/saveStructuredData?'
 # hbase存储爬虫输出多媒体文件
 SpiderMediaSaveUrl='http://60.195.249.89:8086/dataserver/dat/saveMediaData?'
 
+# ==================《万方专利》======================
+
+# 万方专利任务生成程序最大进程数
+WANFANG_PATENT_URL_SPIDER_PROCESS = 4
+# 完场专利数据抓取程序最大进程数
+WANFANG_PATENT_DATA_SPIDER_PROCESS = 4
+
 # # oss
 # ACCESSKEYID='LTAITx7i8MVIqSWh'
 # ACCESSKEYSECRET='kwXFGPMeO4JtsTXs7Pa4zeJZhvsbaK'

@@ -122,7 +122,6 @@ def insert_one(connection, table, data):
         sql = "insert into {table}(`{name}`) VALUES ('{value}')".format(table='`' + table + '`',
                                                                       name='`,`'.join(str(n) for n in name),
                                                                       value='\',\''.join(str(v) for v in value))
-        print(sql)
         cursor.execute(sql)
 
     return _do_in_cursor(run, connection)
@@ -143,6 +142,8 @@ def update(connection, table, data, where):
             updates.append(index)
 
         sql = "update `{}` set {} WHERE {}".format(table, ','.join(updates), where)
+
+        print(sql)
 
         cursor.execute(sql)
 
