@@ -87,7 +87,7 @@ def getPatentHtml(logging, redis_client, url):
         if proxies is None:
             continue
 
-        # logging.info('当前代理IP: {}'.format(proxies['http']))
+        logging.info('当前代理IP: {}'.format(proxies['http']))
 
         for down_num in range(2):
             # 获取入口页html响应

@@ -101,7 +101,7 @@ class SpiderMain(object):
             # 生成ref
             save_data['ref'] = ''
 
-            # pprint.pprint(save_data)
+            LOGGING.info(save_data)
 
             if save_data['title'] == '':
                 return
@@ -136,7 +136,8 @@ class SpiderMain(object):
                     continue
 
                 # break
-            except:
+            except Exception as e:
+                LOGGING.error('发生错误: {}'.format(e))
                 continue
 
     def run(self):

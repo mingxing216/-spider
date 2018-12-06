@@ -143,8 +143,6 @@ def update(connection, table, data, where):
 
         sql = "update `{}` set {} WHERE {}".format(table, ','.join(updates), where)
 
-        print(sql)
-
         cursor.execute(sql)
 
     return _do_in_cursor(run, connection)
