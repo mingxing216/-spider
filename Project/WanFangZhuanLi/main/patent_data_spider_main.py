@@ -101,9 +101,12 @@ class SpiderMain(object):
             # 生成ref
             save_data['ref'] = ''
 
-            LOGGING.info(save_data)
+            # LOGGING.info(save_data)
 
             if save_data['title'] == '':
+                # 修改mysql专利状态
+                dao.updatePatentDataToMysql(mysql_client=mysql_client, patent_url=patent_url, country=country)
+
                 return
 
             # 保存数据到hbase
