@@ -30,27 +30,28 @@ def maintainProxyPool():
     redis_key = settings.REDIS_PROXY_KEY
     redis_proxy_number = settings.REDIS_PROXY_NUMBER
     server = proxy_pool_service.ProxySetMealServices()
-    proxy_number = server.getProxyPoolLen(redis_client=redis_client, key=redis_key)
+    while True:
+        proxy_number = server.getProxyPoolLen(redis_client=redis_client, key=redis_key)
 
-    if proxy_number < int(redis_proxy_number):
-        get_proxy_num = int(redis_proxy_number) - proxy_number
-        proxys = server.getZhiMaProxy(get_proxy_num)
-        if proxys is not None:
-            for proxy_dict in proxys:
-                proxy = 'socks5://%s:%s' % (proxy_dict['ip'], proxy_dict['port'])
-                # # 检测代理是否高匿
-                # proxy_stutus = proxy_utils.jianChaNiMingDu(proxy=proxy, logging=LOGGING)
-                # if proxy_stutus:
-                #     redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
-                #     LOGGING.info('Save proxy in redis: {}'.format(proxy))
-                redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
-                LOGGING.info('Save proxy in redis: {}'.format(proxy))
-        else:
-            LOGGING.error('Get proxy failed!!!')
+        if proxy_number < int(redis_proxy_number):
+            get_proxy_num = int(redis_proxy_number) - proxy_number
+            proxys = server.getZhiMaProxy(get_proxy_num)
+            if proxys is not None:
+                for proxy_dict in proxys:
+                    proxy = 'socks5://%s:%s' % (proxy_dict['ip'], proxy_dict['port'])
+                    # # 检测代理是否高匿
+                    # proxy_stutus = proxy_utils.jianChaNiMingDu(proxy=proxy, logging=LOGGING)
+                    # if proxy_stutus:
+                    #     redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
+                    #     LOGGING.info('Save proxy in redis: {}'.format(proxy))
+                    redispool_utils.sadd(redis_client=redis_client, key=redis_key, value=proxy)
+                    LOGGING.info('Save proxy in redis: {}'.format(proxy))
+            else:
+                LOGGING.error('Get proxy failed!!!')
+
+        time.sleep(1)
 
 
 if __name__ == '__main__':
-    while True:
-        maintainProxyPool()
 
-        time.sleep(1)
+    maintainProxyPool()
