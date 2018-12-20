@@ -23,8 +23,6 @@ LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 class SpiderMain(object):
     def __init__(self):
-        self.download = download_middleware.Download_Middleware(logging=LOGGING)
-        self.server = services.Services(logging=LOGGING)
         self.index_url = 'http://m.xinhuanet.com/'
         self.file_path = os.path.dirname(__file__) + os.sep + "../../../" + "Static/txt/" + "XinHuaNewsUrl.txt"
 
@@ -32,150 +30,150 @@ class SpiderMain(object):
     # 抓取模板1
     def newsTemplate_1(self, redis_client, url, one_clazz):
         # 获取来源页html
-        resp = self.download.getResponse(redis_client=redis_client, url=url)
+        resp = download_middleware.getResponse(logging=LOGGING, redis_client=redis_client, url=url)
         # 获取来源nid
-        nid = self.server.getNewsFromNid(resp=resp)
+        nid = services.getNewsFromNid(resp=resp)
         if nid is None:
             return
         # 生成新闻列表页首页API
-        APIUrl = self.server.createApiUrl(nid=nid, page=1, count=12)
+        APIUrl = services.createApiUrl(nid=nid, page=1, count=12)
         # 获取首页API响应
-        APIUrlResp_1 = self.download.getResponse(redis_client=redis_client, url=APIUrl)
+        APIUrlResp_1 = download_middleware.getResponse(logging=LOGGING, redis_client=redis_client, url=APIUrl)
         # 获取总页数
-        page_sum = self.server.getPageSum(resp=APIUrlResp_1, select_num=12)
+        page_sum = services.getPageSum(resp=APIUrlResp_1, select_num=12)
         for page in range(page_sum):
             # 生成新闻列表页API
-            APIUrl = self.server.createApiUrl(nid=nid, page=page + 1, count=12)
+            APIUrl = services.createApiUrl(nid=nid, page=page + 1, count=12)
             # 获取首页API响应
-            APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
+            APIUrlResp = download_middleware.getResponse(logging=LOGGING, redis_client=redis_client, url=APIUrl)
             # 获取新闻种子列表
-            NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
+            NewUrlList = services.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
             for NewUrl in NewUrlList:
                 LOGGING.info(NewUrl)
                 with open(self.file_path, 'a') as f:
                     datas = json.dumps(NewUrl)
                     f.write(datas + '\n')
                     # f.write(str(NewUrl) + '\n')
-
-    # 抓取模板2
-    def newsTemplate_2(self, redis_client, url, one_clazz):
-        jsAPI = 'http://www.xinhuanet.com/video/xinhuaradio/ej2018/scripts/home_mob.js'
-        # 获取JS接口响应
-        jsResp = self.download.getResponse(redis_client=redis_client, url=jsAPI)
-        # 获取colNid
-        colNid = self.server.getColNid(resp=jsResp)
-        if colNid is None:
-            return
-        # 生成新闻列表页首页API
-        APIUrl = self.server.createApiUrl(nid=colNid, page=1, count=12)
-        # 获取首页API响应
-        APIUrlResp_1 = self.download.getResponse(redis_client=redis_client, url=APIUrl)
-        # 获取总页数
-        page_sum = self.server.getPageSum(resp=APIUrlResp_1, select_num=12)
-        for page in range(page_sum):
-            # 生成新闻列表页API
-            APIUrl = self.server.createApiUrl(nid=colNid, page=page + 1, count=12)
-            # 获取首页API响应
-            APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
-            # 获取新闻种子列表
-            NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
-            for NewUrl in NewUrlList:
-                LOGGING.info(NewUrl)
-                with open(self.file_path, 'a') as f:
-                    f.write(str(NewUrl) + '\n')
-
+    #
+    # # 抓取模板2
+    # def newsTemplate_2(self, redis_client, url, one_clazz):
+    #     jsAPI = 'http://www.xinhuanet.com/video/xinhuaradio/ej2018/scripts/home_mob.js'
+    #     # 获取JS接口响应
+    #     jsResp = self.download.getResponse(redis_client=redis_client, url=jsAPI)
+    #     # 获取colNid
+    #     colNid = self.server.getColNid(resp=jsResp)
+    #     if colNid is None:
+    #         return
+    #     # 生成新闻列表页首页API
+    #     APIUrl = self.server.createApiUrl(nid=colNid, page=1, count=12)
+    #     # 获取首页API响应
+    #     APIUrlResp_1 = self.download.getResponse(redis_client=redis_client, url=APIUrl)
+    #     # 获取总页数
+    #     page_sum = self.server.getPageSum(resp=APIUrlResp_1, select_num=12)
+    #     for page in range(page_sum):
+    #         # 生成新闻列表页API
+    #         APIUrl = self.server.createApiUrl(nid=colNid, page=page + 1, count=12)
+    #         # 获取首页API响应
+    #         APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
+    #         # 获取新闻种子列表
+    #         NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
+    #         for NewUrl in NewUrlList:
+    #             LOGGING.info(NewUrl)
+    #             with open(self.file_path, 'a') as f:
+    #                 f.write(str(NewUrl) + '\n')
+    #
     # 抓取模板3
     def newsTemplate_3(self, redis_client, url, one_clazz):
         # 获取来源页html
-        resp = self.download.getResponse(redis_client=redis_client, url=url)
+        resp = download_middleware.getResponse(logging=LOGGING, redis_client=redis_client, url=url)
         # 获取新闻种子列表
-        NewUrlList = self.server.getNewsUrlList_Template_3(resp=resp, one_clazz=one_clazz)
+        NewUrlList = services.getNewsUrlList_Template_3(resp=resp, one_clazz=one_clazz)
         for NewUrl in NewUrlList:
             LOGGING.info(NewUrl)
             with open(self.file_path, 'a') as f:
                 f.write(str(NewUrl) + '\n')
-
-    # 抓取模板4
-    def newsTemplate_4(self, redis_client, news_from_title):
-        index_url = 'http://sike.news.cn/page/{}'
-        page = 1
-        while 1:
-            url = index_url.format(page)
-            # 获取来源页响应
-            resp = self.download.getResponse(redis_client=redis_client, url=url)
-            # 获取新闻种子列表
-            NewUrlList = self.server.getNewsUrlList_Template_4(resp=resp, news_from_title=news_from_title)
-            if not NewUrlList:
-                break
-
-            for NewUrl in NewUrlList:
-                LOGGING.info(NewUrl)
-                with open(self.file_path, 'a') as f:
-                    f.write(str(NewUrl) + '\n')
-
-            page += 1
-
-    # 抓取模板5
-    def newsTemplate_5(self, redis_client, url, one_clazz):
-        # 获取来源页响应
-        resp = self.download.getResponse(redis_client=redis_client, url=url)
-        # 获取栏目分类
-        column_type_list = self.server.getColumnTypeList(resp=resp)
-        for column_type in column_type_list:
-            shuJuXinWenFenLeiUrl = column_type['shuJuXinWenFenLeiUrl']
-            shuJuXinWenFenLeiMing = column_type['shuJuXinWenFenLeiMing']
-            # 获取分类页响应
-            column_type_resp = self.download.getResponse(redis_client=redis_client, url=shuJuXinWenFenLeiUrl)
-            # 获取分类pageNid
-            pageNid = self.server.getPageNid(resp=column_type_resp)
-            if pageNid is None:
-                continue
-            # 生成新闻列表页首页API
-            APIUrl = self.server.createApiUrl(nid=pageNid, page=1, count=16)
-            # 获取首页API响应
-            APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
-            # 获取总页数
-            page_sum = self.server.getPageSum(resp=APIUrlResp, select_num=16)
-            for page in range(page_sum):
-                # 生成新闻列表页API
-                APIUrl = self.server.createApiUrl(nid=pageNid, page=page + 1, count=16)
-                # 获取首页API响应
-                APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
-                # 获取新闻种子列表
-                NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
-                for NewUrl in NewUrlList:
-                    NewUrl['last_from_title'] = shuJuXinWenFenLeiMing
-                    LOGGING.info(NewUrl)
-                    with open(self.file_path, 'a') as f:
-                        f.write(str(NewUrl) + '\n')
-
-    # 抓取模板6
-    def newsTemplate_6(self, redis_client, one_clazz):
-        url = 'http://uav.xinhuanet.com/zx.htm'
-        # 获取来源页响应
-        resp = self.download.getResponse(redis_client=redis_client, url=url)
-        # 获取pageNid
-        pageNid = self.server.getPageNid(resp=resp)
-        if pageNid is None:
-            return
-        # 生成新闻列表页首页API
-        APIUrl = self.server.createApiUrl(nid=pageNid, page=1, count=20)
-        # 获取首页API响应
-        APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
-        # 获取总页数
-        page_sum = self.server.getPageSum(resp=APIUrlResp, select_num=20)
-        for page in range(page_sum):
-            # 生成新闻列表页API
-            APIUrl = self.server.createApiUrl(nid=pageNid, page=page + 1, count=20)
-            # 获取首页API响应
-            APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
-            # 获取新闻种子列表
-            NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
-            for NewUrl in NewUrlList:
-                LOGGING.info(NewUrl)
-                with open(self.file_path, 'a') as f:
-                    f.write(str(NewUrl) + '\n')
-
+    #
+    # # 抓取模板4
+    # def newsTemplate_4(self, redis_client, news_from_title):
+    #     index_url = 'http://sike.news.cn/page/{}'
+    #     page = 1
+    #     while 1:
+    #         url = index_url.format(page)
+    #         # 获取来源页响应
+    #         resp = self.download.getResponse(redis_client=redis_client, url=url)
+    #         # 获取新闻种子列表
+    #         NewUrlList = self.server.getNewsUrlList_Template_4(resp=resp, news_from_title=news_from_title)
+    #         if not NewUrlList:
+    #             break
+    #
+    #         for NewUrl in NewUrlList:
+    #             LOGGING.info(NewUrl)
+    #             with open(self.file_path, 'a') as f:
+    #                 f.write(str(NewUrl) + '\n')
+    #
+    #         page += 1
+    #
+    # # 抓取模板5
+    # def newsTemplate_5(self, redis_client, url, one_clazz):
+    #     # 获取来源页响应
+    #     resp = self.download.getResponse(redis_client=redis_client, url=url)
+    #     # 获取栏目分类
+    #     column_type_list = self.server.getColumnTypeList(resp=resp)
+    #     for column_type in column_type_list:
+    #         shuJuXinWenFenLeiUrl = column_type['shuJuXinWenFenLeiUrl']
+    #         shuJuXinWenFenLeiMing = column_type['shuJuXinWenFenLeiMing']
+    #         # 获取分类页响应
+    #         column_type_resp = self.download.getResponse(redis_client=redis_client, url=shuJuXinWenFenLeiUrl)
+    #         # 获取分类pageNid
+    #         pageNid = self.server.getPageNid(resp=column_type_resp)
+    #         if pageNid is None:
+    #             continue
+    #         # 生成新闻列表页首页API
+    #         APIUrl = self.server.createApiUrl(nid=pageNid, page=1, count=16)
+    #         # 获取首页API响应
+    #         APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
+    #         # 获取总页数
+    #         page_sum = self.server.getPageSum(resp=APIUrlResp, select_num=16)
+    #         for page in range(page_sum):
+    #             # 生成新闻列表页API
+    #             APIUrl = self.server.createApiUrl(nid=pageNid, page=page + 1, count=16)
+    #             # 获取首页API响应
+    #             APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
+    #             # 获取新闻种子列表
+    #             NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
+    #             for NewUrl in NewUrlList:
+    #                 NewUrl['last_from_title'] = shuJuXinWenFenLeiMing
+    #                 LOGGING.info(NewUrl)
+    #                 with open(self.file_path, 'a') as f:
+    #                     f.write(str(NewUrl) + '\n')
+    #
+    # # 抓取模板6
+    # def newsTemplate_6(self, redis_client, one_clazz):
+    #     url = 'http://uav.xinhuanet.com/zx.htm'
+    #     # 获取来源页响应
+    #     resp = self.download.getResponse(redis_client=redis_client, url=url)
+    #     # 获取pageNid
+    #     pageNid = self.server.getPageNid(resp=resp)
+    #     if pageNid is None:
+    #         return
+    #     # 生成新闻列表页首页API
+    #     APIUrl = self.server.createApiUrl(nid=pageNid, page=1, count=20)
+    #     # 获取首页API响应
+    #     APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
+    #     # 获取总页数
+    #     page_sum = self.server.getPageSum(resp=APIUrlResp, select_num=20)
+    #     for page in range(page_sum):
+    #         # 生成新闻列表页API
+    #         APIUrl = self.server.createApiUrl(nid=pageNid, page=page + 1, count=20)
+    #         # 获取首页API响应
+    #         APIUrlResp = self.download.getResponse(redis_client=redis_client, url=APIUrl)
+    #         # 获取新闻种子列表
+    #         NewUrlList = self.server.getNewUrlList(resp=APIUrlResp, one_clazz=one_clazz)
+    #         for NewUrl in NewUrlList:
+    #             LOGGING.info(NewUrl)
+    #             with open(self.file_path, 'a') as f:
+    #                 f.write(str(NewUrl) + '\n')
+    #
     def handle(self, redis_client, news_from):
         one_clazz = news_from['laiYuanTitle']
         news_from_url = news_from['laiYuanUrl']
@@ -266,9 +264,9 @@ class SpiderMain(object):
             pass
         redis_client = redispool_utils.createRedisPool()
         # 获取首页html源码
-        index_resp = self.download.getResponse(redis_client=redis_client, url=self.index_url)
+        index_resp = download_middleware.getResponse(logging=LOGGING, redis_client=redis_client, url=self.index_url)
         # 获取新闻来源列表
-        news_from_list = self.server.getNewsFromList(resp=index_resp)
+        news_from_list = services.getNewsFromList(resp=index_resp)
 
         threadpool = ThreadPool(4)
         for news_from in news_from_list:

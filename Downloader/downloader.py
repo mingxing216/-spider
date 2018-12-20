@@ -17,7 +17,7 @@ import settings
 from Utils import redispool_utils
 
 
-def newGetRespForGet(logging, url, headers, proxies=None):
+def newGetRespForGet(logging, url, headers, proxies=None, cookies=None):
     '''
     get请求下载器
     :param logging: log对象
@@ -27,7 +27,7 @@ def newGetRespForGet(logging, url, headers, proxies=None):
     :return: 响应结果
     '''
     try:
-        resp = requests.get(url=url, headers=headers, proxies=proxies, timeout=10)
+        resp = requests.get(url=url, headers=headers, proxies=proxies, timeout=10, cookies=cookies)
         if resp.status_code == 200:
             response = resp.content.decode('utf-8')
             resp.close()

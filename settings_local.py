@@ -70,6 +70,21 @@ WANFANG_PATENT_URL_SPIDER_PROCESS = 4
 # 完场专利数据抓取程序最大进程数
 WANFANG_PATENT_DATA_SPIDER_PROCESS = 4
 
+# ==================《新华网》======================
+
+# 新华网数据抓取程序最大进程数
+XINHUA_NEWS_DATA_SPIDER_PROCESS = 4
+
+# ==================《58同城企业名录》====================
+
+# 58同城企业名目爬虫最大进程数
+COMPANY_TITLE_FOR_58TONGCHENG = 4
+
+# ==================《长效代理》====================
+
+# redis长效代理IP集合名
+LANG_PROXY_KEY = 'lang_proxy_pool'
+
 
 
 # # oss

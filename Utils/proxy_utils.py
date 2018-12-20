@@ -42,7 +42,6 @@ def jianChaNiMingDu(proxy, logging):
 
         return False
 
-
 def getZhiMaProxy_Number(num, protocol=2, time=1):
     '''
     按次从芝麻代理API获取代理
@@ -132,6 +131,26 @@ def getProxy(redis_client, logging):
             time.sleep(1)
             continue
 
+def getProxydemo(redis_client):
+    '''
+    随机获取代理池短效代理IP
+    :return: 代理IP
+    '''
+    for i in range(10):
+        proxydata = redispool_utils.srandmember(redis_client=redis_client, key=settings.REDIS_PROXY_KEY, num=1)
+        if proxydata:
+            proxy = proxydata[0]
+            proxies = {
+                'http': '{}'.format(proxy),
+                'https': '{}'.format(proxy)
+            }
+
+            return proxies
+        else:
+            # logging.error('代理池代理获取失败')
+            time.sleep(1)
+            continue
+
 def delProxy(redis_client, proxies):
     '''
     删除代理池指定代理
@@ -178,4 +197,19 @@ def getABuYunProxy():
         "https" : proxyMeta,
     }
     return proxies
+
+# 获取redis长效代理
+def getLangProxy(logging, redis_client):
+    proxydata = redispool_utils.srandmember(redis_client=redis_client, key=settings.LANG_PROXY_KEY, num=1)
+    if proxydata:
+        proxy = proxydata[0]
+        proxies = {
+            'http': 'http://{}'.format(proxy),
+            'https': 'https://{}'.format(proxy)
+        }
+
+        return proxies
+    else:
+        logging.error('长效代理获取失败')
+        return None
 

@@ -8,9 +8,12 @@ import os
 import hashlib
 import base64
 import pprint
-from multiprocessing.dummy import Pool as ThreadPool
+import re
+import json
+from multiprocessing import Pool as Process
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
+import settings
 from Log import log
 from Utils import redispool_utils
 from Utils import mysqlpool_utils
@@ -26,10 +29,6 @@ LOGGING = log.ILog(log_file_dir, LOGNAME)
 class SpiderMain(object):
     def __init__(self):
         self.file_path = os.path.dirname(__file__) + os.sep + "../../../" + "Static/txt/" + "XinHuaNewsUrl.txt"
-        self.server = services.NewsDataSpiderServices(logging=LOGGING)
-        self.dao = dao.Dao(logging=LOGGING)
-
-        self.download = download_middleware.Download_Middleware(logging=LOGGING)
 
     # 抓取模板1
     def newsTemplate_1(self, redis_client, mysql_client, new_url_data):
@@ -40,54 +39,57 @@ class SpiderMain(object):
         faBuShiJian = new_url_data['faBuShiJian']
         title = new_url_data['title']
         biaoShi = new_url_data['biaoShi']
-        # 查询新闻是否被抓取过, True(抓过)、False(未抓过)
-        status = self.dao.new_status(mysql_client=mysql_client, new_url=new_url)
-        if status is True:
-            return
+        # new_url = 'http://www.xinhuanet.com/politics/2018-11/19/c_1123731703.htm'
+        # # 查询新闻是否被抓取过, True(抓过)、False(未抓过)
+        # status = dao.new_status(mysql_client=mysql_client, new_url=new_url)
+        # if status is True:
+        #     return
         # 获取新闻页html源码
-        resp = self.download.getResponse(redis_client=redis_client, url=new_url)
+        resp = download_middleware.getResponse(logging=LOGGING, redis_client=redis_client, url=new_url)
+
         # 下载标识
         if biaoShi != '':
-            self.server.downImg(download=self.download, dao=self.dao, redis_client=redis_client, img_url=biaoShi)
+            img_resp = download_middleware.down_img(logging=LOGGING, redis_client=redis_client, url=biaoShi)
+            if img_resp is not None:
+                # 存储图片到hbase
+                dao.saveImg(logging=LOGGING, media_url=biaoShi, content=img_resp, type='image')
+
         # 获取来源网站
-        laiYuanWangZhan = self.server.newsTemplate_1_LaiYuanWangZhan(resp)
+        laiYuanWangZhan = services.newsTemplate_1_LaiYuanWangZhan(resp)
         if laiYuanWangZhan is None:
             laiYuanWangZhan = ''
             with open('没有来源网站的新闻.txt', 'a') as f:
                 f.write(new_url + '\n')
 
         # 获取正文
-        zhengWen = self.server.newsTemplate_1_ZhengWen(resp)
-        if zhengWen is None:
+        zhengWen = ''
+        zhengWen_list = services.newsTemplate_1_ZhengWen(logging=LOGGING, redis_client=redis_client, url=new_url)
+        if not zhengWen_list:
             zhengWen = ''
             with open('没有正文的新闻.txt', 'a') as f:
                 f.write(new_url + '\n')
+        else:
+            for data in zhengWen_list:
+                zhengWen += data['zhengWen']
 
         # 获取标签
-        biaoQian = self.server.newsTemplate_1_BiaoQian(resp=resp)
+        biaoQian = services.newsTemplate_1_BiaoQian(resp)
         if biaoQian is None:
             biaoQian = ''
             with open('没有标签的新闻.txt', 'a') as f:
                 f.write(new_url + '\n')
 
-        # 获取组图列表url
-        img_url_data = self.server.newsTemplate_1_ZuTu(resp=resp, new_url=new_url)
-        if img_url_data:
-            for img_url in img_url_data:
-                # 下载图片
-                self.server.downImg(download=self.download, dao=self.dao, redis_client=redis_client, img_url=img_url)
-        if img_url_data:
-            # 替换正文中的图片url地址
-            zhengWen = self.server.newsTemplate_1_UpdateZhengWen(zhengWen=zhengWen, img_url_list=img_url_data)
-
         # 获取责任编辑
-        zeRenBianJi = self.server.newsTemplate_1_ZeRenBianJi(resp=resp, url=new_url)
+        zeRenBianJi = services.newsTemplate_1_ZeRenBianJi(resp=resp)
         if zeRenBianJi is None:
             zeRenBianJi = ''
             with open('没有责任编辑的新闻.txt', 'a') as f:
                 f.write(new_url + '\n')
         # 获取视频
-        shiPin = ''
+        shiPin = services.newsTemplate_1_ShiPin(resp=resp, url=new_url)
+        if shiPin is None:
+            shiPin = ''
+
         # 获取发布者
         faBuZhe = ''
         # 获取编辑
@@ -138,29 +140,31 @@ class SpiderMain(object):
         LOGGING.info(sha)
 
         # 存储数据
-        self.dao.saveData(save_data)
+        dao.saveData(data=save_data, logging=LOGGING)
 
-
-    def handle(self, redis_client, mysql_client, new_url_data):
-        one_clazz = new_url_data['one_clazz']
-        # if one_clazz == '时政':
-        #     self.newsTemplate_1(redis_client=redis_client, mysql_client=mysql_client, new_url_data=new_url_data)
-        if one_clazz == '财经':
-            self.newsTemplate_1(redis_client=redis_client, mysql_client=mysql_client, new_url_data=new_url_data)
-
-    def run(self):
+    def handle(self, new_url_data):
         redis_client = redispool_utils.createRedisPool()
         mysql_client = mysqlpool_utils.createMysqlPool()
-        # 获取新闻种子数据
-        new_url_data_list = self.server.getUrlDataList(filepath=self.file_path)
-        for new_url_data in new_url_data_list:
-            self.handle(redis_client=redis_client, mysql_client=mysql_client, new_url_data=new_url_data)
+        one_clazz = new_url_data['one_clazz']
+        if one_clazz == '时政':
+            self.newsTemplate_1(redis_client=redis_client, mysql_client=mysql_client, new_url_data=new_url_data)
+        # if one_clazz == '财经':
+        #     self.newsTemplate_1(redis_client=redis_client, mysql_client=mysql_client, new_url_data=new_url_data)
 
-        # threadpool = ThreadPool(1)
+    def run(self):
+
+        # 获取新闻种子数据
+        new_url_data_list = services.getUrlDataList(filepath=self.file_path)
+
         # for new_url_data in new_url_data_list:
-        #     threadpool.apply_async(func=self.handle, args=(redis_client, mysql_client, new_url_data))
-        # threadpool.close()
-        # threadpool.join()
+        #     self.handle(new_url_data=new_url_data)
+        #     break
+
+        po = Process(int(settings.XINHUA_NEWS_DATA_SPIDER_PROCESS))
+        for new_url_data in new_url_data_list:
+            po.apply_async(func=self.handle, args=(new_url_data, ))
+        po.close()
+        po.join()
 
 
 if __name__ == '__main__':
