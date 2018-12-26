@@ -34,7 +34,9 @@ class Download(object):
             # 获取代理IP
             proxies = proxy_utils.getProxy(redis_client=redis_client, logging=logging)
             if proxies is None:
+                logging.error('代理获取失败')
                 continue
+            logging.info('代理获取成功: {}'.format(proxies))
 
             for down_num in range(2):
                 logging.info('发起请求第 {} 次: {}'.format(down_num + 1, url))

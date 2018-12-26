@@ -128,7 +128,7 @@ def getProxy(redis_client, logging):
 
             return proxies
         else:
-            logging.error('代理池代理获取失败')
+            logging.error('尝试第{}次获取代理'.format(i + 1))
             time.sleep(1)
             continue
 
