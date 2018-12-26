@@ -28,8 +28,12 @@ M_PORT=27017
 # 线上芝麻代理套餐==========================================
 
 ZHIMA_SETMEAL=32716 # 芝麻代理套餐号
-REDIS_PROXY_KEY='zhimaProxyPool' # redis中保存代理IP的列表名
-REDIS_PROXY_NUMBER=2 # redis中保存代理IP的数量
+REDIS_PROXY_KEY='zhimaProxyPool' # redis中保存socks代理IP的列表名
+REDIS_PROXY_NUMBER=2 # redis中保存socks5代理IP的数量
+REDIS_PROXY_KEY_HTTP='zhimaProxyPoolHttp' # redis中保存http代理的列表名
+REDIS_PROXY_NUMBER_HTTP=2 # redis中保存http代理ip的数量
+REDIS_PROXY_KEY_HTTPS='zhimaProxyPoolHttps' # redis中保存https代理的列表名
+REDIS_PROXY_NUMBER_HTTPS=2 # redis中保存https代理ip的数量
 
 # 芝麻套餐余量查询参数
 SETMEALNEEK=54871
