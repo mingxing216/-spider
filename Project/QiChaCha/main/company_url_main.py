@@ -58,6 +58,10 @@ class SpiderMain(object):
                     # 获取企业url列表
                     if page_resp is None:
                         continue
+                    # 判断是否出现验证码
+                    if len(page_resp) < 200:
+                        LOGGING.error('出现验证码')
+                        continue
                     company_url_list = self.server.getCompanyUrlList(logging=LOGGING, resp=page_resp)
                     # 判断是否到最后一页
                     if not company_url_list:
@@ -65,7 +69,6 @@ class SpiderMain(object):
                     # 保存企业url
                     self.dao.saveCompanyUrl(logging=LOGGING, mysql_client=mysql_client, data=company_url_list)
 
-                time.sleep(random.randint(40, 60))
 
             '''处理行业分类'''
             for industry_url in industry_url_list:
@@ -76,6 +79,10 @@ class SpiderMain(object):
                     page_resp = self.download.getIndustryResp(logging=LOGGING, redis_client=redis_client, url=url)
                     if page_resp is None:
                         continue
+                    # 判断是否出现验证码
+                    if len(page_resp) < 200:
+                        LOGGING.error('出现验证码')
+                        continue
                     # 获取企业url列表
                     company_url_list = self.server.getCompanyUrlList(logging=LOGGING, resp=page_resp)
                     # 判断是否到最后一页
@@ -84,7 +91,6 @@ class SpiderMain(object):
                     # 保存企业url
                     self.dao.saveCompanyUrl(logging=LOGGING, mysql_client=mysql_client, data=company_url_list)
 
-                time.sleep(random.randint(40, 60))
 
 
 if __name__ == '__main__':
