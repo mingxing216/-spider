@@ -8,6 +8,7 @@ import time
 import json
 import requests
 import socket
+import re
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
@@ -41,7 +42,6 @@ def jianChaNiMingDu(proxy, logging):
     else:
 
         return False
-
 
 def getZhiMaProxy_Number(num, protocol=2, time=1):
     '''
@@ -77,6 +77,7 @@ def getZhiMaProxy_Number(num, protocol=2, time=1):
 
     return None
 
+# 按套餐方式获取芝麻代理
 def getZhiMaProxy_SetMeal(set_meal, num, protocol=2, time=1):
     '''
     获取芝麻代理
@@ -114,7 +115,7 @@ def getZhiMaProxy_SetMeal(set_meal, num, protocol=2, time=1):
 
 def getProxy(redis_client, logging):
     '''
-    随机获取代理池短效代理IP
+    随机获取socks5代理池短效代理IP
     :return: 代理IP
     '''
     for i in range(10):
@@ -128,23 +129,59 @@ def getProxy(redis_client, logging):
 
             return proxies
         else:
-            logging.error('代理池代理获取失败')
+            logging.error('尝试第{}次获取socks5代理'.format(i + 1))
             time.sleep(1)
             continue
 
+# 随机获取http代理池短效代理IP
+def getHttpProxy(logging, redis_client):
+    for i in range(10):
+        proxydata = redispool_utils.srandmember(redis_client=redis_client, key=settings.REDIS_PROXY_KEY_HTTP, num=1)
+        if proxydata:
+            proxy = proxydata[0]
+            proxies = {
+                'http': '{}'.format(proxy)
+            }
+
+            return proxies
+        else:
+            logging.error('尝试第{}次获取http代理'.format(i + 1))
+            time.sleep(1)
+            continue
+
+# 随机获取https代理池短效代理IP
+def getHttpsProxy(logging, redis_client):
+    for i in range(10):
+        proxydata = redispool_utils.srandmember(redis_client=redis_client, key=settings.REDIS_PROXY_KEY_HTTPS, num=1)
+        if proxydata:
+            proxy = proxydata[0]
+            proxies = {
+                'https': '{}'.format(proxy)
+            }
+
+            return proxies
+        else:
+            logging.error('尝试第{}次获取https代理'.format(i + 1))
+            time.sleep(1)
+            continue
+
+# 删除socks5代理池内指定代理
 def delProxy(redis_client, proxies):
-    '''
-    删除代理池指定代理
-    :param proxies: 当前代理
-    '''
     proxy = proxies['http']
     redispool_utils.srem(redis_client=redis_client, key=settings.REDIS_PROXY_KEY, value=proxy)
 
+# 删除http代理池内指定代理
+def delHttpProxy(redis_client, proxies):
+    proxy = proxies['http']
+    redispool_utils.srem(redis_client=redis_client, key=settings.REDIS_PROXY_KEY_HTTP, value=proxy)
+
+# 删除https代理池内指定代理
+def delHttpsProxy(redis_client, proxies):
+    proxy = proxies['https']
+    redispool_utils.srem(redis_client=redis_client, key=settings.REDIS_PROXY_KEY_HTTPS, value=proxy)
+
+# 获取本机IP
 def getLocalIP():
-    '''
-    获取本机IP
-    :return: 本机IP
-    '''
     global s
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -178,4 +215,42 @@ def getABuYunProxy():
         "https" : proxyMeta,
     }
     return proxies
+
+# 获取redis长效代理
+def getLangProxy(logging, redis_client):
+    proxydata = redispool_utils.srandmember(redis_client=redis_client, key=settings.LANG_PROXY_KEY, num=1)
+    if proxydata:
+        proxy = proxydata[0]
+        proxies = {
+            'http': 'http://{}'.format(proxy),
+            'https': 'https://{}'.format(proxy)
+        }
+
+        return proxies
+    else:
+        logging.error('长效代理获取失败')
+        return None
+
+# 获取adsl代理
+def getAdslProxy(logging, random=0, country=1, city=0):
+    url = "{}?random={}&country={}&city={}".format(settings.GET_PROXY_API, random, country, city)
+    proxy_data = requests.get(url=url).content.decode('utf-8')
+    data = json.loads(proxy_data)
+    if data['status'] == 0:
+        proxies = {
+            'http': '{}'.format('http://{}:{}'.format(data['ip'], data['port'])),
+            'https': '{}'.format('https://{}:{}'.format(data['ip'], data['port']))
+        }
+
+        return proxies
+
+    else:
+        logging.error('代理池代理获取失败')
+
+# adsl代理状态更新
+def updateAdslProxy(proxies):
+    ip = re.findall(r"\d+\.\d+\.\d+\.\d+", proxies['http'])[0]
+    url = "{}?ip={}".format(settings.UPDATE_PROXY_API, ip)
+    requests.get(url=url)
+    time.sleep(1)
 

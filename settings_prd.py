@@ -28,8 +28,12 @@ M_PORT=27017
 # 线上芝麻代理套餐==========================================
 
 ZHIMA_SETMEAL=32716 # 芝麻代理套餐号
-REDIS_PROXY_KEY='zhimaProxyPool' # redis中保存代理IP的列表名
-REDIS_PROXY_NUMBER=5 # redis中保存代理IP的数量
+REDIS_PROXY_KEY='zhimaProxyPool' # redis中保存socks代理IP的列表名
+REDIS_PROXY_NUMBER=2 # redis中保存socks5代理IP的数量
+REDIS_PROXY_KEY_HTTP='zhimaProxyPoolHttp' # redis中保存http代理的列表名
+REDIS_PROXY_NUMBER_HTTP=2 # redis中保存http代理ip的数量
+REDIS_PROXY_KEY_HTTPS='zhimaProxyPoolHttps' # redis中保存https代理的列表名
+REDIS_PROXY_NUMBER_HTTPS=2 # redis中保存https代理ip的数量
 
 # 芝麻套餐余量查询参数
 SETMEALNEEK=54871
@@ -69,6 +73,28 @@ SpiderMediaSaveUrl='http://60.195.249.117:8090/hbaseserver/dat/saveMediaData?'
 WANFANG_PATENT_URL_SPIDER_PROCESS = 8
 # 完场专利数据抓取程序最大进程数
 WANFANG_PATENT_DATA_SPIDER_PROCESS = 8
+
+# ==================《新华网》======================
+
+# 新华网数据抓取程序最大进程数
+XINHUA_NEWS_DATA_SPIDER_PROCESS = 8
+
+# ==================《58同城企业名录》====================
+
+# 58同城企业名目爬虫最大进程数
+COMPANY_TITLE_FOR_58TONGCHENG = 8
+
+# ==================《长效代理》====================
+
+# redis长效代理IP集合名
+LANG_PROXY_KEY = 'lang_proxy_pool'
+
+# ==================《adsl代理池》==================
+
+# 获取代理接口
+GET_PROXY_API = "http://60.195.249.95:5000/get-proxy"
+# 代理状态更新接口
+UPDATE_PROXY_API = "http://60.195.249.95:5000/update-proxy"
 
 # # oss
 # ACCESSKEYID='LTAITx7i8MVIqSWh'

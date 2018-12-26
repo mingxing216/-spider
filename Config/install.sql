@@ -131,3 +131,19 @@ CREATE TABLE `ss_patent_wanfang` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+
+-- ----------------------------
+-- Table structure for ss_company_qicha
+-- ----------------------------
+DROP TABLE IF EXISTS `ss_company_qicha`;
+CREATE TABLE `ss_company_qicha` (
+  `sha` varchar(40) NOT NULL,
+  `url` varchar(150) NOT NULL,
+  `del` enum('0','1') DEFAULT '0',
+  PRIMARY KEY (`sha`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+
+

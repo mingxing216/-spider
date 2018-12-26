@@ -122,6 +122,7 @@ def insert_one(connection, table, data):
         sql = "insert into {table}(`{name}`) VALUES ('{value}')".format(table='`' + table + '`',
                                                                       name='`,`'.join(str(n) for n in name),
                                                                       value='\',\''.join(str(v) for v in value))
+
         cursor.execute(sql)
 
     return _do_in_cursor(run, connection)
