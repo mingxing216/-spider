@@ -16,7 +16,7 @@ from Project.QiChaCha.middleware import download_middleware
 from Project.QiChaCha.services import services
 
 log_file_dir = 'QiChaCha'  # LOG日志存放路径
-LOGNAME = '<企查查数据抓取_非登录>'  # LOG名
+LOGNAME = '<企查查数据抓取>'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 class SpiderMain(object):

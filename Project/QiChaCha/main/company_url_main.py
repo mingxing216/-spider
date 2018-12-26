@@ -19,7 +19,7 @@ from Utils import mysqlpool_utils
 from Utils import create_ua_utils
 
 log_file_dir = 'QiChaCha'  # LOG日志存放路径
-LOGNAME = '<企查查任务抓取_基于登录>'  # LOG名
+LOGNAME = '<企查查任务抓取>'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 class SpiderMain(object):
@@ -36,6 +36,9 @@ class SpiderMain(object):
         while 1:
             # 获取入口页响应
             index_resp = self.download.getResp(logging=LOGGING, redis_client=redis_client, url=self.index_url)
+            if not index_resp:
+                LOGGING.error('入口页响应获取失败')
+                continue
             # with open('index.html', 'r') as f:
             #     index_resp = f.read()
 
