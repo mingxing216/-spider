@@ -78,3 +78,19 @@ class Download(object):
         logging.error('重复请求次数已达到最大值。')
         return None
 
+    # 获取机构主页响应
+    def getJiGouHtml(self, logging, url, proxies):
+        for down_num in range(2):
+            logging.info('发起请求第 {} 次: {}'.format(down_num + 1, url))
+            # 获取入口页html响应
+            resp = downloader.newGetRespForGet(logging=logging, url=url, headers=self.headers, proxies=proxies)
+            if resp is None:
+                logging.error('请求失败: {}'.format(url))
+                continue
+            else:
+                logging.info('请求成功: {}'.format(url))
+                return resp
+
+        return None
+
+

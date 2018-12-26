@@ -5,11 +5,16 @@
 '''
 import sys
 import os
+import base64
+import json
 import hashlib
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
+import settings
 from Utils import mysqlpool_utils
 from Utils import redispool_utils
+from Utils import proxy_utils
+from Downloader import downloader
 
 
 # 数据操作_基于登录
@@ -52,5 +57,45 @@ class Dao(object):
         logging.info('已获取企业任务: {}个'.format(len(obj_list)))
         return obj_list
 
+    # 保存图片到hbase
+    def saveImg(self, logging, media_url, content, type):
+        url = '{}'.format(settings.SpiderMediaSaveUrl)
+        content_bs64 = base64.b64encode(content)
+        sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
+        item = {
+            'pk': sha,
+            'type': 'image',
+            'url': media_url
+        }
+        data = {"ip": "{}".format(proxy_utils.getLocalIP()),
+                "wid": "100",
+                "url": "{}".format(media_url),
+                "content": "{}".format(content_bs64.decode('utf-8')),
+                "type": "{}".format(type),
+                "ref": "",
+                "item": json.dumps(item)}
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
+        }
+
+        resp = downloader.newGetRespForPost(logging=logging, url=url, headers=headers, data=data)
+
+        return resp
+
+    # 存储专利数据到Hbase数据库
+    def saveData(self, data, logging):
+        save_data = json.dumps(data)
+        url = '{}'.format(settings.SpiderDataSaveUrl)
+        data = {"ip": "{}".format(proxy_utils.getLocalIP()),
+                "wid": "python",
+                "ref": "",
+                "item": save_data}
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
+        }
+        resp = downloader.newGetRespForPost(logging=logging, url=url, headers=headers, data=data)
+
+        return resp
 
 

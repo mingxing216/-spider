@@ -25,13 +25,14 @@ class StartMain(object):
             url_num = redispool_utils.scard(redis_client=redis_client, key=self.redis_key)
             if url_num < 100:
                 # 从mysql获取1000条任务
-                sql = 'select url from {} where del = "0" limit 1000'.format(self.mysql_table)
+                sql = 'select sha, url from {} where del = "0" limit 1000'.format(self.mysql_table)
                 url_list = mysql_client.get_results(sql=sql)
-                for url in url_list:
-                    url = url['url']
+                for url_data in url_list:
+                    url = url_data['url']
+                    sha = url_data['sha']
                     redispool_utils.sadd(redis_client=redis_client, key=self.redis_key, value=url)
-                    # # mysql逻辑删除任务
-                    # mysql_client.update(table=self.mysql_table, data={'del': 1}, where='url = "{}"'.format(url))
+                    # mysql逻辑删除任务
+                    mysql_client.update(table=self.mysql_table, data={'del': 1}, where='sha = "{}"'.format(sha))
 
             time.sleep(10)
 

@@ -118,7 +118,6 @@ class DBUtils_PyMysql(object):
                 updates.append(index)
 
             sql = "update `{}` set {} WHERE {}".format(table, ','.join(updates), where)
-            print(sql)
 
             cursor.execute(sql)
 

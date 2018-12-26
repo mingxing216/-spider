@@ -85,6 +85,13 @@ COMPANY_TITLE_FOR_58TONGCHENG = 8
 # redis长效代理IP集合名
 LANG_PROXY_KEY = 'lang_proxy_pool'
 
+# ==================《adsl代理池》==================
+
+# 获取代理接口
+GET_PROXY_API = "http://60.195.249.95:5000/get-proxy"
+# 代理状态更新接口
+UPDATE_PROXY_API = "http://60.195.249.95:5000/update-proxy"
+
 # # oss
 # ACCESSKEYID='LTAITx7i8MVIqSWh'
 # ACCESSKEYSECRET='kwXFGPMeO4JtsTXs7Pa4zeJZhvsbaK'

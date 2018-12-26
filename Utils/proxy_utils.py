@@ -8,6 +8,7 @@ import time
 import json
 import requests
 import socket
+import re
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
@@ -212,4 +213,27 @@ def getLangProxy(logging, redis_client):
     else:
         logging.error('长效代理获取失败')
         return None
+
+# 获取adsl代理
+def getAdslProxy(logging, random=0, country=1, city=0):
+    url = "{}?random={}&country={}&city={}".format(settings.GET_PROXY_API, random, country, city)
+    proxy_data = requests.get(url=url).content.decode('utf-8')
+    data = json.loads(proxy_data)
+    if data['status'] == 0:
+        proxies = {
+            'http': '{}'.format('http://{}:{}'.format(data['ip'], data['port'])),
+            'https': '{}'.format('https://{}:{}'.format(data['ip'], data['port']))
+        }
+
+        return proxies
+
+    else:
+        logging.error('代理池代理获取失败')
+
+# adsl代理状态更新
+def updateAdslProxy(proxies):
+    ip = re.findall(r"\d+\.\d+\.\d+\.\d+", proxies['http'])[0]
+    url = "{}?ip={}".format(settings.UPDATE_PROXY_API, ip)
+    requests.get(url=url)
+    time.sleep(1)
 

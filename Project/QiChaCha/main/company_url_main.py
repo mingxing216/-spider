@@ -11,9 +11,9 @@ import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Log import log
-from Test.QiChaCha.dao import dao
-from Test.QiChaCha.services import services
-from Test.QiChaCha.middleware import download_middleware
+from Project.QiChaCha.dao import dao
+from Project.QiChaCha.services import services
+from Project.QiChaCha.middleware import download_middleware
 from Utils import redispool_utils
 from Utils import mysqlpool_utils
 from Utils import create_ua_utils
