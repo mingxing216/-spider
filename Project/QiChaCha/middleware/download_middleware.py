@@ -6,6 +6,7 @@
 import sys
 import os
 import random
+import time
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
@@ -34,9 +35,7 @@ class Download(object):
             # 获取代理IP
             proxies = proxy_utils.getHttpsProxy(redis_client=redis_client, logging=logging)
             if proxies is None:
-                # logging.error('代理获取失败')
                 continue
-            # logging.info('代理获取成功: {}'.format(proxies))
 
             for down_num in range(2):
                 # logging.info('发起请求第 {} 次: {}'.format(down_num + 1, url))
@@ -46,7 +45,16 @@ class Download(object):
                     # logging.error('请求失败: {}'.format(url))
                     continue
 
+                # 检查是否出现验证码
+                if len(resp) < 200:
+                    logging.error('出现验证码')
+                    # # logging.info('删除当前代理: {}'.format(proxies))
+                    # proxy_utils.delHttpsProxy(redis_client=redis_client, proxies=proxies)
+                    # # logging.info('开始第 {} 次获取代理'.format(i + 2))
+                    break
+
                 # logging.info('请求成功: {}'.format(url))
+                time.sleep(random.randint(40, 60))
                 return resp
 
             # logging.info('删除当前代理: {}'.format(proxies))
@@ -56,29 +64,36 @@ class Download(object):
         # logging.error('重复请求次数已达到最大值。')
         return None
 
-    # 获取当前页响应
-    def getIndustryResp(self, logging, redis_client, url):
-        for i in range(3):
+    # 获取响应【通用】GET | ADSL_PROXY
+    def getResp_Adsl(self, logging, url):
+        while True:
             # 获取代理IP
-            proxies = proxy_utils.getHttpsProxy(redis_client=redis_client, logging=logging)
+            proxies = proxy_utils.getAdslProxy(logging=logging)
             if proxies is None:
+                logging.error('代理获取失败')
+                time.sleep(1)
                 continue
+            logging.info('已获取adsl代理：{}'.format(proxies))
+            break
 
-            for down_num in range(2):
-                # logging.info('发起请求第 {} 次: {}'.format(down_num + 1, url))
-                # 获取入口页html响应
-                resp = downloader.newGetRespForGet(logging=logging, url=url, headers=self.headers, proxies=proxies)
-                if resp is None:
-                    # logging.error('请求失败: {}'.format(url))
-                    continue
+        # 获取入口页html响应
+        resp = downloader.newGetRespForGet(logging=logging, url=url, headers=self.headers, proxies=proxies)
 
-                # logging.info('请求成功: {}'.format(url))
-                return resp
+        if resp is None:
+            # 标记此代理
+            proxy_utils.updateAdslProxy(proxies)
 
-            # logging.info('开始第 {} 次获取代理'.format(i + 2))
+            return {'status': 1}
 
-        # logging.error('重复请求次数已达到最大值。')
-        return None
+        if len(resp) < 200:
+            logging.error('出现验证码')
+            # 标记此代理
+            proxy_utils.updateAdslProxy(proxies)
+
+            return {'status': 2}
+
+        return {'status': 0, 'data': resp}
+
 
     # 获取机构主页响应
     def getJiGouHtml(self, logging, url, proxies):
