@@ -42,6 +42,15 @@ def selectDelAndCreateDir(path):
         # 创建文件夹
         os.mkdir(path)
 
+# 判断指定路径文件夹下是否包含某文件夹，不包含创建
+def selectAndCreateDir(path):
+    has = hasDir(path)
+    if has is True:
+        pass
+    else:
+        # 创建文件夹
+        os.mkdir(path)
+
 # 删除指定文件夹下所有文件
 def delDir(path):
     # 删除文件夹下的所有文件

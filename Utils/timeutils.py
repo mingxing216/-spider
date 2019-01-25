@@ -10,7 +10,7 @@ import time
 import datetime
 
 
-def get_yyyy_mm_dd():
+def getNowDate():
     '''
     获取当前日期
     :return: 2018-10-04
@@ -18,7 +18,7 @@ def get_yyyy_mm_dd():
 
     return time.strftime('%Y-%m-%d')
 
-def get_yyyy_mm_dd_hh_mm_ss():
+def getNowDatetime():
     '''
     获取当前日期 + 时间
     :return: 2018-10-04 10:38:03
@@ -26,7 +26,7 @@ def get_yyyy_mm_dd_hh_mm_ss():
 
     return time.strftime('%Y-%m-%d %H:%M:%S')
 
-def get_current_millis():
+def get_current_second():
     '''
     获取当前时间戳（秒）
     :return: 1538621331
@@ -35,7 +35,7 @@ def get_current_millis():
 
     return int(round(t))
 
-def formatMillis(timestamp, format="%Y-%m-%d %H:%M:%S"):
+def SecondToDatetime(timestamp, format="%Y-%m-%d %H:%M:%S"):
     '''
     将时间戳变成日期 + 时间
     :param timestamp: 时间戳（秒）
@@ -47,7 +47,7 @@ def formatMillis(timestamp, format="%Y-%m-%d %H:%M:%S"):
 
     return dt
 
-def getBeforeDawnMillis():
+def getBeforeDawnSecond():
     '''
     获取今日凌晨时间戳
     :return: 1538582400
@@ -56,7 +56,7 @@ def getBeforeDawnMillis():
 
     return int(time.mktime(today.timetuple()))
 
-def getMondayStamp():
+def getMondayDate():
     '''
     获取本周一日期
     :return: 2018-10-01
@@ -67,7 +67,7 @@ def getMondayStamp():
 
     return monday_stamp
 
-def getBeforeMondayMillis():
+def getBeforeMondayDate():
     '''
     获取上周，周一日期
     :return: 2018-09-24
@@ -78,7 +78,7 @@ def getBeforeMondayMillis():
 
     return before_monday_date
 
-def getBeforeSundayMillis():
+def getBeforeSundayDate():
     '''
     获取上周，周日日期
     :return: 2018-09-30
@@ -89,7 +89,7 @@ def getBeforeSundayMillis():
 
     return before_sunday_date
 
-def getBefore_2_MondayMillis():
+def getBefore_2_MondayDate():
     '''
     获取上上周，周一日期
     :return: 2018-09-17
@@ -100,7 +100,7 @@ def getBefore_2_MondayMillis():
 
     return before_monday_date
 
-def getBefore_2_SundayMillis():
+def getBefore_2_SundayDate():
     '''
     获取上上周，周日日期
     :return: 2018-09-30
@@ -111,7 +111,7 @@ def getBefore_2_SundayMillis():
 
     return before_sunday_date
 
-def getBeforeWeekNow(time_data, n=1):
+def getBeforeWeekNowSecond(time_data, n=1):
     '''
     获取n周以前的当前时间戳
     :param time_data: 2018-10-04 11:05:03
@@ -124,19 +124,19 @@ def getBeforeWeekNow(time_data, n=1):
 
     return timestamp
 
-def getBeforeMondayStamp(time_stamp):
+def secondToWeekNumber(time_stamp):
     '''
     获取指定时间戳是周几
     :param time_stamp: 时间戳（秒）
     :return: 1-7
     '''
-    str_date = formatMillis(time_stamp)
+    str_date = SecondToDatetime(time_stamp)
     date = datetime.datetime.strptime(str_date,"%Y-%m-%d %H:%M:%S")
     week_num = date.weekday()
 
     return week_num + 1
 
-def strDateToStamp(str_date):
+def strDateToSecond(str_date):
     '''
     将字符串类型时间转换成时间戳
     :param str_date: 2018-10-04 11:12:52
@@ -147,7 +147,7 @@ def strDateToStamp(str_date):
 
     return timeStamp
 
-def strDateToTime(str_date):
+def strDateToDatetime(str_date):
     '''
     将字符串类型时间 转换成 时间类型时间
     :param str_date: 2018-10-04 11:14:37（str）
@@ -163,11 +163,11 @@ def getStampFromMonday(stamp, format="%Y-%m-%d %H:%M:%S"):
     :param format: 输出时间格式
     :return: 2018-10-01 11:16:54
     '''
-    week_num = getBeforeMondayStamp(stamp)
+    week_num = secondToWeekNumber(stamp)
     if week_num == 1:
 
-        return formatMillis(stamp, format)
+        return SecondToDatetime(stamp, format)
     else:
 
-        return formatMillis(stamp - (86400 * (week_num - 1)), format)
+        return SecondToDatetime(stamp - (86400 * (week_num - 1)), format)
 

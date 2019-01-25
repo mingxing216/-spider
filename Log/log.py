@@ -36,7 +36,7 @@ class ILog(object):
 
         self.haveLogDir(file_dir)
         # 获取当前日期
-        now_date = timeutils.get_yyyy_mm_dd()
+        now_date = timeutils.getNowDate()
         # 添加handler
         if not self.logger.handlers:
             filename = os.path.dirname(__file__) + os.sep + "../Log/{}/{}_{}.log".format(self.file_dir, self.name, now_date)
