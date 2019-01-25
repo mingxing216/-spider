@@ -24,20 +24,11 @@ REDIS_POOL_MAX_NUMBER=10 # redis链接池最大连接数
 M_HOST='127.0.0.1'
 M_PORT=27017
 
-# =======================================================
-
-# 知网期刊爬虫最大进程数
-ZHIWANG_PERIODOCAL_SPIDER_PROCESS = 8
-# 知网论文作者机构爬虫最大进程数
-ZHIWANG_JIGOU_SPIDER_PROCESS = 1
-
-
 # 若快打码================================================
 r_username='15711294367'
 r_password='rockerfm520'
 r_soft_id=116272
 r_soft_key='c4f5ffd82a6f4cfeafdd8c062c0358ca'
-
 
 # 橙子短验API参数==========================================
 OrangeAPI_uid='y3138359'
@@ -45,23 +36,10 @@ OrangeAPI_pwd='3138359'
 Orange_Pid=46808
 
 # ======================================================
-
 # hbase存储爬虫输出数据
 SpiderDataSaveUrl='http://60.195.249.117:8090/hbaseserver/dat/saveStructuredData?'
 # hbase存储爬虫输出多媒体文件
 SpiderMediaSaveUrl='http://60.195.249.117:8090/hbaseserver/dat/saveMediaData?'
-
-# ==================《万方专利》======================
-
-# 万方专利任务生成程序最大进程数
-WANFANG_PATENT_URL_SPIDER_PROCESS = 8
-# 完场专利数据抓取程序最大进程数
-WANFANG_PATENT_DATA_SPIDER_PROCESS = 8
-
-# ==================《新华网》======================
-
-# 新华网数据抓取程序最大进程数
-XINHUA_NEWS_DATA_SPIDER_PROCESS = 8
 
 # ==================《adsl代理池》==================
 
@@ -72,6 +50,8 @@ UPDATE_PROXY_API = "http://60.195.249.95:5000/update-proxy"
 # 删除代理接口
 DELETE_PROXY_API = "http://60.195.249.95:5000/delete-proxy"
 
+# mysql数据库存储流媒体文件url的表名
+MEDIA_TABLE = 'ss_media'
 
 # # oss
 # ACCESSKEYID='LTAITx7i8MVIqSWh'
