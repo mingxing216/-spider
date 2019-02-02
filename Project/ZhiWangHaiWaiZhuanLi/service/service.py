@@ -122,8 +122,6 @@ class UrlServer(object):
 
     # 获取下一页url
     def getNextUrl(self, resp):
-        with open('index.html', 'w') as f:
-            f.write(resp.content.decode('utf-8'))
         response = resp.content.decode('utf-8')
         response_etree = etree.HTML(response)
         if response_etree.xpath("//a[text()='下一页']/@href"):

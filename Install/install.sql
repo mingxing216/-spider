@@ -164,7 +164,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ----------------------------
 DROP TABLE IF EXISTS `ss_zhiwang_zhuanli_url`;
 CREATE TABLE `ss_zhiwang_zhuanli_url` (
-  `url` varchar(200) NOT NULL,
+  `url` varchar(150) NOT NULL,
   PRIMARY KEY (`url`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

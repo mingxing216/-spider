@@ -26,4 +26,4 @@ REDIS_URL_TABLE = 'ss_zhiwang_zhuanli_url'
 REDIS_GET_NUMBER = 100
 
 # 进程数
-PROCESS_NUMBER = 4
+PROCESS_NUMBER = 8

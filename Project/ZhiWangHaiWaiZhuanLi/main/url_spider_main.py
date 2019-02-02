@@ -28,6 +28,7 @@ class BastSpiderMain(object):
                                                                   proxy_country=config.COUNTRY)
         self.server = service.UrlServer(logging=LOGGING)
         self.dao = dao.UrlDao(logging=LOGGING)
+        self.number = 0
 
 
 class SpiderMain(BastSpiderMain):
@@ -73,10 +74,6 @@ class SpiderMain(BastSpiderMain):
                 category_list = self.server.getCategoryNumber(resp=second_resp)
                 for category in category_list:
                     category_number.append(category)
-                    # break
-
-                # break
-            # break
 
         # 遍历分类号
         for category in category_number:
@@ -84,26 +81,31 @@ class SpiderMain(BastSpiderMain):
             # 遍历国家
             for country in range(self.country_number):
                 number = country + 1
+                if number == 9:
+                    number = '9+0'
 
                 # 获取时间列表
                 time_resp = self.download_middleware.getTimeListResp(category=category, country=number)
                 year_list = self.server.getYearList(resp=time_resp)
-                if year_list:
-                    for year in year_list:
-                        # 获取指定年的专利列表首页响应
+                for year in year_list:
+                    # 获取指定年的专利列表首页响应
+                    try:
                         index_html = self.download_middleware.getIndexHtml(year=year)
-                        # 获取专利主页url，内置翻页功能
+                    except Exception as e:
+                        LOGGING.error(e)
+                        continue
+                    # 获取专利主页url，内置翻页功能
+                    try:
                         url_list = self.getUrlList(index_html)
-                        # 保存url
-                        for url in url_list:
-                            LOGGING.info(url)
-                            self.dao.saveUrlToMysql(url=url)
-
-
-                        # break
-
-
-                # break
+                    except Exception as e:
+                        LOGGING.error(e)
+                        continue
+                    # 保存url
+                    for url in url_list:
+                        self.number += 1
+                        LOGGING.info(self.number)
+                        LOGGING.info(url)
+                        self.dao.saveUrlToMysql(url=url)
 
 
 if __name__ == '__main__':
