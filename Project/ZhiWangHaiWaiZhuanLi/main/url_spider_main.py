@@ -5,6 +5,7 @@
 '''
 import sys
 import os
+import time
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Log import log
@@ -109,5 +110,10 @@ class SpiderMain(BastSpiderMain):
 
 
 if __name__ == '__main__':
+    LOGGING.info('=========start object=========')
+    begin_time = time.time()
     main = SpiderMain()
     main.start()
+    LOGGING.info('=========end object=========')
+    LOGGING.info('=========Time consuming {}s'.format(int(time.time() - begin_time)))
+
