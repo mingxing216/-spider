@@ -5,6 +5,7 @@
 '''
 import sys
 import os
+import time
 from multiprocessing import Pool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
@@ -46,8 +47,12 @@ def process_start():
     main.start()
 
 if __name__ == '__main__':
+    begin_time = time.time()
     po = Pool(config.PROCESS_NUMBER)
     for i in range(config.PROCESS_NUMBER):
         po.apply_async(func=process_start)
     po.close()
     po.join()
+    end_time = time.time()
+    LOGGING.info('======The End!======')
+    LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

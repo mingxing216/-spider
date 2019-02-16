@@ -13,22 +13,36 @@ import settings
 
 
 class MysqlPool(object):
-    def __init__(self):
+    def __init__(self, number=10):
         # 创建mysql连接池
+        # self.pool = PooledDB(
+        #                 pymysql,
+        #                 mincached=settings.DB_POOL_MIN_NUMBER, # 最小空闲连接数
+        #                 maxcached=settings.DB_POOL_MAX_NUMBER, # 最大空闲连接数
+        #                 maxconnections=settings.DB_POOL_MAX_CONNECT, # 最大连接数
+        #                 blocking=True,
+        #                 host=settings.DB_HOST,
+        #                 user=settings.DB_USER,
+        #                 passwd=settings.DB_PASS,
+        #                 db=settings.DB_NAME,
+        #                 port=settings.DB_PORT,
+        #                 charset="utf8mb4",
+        #                 cursorclass=pymysql.cursors.DictCursor # 以字典格式返回数据
+        #                 )
         self.pool = PooledDB(
-                        pymysql,
-                        mincached=settings.DB_POOL_MIN_NUMBER, # 最小空闲连接数
-                        maxcached=settings.DB_POOL_MAX_NUMBER, # 最大空闲连接数
-                        maxconnections=settings.DB_POOL_MAX_CONNECT, # 最大连接数
-                        blocking=True,
-                        host=settings.DB_HOST,
-                        user=settings.DB_USER,
-                        passwd=settings.DB_PASS,
-                        db=settings.DB_NAME,
-                        port=settings.DB_PORT,
-                        charset="utf8mb4",
-                        cursorclass=pymysql.cursors.DictCursor # 以字典格式返回数据
-                        )
+            pymysql,
+            mincached=number,  # 最小空闲连接数
+            maxcached=number,  # 最大空闲连接数
+            maxconnections=number,  # 最大连接数
+            blocking=True,
+            host=settings.DB_HOST,
+            user=settings.DB_USER,
+            passwd=settings.DB_PASS,
+            db=settings.DB_NAME,
+            port=settings.DB_PORT,
+            charset="utf8mb4",
+            cursorclass=pymysql.cursors.DictCursor  # 以字典格式返回数据
+        )
 
     def _do_in_cursor(self, callback, pool):
         conn = None

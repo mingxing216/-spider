@@ -25,9 +25,9 @@ if __name__ == '__main__':
     path = 'Test/{}'.format(object_name)
     dir_utils.selectAndCreateDir(path)
     os.system('cp -r Project_Template/ProjectTemplate/ Test/{}'.format(object_name))
-    alter('Test/{}/main/main.py'.format(object_name), "Project_Template", "Test")
-    alter('Test/{}/main/main.py'.format(object_name), "ProjectTemplate", "{}".format(object_name))
-    alter('Test/{}/main/main.py'.format(object_name), "log_file_dir = ''", "log_file_dir = '{}'".format(object_name))
+    alter('Test/{}/main/template_1_main.py'.format(object_name), "Project_Template", "Test")
+    alter('Test/{}/main/template_1_main.py'.format(object_name), "ProjectTemplate", "{}".format(object_name))
+    alter('Test/{}/main/template_1_main.py'.format(object_name), "log_file_dir = ''", "log_file_dir = '{}'".format(object_name))
 
 
 

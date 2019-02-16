@@ -44,7 +44,7 @@ class SpiderMain(BastSpiderMain):
         if resp['status'] == 0:
             content = resp['data'].content
             # 保存数据到hbase
-            save_status = self.dao.saveMediaToHbase(media_url=url,
+            self.dao.saveMediaToHbase(media_url=url,
                                                     content=content,
                                                     type=media_type).content.decode('utf-8')
             LOGGING.info('媒体文件已保存至hbase: {} | {}'.format(sha, url))
@@ -61,8 +61,8 @@ class SpiderMain(BastSpiderMain):
             # 获取100个任务
             datas = self.dao.getObject(number=100)
             if not datas:
-                time.sleep(10)
                 LOGGING.info('数据库没任务了')
+                time.sleep(10)
                 continue
                 
             thread_pool = Thread_Pool()

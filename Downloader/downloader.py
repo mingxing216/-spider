@@ -20,12 +20,12 @@ def _error(func):
         try:
             data = func(self, *args, **kwargs)
             if data.status_code == 200:
-                return {'status': 0, 'data': data}
+                return {'status': 0, 'data': data, 'code': data.status_code}
 
             else:
                 self.logging.error("Downloader" + " | " + 'response status code is {}'.format(data.status_code) + " | "
                                     + kwargs['url'])
-                return {'status': 1, 'data': None}
+                return {'status': 1, 'data': None, 'code': data.status_code}
 
         except ConnectTimeout or ReadTimeout:
             self.logging.error("Downloader" + " | " + "request timeout: {}s".format(kwargs['timeout']) + " | "
@@ -131,7 +131,15 @@ class Downloader(object):
 
                         return {'status': 0, 'data': down_data['data'], 'proxies': proxies}
 
-                    else:
+                    if down_data['status'] == 1:
+                        status_code = str(down_data['code'])
+                        if status_code.startswith('5'):
+                            continue
+                        else:
+                            return {'status': 1}
+
+                    if down_data['status'] == 2:
+
                         continue
 
                 # 删除代理
