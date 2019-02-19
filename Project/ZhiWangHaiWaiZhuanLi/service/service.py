@@ -7,8 +7,6 @@ import sys
 import os
 import re
 import ast
-import requests
-import pprint
 from lxml import html
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
@@ -131,6 +129,11 @@ class UrlServer(object):
         else:
             # print('没有')
             return None
+
+    # 替换下一页的页码
+    def replace_page_number(self, next_page_url, page):
+
+        return re.sub(r"curpage=\d+", "curpage={}".format(page), next_page_url)
 
 
 class DataServer(object):

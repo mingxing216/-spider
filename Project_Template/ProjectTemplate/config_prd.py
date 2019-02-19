@@ -18,3 +18,6 @@ COUNTRY=1
 
 # 进程数
 PROCESS_NUMBER=8
+
+# mysql连接池数量
+MYSQLPOOL_NUMBER = 1

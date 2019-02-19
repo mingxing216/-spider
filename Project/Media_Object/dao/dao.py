@@ -25,7 +25,7 @@ class Dao(object):
 
     # 获取任务
     def getObject(self, number):
-        sql = 'select * from {} limit {}'.format(settings.MEDIA_TABLE, number)
+        sql = "select * from {} where `err` = '0' and `type` = 'image' limit {}".format(settings.MEDIA_TABLE, number)
         datas = self.mysql_client.get_results(sql=sql)
 
         return datas
@@ -77,6 +77,19 @@ class Dao(object):
     def delObject(self, sha):
         sql = "delete from {} where `sha` = '{}'".format(settings.MEDIA_TABLE, sha)
         self.mysql_client.execute(sql=sql)
+
+    # 更新mysql媒体文件链接
+    def updateObject(self, sha, url, type):
+        table = settings.MEDIA_TABLE
+        data = {
+            'url': url,
+            'type': type,
+            'err': 1,
+        }
+        where = "sha = '{}'".format(sha)
+        self.mysql_client.update(table=table, data=data, where=where)
+
+
 
     # # 保存媒体文件链接到mysql
     # def saveMediaToMysql(self, url, type):

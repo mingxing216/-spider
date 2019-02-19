@@ -15,13 +15,14 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 import settings
 from Utils import proxy
 from Utils import mysqlpool_utils
+from Project_Template.ProjectTemplate import config
 
 
 class Dao(object):
     def __init__(self, logging):
         self.logging = logging
         self.proxy_obj = proxy.ProxyUtils(logging=logging)
-        # self.mysql_client = mysqlpool_utils.MysqlPool()
+        # self.mysql_client = mysqlpool_utils.MysqlPool(config.MYSQLPOOL_NUMBER)
 
 
     # 存储专利数据到Hbase数据库
@@ -76,4 +77,7 @@ class Dao(object):
     #             'type': type,
     #             'url': url
     #         }
-    #         self.mysql_client.insert_one(table=settings.MEDIA_TABLE, data=data)
+    #         try:
+    #             self.mysql_client.insert_one(table=settings.MEDIA_TABLE, data=data)
+    #         except Exception as e:
+    #             self.logging.warning(e)

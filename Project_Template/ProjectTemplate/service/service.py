@@ -27,7 +27,6 @@ class Server(object):
     def __init__(self, logging):
         self.logging = logging
 
-    @error
     def getTitle(self, resp):
         '''This is demo'''
         response = resp.content.decode('utf-8')

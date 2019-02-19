@@ -1,0 +1,11 @@
+程序编写人：王勇
+编写人岗位：高级采集工程师
+所属部门：采集部
+最后更新日期：2019年2月18日
+
+程序责任：抓取《新华网》新闻
+抓取栏目范围：详见项目config.py配置文件COLUMN_INDEX_1参数
+程序启动方式：crontab启动主程序template_1_main.py文件
+程序运行周期：每2小时运行一次
+多媒体文件url存储地址：本地mysql数据库ss_media表
+Log日志存放位置：SpiderFrame/../Log/XinHuaNews/

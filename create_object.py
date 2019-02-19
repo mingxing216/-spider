@@ -1,7 +1,7 @@
 #-*-coding:utf-8-*-
 import sys
 import os
-from Utils import dir_utils
+
 
 def alter(file,old_str,new_str):
     """
@@ -22,12 +22,10 @@ def alter(file,old_str,new_str):
 
 if __name__ == '__main__':
     object_name = sys.argv[1]
-    path = 'Test/{}'.format(object_name)
-    dir_utils.selectAndCreateDir(path)
-    os.system('cp -r Project_Template/ProjectTemplate/ Test/{}'.format(object_name))
-    alter('Test/{}/main/template_1_main.py'.format(object_name), "Project_Template", "Test")
-    alter('Test/{}/main/template_1_main.py'.format(object_name), "ProjectTemplate", "{}".format(object_name))
-    alter('Test/{}/main/template_1_main.py'.format(object_name), "log_file_dir = ''", "log_file_dir = '{}'".format(object_name))
+    os.system('cp -r Project_Template/ProjectTemplate Test/{}'.format(object_name))
+    alter('Test/{}/main/main.py'.format(object_name), "Project_Template", "Test")
+    alter('Test/{}/main/main.py'.format(object_name), "ProjectTemplate", "{}".format(object_name))
+    alter('Test/{}/main/main.py'.format(object_name), "log_file_dir = ''", "log_file_dir = '{}'".format(object_name))
 
 
 

@@ -5,6 +5,7 @@
 '''
 import sys
 import os
+import requests
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
@@ -31,6 +32,15 @@ class Downloader(downloader.BaseDownloaderMiddleware):
 
         self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], url, param['data']))
         return self._startDownload(param=param)
+
+    def getResp_for_requests(self, url):
+        media_url = url
+        request_headers = {
+            'User-Agent': user_agent_u.get_ua()
+        }
+        resp = requests.get(url=media_url, headers=request_headers)
+
+        return resp
 
 
 
