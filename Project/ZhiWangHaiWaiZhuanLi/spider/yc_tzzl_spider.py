@@ -13,6 +13,7 @@ etree = html.etree
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Utils import user_agent_u
+from Project.ZhiWangHaiWaiZhuanLi import config
 
 
 # 从入口页获取第一部分cookie和默认同族页post参数
@@ -53,7 +54,7 @@ def func2(data1, proxies):
     }
     data = ast.literal_eval(data1['tzzl_data'])
     try:
-        resp = requests.post(url=url, headers=headers, data=data, proxies=proxies, timeout=5).content.decode('utf-8')
+        resp = requests.post(url=url, headers=headers, data=data, proxies=proxies, timeout=config.TIMEOUT).content.decode('utf-8')
     except:
         resp = None
     if not resp:
@@ -64,7 +65,7 @@ def func2(data1, proxies):
         data1['more_url'] = more_url
     except:
         data1['more_url'] = None
-    
+
     data1['yc_tzzl_html'] = resp
     return data1
 
@@ -79,7 +80,7 @@ def func3(data2, proxies):
         'User-Agent': user_agent_u.get_ua()
     }
     try:
-        resp = requests.get(url=url, headers=headers, proxies=proxies, allow_redirects=False, timeout=5).content.decode('utf-8')
+        resp = requests.get(url=url, headers=headers, proxies=proxies, allow_redirects=False, timeout=config.TIMEOUT).content.decode('utf-8')
     except:
         resp = None
     resp_etree = etree.HTML(resp)
@@ -101,7 +102,7 @@ def func4(data3, proxies, save_data, server):
         'User-Agent': user_agent_u.get_ua()
     }
     try:
-        resp = requests.get(url=url, headers=headers, proxies=proxies, timeout=5)
+        resp = requests.get(url=url, headers=headers, proxies=proxies, timeout=config.TIMEOUT)
     except:
         resp = None
     # 生成完整cookie
@@ -144,7 +145,7 @@ def func5(url, proxies, cookie, save_data, server):
         'User-Agent': user_agent_u.get_ua()
     }
     try:
-        resp = requests.get(url=url, headers=headers, proxies=proxies, timeout=5)
+        resp = requests.get(url=url, headers=headers, proxies=proxies, timeout=config.TIMEOUT)
     except:
         resp = None
     # TODO 这里可以获取首页显示的所有同族专利数据

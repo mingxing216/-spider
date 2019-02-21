@@ -39,6 +39,7 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
         self.tzzl_url = 'http://dbpub.cnki.net/grid2008/dbpub/Detail.aspx?action=node&dbname=sopd&block=SOPD_TZZL'
+        self.error = '0'
 
     def handle(self, resp, save_data):
         # 获取标题
@@ -84,20 +85,27 @@ class SpiderMain(BastSpiderMain):
         self.handle(resp=index_resp, save_data=save_data)
         error_number = 0
         while 1:
-            if error_number >= 2:
+            if error_number >= config.UPDATE_PROXY_FREQUENCY:
                 break
             # 获取代理
             proxies = self.download_middleware.downloader.proxy_obj.getProxy()
-            try:
-                yc_tzzl_spider.run(index_resp, proxies, save_data, self.server)
-                break
+            for i in range(config.RETRY):
+                try:
+                    yc_tzzl_spider.run(index_resp, proxies, save_data, self.server)
+                    self.error = '0'
+                    break
+                except:
+                    self.error = '1'
+                    continue
 
-            except Exception as e:
-                print(e)
+            if self.error == '1':
                 error_number += 1
                 # 删除代理
                 self.download_middleware.downloader.proxy_obj.delProxy(proxies)
+                time.sleep(1)
                 continue
+            else:
+                break
 
         # url
         save_data['url'] = url

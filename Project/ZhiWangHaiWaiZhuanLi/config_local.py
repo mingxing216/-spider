@@ -11,7 +11,7 @@ UPDATE_PROXY_FREQUENCY = 8
 RETRY = 5
 
 # 请求超时
-TIMEOUT = 5
+TIMEOUT = 10
 
 # 代理IP所属国家
 COUNTRY = 1
