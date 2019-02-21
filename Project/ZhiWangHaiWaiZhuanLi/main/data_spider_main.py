@@ -86,6 +86,7 @@ class SpiderMain(BastSpiderMain):
         error_number = 0
         while 1:
             if error_number >= config.UPDATE_PROXY_FREQUENCY:
+                save_data['guanLianTongZuZhuanLi'] = []
                 break
             # 获取代理
             proxies = self.download_middleware.downloader.proxy_obj.getProxy()
@@ -96,6 +97,7 @@ class SpiderMain(BastSpiderMain):
                     break
                 except:
                     self.error = '1'
+                    LOGGING.error('同族专利页请求失败')
                     continue
 
             if self.error == '1':
