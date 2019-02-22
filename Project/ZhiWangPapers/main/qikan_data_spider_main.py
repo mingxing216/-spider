@@ -227,7 +227,6 @@ class SpiderMain(BastSpiderMain):
                 break
 
 
-
 if __name__ == '__main__':
     main = SpiderMain()
     main.itegrationOfData()

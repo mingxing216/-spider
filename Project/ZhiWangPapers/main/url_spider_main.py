@@ -144,7 +144,6 @@ class SpiderMain(BastSpiderMain):
                                                        requests_data=request_data)
 
                                 if i == column_numbers:  # 最后一个栏目的存法
-                                    print(1)
                                     # 抓取文章用的期刊队列
                                     redis_key1 = 'article_qikan_queue_2'
                                     # 抓取期刊用的期刊队列

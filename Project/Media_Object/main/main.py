@@ -16,7 +16,7 @@ from Project.Media_Object.middleware import download_middleware
 from Project.Media_Object.service import service
 from Project.Media_Object.dao import dao
 from Project.Media_Object import config
-from Utils import user_agent_u
+
 
 log_file_dir = 'Media_Object'  # LOG日志存放路径
 LOGNAME = '<媒体文件下载脚本>'  # LOG名
@@ -101,6 +101,7 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取100个任务
             datas = self.dao.getObject(number=100)
+            LOGGING.info('已获取任务：{}个'.format(len(datas)))
             if not datas:
                 LOGGING.info('数据库没任务了')
                 time.sleep(10)

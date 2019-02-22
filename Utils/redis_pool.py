@@ -75,11 +75,11 @@ def _redisLock(func):
 
 
 class RedisPoolUtils(object):
-    def __init__(self):
+    def __init__(self, number=settings.REDIS_POOL_MAX_NUMBER):
         self.REDIS_HOST = settings.REDIS_HOST
         self.REDIS_PORT = settings.REDIS_PORT
         self.REDIS_PASSWORD = settings.REDIS_PASSWORD
-        self.REDIS_POOL_MAX_NUMBER = settings.REDIS_POOL_MAX_NUMBER
+        self.REDIS_POOL_MAX_NUMBER = number
         def createRedisPool():
             '''
             创建redis连接池

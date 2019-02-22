@@ -13,7 +13,7 @@ import settings
 
 
 class MysqlPool(object):
-    def __init__(self, number=10):
+    def __init__(self, number=settings.DB_POOL_NUMBER):
         # 创建mysql连接池
         # self.pool = PooledDB(
         #                 pymysql,

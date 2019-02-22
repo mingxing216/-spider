@@ -136,7 +136,32 @@ class QiKanDownloader(downloader.BaseDownloaderMiddleware):
 
         return resp['data']
 
-class Downloader(downloader.BaseDownloaderMiddleware):
+
+class LunWenDownloader(downloader.BaseDownloaderMiddleware):
+    def getResp(self, url, data=None):
+        param = {'url': url}
+
+        # 设置请求方式：GET或POST
+        param['mode'] = 'get'
+        # 设置请求头
+        param['headers'] = {
+            'Host': 'navi.cnki.net',
+            'Upgrade-Insecure-Requests': '1',
+            'Referer': 'http://navi.cnki.net/KNavi/Journal.html',
+            'User-Agent': user_agent_u.get_ua()
+        }
+        # 设置post参数
+        param['data'] = data
+
+        self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], url, data))
+        return self._startDownload(param=param)
+
+
+class JiGouDownloader(downloader.BaseDownloaderMiddleware):
+
+    def __del_proxies(self, proxies):
+        # 删除代理
+        self.downloader.proxy_obj.delProxy(proxies=proxies)
 
     def getResp(self, url, data=None):
         param = {'url': url}
@@ -145,33 +170,13 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         param['mode'] = 'get'
         # 设置请求头
         param['headers'] = {
+            'Host': 'navi.cnki.net',
+            'Upgrade-Insecure-Requests': '1',
+            'Referer': 'http://navi.cnki.net/KNavi/Journal.html',
             'User-Agent': user_agent_u.get_ua()
         }
         # 设置post参数
         param['data'] = data
 
-        self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], url, data))
-        return self.startDownload(param=param)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], url, param['data']))
+        return self._startDownload(param=param)
