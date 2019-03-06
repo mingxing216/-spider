@@ -10,6 +10,7 @@ import hashlib
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 
+import settings
 from Utils import timeutils
 from Storage import storage
 from Project.ZhiWangLunWen import config
@@ -231,25 +232,12 @@ class QiKanLunWen_LunWenDataDao(storage.Dao):
                                                         mysqlpool_number=mysqlpool_number,
                                                         redispool_number=redispool_number)
 
-    # 从论文队列获取论文任务
     def getLunWenUrls(self):
         datas = self.redis_client.queue_spops(key=config.REDIS_QIKANLUNWEN_LUNWEN, count=100,
                                               lockname=config.REDIS_QIKANLUNWEN_LUNWEN_LOCK)
 
         return datas
 
-    # 判断论文是否抓取过
-    def getLunWenStatus(self, sha):
-        sql = "select * from {} where `sha` = '{}'".format(config.MYSQL_REMOVAL, sha)
-        status = self.mysql_client.get_results(sql=sql)
-        if status:
-
-            return True
-        else:
-
-            return False
-
-    # 删除任务
     def deleteLunWenUrl(self, sha):
         data = {
             'del': '1'
@@ -260,7 +248,6 @@ class QiKanLunWen_LunWenDataDao(storage.Dao):
         except:
             self.logging.warning('论文任务删除异常: {}'.format(sha))
 
-    # 保存人物队列
     def saveRenWuToMysql(self, memo_list):
         for memo in memo_list:
             sha = memo['sha']
@@ -283,7 +270,6 @@ class QiKanLunWen_LunWenDataDao(storage.Dao):
             else:
                 self.logging.warning('人物队列数据已存在: {}'.format(sha))
 
-    # 保存机构队列
     def saveJiGouToMysql(self, memo_list):
         for memo in memo_list:
             sha = memo['sha']
@@ -313,25 +299,12 @@ class HuiYiLunWen_LunWenDataDao(storage.Dao):
                                                         mysqlpool_number=mysqlpool_number,
                                                         redispool_number=redispool_number)
 
-    # 从论文队列获取论文任务
     def getLunWenUrls(self):
         datas = self.redis_client.queue_spops(key=config.REDIS_HUIYILUNWEN_LUNWEN, count=100,
                                               lockname=config.REDIS_HUIYILUNWEN_LUNWEN_LOCK)
 
         return datas
 
-    # 判断论文是否抓取过
-    def getLunWenStatus(self, sha):
-        sql = "select * from {} where `sha` = '{}'".format(config.MYSQL_REMOVAL, sha)
-        status = self.mysql_client.get_results(sql=sql)
-        if status:
-
-            return True
-        else:
-
-            return False
-
-    # 删除任务
     def deleteLunWenUrl(self, sha):
         data = {
             'del': '1'
@@ -342,7 +315,6 @@ class HuiYiLunWen_LunWenDataDao(storage.Dao):
         except:
             self.logging.warning('论文任务删除异常: {}'.format(sha))
 
-    # 保存人物队列
     def saveRenWuToMysql(self, memo_list):
         for memo in memo_list:
             sha = memo['sha']
@@ -365,7 +337,6 @@ class HuiYiLunWen_LunWenDataDao(storage.Dao):
             else:
                 self.logging.warning('人物队列数据已存在: {}'.format(sha))
 
-    # 保存机构队列
     def saveJiGouToMysql(self, memo_list):
         for memo in memo_list:
             sha = memo['sha']
@@ -395,25 +366,12 @@ class XueWeiLunWen_LunWenDataDao(storage.Dao):
                                                          mysqlpool_number=mysqlpool_number,
                                                          redispool_number=redispool_number)
 
-    # 从论文队列获取论文任务
     def getLunWenUrls(self):
         datas = self.redis_client.queue_spops(key=config.REDIS_XUEWEILUNWEN_LUNWEN, count=100,
                                               lockname=config.REDIS_XUEWEILUNWEN_LUNWEN_LOCK)
 
         return datas
 
-    # 判断论文是否抓取过
-    def getLunWenStatus(self, sha):
-        sql = "select * from {} where `sha` = '{}'".format(config.MYSQL_REMOVAL, sha)
-        status = self.mysql_client.get_results(sql=sql)
-        if status:
-
-            return True
-        else:
-
-            return False
-
-    # 保存人物队列
     def saveRenWuToMysql(self, memo_list):
         for memo in memo_list:
             sha = memo['sha']
@@ -436,7 +394,6 @@ class XueWeiLunWen_LunWenDataDao(storage.Dao):
             else:
                 self.logging.warning('人物队列数据已存在: {}'.format(sha))
 
-    # 保存机构队列
     def saveJiGouToMysql(self, memo_list):
         for memo in memo_list:
             sha = memo['sha']
@@ -459,7 +416,6 @@ class XueWeiLunWen_LunWenDataDao(storage.Dao):
             else:
                 self.logging.warning('机构队列数据已存在: {}'.format(sha))
 
-    # 删除任务
     def deleteLunWenUrl(self, sha):
         data = {
             'del': '1'
@@ -477,25 +433,12 @@ class ZhiWangLunWen_JiGouDataDao(storage.Dao):
                                                          mysqlpool_number=mysqlpool_number,
                                                          redispool_number=redispool_number)
 
-    # 从机构队列获取论文任务
     def getJiGouUrls(self):
         datas = self.redis_client.queue_spops(key=config.REDIS_JIGOU, count=100,
                                               lockname=config.REDIS_JIGOU_LOCK)
 
         return datas
 
-    # 判断机构是否抓取过
-    def getJiGouStatus(self, sha):
-        sql = "select * from {} where `sha` = '{}'".format(config.MYSQL_REMOVAL, sha)
-        status = self.mysql_client.get_results(sql=sql)
-        if status:
-
-            return True
-        else:
-
-            return False
-
-    # 删除任务
     def deleteJiGouUrl(self, sha):
         data = {
             'del': '1'
@@ -513,25 +456,12 @@ class ZhiWangLunWen_ZuoZheDataDao(storage.Dao):
                                                           mysqlpool_number=mysqlpool_number,
                                                           redispool_number=redispool_number)
 
-    # 从机构队列获取论文任务
     def getZuoZheUrls(self):
         datas = self.redis_client.queue_spops(key=config.REDIS_ZUOZHE, count=100,
                                               lockname=config.REDIS_ZUOZHE_LOCK)
 
         return datas
 
-    # 判断机构是否抓取过
-    def getZuoZheStatus(self, sha):
-        sql = "select * from {} where `sha` = '{}'".format(config.MYSQL_REMOVAL, sha)
-        status = self.mysql_client.get_results(sql=sql)
-        if status:
-
-            return True
-        else:
-
-            return False
-
-    # 删除任务
     def deleteZuoZheUrl(self, sha):
         data = {
             'del': '1'
@@ -542,7 +472,6 @@ class ZhiWangLunWen_ZuoZheDataDao(storage.Dao):
         except:
             self.logging.warning('作者任务删除异常: {}'.format(sha))
 
-    # 保存机构队列
     def saveJiGouToMysql(self, memo):
         sha = memo['sha']
         # 查询数据库是否含有此数据
@@ -571,7 +500,6 @@ class ZhiWangLunWen_HuiYiDataDao(storage.Dao):
                                                          mysqlpool_number=mysqlpool_number,
                                                          redispool_number=redispool_number)
 
-    # 从机构队列获取论文任务
     def getWenJiUrls(self):
         sql = "select * from {} where `type` = '{}'".format(config.MYSQL_QIKAN, config.HUIYILUNWEN_QIKAN_MAIN)
         datas = self.mysql_client.get_results(sql=sql)
@@ -585,7 +513,6 @@ class ZhiWangLunWen_QiKanDataDao(storage.Dao):
                                                          mysqlpool_number=mysqlpool_number,
                                                          redispool_number=redispool_number)
 
-    # 从机构队列获取论文任务
     def getQiKanUrls(self):
         sql = "select * from {} where `type` = '{}'".format(config.MYSQL_QIKAN, config.QIKANLUNWEN_QIKAN_MAIN)
         datas = self.mysql_client.get_results(sql=sql)
@@ -599,7 +526,6 @@ class ZhiWangLunWen_WenJiDataDao(storage.Dao):
                                                          mysqlpool_number=mysqlpool_number,
                                                          redispool_number=redispool_number)
 
-    # 从机构队列获取论文任务
     def getWenJiUrls(self):
         sql = "select * from {} where `type` = '{}'".format(config.MYSQL_QIKAN, config.HUIYILUNWEN_QIKAN_MAIN)
         datas = self.mysql_client.get_results(sql=sql)

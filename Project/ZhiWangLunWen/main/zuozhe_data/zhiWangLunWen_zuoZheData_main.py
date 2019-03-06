@@ -45,7 +45,7 @@ class SpiderMain(BastSpiderMain):
         name = task['name']
         return_data = {}
         # # 查询当前文章是否被抓取过
-        status = self.dao.getZuoZheStatus(sha=sha)
+        status = self.dao.getTaskStatus(sha=sha)
 
         if status is False:
             # 获取会议主页html源码
@@ -72,7 +72,7 @@ class SpiderMain(BastSpiderMain):
                 # 生成clazz ——层级关系
                 return_data['clazz'] = '人物_论文作者'
                 # 生成es ——栏目名称
-                return_data['es'] = '论文作者'
+                return_data['es'] = '中国知网_作者数据'
                 # 生成biz ——项目
                 return_data['biz'] = '文献大数据'
                 # 生成ref
@@ -83,13 +83,13 @@ class SpiderMain(BastSpiderMain):
                 # --------------------------
                 # 保存机构队列
                 self.dao.saveJiGouToMysql(return_data['guanLianQiYeJiGou'])
-                # 记录已抓取任务
-                self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
+                # # 记录已抓取任务
+                # self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
                 # 删除任务
                 self.dao.deleteZuoZheUrl(sha=sha)
                 # 保存数据
                 status = self.dao.saveDataToHbase(data=return_data)
-                LOGGING.info(status.content.decode('utf-8'))
+                LOGGING.info(status)
 
             else:
                 LOGGING.error('获取文章页html源码失败，url: {}'.format(url))

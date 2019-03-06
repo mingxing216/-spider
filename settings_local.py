@@ -49,6 +49,8 @@ DELETE_PROXY_API = "http://60.195.249.95:5000/delete-proxy"
 
 # mysql数据库存储流媒体文件url的表名
 MEDIA_TABLE = 'ss_media'
+# mysql数据库记录已存数据的表名
+STATISTICS_TABLE = 'ss_statistics'
 
 
 

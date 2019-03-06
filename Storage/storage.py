@@ -39,20 +39,38 @@ class Dao(object):
             # 创建指定个数redis链接
             self.redis_client = redis_pool.RedisPoolUtils(int(redispool_number))
 
-    # 存储专利数据到Hbase数据库
+    # 存储数据到Hbase数据库 resultCode
     def saveDataToHbase(self, data):
         save_data = json.dumps(data)
         url = '{}'.format(settings.SpiderDataSaveUrl)
-        data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
+        save_data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
                 "wid": "python",
                 "ref": "",
                 "item": save_data}
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
         }
-        resp = requests.post(url=url, headers=headers, data=data)
+        resp = requests.post(url=url, headers=headers, data=save_data).content.decode('utf-8')
+        try:
+            resultCode = json.loads(resp)['resultCode']
+        except:
+            resultCode = 1
+
+        if resultCode == 0:
+            # 记录已存数据
+            statistics_data = {
+                'sha': data['sha'],
+                'create_at': timeutils.getNowDatetime(),
+                'type': data['es']
+            }
+            try:
+                self.mysql_client.insert_one(table=settings.STATISTICS_TABLE, data=statistics_data)
+
+            except:
+                return resp
 
         return resp
+
 
     # 保存流媒体到hbase
     def saveMediaToHbase(self, media_url, content, type):
@@ -76,7 +94,24 @@ class Dao(object):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
         }
 
-        resp = requests.post(url=url, headers=headers, data=data)
+        resp = requests.post(url=url, headers=headers, data=data).content.decode('utf-8')
+        try:
+            resultCode = json.loads(resp)['resultCode']
+        except:
+            resultCode = 1
+
+        if resultCode == 0:
+            # 记录已存数据
+            statistics_data = {
+                'sha': sha,
+                'create_at': timeutils.getNowDatetime(),
+                'type': type
+            }
+            try:
+                self.mysql_client.insert_one(table=settings.STATISTICS_TABLE, data=statistics_data)
+
+            except:
+                return resp
 
         return resp
 
@@ -102,14 +137,13 @@ class Dao(object):
             except Exception as e:
                 self.logging.warning('保存媒体链接到mysql警告: {}'.format(e))
 
-    # 记录已完成任务
-    def saveComplete(self, table, sha):
-        data = {
-            'sha': sha,
-            'create_at': timeutils.getNowDatetime()
-        }
-        try:
-            self.mysql_client.insert_one(table=table, data=data)
-        except:
+    # 判断任务是否抓取过
+    def getTaskStatus(self, sha):
+        sql = "select * from {} where `sha` = '{}'".format(settings.STATISTICS_TABLE, sha)
+        status = self.mysql_client.get_results(sql=sql)
+        if status:
 
-            return
+            return True
+        else:
+
+            return False

@@ -47,7 +47,7 @@ class SpiderMain(BastSpiderMain):
         wenji_url = task['wenji']
         # url = 'http://kns.cnki.net/kcms/detail/detail.aspx?sfield=FN&dbcode=CPFD&fileName=JCHX200504001010&tableName=CPFD9908'
         # 查询当前文章是否被抓取过
-        status = self.dao.getLunWenStatus(sha=sha)
+        status = self.dao.getTaskStatus(sha=sha)
 
         if status is False:
             # 获取会议主页html源码
@@ -120,7 +120,7 @@ class SpiderMain(BastSpiderMain):
                 # 生成clazz ——层级关系
                 return_data['clazz'] = '论文_会议论文'
                 # 生成es ——栏目名称
-                return_data['es'] = '会议论文'
+                return_data['es'] = '中国知网_会议论文数据'
                 # 生成biz ——项目
                 return_data['biz'] = '文献大数据'
                 # 生成ref
@@ -136,13 +136,13 @@ class SpiderMain(BastSpiderMain):
                 # 保存媒体url
                 for media in return_data['zuTu']:
                     self.dao.saveMediaToMysql(url=media['url'], type='image')
-                # 记录已抓取任务
-                self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
+                # # 记录已抓取任务
+                # self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
                 # 删除任务
                 self.dao.deleteLunWenUrl(sha=sha)
                 # 保存数据
                 status = self.dao.saveDataToHbase(data=return_data)
-                LOGGING.info(status.content.decode('utf-8'))
+                LOGGING.info(status)
 
             else:
                 LOGGING.error('获取文章页html源码失败，url: {}'.format(url))

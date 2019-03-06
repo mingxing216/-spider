@@ -46,6 +46,14 @@ CREATE TABLE `ss_zhiwang_zuozhe` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
+CREATE TABLE `ss_statistics` (
+  `sha` varchar(50) NOT NULL,
+  `create_at` datetime DEFAULT NULL,
+  `type` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`sha`),
+  KEY `create_at` (`create_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 -- ----------------------------
 -- Table structure for ss_zhiwang_zhuanli_url

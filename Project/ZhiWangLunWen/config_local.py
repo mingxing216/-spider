@@ -17,8 +17,6 @@ COUNTRY=1
 # ----------------------------
 # mysql表名配置
 # ----------------------------
-# 已抓任务存放表(用于抓取去重)
-MYSQL_REMOVAL = 'ss_zhiwang_removal'
 # 期刊任务表
 MYSQL_QIKAN = 'ss_zhiwang_qikan'
 # 论文任务表

@@ -90,7 +90,7 @@ class SpiderMain(BastSpiderMain):
             # 生成clazz ——层级关系
             return_data['clazz'] = '期刊_会议文集'
             # 生成es ——栏目名称
-            return_data['es'] = '会议文集'
+            return_data['es'] = '中国知网_会议文集数据'
             # 生成biz ——项目
             return_data['biz'] = '文献大数据'
             # 生成ref
@@ -104,7 +104,7 @@ class SpiderMain(BastSpiderMain):
                 self.dao.saveMediaToMysql(url=return_data['biaoShi']['url'], type='image')
             # 保存数据
             status = self.dao.saveDataToHbase(data=return_data)
-            LOGGING.info(status.content.decode('utf-8'))
+            LOGGING.info(status)
 
         else:
             LOGGING.error('获取文章页html源码失败，url: {}'.format(url))

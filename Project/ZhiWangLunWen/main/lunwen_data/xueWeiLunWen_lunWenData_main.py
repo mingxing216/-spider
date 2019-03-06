@@ -49,7 +49,7 @@ class SpiderMain(BastSpiderMain):
         url = task['url']
 
         # 查询当前文章是否被抓取过
-        status = self.dao.getLunWenStatus(sha=sha)
+        status = self.dao.getTaskStatus(sha=sha)
         if status is False:
 
             # 获取论文主页html源码
@@ -101,7 +101,7 @@ class SpiderMain(BastSpiderMain):
                 # 生成clazz ——层级关系
                 task['clazz'] = '论文_学位论文'
                 # 生成es ——栏目名称
-                task['es'] = '学位论文'
+                task['es'] = '中国知网_学位论文数据'
                 # 生成biz ——项目
                 task['biz'] = '文献大数据'
                 # 生成ref
@@ -117,13 +117,13 @@ class SpiderMain(BastSpiderMain):
                 # 保存媒体url
                 for media in task['zuTu']:
                     self.dao.saveMediaToMysql(url=media['url'], type='image')
-                # 记录已抓取任务
-                self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
+                # # 记录已抓取任务
+                # self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
                 # 删除任务
                 self.dao.deleteLunWenUrl(sha=sha)
                 # 保存数据
                 status = self.dao.saveDataToHbase(data=task)
-                LOGGING.info(status.content.decode('utf-8'))
+                LOGGING.info(status)
 
             else:
                 LOGGING.error('获取论文页html源码失败，url: {}'.format(url))
