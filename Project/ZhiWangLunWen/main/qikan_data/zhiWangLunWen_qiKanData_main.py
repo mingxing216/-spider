@@ -10,7 +10,7 @@ import re
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
+sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
 from Project.ZhiWangLunWen.middleware import download_middleware
 from Project.ZhiWangLunWen.service import service
