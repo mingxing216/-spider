@@ -23,9 +23,9 @@ def alter(file,old_str,new_str):
 if __name__ == '__main__':
     object_name = sys.argv[1]
     os.system('cp -r Project_Template/ProjectTemplate Test/{}'.format(object_name))
-    alter('Test/{}/main/main.py'.format(object_name), "Project_Template", "Test")
-    alter('Test/{}/main/main.py'.format(object_name), "ProjectTemplate", "{}".format(object_name))
-    alter('Test/{}/main/main.py'.format(object_name), "log_file_dir = ''", "log_file_dir = '{}'".format(object_name))
+    alter('Test/{}/main/wenji_url_spider_main.py'.format(object_name), "Project_Template", "Test")
+    alter('Test/{}/main/wenji_url_spider_main.py'.format(object_name), "ProjectTemplate", "{}".format(object_name))
+    alter('Test/{}/main/wenji_url_spider_main.py'.format(object_name), "log_file_dir = ''", "log_file_dir = '{}'".format(object_name))
 
 
 
