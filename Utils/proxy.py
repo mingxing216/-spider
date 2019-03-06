@@ -40,17 +40,23 @@ class ProxyUtils(object):
 
     def __del(self, ip):
         url = '{}?ip={}'.format(settings.DELETE_PROXY_API, ip)
-        resp = requests.get(url=url).content.decode('utf-8')
-        data = json.loads(resp)
-        if data['status'] == 0:
-            self.logging.info('delete proxy {} OK'.format(ip))
+        try:
+            resp = requests.get(url=url).content.decode('utf-8')
+            data = json.loads(resp)
+            if data['status'] == 0:
+                self.logging.info('delete proxy {} OK'.format(ip))
+        except:
+            pass
 
     def __update(self, ip):
         url = '{}?ip={}'.format(settings.UPDATE_PROXY_API, ip)
-        resp = requests.get(url=url).content.decode('utf-8')
-        data = json.loads(resp)
-        if data['status'] == 0:
-            self.logging.info('delete proxy {} OK'.format(ip))
+        try:
+            resp = requests.get(url=url).content.decode('utf-8')
+            data = json.loads(resp)
+            if data['status'] == 0:
+                self.logging.info('delete proxy {} OK'.format(ip))
+        except:
+            pass
 
     # 检测代理IP是否是高匿代理， 高匿返回True， 否则返回Fales
     def __jianChaNiMingDu(self, proxy, logging):
@@ -86,37 +92,47 @@ class ProxyUtils(object):
             url = "{}?random={}&country={}&city={}&type={}".format(settings.GET_PROXY_API, self.random,
                                                                    self.country, self.city, self.type)
 
-            proxy_data = requests.get(url=url).content.decode('utf-8')
-            data = json.loads(proxy_data)
-            if data['status'] == 0:
-                ip = data['ip']
-                port = data['port']
+            try:
+                proxy_data = requests.get(url=url).content.decode('utf-8')
+            except:
+                proxy_data = None
 
-                # 判断协议种类
-                if self.type == 'http':
+            if proxy_data:
+                data = json.loads(proxy_data)
+                if data['status'] == 0:
+                    ip = data['ip']
+                    port = data['port']
 
-                    return {'http': 'http://{}:{}'.format(ip, port)}
-                elif self.type == 'https':
+                    # 判断协议种类
+                    if self.type == 'http':
 
-                    return {'https': 'https://{}:{}'.format(ip, port)}
-                elif self.type == 'socks5':
+                        return {'http': 'http://{}:{}'.format(ip, port)}
+                    elif self.type == 'https':
 
-                    return {'http': 'socks5://{}:{}'.format(ip, port),
-                            'https': 'socks5://{}:{}'.format(ip, port)}
-                elif self.type == 'adsl':
+                        return {'https': 'https://{}:{}'.format(ip, port)}
+                    elif self.type == 'socks5':
 
-                    return {'http': 'http://{}:{}'.format(ip, port),
-                            'https': 'https://{}:{}'.format(ip, port)}
+                        return {'http': 'socks5://{}:{}'.format(ip, port),
+                                'https': 'socks5://{}:{}'.format(ip, port)}
+                    elif self.type == 'adsl':
+
+                        return {'http': 'http://{}:{}'.format(ip, port),
+                                'https': 'https://{}:{}'.format(ip, port)}
+                    else:
+                        self.logging.error('status: False | err: type error!!! | from: getProxy')
+
+                        continue
+
                 else:
-                    self.logging.error('status: False | err: type error!!! | from: getProxy')
+                    self.logging.error('代理池代理获取失败')
+                    time.sleep(10)
 
-                    continue
+                continue
 
             else:
                 self.logging.error('代理池代理获取失败')
                 time.sleep(10)
-
-            continue
+                continue
 
     # 删除代理
     def delProxy(self, proxies):
