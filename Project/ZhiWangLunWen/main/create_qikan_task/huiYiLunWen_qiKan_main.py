@@ -6,6 +6,7 @@
 import sys
 import os
 import time
+import traceback
 from multiprocessing import Pool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
@@ -113,7 +114,10 @@ class SpiderMain(BastSpiderMain):
 
 def process_start():
     main = SpiderMain()
-    main.start()
+    try:
+        main.start()
+    except:
+        LOGGING.error(str(traceback.format_exc()))
 
 if __name__ == '__main__':
     begin_time = time.time()

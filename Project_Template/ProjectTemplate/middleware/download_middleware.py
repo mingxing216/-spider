@@ -24,6 +24,27 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         # 删除代理
         self.downloader.proxy_obj.delProxy(proxies=proxies)
 
+    # 网页正常度检测机制
+    # def __judge_verify(self, param):
+    #     while True:
+    #         resp = self._startDownload(param=param)
+    #         if resp['status'] != 0:
+    #             continue
+    #
+    #         if 'proxies' in resp:
+    #             proxies = resp['proxies']
+    #             response = resp['data']
+    #             # 这里写验证码检测机制
+    #
+    #                 # self.logging.error('出现验证码')
+    #                 # # 删除代理
+    #                 # self.__del_proxies(proxies=proxies)
+    #                 # continue
+    #
+    #             return resp
+    #
+    #         return resp
+
     def getResp(self, url, mode, data=None):
         param = {'url': url}
 

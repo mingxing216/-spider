@@ -8,6 +8,7 @@ import os
 import time
 import re
 import hashlib
+import traceback
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -124,7 +125,10 @@ class SpiderMain(BastSpiderMain):
 
 def process_start():
     main = SpiderMain()
-    main.start()
+    try:
+        main.start()
+    except:
+        LOGGING.error(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
