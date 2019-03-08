@@ -1544,8 +1544,16 @@ class QiKanLunWen_LunWenDataServer(object):
                     if '大小' in title[0]:
                         daXiao = span.xpath("./b/text()")
                         if daXiao:
+                            try:
+                                v = re.findall(r'\d+', daXiao[0])[0]
+                            except:
+                                v = ''
+                            try:
+                                u = re.findall(r"[^\d]", daXiao[0])[0]
+                            except:
+                                u = 'K'
 
-                            return {'v': re.findall(r'\d+', daXiao[0])[0], 'u': re.findall(r"[^\d]", daXiao[0])[0]}
+                            return {'v': v, 'u': u}
                         else:
 
                             return {}
@@ -2130,8 +2138,16 @@ class HuiYiLunWen_LunWenDataServer(object):
                     if '大小' in title[0]:
                         daXiao = span.xpath("./b/text()")
                         if daXiao:
+                            try:
+                                v = re.findall(r'\d+', daXiao[0])[0]
+                            except:
+                                v = ''
+                            try:
+                                u = re.findall(r"[^\d]", daXiao[0])[0]
+                            except:
+                                u = 'K'
 
-                            return {'v': re.findall(r'\d+', daXiao[0])[0], 'u': re.findall(r"[^\d]", daXiao[0])[0]}
+                            return {'v': v, 'u': u}
                         else:
 
                             return {}
@@ -3166,8 +3182,16 @@ class XueWeiLunWen_LunWenDataServer(object):
                     if '大小' in title[0]:
                         daXiao = span.xpath("./b/text()")
                         if daXiao:
+                            try:
+                                v = re.findall(r'\d+', daXiao[0])[0]
+                            except:
+                                v = ''
+                            try:
+                                u = re.findall(r"[^\d]", daXiao[0])[0]
+                            except:
+                                u = 'K'
 
-                            return {'v': re.findall(r'\d+', daXiao[0])[0], 'u': re.findall(r"[^\d]", daXiao[0])[0]}
+                            return {'v': v, 'u': u}
                         else:
 
                             return {}
