@@ -7,6 +7,7 @@ import sys
 import os
 import time
 import hashlib
+import traceback
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Pool
 
@@ -128,27 +129,32 @@ class SpiderMain(BastSpiderMain):
         # 生成ref
         save_data['ref'] = ''
 
-        # 保存数据
-        save_status = self.dao.saveDataToHbase(save_data)
-
-        LOGGING.info(save_status.content.decode('utf-8'))
-        # 从mysql删除数据
-        self.dao.deleteObject(url=url)
+        # # 保存数据
+        # save_status = self.dao.saveDataToHbase(save_data)
+        #
+        # LOGGING.info(save_status.content.decode('utf-8'))
+        # # 从mysql删除数据
+        # self.dao.deleteObject(url=url)
+        print(save_data)
 
 
     def start(self):
         # 从redis获取任务
         url_list = self.dao.getUrlList()
 
-        threadpool = ThreadPool()
+        threadpool = ThreadPool(1)
         for url in url_list:
             threadpool.apply_async(func=self.run, args=(url,))
+            break
         threadpool.close()
         threadpool.join()
 
 def process_start():
     main = SpiderMain()
-    main.start()
+    try:
+        main.start()
+    except:
+        LOGGING.error(str(traceback.format_exc()))
 
 if __name__ == '__main__':
     while 1:
@@ -158,4 +164,5 @@ if __name__ == '__main__':
         po.close()
         po.join()
         time.sleep(2)
+        break
 

@@ -60,11 +60,14 @@ class Dao(object):
             # 记录已存数据
             statistics_data = {
                 'sha': data['sha'],
+                'memo': str({"url": data['url']}).replace('\'', '"'),
                 'create_at': timeutils.getNowDatetime(),
-                'type': data['es']
+                'data_type': data['es']
             }
+
             try:
-                self.mysql_client.insert_one(table=settings.STATISTICS_TABLE, data=statistics_data)
+                self.mysql_client.insert_one(table=settings.DATA_VOLUME_TOTAL_TABLE, data=statistics_data)
+                self.mysql_client.insert_one(table=settings.DATA_VOLUME_DAY_TABLE, data=statistics_data)
 
             except:
                 return resp
@@ -139,7 +142,7 @@ class Dao(object):
 
     # 判断任务是否抓取过
     def getTaskStatus(self, sha):
-        sql = "select * from {} where `sha` = '{}'".format(settings.STATISTICS_TABLE, sha)
+        sql = "select * from {} where `sha` = '{}'".format(settings.DATA_VOLUME_TOTAL_TABLE, sha)
         status = self.mysql_client.get_results(sql=sql)
         if status:
 

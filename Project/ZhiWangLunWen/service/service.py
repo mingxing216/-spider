@@ -2987,26 +2987,39 @@ class XueWeiLunWen_LunWenDataServer(object):
     def __init__(self, logging):
         self.logging = logging
 
-    def getTask(self, task_data):
-        task = ast.literal_eval(re.sub(r"datetime\.datetime\(.*\)", '"' + "date" + '"', task_data))
-        return ast.literal_eval(task['memo'])
+    def getTask(self, task_data_dict):
+        if 'memo' in task_data_dict:
+            return ast.literal_eval(task_data_dict['memo'])
+        else:
+            return None
+
+    def getUrlStatus(self, url):
+        # http://kns.cnki.net/kcms/detail/detail.aspx?sfield=FN&dbCode=CMFD&fileName=2003060149.nh&tableName=CMFD9904
+        if not re.findall(r"fileName=(.*?)&", url) or not re.findall(r"tableName=(.*)", url):
+            return False
+
+        else:
+            return True
 
     # 获取发布单位
     def getFaBuDanWei(self, resp):
         return_data = []
         html_etree = etree.HTML(resp)
-        try:
-            a_list = html_etree.xpath("//div[@class='orgn']/span/a")
-        except:
-            a_list = None
+
+        a_list = html_etree.xpath("//div[@class='orgn']/span/a")
 
         if a_list:
             for a in a_list:
                 url_data = a.xpath("./@onclick")
                 if url_data:
-                    url_data = eval(re.findall(r"(\(.*\))", url_data[0])[0])
-                    zuoZheDanWei = url_data[1]
-                    return_data.append(zuoZheDanWei)
+                    url_data = ast.literal_eval(re.findall(r"(\(.*\))", url_data[0])[0])
+                    try:
+                        zuoZheDanWei = url_data[1]
+                        return_data.append(zuoZheDanWei)
+                    except:
+                        continue
+                else:
+                    continue
 
             if return_data:
 
@@ -3020,10 +3033,8 @@ class XueWeiLunWen_LunWenDataServer(object):
     # 获取摘要
     def getZhaiYao(self, resp):
         html_etree = etree.HTML(resp)
-        try:
-            zhaiYao = html_etree.xpath("//span[@id='ChDivSummary']/text()")
-        except:
-            zhaiYao = None
+        zhaiYao = html_etree.xpath("//span[@id='ChDivSummary']/text()")
+
         if zhaiYao:
 
             return zhaiYao[0]
@@ -3035,10 +3046,7 @@ class XueWeiLunWen_LunWenDataServer(object):
     def getGuanJianCi(self, resp):
         return_data = []
         html_etree = etree.HTML(resp)
-        try:
-            p_list = html_etree.xpath("//div[@class='wxBaseinfo']/p")
-        except:
-            p_list = None
+        p_list = html_etree.xpath("//div[@class='wxBaseinfo']/p")
 
         if p_list:
             for p in p_list:
@@ -3047,9 +3055,11 @@ class XueWeiLunWen_LunWenDataServer(object):
                     if '关键词' in title[0]:
                         a_list = p.xpath("./a")
                         for a in a_list:
-                            guanJianCi = ''.join(re.findall(r'[^&nbsp\r\n\s;]', a.xpath("./text()")[0]))
-
-                            return_data.append(guanJianCi)
+                            try:
+                                guanJianCi = ''.join(re.findall(r'[^&nbsp\r\n\s;]', a.xpath("./text()")[0]))
+                                return_data.append(guanJianCi)
+                            except:
+                                continue
 
             if return_data:
 
@@ -3064,10 +3074,7 @@ class XueWeiLunWen_LunWenDataServer(object):
     def getJiJin(self, resp):
         return_data = []
         html_etree = etree.HTML(resp)
-        try:
-            p_list = html_etree.xpath("//div[@class='wxBaseinfo']/p")
-        except:
-            p_list = None
+        p_list = html_etree.xpath("//div[@class='wxBaseinfo']/p")
 
         if p_list:
             for p in p_list:
@@ -3077,27 +3084,26 @@ class XueWeiLunWen_LunWenDataServer(object):
                         a_list = p.xpath("./a")
                         if a_list:
                             for a in a_list:
-                                guanJianCi = ''.join(re.findall(r'[^&nbsp\r\n\s;；]', a.xpath("./text()")[0]))
-
-                                return_data.append(guanJianCi)
+                                try:
+                                    jiJin = ''.join(re.findall(r'[^&nbsp\r\n\s;；]', a.xpath("./text()")[0]))
+                                    return_data.append(jiJin)
+                                except:
+                                    continue
 
             if return_data:
 
                 return '|'.join(return_data)
             else:
 
-                return return_data
+                return ''
         else:
 
-            return return_data
+            return ''
 
     # 获取分类号
     def getZhongTuFenLeiHao(self, resp):
         html_etree = etree.HTML(resp)
-        try:
-            p_list = html_etree.xpath("//div[@class='wxBaseinfo']/p")
-        except:
-            p_list = None
+        p_list = html_etree.xpath("//div[@class='wxBaseinfo']/p")
 
         if p_list:
             for p in p_list:
@@ -3106,15 +3112,14 @@ class XueWeiLunWen_LunWenDataServer(object):
                     if '分类号' in title[0]:
                         fenLeiHao = p.xpath("./text()")
                         if fenLeiHao:
-
                             return ''.join(re.sub(';', '|', fenLeiHao[0]))
-                        else:
 
+                        else:
                             return ""
 
             return ""
-        else:
 
+        else:
             return ""
 
     # 获取文内图片
@@ -3125,7 +3130,7 @@ class XueWeiLunWen_LunWenDataServer(object):
         if data:
             fnbyIdAndName = re.findall(r"filename=(.*)&", data[0])[0]
             # 图片参数url
-            image_data_url = 'http://image.cnki.net/getimage.ashx?fnbyIdAndName={}'.format(fnbyIdAndName)
+            image_data_url = 'http://image.cnki.net/getimage.ashx?fnbyIdAndName={}'.format(str(fnbyIdAndName))
             # 获取图片参数
             image_data_resp = download_middleware.getResp(url=image_data_url, mode='get')
             if image_data_resp['status'] == 0:
@@ -3170,10 +3175,7 @@ class XueWeiLunWen_LunWenDataServer(object):
     # 获取大小
     def getDaXiao(self, resp):
         html_etree = etree.HTML(resp)
-        try:
-            span_list = html_etree.xpath("//div[@class='dllink-down']/div[@class='info']/div[@class='total']/span")
-        except:
-            span_list = None
+        span_list = html_etree.xpath("//div[@class='dllink-down']/div[@class='info']/div[@class='total']/span")
 
         if span_list:
             for span in span_list:
@@ -3197,17 +3199,14 @@ class XueWeiLunWen_LunWenDataServer(object):
                             return {}
 
             return {}
-        else:
 
+        else:
             return {}
 
     # 获取下载
     def getXiaZai(self, resp):
         html_etree = etree.HTML(resp)
-        try:
-            a_list = html_etree.xpath("//div[@class='dllink']/a")
-        except:
-            a_list = None
+        a_list = html_etree.xpath("//div[@class='dllink']/a")
 
         if a_list:
             for a in a_list:
@@ -3216,21 +3215,24 @@ class XueWeiLunWen_LunWenDataServer(object):
                     if '整本下载' in a_text[0]:
                         url = a.xpath("./@href")
                         if url:
-                            return url[0]
+                            url = url[0]
+                            if re.match(r"http", url):
+                                return url
+                            else:
+                                return 'http://kns.cnki.net' + url
                         else:
                             continue
                 else:
                     continue
+
+            return ''
         else:
             return ''
 
     # 获取在线阅读
     def getZaiXianYueDu(self, resp):
         html_etree = etree.HTML(resp)
-        try:
-            a_list = html_etree.xpath("//div[@class='dllink']/a")
-        except:
-            a_list = None
+        a_list = html_etree.xpath("//div[@class='dllink']/a")
 
         if a_list:
             for a in a_list:
@@ -3239,11 +3241,17 @@ class XueWeiLunWen_LunWenDataServer(object):
                     if '在线阅读' in a_text[0]:
                         url = a.xpath("./@href")
                         if url:
-                            return url[0]
+                            url = url[0]
+                            if re.match(r"http", url):
+                                return url
+                            else:
+                                return 'http://kns.cnki.net' + url
+
                         else:
                             continue
                 else:
                     continue
+            return ''
         else:
             return ''
 
@@ -3938,26 +3946,35 @@ class XueWeiLunWen_LunWenDataServer(object):
     def getGuanLianRenWu(self, resp):
         return_data = []
         html_etree = etree.HTML(resp)
-        try:
-            a_list = html_etree.xpath("//div[@class='author']/span/a")
-        except:
-            a_list = None
+        a_list = html_etree.xpath("//div[@class='author']/span/a")
+
         if a_list:
             for a in a_list:
-                url_data = ast.literal_eval(re.findall(r"(\(.*\))", a.xpath("./@onclick")[0])[0])
-                sfield = url_data[0]
-                skey = parse.quote(url_data[1])
-                code = url_data[2]
-                if not sfield or not skey:
-                    return return_data
+                onclick = a.xpath("./@onclick")
+                if onclick:
+                    try:
+                        url_data = ast.literal_eval(re.findall(r"(\(.*\))", a.xpath("./@onclick")[0])[0])
+                    except:
+                        url_data = None
+                if url_data:
+                    sfield = url_data[0]
+                    skey = parse.quote(url_data[1])
+                    code = url_data[2]
+                    if not sfield or not skey:
+                        continue
 
-                url = ('http://kns.cnki.net/kcms/detail/knetsearch.aspx?'
-                       'sfield={}'
-                       '&skey={}'
-                       '&code={}'.format(sfield, skey, code))
-                sha1 = hashlib.sha1(url.encode('utf-8')).hexdigest()
-                name = a.xpath("./text()")[0]
-                return_data.append({'sha': sha1, 'url': url, 'name': name, 'ss': '人物'})
+                    url = ('http://kns.cnki.net/kcms/detail/knetsearch.aspx?'
+                           'sfield={}'
+                           '&skey={}'
+                           '&code={}'.format(sfield, skey, code))
+                    sha1 = hashlib.sha1(url.encode('utf-8')).hexdigest()
+                    name = a.xpath("./text()")
+                    if name:
+                        return_data.append({'sha': sha1, 'url': url, 'name': name[0], 'ss': '人物'})
+                    else:
+                        continue
+                else:
+                    continue
 
             return return_data
         else:
@@ -3968,10 +3985,7 @@ class XueWeiLunWen_LunWenDataServer(object):
     def getGuanLianDaoShi(self, resp):
         return_data = []
         html_etree = etree.HTML(resp)
-        try:
-            p_list = html_etree.xpath("//div[@class='wxBaseinfo']/p")
-        except:
-            p_list = None
+        p_list = html_etree.xpath("//div[@class='wxBaseinfo']/p")
 
         if p_list:
             for p in p_list:
@@ -3982,39 +3996,38 @@ class XueWeiLunWen_LunWenDataServer(object):
                         if a_list:
                             for a in a_list:
                                 save_data = {}
-                                onclick = ast.literal_eval(
-                                    re.findall(r"TurnPageToKnet(\(.*\))", a.xpath("./@onclick")[0])[0])
-                                url = 'http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
-                                    onclick[0],
-                                    onclick[1],
-                                    onclick[2])
-                                name = onclick[1]
-                                save_data['url'] = url
-                                save_data['name'] = name
-                                save_data['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
-                                save_data['ss'] = '人物'
-                                return_data.append(save_data)
-
-        else:
+                                onclick = a.xpath("./@onclick")
+                                if onclick:
+                                    onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick[0])[0])
+                                    url = 'http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
+                                        onclick[0],
+                                        onclick[1],
+                                        onclick[2])
+                                    name = onclick[1]
+                                    save_data['url'] = url
+                                    save_data['name'] = name
+                                    save_data['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
+                                    save_data['ss'] = '人物'
+                                    return_data.append(save_data)
+                                else:
+                                    continue
 
             return return_data
 
-        return return_data
+        else:
+            return return_data
 
     # 获取关联企业机构
     def getGuanLianQiYeJiGou(self, resp):
         return_data = []
         html_etree = etree.HTML(resp)
-        try:
-            a_list = html_etree.xpath("//div[@class='orgn']/span/a")
-        except:
-            a_list = None
+        a_list = html_etree.xpath("//div[@class='orgn']/span/a")
 
         if a_list:
             for a in a_list:
                 url_data = a.xpath("./@onclick")
                 if url_data:
-                    url_data = eval(re.findall(r"(\(.*\))", url_data[0])[0])
+                    url_data = ast.literal_eval(re.findall(r"(\(.*\))", url_data[0])[0])
                     sfield = url_data[0]
                     skey = parse.quote(url_data[1])
                     code = url_data[2]
@@ -4025,8 +4038,8 @@ class XueWeiLunWen_LunWenDataServer(object):
                     return_data.append({'url': url, 'ss': '机构', 'sha': url_sha1})
 
             return return_data
-        else:
 
+        else:
             return return_data
 
 

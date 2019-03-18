@@ -12,6 +12,8 @@ RETRY=3
 TIMEOUT=10
 # 代理IP所属国家
 COUNTRY=1
+# 下载延迟
+DOWNLOAD_DELAY = 0.2
 
 
 # ----------------------------

@@ -7,11 +7,13 @@
 import sys
 import os
 import requests
+import time
 from requests.exceptions import ConnectTimeout
 from requests.exceptions import ConnectionError
 from requests.exceptions import ReadTimeout
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
+from settings import DOWNLOAD_DELAY
 from Utils import proxy
 
 
@@ -108,6 +110,7 @@ class Downloader(object):
         return resp
 
     def start(self, url, headers, data, cookies, timeout, proxies, connect_type):
+        time.sleep(int(DOWNLOAD_DELAY))
         if connect_type == 'GET':
             down_data = self.get(url=url, headers=headers, cookies=cookies,
                                  timeout=timeout, proxies=proxies)

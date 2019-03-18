@@ -81,3 +81,32 @@ CREATE TABLE `ss_media` (
 SET FOREIGN_KEY_CHECKS = 1;
 
 
+CREATE TABLE `data_number_total` (
+  `sha` varchar(50) NOT NULL,
+  `memo` longtext,
+  `data_type` varchar(10) DEFAULT NULL,
+  `create_at` datetime DEFAULT NULL,
+  `del` enum('0','1') DEFAULT '0',
+  PRIMARY KEY (`sha`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE `data_volume_day` (
+  `sha` varchar(50) NOT NULL,
+  `memo` longtext,
+  `data_type` varchar(50) DEFAULT NULL,
+  `create_at` datetime DEFAULT NULL,
+  `del` enum('0','1') DEFAULT '0',
+  PRIMARY KEY (`sha`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE `data_volume_total` (
+  `sha` varchar(50) NOT NULL,
+  `memo` longtext,
+  `data_type` varchar(50) DEFAULT NULL,
+  `create_at` datetime DEFAULT NULL,
+  `del` enum('0','1') DEFAULT '0',
+  PRIMARY KEY (`sha`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

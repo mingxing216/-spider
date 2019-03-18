@@ -52,6 +52,10 @@ MEDIA_TABLE = 'ss_media'
 # mysql数据库记录已存数据的表名
 STATISTICS_TABLE = 'ss_statistics'
 
+# 已抓取数据记录总表
+DATA_VOLUME_TOTAL_TABLE = 'data_volume_total'
+# 每日已抓取数据记录表
+DATA_VOLUME_DAY_TABLE = 'data_volume_day'
 
 
 # # oss
