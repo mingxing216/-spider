@@ -51,29 +51,28 @@ class Dao(object):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
         }
         resp = requests.post(url=url, headers=headers, data=save_data).content.decode('utf-8')
-        try:
-            resultCode = json.loads(resp)['resultCode']
-        except:
-            resultCode = 1
-
-        if resultCode == 0:
-            # 记录已存数据
-            statistics_data = {
-                'sha': data['sha'],
-                'memo': str({"url": data['url']}).replace('\'', '"'),
-                'create_at': timeutils.getNowDatetime(),
-                'data_type': data['es']
-            }
-
-            try:
-                self.mysql_client.insert_one(table=settings.DATA_VOLUME_TOTAL_TABLE, data=statistics_data)
-                self.mysql_client.insert_one(table=settings.DATA_VOLUME_DAY_TABLE, data=statistics_data)
-
-            except:
-                return resp
+        # try:
+        #     resultCode = json.loads(resp)['resultCode']
+        # except:
+        #     resultCode = 1
+        #
+        # if resultCode == 0:
+        #     # 记录已存数据
+        #     statistics_data = {
+        #         'sha': data['sha'],
+        #         'memo': str({"url": data['url']}).replace('\'', '"'),
+        #         'create_at': timeutils.getNowDatetime(),
+        #         'data_type': data['es']
+        #     }
+        #
+        #     try:
+        #         self.mysql_client.insert_one(table=settings.DATA_VOLUME_TOTAL_TABLE, data=statistics_data)
+        #         self.mysql_client.insert_one(table=settings.DATA_VOLUME_DAY_TABLE, data=statistics_data)
+        #
+        #     except:
+        #         return resp
 
         return resp
-
 
     # 保存流媒体到hbase
     def saveMediaToHbase(self, media_url, content, type):

@@ -7,6 +7,7 @@ import sys
 import os
 import json
 import hashlib
+import requests
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 
@@ -305,15 +306,23 @@ class HuiYiLunWen_LunWenDataDao(storage.Dao):
 
         return datas
 
+    def deleteUrl(self, sha):
+        sql = "delete from {} where `sha` = '{}'".format(config.MYSQL_LUNWEN, sha)
+        try:
+            self.mysql_client.execute(sql=sql)
+            self.logging.info('论文任务已删除: {}'.format(sha))
+        except:
+            self.logging.warning('论文任务删除异常: {}'.format(sha))
+
     def deleteLunWenUrl(self, sha):
         data = {
             'del': '1'
         }
         try:
             self.mysql_client.update(table=config.MYSQL_LUNWEN, data=data, where="sha = '{}'".format(sha))
-            self.logging.info('论文任务已删除: {}'.format(sha))
+            self.logging.info('论文任务已逻辑删除: {}'.format(sha))
         except:
-            self.logging.warning('论文任务删除异常: {}'.format(sha))
+            self.logging.warning('论文任务逻辑删除异常: {}'.format(sha))
 
     def saveRenWuToMysql(self, memo_list):
         for memo in memo_list:
@@ -456,11 +465,21 @@ class ZhiWangLunWen_ZuoZheDataDao(storage.Dao):
                                                           mysqlpool_number=mysqlpool_number,
                                                           redispool_number=redispool_number)
 
+
     def getZuoZheUrls(self):
         datas = self.redis_client.queue_spops(key=config.REDIS_ZUOZHE, count=100,
                                               lockname=config.REDIS_ZUOZHE_LOCK)
 
         return datas
+
+    def deleteUrl(self, sha):
+        sql = "delete from {} where `sha` = '{}'".format(config.MYSQL_ZUOZHE, sha)
+        try:
+            self.mysql_client.execute(sql=sql)
+            self.logging.info('作者任务已删除: {}'.format(sha))
+        except:
+            self.logging.warning('作者任务删除异常: {}'.format(sha))
+
 
     def deleteZuoZheUrl(self, sha):
         data = {

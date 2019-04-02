@@ -4,6 +4,9 @@
 测试环境配置参数
 '''
 
+# 下载延时
+DOWNLOAD_DELAY = 0.2
+
 # Mysql
 DB_HOST='60.195.249.104'
 DB_PORT=3306
@@ -54,6 +57,25 @@ MEDIA_TABLE = 'ss_media'
 DATA_VOLUME_TOTAL_TABLE = 'data_volume_total'
 # 每日已抓取数据记录表
 DATA_VOLUME_DAY_TABLE = 'data_volume_day'
+# 数据量表
+DATA_NUMBER_TOTAL_TABLE = 'data_number_total'
+# 爬虫列表
+SPIDER_TABLE = 'ss_spider'
+
+# ==================《mysql操作接口》====================
+DB_API_HOST = 'http://60.195.249.95:5001'
+
+
+# mysql数据增加接口
+DB_INSERT = '{}/mysql-insertData'.format(DB_API_HOST)
+# mysql数据删除接口
+DB_DELETE = '{}/mysql-deleteData'.format(DB_API_HOST)
+# mysql数据更新接口
+DB_UPDATE = '{}/mysql-updateData'.format(DB_API_HOST)
+# mysql表查询接口
+DB_SELECT = '{}/mysql-selectData'.format(DB_API_HOST)
+# 执行一条sql语句
+DB_EXECUTE = '{}/mysql-execute'.format(DB_API_HOST)
 
 # # oss
 # ACCESSKEYID='LTAITx7i8MVIqSWh'
