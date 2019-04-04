@@ -200,7 +200,11 @@ class HuiYiLunWen_LunWenTaskDownloader(downloader.BaseDownloaderMiddleware):
 
             if 'proxies' in resp:
                 proxies = resp['proxies']
-                response = resp['data'].content.decode('utf-8')
+                response = resp['data'].text
+                # try:
+                #     response = resp['data'].content.decode('utf-8')
+                # except:
+                #     response = resp['data'].text
                 if 'window.location.href' in response:
                     self.logging.error('出现验证码')
                     # 删除代理
