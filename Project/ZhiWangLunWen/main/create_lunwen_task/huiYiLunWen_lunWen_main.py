@@ -86,22 +86,25 @@ class SpiderMain(BastSpiderMain):
                         huiyi_list_resp = self.download_middleware.getResp(url=self.huiyi_list_url,
                                                                            mode='post',
                                                                            data=huiyi_list_url_data)
-                        huiyi_list_response = huiyi_list_resp['data'].content.decode('utf-8')
+                        if huiyi_list_resp['status'] == 0:
+                            huiyi_list_response = huiyi_list_resp['data'].content.decode('utf-8')
 
-                        # 获取会议url
-                        huiyi_url_list = self.server.getHuiYiUrlList(resp=huiyi_list_response)
+                            # 获取会议url
+                            huiyi_url_list = self.server.getHuiYiUrlList(resp=huiyi_list_response)
 
-                        for huiyi_url in huiyi_url_list:
-                            save_data = {}
-                            sha = hashlib.sha1(huiyi_url.encode('utf-8')).hexdigest()
-                            save_data['sha'] = sha
-                            save_data['url'] = huiyi_url
-                            save_data['jibie'] = task_jibie
-                            save_data['wenji'] = task_url
+                            for huiyi_url in huiyi_url_list:
+                                save_data = {}
+                                sha = hashlib.sha1(huiyi_url.encode('utf-8')).hexdigest()
+                                save_data['sha'] = sha
+                                save_data['url'] = huiyi_url
+                                save_data['jibie'] = task_jibie
+                                save_data['wenji'] = task_url
 
-                            # 保存会议种子数据
-                            self.dao.saveHuiYiUrlData(memo=save_data, sha=sha)
+                                # 保存会议种子数据
+                                self.dao.saveHuiYiUrlData(memo=save_data, sha=sha)
 
+                        else:
+                            LOGGING.error('会议列表页响应获取失败，url: {}, data: {}'.format(self.huiyi_list_url, huiyi_list_url_data))
                 else:
                     LOGGING.warning('会议总数量未获取到 或 等于0，url: {}'.format(huiyi_number_url))
             else:
