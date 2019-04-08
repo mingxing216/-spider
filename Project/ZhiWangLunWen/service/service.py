@@ -4117,6 +4117,14 @@ class ZhiWangLunWen_ZuoZheDataServer(object):
         task = ast.literal_eval(re.sub(r"datetime\.datetime\(.*\)", '"' + "date" + '"', task_data))
         return ast.literal_eval(task['memo'])
 
+    def getHtmlStatus(self, resp):
+        if '对不起，未找到相关数据' in resp:
+            return False
+
+        else:
+            return True
+
+
     def getSuoZaiDanWei(self, resp):
         html_etree = etree.HTML(resp)
         if html_etree.xpath("//p[@class='orgn']/a/text()"):
