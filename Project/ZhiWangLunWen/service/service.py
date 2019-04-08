@@ -385,7 +385,11 @@ class HuiYiLunWen_LunWenTaskServer(object):
     def getHuiYiUrlList(self, resp):
         return_data = []
         response_etree = etree.HTML(bytes(bytearray(resp, encoding='utf-8')))
-        a_list = response_etree.xpath("//td[@class='nobreak']/following-sibling::td[@class='name']/a")
+        try:
+            a_list = response_etree.xpath("//td[@class='nobreak']/following-sibling::td[@class='name']/a")
+        except:
+            a_list = []
+
         for a in a_list:
             href = a.xpath("./@href")[0]
             if href:
