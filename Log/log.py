@@ -24,7 +24,7 @@ class ILog(object):
         检查是否含有log文件夹
         :param dirname: 文件夹名字
         '''
-        dir_path = str(os.path.dirname(__file__) + os.sep + "../../") + 'Log/' + dirname
+        dir_path = str(os.path.dirname(__file__) + os.sep + "../../../../../opt/") + 'Log/' + dirname
         status = dir_utils.hasDir(dir_path)
         if status is False:
             dir_utils.createDir(dir_path)
@@ -39,7 +39,7 @@ class ILog(object):
         now_date = timeutils.getNowDate()
         # 添加handler
         if not self.logger.handlers:
-            filename = os.path.dirname(__file__) + os.sep + "../../Log/{}/{}_{}.log".format(self.file_dir, self.name, now_date)
+            filename = os.path.dirname(__file__) + os.sep + "../../../../../opt/Log/{}/{}_{}.log".format(self.file_dir, self.name, now_date)
             log_formatter = logging.Formatter('%(asctime)s {} %(levelname)s %(message)s'.format(self.name))
             log_handler = FileHandler(filename)
             log_handler.setFormatter(log_formatter)
