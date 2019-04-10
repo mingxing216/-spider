@@ -391,7 +391,10 @@ class HuiYiLunWen_LunWenTaskServer(object):
             a_list = []
 
         for a in a_list:
-            href = a.xpath("./@href")[0]
+            try:
+                href = a.xpath("./@href")[0]
+            except:
+                href = None
             if href:
                 url = 'http://kns.cnki.net/kcms/detail/detail.aspx?' + re.findall(r"\?(.*)", href)[0]
                 return_data.append(url)

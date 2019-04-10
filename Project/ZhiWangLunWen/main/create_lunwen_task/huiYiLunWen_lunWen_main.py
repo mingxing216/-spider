@@ -72,8 +72,8 @@ class SpiderMain(BastSpiderMain):
 
             # 获取会议数量页html
             huiyi_number_resp = self.download_middleware.getResp(url=huiyi_number_url, mode='get')
-            if huiyi_number_resp['status'] == 0:
-                huiyi_number_response = huiyi_number_resp['data'].content.decode('utf-8')
+            if huiyi_number_resp['status'] == 0 and huiyi_number_resp['data'] is not None:
+                huiyi_number_response = huiyi_number_resp['data'].text
                 # 获取会议数量
                 huiyi_number = self.server.getHuiYiNumber(resp=huiyi_number_response)
                 if huiyi_number > 0:
@@ -86,8 +86,8 @@ class SpiderMain(BastSpiderMain):
                         huiyi_list_resp = self.download_middleware.getResp(url=self.huiyi_list_url,
                                                                            mode='post',
                                                                            data=huiyi_list_url_data)
-                        if huiyi_list_resp['status'] == 0:
-                            huiyi_list_response = huiyi_list_resp['data'].content.decode('utf-8')
+                        if huiyi_list_resp['status'] == 0 and huiyi_list_resp['data'] is not None:
+                            huiyi_list_response = huiyi_list_resp['data'].text
 
                             # 获取会议url
                             huiyi_url_list = self.server.getHuiYiUrlList(resp=huiyi_list_response)
