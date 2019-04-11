@@ -25,34 +25,25 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         self.downloader.proxy_obj.delProxy(proxies=proxies)
 
     # 网页正常度检测机制
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            # 如果下载异常，重新下载
-            if resp['status'] != 0:
-                continue
-
-            # 如果下载成功， 并且响应内容不是None, 设置响应结果，否则响应设置None
-            if resp['status'] == 0 and resp['data'] is not None:
-                response = resp['data']
-            else:
-                response = None
-
-            # # 检测是否遇到验证码
-            # if response is not None:
-            #     proxies = resp['proxies']
-            #     if '您的IP访问过于频繁，请输入验证码后继续使用' in response.text:
-            #         self.logging.info('出现验证码')
-            #         # 删除代理
-            #         self.__del_proxies(proxies=proxies)
-            #         continue
-            #
-            #     else:
-            #         return response
-
-            # 返回响应内容
-            return response
+    # def __judge_verify(self, param):
+    #     while True:
+    #         resp = self._startDownload(param=param)
+    #         if resp['status'] != 0:
+    #             continue
+    #
+    #         if 'proxies' in resp:
+    #             proxies = resp['proxies']
+    #             response = resp['data']
+    #             # 这里写验证码检测机制
+    #
+    #                 # self.logging.error('出现验证码')
+    #                 # # 删除代理
+    #                 # self.__del_proxies(proxies=proxies)
+    #                 # continue
+    #
+    #             return resp
+    #
+    #         return resp
 
     def getResp(self, url, mode, data=None):
         param = {'url': url}
@@ -67,4 +58,4 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         param['data'] = data
 
         self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], url, param['data']))
-        return self.__judge_verify(param=param)
+        return self._startDownload(param=param)

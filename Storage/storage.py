@@ -117,14 +117,14 @@ class Dao(object):
 
         return resp
 
-    # 保存数据到mysql
+    # TODO 保存数据到mysql，不再使用
     def saveDataToMysql(self, table, data):
         try:
             self.mysql_client.insert_one(table=table, data=data)
         except Exception as e:
             self.logging.warning('保存数据到mysql警告: {}'.format(e))
 
-    # 保存媒体文件链接到mysql
+    # TODO 保存媒体文件链接到mysql，不再使用
     def saveMediaToMysql(self, url, type):
         if re.match('http', url):
             assert type == 'image' or type == 'music' or type == 'video' or type == 'file'
@@ -149,3 +149,38 @@ class Dao(object):
         else:
 
             return False
+
+    # 保存任务
+    def saveTask(self, data, cateid):
+        table = 'ss_task'
+        sha = data['sha']
+
+        save_data = {
+            'sha': sha,
+            'memo': str(data).replace('\'', '"'),
+            'cateid': cateid
+        }
+
+        # 查询数据库是否含有此数据
+        data_status_sql = "select * from {} where `sha` = '{}'".format(table, sha)
+        data_status = self.mysql_client.get_result(sql=data_status_sql)
+
+        if not data_status:
+            # 插入
+            try:
+                self.mysql_client.insert_one(table=table, data=save_data)
+                self.logging.info('insert data complete: {}'.format(sha))
+            except Exception as e:
+
+                self.logging.error('insert data error: {}'.format(e))
+
+        else:
+            # 更新
+            try:
+                self.mysql_client.update(table=table, data=save_data, where="sha = '{}'".format(sha))
+
+                self.logging.info('update data complete: {}'.format(sha))
+                return json.dumps({"status": 0, "sha": sha})
+
+            except Exception as e:
+                self.logging.error('uodate data error: {}'.format(e))
