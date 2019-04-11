@@ -12,3 +12,8 @@ RETRY=3
 TIMEOUT=10
 # 代理IP所属国家
 COUNTRY=1
+
+# cateid
+CATEID = '万方_标准'
+# 下载延迟
+DOWNLOADDELY = 5
