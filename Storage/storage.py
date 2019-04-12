@@ -139,6 +139,32 @@ class Dao(object):
             except Exception as e:
                 self.logging.warning('保存媒体链接到mysql警告: {}'.format(e))
 
+    # 数据库记录爬虫名
+    def saveSpiderName(self, name):
+        # 查询爬虫是否存在
+        sha = hashlib.sha1(name.encode('utf-8')).hexdigest()
+        select_sql = "select * from {} where sha = '{}'".format(settings.SPIDER_TABLE, sha)
+        spider_status = self.mysql_client.get_results(sql=select_sql)
+        if spider_status:
+            # 有
+            return
+        else:
+            # 没有
+            memo = {
+                'sha': sha,
+                'name': name
+            }
+            data = {
+                'sha': sha,
+                'memo': str(memo).replace('\'', '\"'),
+                'data_type': name,
+                'create_at': timeutils.getNowDatetime()
+            }
+            try:
+                self.mysql_client.insert_one(table=settings.SPIDER_TABLE, data=data)
+            except Exception as e:
+                print(e)
+
     # 判断任务是否抓取过
     def getTaskStatus(self, sha):
         sql = "select * from {} where `sha` = '{}'".format(settings.DATA_VOLUME_TOTAL_TABLE, sha)
@@ -184,3 +210,7 @@ class Dao(object):
 
             except Exception as e:
                 self.logging.error('uodate data error: {}'.format(e))
+
+    # 获取任务
+    def getTask(self, key, count, lockname):
+        return self.redis_client.queue_spops(key=key, count=count, lockname=lockname)

@@ -12,6 +12,7 @@ import json
 import hashlib
 from lxml import html
 from urllib import parse
+from scrapy import Selector
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 
@@ -341,8 +342,15 @@ class HuiYiLunWen_LunWenTaskServer(object):
 
     # 获取pcode、lwjcode
     def getPcodeAndLwjcode(self, data):
-        pcode = re.findall(r"pcode=(.*?)&", data)[0]
-        lwjcode = re.findall(r"lwjcode=(.*?)&", data)[0]
+        try:
+            pcode = re.findall(r"pcode=(.*?)&", data)[0]
+        except:
+            pcode = None
+
+        try:
+            lwjcode = re.findall(r"lwjcode=(.*?)&", data)[0]
+        except:
+            lwjcode = None
 
         return pcode, lwjcode
 
@@ -355,10 +363,10 @@ class HuiYiLunWen_LunWenTaskServer(object):
 
     # 获取会议数量
     def getHuiYiNumber(self, resp):
-        response_etree = etree.HTML(resp)
-        if response_etree.xpath("//span[@id='partiallistcount']/text()"):
-            return int(response_etree.xpath("//span[@id='partiallistcount']/text()")[0])
-
+        selector = Selector(text=resp)
+        data = selector.xpath("//span[@id='partiallistcount']/text()").extract_first()
+        if data:
+            return int(data)
         else:
             return 0
 
@@ -384,20 +392,17 @@ class HuiYiLunWen_LunWenTaskServer(object):
     # 获取会议url
     def getHuiYiUrlList(self, resp):
         return_data = []
-        response_etree = etree.HTML(bytes(bytearray(resp, encoding='utf-8')))
-        try:
-            a_list = response_etree.xpath("//td[@class='nobreak']/following-sibling::td[@class='name']/a")
-        except:
-            a_list = []
-
+        selector = Selector(text=resp)
+        a_list = selector.xpath("//td[@class='nobreak']/following-sibling::td[@class='name']/a")
         for a in a_list:
-            try:
-                href = a.xpath("./@href")[0]
-            except:
-                href = None
+            href = a.xpath("./@href").extract_first()
             if href:
-                url = 'http://kns.cnki.net/kcms/detail/detail.aspx?' + re.findall(r"\?(.*)", href)[0]
-                return_data.append(url)
+                try:
+                    url = 'http://kns.cnki.net/kcms/detail/detail.aspx?' + re.findall(r"\?(.*)", href)[0]
+                    return_data.append(url)
+                except:
+                    continue
+
             else:
                 continue
 

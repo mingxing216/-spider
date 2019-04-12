@@ -9,6 +9,7 @@ import json
 import re
 import ast
 import hashlib
+import pypinyin
 from lxml import html
 from scrapy import Selector
 
@@ -108,11 +109,92 @@ class Data_Server(object):
     def __init__(self, logging):
         self.logging = logging
 
-    def getTitle(self, resp):
-        '''This is demo'''
-        response = resp.content.decode('utf-8')
-        response_etree = etree.HTML(response)
-        title = response_etree.xpath("//title/text()")[0]
+    def getCateidPinyin(self, cateid):
+        cateid_pinyin = ''
+        for i in pypinyin.pinyin(cateid, style=pypinyin.NORMAL):
+            cateid_pinyin += ''.join(i)
 
-        return title
+        return cateid_pinyin
+
+    def getTitle(self, html):
+        selector = Selector(text=html)
+
+        title_data = selector.xpath("//div[@class='left_con_top']/div[@class='title']/text()").extract_first()
+        if title_data:
+
+            return re.sub(r"(\r|\n|\s{2,}|\t)", "", title_data)
+
+        else:
+            return ''
+
+    def getYingWenBiaoTi(self, html):
+        selector = Selector(text=html)
+
+        title_data = selector.xpath("//div[@class='left_con_top']/div[@class='title']/following-sibling::div/text()").extract_first()
+        if title_data:
+
+            return title_data
+
+        else:
+            return ''
+
+    def getBiaoZhunBianHao(self, html):
+        selector = Selector(text=html)
+
+        data = selector.xpath("//div[contains(text(), '标准编号')]/following-sibling::div/text()").extract_first()
+        if data:
+            return re.sub(r"(\r|\n|\t|\s)", "", data)
+
+        else:
+            return ''
+
+    def getBiaoZhunLeiXing(self, html):
+        selector = Selector(text=html)
+
+        data = selector.xpath("//div[contains(text(), '标准类型')]/following-sibling::div/text()").extract_first()
+        if data:
+            return re.sub(r"(\r|\n|\t|\s)", "", data)
+
+        else:
+            return ''
+
+    def getFaBuRiQi(self, html):
+        selector = Selector(text=html)
+
+        data = selector.xpath("//div[contains(text(), '发布日期')]/following-sibling::div/text()").extract_first()
+        if data:
+            return re.sub(r"(\r|\n|\t|\s)", "", data) + ' ' + '00:00:00'
+
+        else:
+            return ''
+
+    def getBiaoZhunZhuangTai(self, html):
+        selector = Selector(text=html)
+
+        data = selector.xpath("//div[contains(text(), '状态')]/following-sibling::div/text()").extract_first()
+        if data:
+            return re.sub(r"(\r|\n|\t|\s)", "", data)
+
+        else:
+            return ''
+
+    def getQiangZhiXingBiaoZhun(self, html):
+        selector = Selector(text=html)
+
+        data = selector.xpath("//div[contains(text(), '强制性标准')]/following-sibling::div/text()").extract_first()
+        if data:
+            return re.sub(r"(\r|\n|\t|\s)", "", data)
+
+        else:
+            return ''
+
+    def getShiShiRiQi(self, html):
+        selector = Selector(text=html)
+
+        data = selector.xpath("//div[contains(text(), '实施日期')]/following-sibling::div/text()").extract_first()
+        if data:
+            return re.sub(r"(\r|\n|\t|\s)", "", data) + ' ' + '00:00:00'
+
+        else:
+            return ''
 

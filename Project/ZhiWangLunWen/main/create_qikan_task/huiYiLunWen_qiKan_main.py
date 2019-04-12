@@ -24,11 +24,9 @@ LOGGING = log.ILog(log_file_dir, LOGNAME)
 class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.HuiYiLunWen_QiKanTaskDownloader(logging=LOGGING,
-                                                                  update_proxy_frequency=config.UPDATE_PROXY_FREQUENCY,
-                                                                  proxy_type=config.PROXY_TYPE,
-                                                                  timeout=config.TIMEOUT,
-                                                                  retry=config.RETRY,
-                                                                  proxy_country=config.COUNTRY)
+                                                                                       proxy_type=config.PROXY_TYPE,
+                                                                                       timeout=config.TIMEOUT,
+                                                                                       proxy_country=config.COUNTRY)
         self.server = service.HuiYiLunWen_QiKanTaskServer(logging=LOGGING)
         self.dao = dao.HuiYiLunWen_QiKanTaskDao(logging=LOGGING)
 
@@ -118,6 +116,7 @@ def process_start():
         main.start()
     except:
         LOGGING.error(str(traceback.format_exc()))
+
 
 if __name__ == '__main__':
     begin_time = time.time()

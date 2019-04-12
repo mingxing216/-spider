@@ -8,6 +8,7 @@ import os
 import time
 import traceback
 from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Log import log
@@ -18,20 +19,20 @@ from Project_Template.ProjectTemplate import config
 
 log_file_dir = ''  # LOG日志存放路径
 LOGNAME = ''  # LOG名
+NAME = '' # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
 class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
-                                                                  update_proxy_frequency=config.UPDATE_PROXY_FREQUENCY,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
-                                                                  retry=config.RETRY,
                                                                   proxy_country=config.COUNTRY)
         self.server = service.Server(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING)
-
+        # 数据库录入爬虫名
+        self.dao.saveSpiderName(name=NAME)
 
 class SpiderMain(BastSpiderMain):
     def __init__(self):

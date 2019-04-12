@@ -30,10 +30,8 @@ TASK_Q = manage.Queue()
 class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.HuiYiLunWen_LunWenTaskDownloader(logging=LOGGING,
-                                                                                        update_proxy_frequency=config.UPDATE_PROXY_FREQUENCY,
                                                                                         proxy_type=config.PROXY_TYPE,
                                                                                         timeout=config.TIMEOUT,
-                                                                                        retry=config.RETRY,
                                                                                         proxy_country=config.COUNTRY)
         self.server = service.HuiYiLunWen_LunWenTaskServer(logging=LOGGING)
         self.dao = dao.HuiYiLunWen_LunWenTaskDao(logging=LOGGING)
@@ -66,14 +64,17 @@ class SpiderMain(BastSpiderMain):
 
             # 获取pcode、lwjcode
             pcode, lwjcode = self.server.getPcodeAndLwjcode(data=task_url)
+            if pcode is None or lwjcode is None:
+                continue
 
             # 生成会议数量页url
             huiyi_number_url = self.server.getHuiYiNumberUrl(pcode=pcode, lwjcode=lwjcode)
 
             # 获取会议数量页html
             huiyi_number_resp = self.download_middleware.getResp(url=huiyi_number_url, mode='get')
-            if huiyi_number_resp['status'] == 0 and huiyi_number_resp['data'] is not None:
+            if huiyi_number_resp['status'] == 0:
                 huiyi_number_response = huiyi_number_resp['data'].text
+
                 # 获取会议数量
                 huiyi_number = self.server.getHuiYiNumber(resp=huiyi_number_response)
                 if huiyi_number > 0:
@@ -86,7 +87,7 @@ class SpiderMain(BastSpiderMain):
                         huiyi_list_resp = self.download_middleware.getResp(url=self.huiyi_list_url,
                                                                            mode='post',
                                                                            data=huiyi_list_url_data)
-                        if huiyi_list_resp['status'] == 0 and huiyi_list_resp['data'] is not None:
+                        if huiyi_list_resp['status'] == 0:
                             huiyi_list_response = huiyi_list_resp['data'].text
 
                             # 获取会议url
