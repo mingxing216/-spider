@@ -31,29 +31,17 @@ class UrlDownloader(downloader.BaseDownloaderMiddleware):
         # 删除代理
         self.downloader.proxy_obj.delProxy(proxies=proxies)
 
+    # 网页正常度检测机制
     def __judge_verify(self, param):
         while True:
+            # 下载
             resp = self._startDownload(param=param)
-            if resp['status'] != 0:
-                continue
-
-            if 'proxies' in resp:
-                proxies = resp['proxies']
-                resp = resp['data']
-                if len(resp.content.decode('utf-8')) < 20:
-                    self.logging.error('出现验证码')
-                    # 删除代理
-                    self.__del_proxies(proxies=proxies)
-                    continue
-
-                if '请输入验证码' in resp.content.decode('utf-8'):
-                    self.logging.error('出现验证码')
-                    # 删除代理
-                    # self.__del_proxies(proxies=proxies)
+            if resp['status'] == 0:
+                response = resp['data']
+                if '请输入验证码' in response.text or len(response.text) < 20:
+                    self.logging.info('出现验证码')
 
                     return None
-
-                return resp
 
             return resp['data']
 
@@ -91,7 +79,6 @@ class UrlDownloader(downloader.BaseDownloaderMiddleware):
             'his': '0'
         }
 
-        self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], param['url'], param['data']))
         return self._startDownload(param=param)
 
     def _two(self, category, country, cookie):
@@ -128,7 +115,6 @@ class UrlDownloader(downloader.BaseDownloaderMiddleware):
             'his': '0'
         }
 
-        self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], param['url'], param['data']))
         return self._startDownload(param=param)
 
     def _third(self, category, country, cookie):
@@ -166,7 +152,6 @@ class UrlDownloader(downloader.BaseDownloaderMiddleware):
             'his': '0'
         }
 
-        self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], param['url'], param['data']))
         return self._startDownload(param=param)
     
     def __urllib2Download(self, url, headers):
@@ -197,7 +182,6 @@ class UrlDownloader(downloader.BaseDownloaderMiddleware):
         # 设置post参数
         param['data'] = data
 
-        self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], url, param['data']))
         return self.__judge_verify(param=param)
 
     def getTimeListResp(self, category, country, cookie):

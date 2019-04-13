@@ -112,6 +112,8 @@ class Downloader(object):
 
     def begin(self, url, headers=None, data=None, cookies=None, connect_type='GET'):
         if self.proxy_type is not None:
+            # 请求异常时间戳
+            err_time = 0
             while 1:
                 proxies = self.proxy_obj.getProxy()
                 self.logging.info("Begin {} request for url: {} | request data is {} | proxy is {}".format(
@@ -132,8 +134,23 @@ class Downloader(object):
                         return {'status': 1, 'data': url}
 
                 if down_data['status'] == 2:
-                    continue
+                    '''
+                    如果未设置请求异常的时间戳，则现在设置；
+                    如果已经设置了异常的时间戳，则获取当前时间戳，然后对比之前设置的时间戳，如果时间超过了3分钟，说明url有问题，直接返回
+                    {'status': 1}
+                    '''
+                    if err_time == 0:
+                        err_time = int(time.time())
+                        continue
 
+                    else:
+                        # 获取当前时间戳
+                        now = int(time.time())
+                        if now - err_time >= 180:
+                            return {'status': 1, 'data': url}
+                        else:
+                            continue
+                        
         else:
             down_data = self.start(url=url, headers=headers, data=data,
                                    cookies=cookies, timeout=self.timeout, proxies=None,

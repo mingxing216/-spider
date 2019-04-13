@@ -25,10 +25,8 @@ LOGGING = log.ILog(log_file_dir, LOGNAME)
 class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
-                                                                  update_proxy_frequency=config.UPDATE_PROXY_FREQUENCY,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
-                                                                  retry=config.RETRY,
                                                                   proxy_country=config.COUNTRY)
         self.server = service.Server(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING)

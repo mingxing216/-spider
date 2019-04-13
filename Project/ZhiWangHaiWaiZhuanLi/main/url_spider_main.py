@@ -22,11 +22,9 @@ LOGGING = log.ILog(log_file_dir, LOGNAME)
 class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.UrlDownloader(logging=LOGGING,
-                                                                  update_proxy_frequency=config.UPDATE_PROXY_FREQUENCY,
-                                                                  proxy_type=config.PROXY_TYPE,
-                                                                  timeout=config.TIMEOUT,
-                                                                  retry=config.RETRY,
-                                                                  proxy_country=config.COUNTRY)
+                                                                     proxy_type=config.PROXY_TYPE,
+                                                                     timeout=config.TIMEOUT,
+                                                                     proxy_country=config.COUNTRY)
         self.server = service.UrlServer(logging=LOGGING)
         self.dao = dao.UrlDao(logging=LOGGING)
         self.number = 0
@@ -35,7 +33,7 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
-        self.country_number = 14    # 国家数
+        self.country_number = 14  # 国家数
         self.index_url = 'http://kns.cnki.net/kns/brief/result.aspx?dbprefix=SOPD'
         self.cookie = ''
 
@@ -66,7 +64,7 @@ class SpiderMain(BastSpiderMain):
                     # 获取下一页url
                     next_page_url = self.server.getNextUrl(resp=index_html)
                     # 替换页码获得新的下一页地址
-                    next_url = self.server.replace_page_number(next_page_url, page+1)
+                    next_url = self.server.replace_page_number(next_page_url, page + 1)
 
                     next_resp = self.download_middleware.getNextHtml(url=next_url, cookie=self.cookie)
                 page += 1
@@ -74,7 +72,7 @@ class SpiderMain(BastSpiderMain):
 
             else:
                 break
-            
+
         return return_data
 
     def start(self):
@@ -106,7 +104,8 @@ class SpiderMain(BastSpiderMain):
                     number = '9+0'
 
                 # 获取时间列表
-                time_resp = self.download_middleware.getTimeListResp(category=category, country=number, cookie=self.cookie)
+                time_resp = self.download_middleware.getTimeListResp(category=category, country=number,
+                                                                     cookie=self.cookie)
                 year_list = self.server.getYearList(resp=time_resp)
                 for year in year_list:
                     # 获取指定年的专利列表首页响应
@@ -137,4 +136,3 @@ if __name__ == '__main__':
     main.start()
     LOGGING.info('=========end object=========')
     LOGGING.info('=========Time consuming {}s'.format(int(time.time() - begin_time)))
-

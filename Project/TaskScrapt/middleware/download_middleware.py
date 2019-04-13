@@ -12,11 +12,9 @@ from Utils import user_agent_u
 
 
 class Downloader(downloader.BaseDownloaderMiddleware):
-    def __init__(self, logging, timeout, retry, update_proxy_frequency, proxy_type, proxy_country):
+    def __init__(self, logging, timeout, proxy_type, proxy_country):
         super(Downloader, self).__init__(logging=logging,
                                          timeout=timeout,
-                                         retry=retry,
-                                         update_proxy_frequency=update_proxy_frequency,
                                          proxy_type=proxy_type,
                                          proxy_country=proxy_country)
 
