@@ -107,24 +107,27 @@ class Server(object):
         href_list = selector.xpath("//a[@class='fz14']/@href").extract()
         for href in href_list:
             try:
-                dbcode = re.findall(r"dbcode=(.*?)&", href)[0]
-            except:
-                dbcode = re.findall(r"dbcode=(.*)", href)[0]
-            try:
-                dbname = re.findall(r"dbname=(.*?)&", href)[0]
-            except:
-                dbname = re.findall(r"dbname=(.*)", href)[0]
-            try:
-                filename = re.findall(r"filename=(.*?)&", href)[0]
-            except:
-                filename = re.findall(r"filename=(.*)", href)[0]
+                try:
+                    dbcode = re.findall(r"dbcode=(.*?)&", href)[0]
+                except:
+                    dbcode = re.findall(r"dbcode=(.*)", href)[0]
+                try:
+                    dbname = re.findall(r"dbname=(.*?)&", href)[0]
+                except:
+                    dbname = re.findall(r"dbname=(.*)", href)[0]
+                try:
+                    filename = re.findall(r"filename=(.*?)&", href)[0]
+                except:
+                    filename = re.findall(r"filename=(.*)", href)[0]
 
-            url = ('http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?'
-                   'dbcode={}&'
-                   'dbname={}&'
-                   'filename={}').format(dbcode, dbname, filename)
+                url = ('http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?'
+                       'dbcode={}&'
+                       'dbname={}&'
+                       'filename={}').format(dbcode, dbname, filename)
 
-            return_data.append(url)
+                return_data.append(url)
+            except:
+                continue
 
         return return_data
 
