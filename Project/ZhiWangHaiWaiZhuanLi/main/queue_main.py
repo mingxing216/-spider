@@ -8,18 +8,17 @@ import os
 import time
 import traceback
 from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Log import log
-from Project_Template.ProjectTemplate.middleware import download_middleware
-from Project_Template.ProjectTemplate.service import service
-from Project_Template.ProjectTemplate.dao import dao
-from Project_Template.ProjectTemplate import config
+from Project.ZhiWangHaiWaiZhuanLi.middleware import download_middleware
+from Project.ZhiWangHaiWaiZhuanLi.service import service
+from Project.ZhiWangHaiWaiZhuanLi.dao import dao
+from Project.ZhiWangHaiWaiZhuanLi import config
 
-log_file_dir = ''  # LOG日志存放路径
-LOGNAME = ''  # LOG名
-NAME = ''  # 爬虫名
+log_file_dir = 'ZhiWangHaiWaiZhuanLi'  # LOG日志存放路径
+LOGNAME = '<知网_海外专利_queue>'  # LOG名
+NAME = '知网_海外专利_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -46,23 +45,24 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
 
-    def __getResp(self, func, url, mode, data=None, cookies=None):
-        while 1:
-            resp = func(url=url, mode=mode, data=data, cookies=cookies)
-            if resp['status'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text:
-                    LOGGING.info('出现验证码')
-                    continue
-
-                else:
-                    return response
-
-            if resp['status'] == 1:
-                return None
-
     def start(self):
-        pass
+        while 1:
+            # 查询redis队列中任务数量
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_TASK)
+            if url_number == 0:
+                LOGGING.info('redis已无任务，准备开始队列任务。')
+
+                # 获取任务
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_TASK, count=2000)
+                LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
+
+                # 队列任务
+                self.dao.QueueTask(key=config.REDIS_TASK, data=new_task_list)
+                LOGGING.info('已成功向redis队列{}个任务'.format(len(new_task_list)))
+            else:
+                LOGGING.info('redis剩余{}个任务'.format(url_number))
+
+            time.sleep(1)
 
 
 def process_start():

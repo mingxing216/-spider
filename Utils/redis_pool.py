@@ -75,7 +75,7 @@ def _redisLock(func):
 
 
 class RedisPoolUtils(object):
-    def __init__(self, number=settings.REDIS_POOL_MAX_NUMBER):
+    def __init__(self, number):
         self.REDIS_HOST = settings.REDIS_HOST
         self.REDIS_PORT = settings.REDIS_PORT
         self.REDIS_PASSWORD = settings.REDIS_PASSWORD

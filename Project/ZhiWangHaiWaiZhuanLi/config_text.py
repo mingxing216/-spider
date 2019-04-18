@@ -1,29 +1,30 @@
 #-*-coding:utf-8-*-
+# ----------------------------
+# 公共配置
+# ----------------------------
+
+PROXY_TYPE='http' # 代理IP协议种类
+TIMEOUT=10 # 请求超时
+COUNTRY=1 # 代理IP所属国家
+MYSQL_POOL_NUMBER = 1 # Mysql连接池数量
+REDIS_POOL_NUMBER = 1 # Redis连接池数量
 
 
-# 代理IP协议种类
-PROXY_TYPE = 'http'
+# ----------------------------
+# 数据表配置
+# ----------------------------
+MYSQL_TASK = 'ss_zhiwang_zhuanli_url' # Mysql任务表
+REDIS_TASK = 'ss_zhiwang_zhuanli_url' # Redis任务表
 
-# 代理重复获取次数
-UPDATE_PROXY_FREQUENCY = 8
 
-# 同IP重复请求次数
-RETRY = 5
+# ----------------------------
+# 锁配置
+# ----------------------------
+REDIS_TASK_LOCK = 'ss_zhiwang_zhuanli_url_lock' # Redis分布式锁名
 
-# 请求超时
-TIMEOUT = 10
+# ----------------------------
+# 进程数配置
+# ----------------------------
+DATA_SCRIPT_PROCESS = 8 # 数据爬虫进程数
 
-# 代理IP所属国家
-COUNTRY = 1
 
-# mysql存储url表名
-MYSQL_URL_TABLE = 'ss_zhiwang_zhuanli_url'
-
-# redis队列url集合名
-REDIS_URL_TABLE = 'ss_zhiwang_zhuanli_url'
-
-# 每次从redis获取任务的数量
-REDIS_GET_NUMBER = 100
-
-# 进程数
-PROCESS_NUMBER = 4

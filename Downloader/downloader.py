@@ -28,16 +28,16 @@ def _error(func):
                 return {'status': 1, 'data': None, 'code': data.status_code}
 
         except ConnectTimeout or ReadTimeout:
-            self.logging.error("Downloader" + " | " + "request timeout: {}s".format(kwargs['timeout']) + " | "
-                                    + kwargs['url'])
+            # self.logging.error("Downloader" + " | " + "request timeout: {}s".format(kwargs['timeout']) + " | "
+            #                         + kwargs['url'])
             return {'status': 2, 'data': None}
 
         except ConnectionError as e:
-            self.logging.error("Downloader" + " | " + "connection error" + " | " + kwargs['url'] + " | " + str(e))
+            # self.logging.error("Downloader" + " | " + "connection error" + " | " + kwargs['url'] + " | " + str(e))
             return {'status': 2, 'data': None}
 
         except Exception as e:
-            self.logging.error("Downloader" + " | " + "unknown error" + " | " + kwargs['url'] + " | " + str(e))
+            # self.logging.error("Downloader" + " | " + "unknown error" + " | " + kwargs['url'] + " | " + str(e))
             return {'status': 2, 'data': None}
 
     return wrapper
@@ -68,6 +68,10 @@ class BaseDownloaderMiddleware(object):
             data = param['data']
         except:
             data = None
+        try:
+            cookies = param['cookies']
+        except:
+            cookies = None
 
         if not url:
             raise Exception("Please specify URL")
@@ -76,11 +80,11 @@ class BaseDownloaderMiddleware(object):
             raise Exception('Please specify request for GET or POST')
 
         if mode == 'GET':
-            resp = self.downloader.begin(url=url, connect_type='GET', headers=headers)
+            resp = self.downloader.begin(url=url, connect_type='GET', headers=headers, cookies=cookies)
             return resp
 
         if mode == 'POST':
-            resp = self.downloader.begin(url=url, connect_type='POST', headers=headers, data=data)
+            resp = self.downloader.begin(url=url, connect_type='POST', headers=headers, data=data, cookies=cookies)
             return resp
 
 
@@ -116,12 +120,14 @@ class Downloader(object):
             err_time = 0
             while 1:
                 proxies = self.proxy_obj.getProxy()
-                self.logging.info("Begin {} request for url: {} | request data is {} | proxy is {}".format(
-                    connect_type, url, data, proxies
-                ))
+                start_time = int(time.time())
                 down_data = self.start(url=url, headers=headers, data=data,
                                        cookies=cookies, timeout=self.timeout, proxies=proxies,
                                        connect_type=connect_type.upper())
+                end_time = int(time.time())
+                self.logging.info("request for url: {} | status: {} | mode: {} | data: {} | proxy: {} | use time: {}".format(
+                    url, down_data['status'], connect_type, data, proxies, '{}s'.format(end_time - start_time)
+                ))
 
                 if down_data['status'] == 0:
                     return {'status': 0, 'data': down_data['data'], 'proxies': proxies}
@@ -146,11 +152,11 @@ class Downloader(object):
                     else:
                         # 获取当前时间戳
                         now = int(time.time())
-                        if now - err_time >= 180:
+                        if now - err_time >= 150:
                             return {'status': 1, 'data': url}
                         else:
                             continue
-                        
+
         else:
             down_data = self.start(url=url, headers=headers, data=data,
                                    cookies=cookies, timeout=self.timeout, proxies=None,
@@ -159,5 +165,5 @@ class Downloader(object):
             if down_data['status'] == 0:
                 return {'status': 0, 'data': down_data['data']}
 
-            return {'status': 1}
+            return {'status': 1, 'url': url}
 

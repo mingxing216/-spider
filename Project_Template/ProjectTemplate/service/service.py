@@ -5,11 +5,10 @@
 '''
 import sys
 import os
-from lxml import html
+from scrapy import Selector
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 
-etree = html.etree
 
 
 class Server(object):
@@ -18,9 +17,8 @@ class Server(object):
 
     def getTitle(self, resp):
         '''This is demo'''
-        response = resp.content.decode('utf-8')
-        response_etree = etree.HTML(response)
-        title = response_etree.xpath("//title/text()")[0]
+        selector = Selector(text=resp)
+        title = selector.xpath("//title/text()").extract_first()
 
         return title
 

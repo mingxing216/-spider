@@ -8,19 +8,31 @@ import os
 import urllib3
 import re
 import time
-import requests
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
 from Utils import user_agent_u
 
 
-class Downloader(downloader.BaseDownloaderMiddleware):
+class TaskDownloader(downloader.BaseDownloaderMiddleware):
     def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(Downloader, self).__init__(logging=logging,
-                                         timeout=timeout,
-                                         proxy_type=proxy_type,
-                                         proxy_country=proxy_country)
+        super(TaskDownloader, self).__init__(logging=logging,
+                                             timeout=timeout,
+                                             proxy_type=proxy_type,
+                                             proxy_country=proxy_country)
+
+    # 网页正常度检测机制
+    def __judge_verify(self, param):
+        # 下载
+        resp = self._startDownload(param=param)
+        if resp['status'] == 0:
+            response = resp['data']
+            if '请输入验证码' in response.text or len(response.text) < 20:
+                self.logging.info('出现验证码')
+                # 重新下载
+                return {'status': 2}
+
+        return resp
 
     def getResp(self, url, mode, data=None, cookies=None):
         param = {'url': url}
@@ -36,7 +48,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         # 设置cookies
         param['cookies'] = cookies
 
-        return self._startDownload(param=param)
+        return self.__judge_verify(param=param)
 
     # 创建COOKIE
     def create_cookie(self):
@@ -44,7 +56,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         resp = self.getResp(url=url1, mode='GET')
         if resp['status'] == 0:
             try:
-                return requests.utils.dict_from_cookiejar(resp['data'].cookies), resp['data'].headers['Set-Cookie']
+                return resp['data'].headers['Set-Cookie']
             except:
                 return None
 
@@ -203,4 +215,73 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         }
 
         return self._startDownload(param=param)
+
+    def getIndexHtml(self, year, cookie):
+        url = 'http://kns.cnki.net/kns/brief/brief.aspx?action=5&dbPrefix=SOPD&PageName=ASP.brief_result_aspx&Param=%E5%B9%B4%20=%20%27{}%27&recordsperpage=50'.format(
+            year)
+        # 设置请求头
+        headers = {
+            'Cookie': cookie,
+            'User-Agent': user_agent_u.get_ua()
+        }
+        param = {'url': url}
+
+        # 设置请求方式：GET或POST
+        param['mode'] = 'get'
+        # 设置请求头
+        param['headers'] = headers
+
+        return self.__judge_verify(param=param)
+
+    def getNextHtml(self, url, cookie):
+        param = {'url': url}
+
+        # 设置请求方式：GET或POST
+        param['mode'] = 'get'
+        # 设置请求头
+        param['headers'] = {
+            'Cookie': cookie,
+            'User-Agent': user_agent_u.get_ua()
+        }
+
+        return self.__judge_verify(param=param)
+
+
+class Downloader(downloader.BaseDownloaderMiddleware):
+    def __init__(self, logging, timeout, proxy_type, proxy_country):
+        super(Downloader, self).__init__(logging=logging,
+                                         timeout=timeout,
+                                         proxy_type=proxy_type,
+                                         proxy_country=proxy_country)
+
+    # 网页正常度检测机制
+    def __judge_verify(self, param):
+        while True:
+            # 下载
+            resp = self._startDownload(param=param)
+            if resp['status'] == 0:
+                response = resp['data']
+                if '请输入验证码' in response.text or len(response.text) < 20:
+                    self.logging.info('出现验证码')
+                    # 重新下载
+                    continue
+
+            return resp
+
+    def getResp(self, url, mode, data=None, cookies=None):
+        param = {'url': url}
+
+        # 设置请求方式：GET或POST
+        param['mode'] = mode
+        # 设置请求头
+        param['headers'] = {
+            'User-Agent': user_agent_u.get_ua()
+        }
+        # 设置post参数
+        param['data'] = data
+        # 设置cookies
+        param['cookies'] = cookies
+
+        return self.__judge_verify(param=param)
+
 
