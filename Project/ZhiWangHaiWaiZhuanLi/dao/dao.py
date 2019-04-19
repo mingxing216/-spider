@@ -46,3 +46,9 @@ class Dao(storage.Dao):
 
         else:
             return
+
+    # 从Mysql物理删除任务
+    def deleteTask(self, table, url):
+        sql = "delete from {} where url = '{}'".format(table, url)
+
+        self.mysql_client.execute(sql=sql)
