@@ -148,42 +148,42 @@ class SpiderMain(BastSpiderMain):
         # 获取字段
         self.handle(response=response, save_data=save_data, url=url)
 
-        # 获取cookie
-        cookies = self.server.getCookie(resp=resp)
-        # 获取post请求参数
-        data = self.server.getPostData(response)
-        # 获取同族专利首页数据
-        tzzl_index_resp = self.__getResp(func=self.download_middleware.getResp,
-                                         url=self.index_tzzl_url,
-                                         mode='POST',
-                                         data=data,
-                                         cookies=cookies)
-        if not tzzl_index_resp:
-            LOGGING.error('同族专利首页数据获取失败。')
-            # 保存数据
-            self.dao.saveDataToHbase(data=save_data)
-            return
-
-        tzzl_index_response = tzzl_index_resp.text
-        # 获取'更多页url'
-        more_page_url = self.server.getMorePageUrl(tzzl_index_response)
-        if more_page_url:
-            # 进入更多页
-            more_page_resp = self.__getResp(func=self.download_middleware.getResp,
-                                            url=more_page_url,
-                                            mode='GET',
-                                            cookies=cookies)
-            if not more_page_resp:
-                # 保存数据
-                self.dao.saveDataToHbase(data=save_data)
-                return
-            more_page_response = more_page_resp.text
-            # 获取同族专利
-            self.getTzzl2(response=more_page_response, save_data=save_data, cookies=cookies)
-
-        else:
-            # 获取当前页显示的所有同族专利
-            self.server.getTzzl1(resp=tzzl_index_response, save_data=save_data)
+        # # 获取cookie
+        # cookies = self.server.getCookie(resp=resp)
+        # # 获取post请求参数
+        # data = self.server.getPostData(response)
+        # # 获取同族专利首页数据
+        # tzzl_index_resp = self.__getResp(func=self.download_middleware.getResp,
+        #                                  url=self.index_tzzl_url,
+        #                                  mode='POST',
+        #                                  data=data,
+        #                                  cookies=cookies)
+        # if not tzzl_index_resp:
+        #     LOGGING.error('同族专利首页数据获取失败。')
+        #     # 保存数据
+        #     self.dao.saveDataToHbase(data=save_data)
+        #     return
+        #
+        # tzzl_index_response = tzzl_index_resp.text
+        # # 获取'更多页url'
+        # more_page_url = self.server.getMorePageUrl(tzzl_index_response)
+        # if more_page_url:
+        #     # 进入更多页
+        #     more_page_resp = self.__getResp(func=self.download_middleware.getResp,
+        #                                     url=more_page_url,
+        #                                     mode='GET',
+        #                                     cookies=cookies)
+        #     if not more_page_resp:
+        #         # 保存数据
+        #         self.dao.saveDataToHbase(data=save_data)
+        #         return
+        #     more_page_response = more_page_resp.text
+        #     # 获取同族专利
+        #     self.getTzzl2(response=more_page_response, save_data=save_data, cookies=cookies)
+        #
+        # else:
+        #     # 获取当前页显示的所有同族专利
+        #     self.server.getTzzl1(resp=tzzl_index_response, save_data=save_data)
 
         status = self.dao.saveDataToHbase(data=save_data)
         LOGGING.info(status)
