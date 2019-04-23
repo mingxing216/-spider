@@ -194,7 +194,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_TASK, count=10, lockname=config.REDIS_TASK_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_TASK, count=100, lockname=config.REDIS_TASK_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             # 创建线程池
