@@ -125,8 +125,14 @@ class Downloader(object):
                                        cookies=cookies, timeout=self.timeout, proxies=proxies,
                                        connect_type=connect_type.upper())
                 end_time = int(time.time())
-                self.logging.info("request for url: {} | status: {} | mode: {} | data: {} | proxy: {} | use time: {}".format(
-                    url, down_data['status'], connect_type, data, proxies, '{}s'.format(end_time - start_time)
+
+                try:
+                    code = down_data['code']
+                except:
+                    code = None
+
+                self.logging.info("request for url: {} | status: {} | code: {} | mode: {} | data: {} | proxy: {} | use time: {}".format(
+                    url, down_data['status'], code, connect_type, data, proxies, '{}s'.format(end_time - start_time)
                 ))
 
                 if down_data['status'] == 0:
@@ -152,7 +158,7 @@ class Downloader(object):
                     else:
                         # 获取当前时间戳
                         now = int(time.time())
-                        if now - err_time >= 150:
+                        if now - err_time >= 70:
                             return {'status': 1, 'data': url}
                         else:
                             continue
