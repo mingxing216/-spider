@@ -10,6 +10,7 @@ import base64
 import hashlib
 import requests
 import re
+import time
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
@@ -50,7 +51,16 @@ class Dao(object):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
         }
-        resp = requests.post(url=url, headers=headers, data=save_data).content.decode('utf-8')
+        start_time = time.time()
+        try:
+            resp = requests.post(url=url, headers=headers, data=save_data).content.decode('utf-8')
+            end_time = int(time.time() - start_time)
+            self.logging.info('title: Save data to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+        except Exception as e:
+            resp = e
+            end_time = int(time.time() - start_time)
+            self.logging.info('title: Save data to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+
         # try:
         #     resultCode = json.loads(resp)['resultCode']
         # except:
@@ -71,8 +81,6 @@ class Dao(object):
         #
         #     except:
         #         return resp
-
-        return resp
 
     # 保存流媒体到hbase
     def saveMediaToHbase(self, media_url, content, type):
