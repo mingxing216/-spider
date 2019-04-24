@@ -185,13 +185,11 @@ class SpiderMain(BastSpiderMain):
         #     # 获取当前页显示的所有同族专利
         #     self.server.getTzzl1(resp=tzzl_index_response, save_data=save_data)
 
-        print(save_data)
+        status = self.dao.saveDataToHbase(data=save_data)
+        LOGGING.info(status)
 
-        # status = self.dao.saveDataToHbase(data=save_data)
-        # LOGGING.info(status)
-        #
-        # # 删除任务
-        # self.dao.deleteTask(table=config.MYSQL_TASK, url=url)
+        # 删除任务
+        self.dao.deleteTask(table=config.MYSQL_TASK, url=url)
 
     def start(self):
         while 1:
