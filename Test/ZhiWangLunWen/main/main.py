@@ -22,7 +22,8 @@ LOGNAME = ''  # LOG名
 NAME = ''  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
-INSERT_SPIDER_NAME = INSERT_DATA_NUMBER = False # 爬虫名入库, 记录抓取数据量
+INSERT_SPIDER_NAME = False # 爬虫名入库
+INSERT_DATA_NUMBER = False # 记录抓取数据量
 
 
 class BastSpiderMain(object):

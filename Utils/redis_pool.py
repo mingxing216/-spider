@@ -212,7 +212,7 @@ class RedisPoolUtils(object):
 
         return status
 
-    # 获取集合类型内元素数量】
+    # 获取集合类型内元素数量
     def scard(self, key):
         '''
         :param key: 集合名

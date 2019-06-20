@@ -40,6 +40,34 @@ class Dao(object):
             # 创建指定个数redis链接
             self.redis_client = redis_pool.RedisPoolUtils(int(redispool_number))
 
+    # 查询redis数据库中有多少任务
+    def selectTaskNumber(self, key):
+        return self.redis_client.scard(key=key)
+
+    # 从Mysql获取任务
+    def getNewTaskList(self, table, count):
+        sql = "select * from {} where `del` = '0' limit {}".format(table, count)
+
+        data_list = self.mysql_client.get_results(sql=sql)
+
+        # 进入redis队列的数据，在mysql数据库中改变`del`字段值为'1'，表示正在执行
+        # for data in data_list:
+        #     sha = data['sha']
+        #     set = {'del': '1'}
+        #     self.mysql_client.update(table, data=set, where="`sha` = '{}'".format(sha))
+
+        return data_list
+
+    # 队列任务
+    def QueueTask(self, key, data):
+        if data:
+            for url_data in data:
+                url = url_data['memo']
+                self.redis_client.sadd(key=key, value=url)
+
+        else:
+            return
+
     # 存储数据到Hbase数据库 resultCode
     def saveDataToHbase(self, data):
         save_data = json.dumps(data)
@@ -98,32 +126,42 @@ class Dao(object):
                 "content": "{}".format(content_bs64.decode('utf-8')),
                 "type": "{}".format(type),
                 "ref": "",
-                "item": json.dumps(item)}
+                "item": json.dumps(item)
+        }
 
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
         }
 
-        resp = requests.post(url=url, headers=headers, data=data).content.decode('utf-8')
+        start_time = time.time()
         try:
-            resultCode = json.loads(resp)['resultCode']
-        except:
-            resultCode = 1
+            resp = requests.post(url=url, headers=headers, data=data).content.decode('utf-8')
+            end_time = int(time.time() - start_time)
+            self.logging.info('title: Save media to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+        except Exception as e:
+            resp = e
+            end_time = int(time.time() - start_time)
+            self.logging.info('title: Save media to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
 
-        if resultCode == 0:
-            # 记录已存数据
-            statistics_data = {
-                'sha': sha,
-                'create_at': timeutils.getNowDatetime(),
-                'type': type
-            }
-            try:
-                self.mysql_client.insert_one(table=settings.STATISTICS_TABLE, data=statistics_data)
-
-            except:
-                return resp
-
-        return resp
+        # try:
+        #     resultCode = json.loads(resp)['resultCode']
+        # except:
+        #     resultCode = 1
+        #
+        # if resultCode == 0:
+        #     # 记录已存数据
+        #     statistics_data = {
+        #         'sha': sha,
+        #         'create_at': timeutils.getNowDatetime(),
+        #         'type': type
+        #     }
+        #     try:
+        #         self.mysql_client.insert_one(table=settings.STATISTICS_TABLE, data=statistics_data)
+        #
+        #     except:
+        #         return resp
+        #
+        # return resp
 
     # TODO 保存数据到mysql，不再使用
     def saveDataToMysql(self, table, data):

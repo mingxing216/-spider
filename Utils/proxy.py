@@ -191,4 +191,3 @@ class ProxyUtils(object):
         except:
             s.close()
             return None
-
