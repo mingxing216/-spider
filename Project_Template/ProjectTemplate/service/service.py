@@ -5,6 +5,7 @@
 '''
 import sys
 import os
+import requests
 from scrapy import Selector
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")

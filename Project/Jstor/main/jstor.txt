@@ -1,0 +1,5263 @@
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html class=" no-js" lang="en">
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width" />
+
+        <title>Results - JSTOR Data For Research</title>
+
+        <script type="text/javascript" data-analytics-provider="ga">
+            var dataLayer = window.dataLayer = window.dataLayer || [];
+            var gaData = {};
+
+            gaData.page = {
+                
+    "pageName" : "dfr results",
+    "siteSection" : "dfr",
+    "pageProduct" : "jstor",
+    "pagePlatform" : "seq",
+    "pageType" : "results"
+
+            };
+
+            gaData.user = {
+                
+    "loggedIn" : "false",
+    "userAuthentication" : "Unauthenticated",
+    "userInstitution" : "",
+    "institutionID" : "",
+    "myJstorUserID" : ""
+
+            };
+
+            
+            
+
+            dataLayer.push(gaData);
+        </script>
+
+        
+            <style>.async-hide { opacity: 0 !important} </style>
+            <script>(function(a,s,y,n,c,h,i,d,e){s.className+=' '+y;h.start=1*new Date;
+            h.end=i=function(){s.className=s.className.replace(RegExp(' ?'+y),'')};
+            (a[n]=a[n]||[]).hide=h;setTimeout(function(){i();h.end=null},c);h.timeout=c;
+            })(window,document.documentElement,'async-hide','dataLayer',2000,
+            {'GTM-N6GDC22':true});</script>
+        
+
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-N6GDC22');</script>
+        <!-- End Google Tag Manager -->
+
+        
+        <script charset='UTF-8'>
+            window['adrum-start-time'] = new Date().getTime();
+            (function (config) {
+                config.appKey = 'AD-AAB-AAN-RSK';
+                config.adrumExtUrlHttp = 'http://cdn.appdynamics.com';
+                config.adrumExtUrlHttps = 'https://cdn.appdynamics.com';
+                config.beaconUrlHttp = 'http://col.eum-appdynamics.com';
+                config.beaconUrlHttps = 'https://col.eum-appdynamics.com'
+                config.xd = {enable: true};
+                config.spa = {
+                    "spa2": true
+                };
+            })(window['adrum-config'] || (window['adrum-config'] = {}));
+        </script>
+        <script src='//cdn.appdynamics.com/adrum/adrum-4.5.1.1066.js'></script>
+        
+
+        
+        <meta name="msapplication-TileImage" content="/assets/mstile-150x150.png" />
+        <meta name="msapplication-TileColor" content="#DA532C" />
+        <meta name="msapplication-config" content="/assets/browserconfig.xml" />
+
+        
+
+        <!-- Start SEO Default tag -->
+<meta name="robots" content="noarchive,NOODP" />
+<meta name="description" content="JSTOR is a digital library of academic journals, books, and primary sources." />
+<!-- End SEO Default tag -->
+
+        
+
+        
+        
+        <link rel="icon" sizes="192x192" type="image/png" href="//www.jstor.org/assets/global_20190617T1925/build/images/favicons/android-chrome-192x192.png" />
+        <link rel="icon" sizes="512x512" type="image/png" href="//www.jstor.org/assets/global_20190617T1925/build/images/favicons/android-chrome-512x512.png" />
+
+        
+        <link rel="apple-touch-icon" href="//www.jstor.org/assets/global_20190617T1925/build/images/favicons/apple-touch-icon.png" />
+
+        
+        <link rel="icon" sizes="16x16" type="image/png" href="//www.jstor.org/assets/global_20190617T1925/build/images/favicons/favicon-16x16.png" />
+        <link rel="icon" sizes="48x48" type="image/png" href="//www.jstor.org/assets/global_20190617T1925/build/images/favicons/favicon-48x48.png" />
+        <link rel="icon" sizes="32x32" type="image/png" href="//www.jstor.org/assets/global_20190617T1925/build/images/favicons/favicon-32x32.png" />
+        
+
+        
+        <link rel="stylesheet" href="//www.jstor.org/assets/global_20190617T1925/build/global/css/global.css" />
+
+        <script
+            src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous">
+        </script>
+
+        
+        
+    <link rel="stylesheet" href="//www.jstor.org/assets/dfr_20190424T1442/build/dfr/css/dfr.css" />
+
+
+        
+    </head>
+    <body  onload="validateElementsPresent(); logPerimeterXLoadingErrors();" >
+        <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N6GDC22"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+        <!-- End Google Tag Manager (noscript) -->
+
+        
+            <script>
+    var validateElementsPresent = function() {
+        var requiredElementSelectors = ['#px-js', '#px-pixel'];
+
+        requiredElementSelectors.forEach(function(selector){
+            if (!$(selector).length) {
+                storePerimeterXLoadingError(selector, 'element not present');
+            }
+        });
+    }, storePerimeterXLoadingError = function(element, errorType) {
+        if (window.perimeterXLoadingErrors) {
+            if (!window.perimeterXLoadingErrors.hasOwnProperty(element)) {
+                window.perimeterXLoadingErrors[element] = errorType;
+            }
+        } else {
+            window.perimeterXLoadingErrors = {};
+            window.perimeterXLoadingErrors[element] = errorType;
+        }
+    };
+</script>
+
+
+<!-- PerimeterX -->
+<script id="px-js" type="text/javascript">
+    (function(){
+        window._pxAppId = 'PXu4K0s8nX';
+        window._pxRootUrl = '/px/xhr';
+
+        
+        window._pxParam1 = "Unknown Users";
+        
+
+        
+
+        var p = document.getElementsByTagName('script')[0],
+            s = document.createElement('script');
+        s.async = 1;
+        s.src = '/px/client/main.min.js';
+        s.onerror = function() {
+            storePerimeterXLoadingError('asyncScript', 'element present but not loaded');
+        };
+        p.parentNode.insertBefore(s,p);
+    }());
+</script>
+<div style="position:fixed; top:0; left:0;" width="1" height="1">
+    <img id="px-pixel" aria-hidden="true" src="/px/xhr/api/v1/collector/pxPixel.gif?appId=PXu4K0s8nX" onerror="storePerimeterXLoadingError('pixel', 'element present but not loaded')" alt="">
+</div>
+<noscript>
+    <div style="position:fixed; top:0; left:0;" width="1" height="1">
+        <img id="px-pixel-nojs" aria-hidden="true" src="/px/xhr/api/v1/collector/noScript.gif?appId=PXu4K0s8nX" alt="">
+    </div>
+</noscript>
+<!-- End PerimeterX -->
+
+
+        
+
+        
+
+        
+
+        <div id="skipNav">
+            <a class="visuallyhidden" href="#content">Skip to Main Content</a>
+        </div>
+
+        <div id="sitewide-error-message">
+            
+        </div>
+
+        
+
+        
+        
+            
+
+
+
+
+
+<div id="provider-designation-statement" class="mvs txtc" data-qa="pds">
+    
+
+
+
+
+    <em>Have library access?</em>
+    <a href="/institutionSearch?redirectUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26cty_journal_facet%3Dam91cm5hbA%253D%253D%26sd%3D%26ed%3D%26acc%3Ddfr">
+        Log in through your library
+    </a>
+
+
+
+
+
+
+</div>
+
+<nav role="navigation">
+    
+    <div class="top-bar pts">
+        <div class="top-bar-title mvxs mrs">
+            <a href="/" id="menu-jstor-logo">
+                <img src="//www.jstor.org/assets/global_20190617T1925/build/images/jstor-logo.png" srcset="//www.jstor.org/assets/global_20190617T1925/build/images/jstor-logo.png 1x, //www.jstor.org/assets/global_20190617T1925/build/images/jstor-logo@2x.png 2x" class="non-responsive" alt="JSTOR Home" width="65" height="90">
+            </a>
+        </div>
+
+        <div class="nav-main">
+            
+                <div class="top-bar-row">
+                    
+                    <div
+                        class="user-account show-for-xlarge-up pbm">
+                        
+                            <a href="/action/showLogin?redirectUri=/dfr/results%3FsearchType%3DfacetSearch%26cty_journal_facet%3Dam91cm5hbA%253D%253D%26sd%3D%26ed%3D%26acc%3Ddfr"
+                               class="inline-block plm">
+                                Log in
+                            </a><i class="nav-separator"></i><a href="/register?redirectUri=/dfr/results%3FsearchType%3DfacetSearch%26cty_journal_facet%3Dam91cm5hbA%253D%253D%26sd%3D%26ed%3D%26acc%3Ddfr">Register</a>
+                        
+                    </div>
+                </div>
+            
+            
+                <div class="top-bar-row">
+                    <div class="flex-box-main">
+                        <ul class="dropdown menu pln" data-dropdown-menu>
+                            <li class="menu-item show-for-medium-up">
+                                <a href="/action/showAdvancedSearch" id="menu-search" data-qa="hdr-adv-search-top">Advanced Search</a>
+                            </li>
+                            <li class="is-dropdown-submenu-parent flex">
+                                <a href="/subjects" id="menu-browse" data-qa="hdr-brs">Browse</a>
+                                <ul class="menu vertical">
+                                    <li><a href="/subjects" data-qa="hdr-brs-by-subj">by Subject</a></li>
+                                    <li><a href="/action/showJournals?browseType=title" data-qa="hdr-brs-by-title">by Title</a></li>
+                                    <li><a href="/publishers" data-qa="hdr-brs-by-pub">by Publisher</a></li>
+                                </ul>
+                            </li>
+                            <li class="is-dropdown-submenu-parent flex show-for-medium-up">
+                                <a href="/analyze" id="menu-tools" data-qa="hdr-tls">Tools</a>
+                                <ul class="menu vertical nav-menu-tools-children">
+                                    <li><a href="/analyze" data-qa="hdr-text-analyzer">Text Analyzer</a></li>
+                                    <li><a href="/understand" data-qa="hdr-understand">The JSTOR Understanding Series</a></li>
+                                    <li><a href="/dfr" data-qa="hdr-dfr">Data for Research</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="top-bar-right show-for-xlarge-up">
+                        <a href="//about.jstor.org" target="_blank" title="This link opens in a new window" class="bold" data-qa="hdr-about">About</a>
+                        <a href="//support.jstor.org" target="_blank" title="This link opens in a new window" class="bold mlm" data-qa="hdr-support">Support</a>
+                    </div>
+                    <div class="flex01a hide-for-xlarge-up">
+                        
+                            <a href="/action/showLogin?redirectUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26cty_journal_facet%3Dam91cm5hbA%253D%253D%26sd%3D%26ed%3D%26acc%3Ddfr" class="bold">Log in</a><i class="nav-separator"></i><a class="bold" href="/register?redirectUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26cty_journal_facet%3Dam91cm5hbA%253D%253D%26sd%3D%26ed%3D%26acc%3Ddfr">Register</a>
+                        
+                    </div>
+                </div>
+            
+        </div>
+    </div>
+</nav>
+
+        
+
+        
+        
+
+        <div id="content" role="main" class="content row" data-equalizer>
+            
+            
+    <div class="small-12 columns negate-nav-bottom-margin">
+        
+        <div id="topsection" class="row very-light-gray-background pvs">
+            <div class="small-12 medium-6 large-5 columns">
+                <div class="xlarge-heading mbn">Data for Research</div>
+                <small class="upper">A Text Mining service from JSTOR</small>
+            </div>
+            <div class="small-12 medium-6 large-7 columns">
+                <div class="right mvm prl">
+                    <a href="/dfr/?searchType=facetSearch&amp;cty_journal_facet=am91cm5hbA%3D%3D&amp;sd=&amp;ed=&amp;acc=dfr" class="no-visited">DfR Home</a><i class="nav-separator"></i><a href="/dfr/about/dataset-services?searchType=facetSearch&amp;cty_journal_facet=am91cm5hbA%3D%3D&amp;sd=&amp;ed=&amp;acc=dfr" class="no-visited">DfR Help</a>
+                </div>
+            </div>
+        </div>
+        
+        <div id="contentwrapper" class="row pvl">
+            
+    <div class="small-12 columns">
+        
+
+
+    
+        
+            
+              
+
+
+
+
+
+
+
+
+
+<div id="search-results-module">
+    
+    
+    
+        
+
+
+
+
+<div id="loginWarning" class="callout warning">
+    <i class="icon-exclamation icon-large callout-icon alert-color"></i>
+    <span> An account is required to request a dataset.
+        <span class="callout-action ptxs">
+            <a href="/action/showLogin?redirectUri=/dfr/results%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr">Log in</a>
+            |
+            <a href="/register?redirectUri=/dfr/results%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr">Register</a></span>
+    </span>
+</div>
+
+<div class="row">
+    <div class="small-12 large-4 columns">
+        <h1 class="xlarge-heading" data-qa="results-banner-header">12,287,072 Search Results</h1>
+    </div>
+    <div class="small-12 medium-8 large-6 columns">
+        <form
+    role="form"
+    class="basic-search-form"
+    action="/dfr/results"
+    method="GET"
+>
+    
+
+    
+
+    
+
+    <div class="input-group small-12">
+        
+        <input
+            id="q0"
+            name="Query"
+            type="text"
+            maxlength="250"
+            class="searchBox input-group-field mbs small"
+            
+            
+            data-qa="results-banner-search-input"
+            
+        />
+        <label for="q0" class="visuallyhidden">Search JSTOR</label>
+
+        
+
+        <div class="input-group-button"><button
+                    type="submit"
+                    title="search button"
+                    data-qa="results-banner-search-submit"
+                    class="button secondary" ><i class="icon-search" aria-label="Submit search"></i></button></div>
+    </div>
+
+    
+</form>
+    </div>
+    <div class="small-12 medium-4 large-2 columns">
+        
+            <a id="dataset-button" href="#" class="button large expanded disabled" data-qa="results-banner-request" data-sc="but click: dfr request dataset"
+               data-open="dataset-request">Request Dataset</a>
+
+            <script id="tpl-request-dataset" type="text/x-handlebars-template">
+                <div class="reveal" id="dataset-request" data-reveal data-icon="plus-circle" data-circle-color="dark-green">
+                    <div class="data-contents">
+                        <h1>
+                            
+                                Request Dataset
+                            
+                        </h1>
+                        
+                        <p>If your results include more than 25,000 documents, your processed dataset will include
+                            the first 25,000 as defined by the parameters of your search.</p>
+                        
+                        
+                        <div id="search-terms" class="pbm hide">
+                            <strong>Search Term(s):</strong> {{{ search-terms }}}
+                        </div>
+                        <div id="subjects" class="pbm hide">
+                            <strong>Subject(s):</strong> {{{ subjects }}}
+                        </div>
+                        <div id="content-types" class="pbm hide">
+                            <strong>Content Type(s):</strong> {{{ content-types }}}
+                        </div>
+                        <div id="date-range" class="pbm hide">
+                            <strong>Date Range:</strong> {{{ date-range }}}
+                        </div>
+                    
+                        
+                        <div id="deliveryEmail" class="pbm">
+                            <strong>Delivery Email:</strong> 
+                        </div>
+                        
+                        <form id="dfr-form" class="form-jstor" data-enable-form-validation="true" data-disable-window-scroll="true" action="" method="post">
+                            <input type='hidden' name='csrfmiddlewaretoken' value='AbNEnlx1qnBnwUrGzFhw0N2x4jIxyXmEs9inElp4SvOJ9zIEvLxRvHsjibCBtvDN' />
+                            
+                                
+
+
+<div class="field-wrapper row collapse"
+     data-label="Dataset Name"
+     data-row-name="id_dataset_name"
+     
+>
+    <div class="columns small-12
+        
+        ">
+        
+            
+
+
+    <label for="id_dataset_name">
+        Dataset Name <span class='required' aria-hidden='true'>*</span><span class='visuallyhidden'> required</span>
+    </label>
+    <input type="text" name="dataset_name" data-qa="dataset_name" data-form-required="text" maxlength="100" required id="id_dataset_name" />
+
+
+
+
+        
+    </div>
+    
+</div>
+                            
+                                
+
+
+<div class="field-wrapper row collapse"
+     data-label="Data Type(s)"
+     data-row-name=""
+     
+>
+    <div class="columns small-12
+        
+        ">
+        
+            
+
+
+    <div class="mbs">
+        <fieldset>
+            
+                <label for=""> Data Type(s) <span class='required' aria-hidden='true'>*</span><span class='visuallyhidden'> required</span></label>
+            
+            
+                <div class="checkboxWrap">
+                    
+    
+        <input
+            type="checkbox"
+            id="id_file_types_0"
+            name="file_types"
+            value="Metadata (xml)"
+            
+                data-qa="data_types"
+            
+                id="id_file_types_0"
+            
+                checked="True"
+            
+            
+                checked="checked"
+            
+        />
+    
+    <label for="id_file_types_0">Metadata (xml)</label>
+
+    
+        <input
+            type="checkbox"
+            id="id_file_types_1"
+            name="file_types"
+            value="Unigrams (txt)"
+            
+                data-qa="data_types"
+            
+                id="id_file_types_1"
+            
+            
+        />
+    
+    <label for="id_file_types_1">Unigrams (txt)</label>
+
+    
+        <input
+            type="checkbox"
+            id="id_file_types_2"
+            name="file_types"
+            value="Bigrams"
+            
+                data-qa="data_types"
+            
+                id="id_file_types_2"
+            
+            
+        />
+    
+    <label for="id_file_types_2">Bigrams</label>
+
+    
+        <input
+            type="checkbox"
+            id="id_file_types_3"
+            name="file_types"
+            value="Trigrams"
+            
+                data-qa="data_types"
+            
+                id="id_file_types_3"
+            
+            
+        />
+    
+    <label for="id_file_types_3">Trigrams</label>
+
+
+
+                </div>
+            
+        </fieldset>
+    </div>
+
+
+
+
+        
+    </div>
+    
+</div>
+                            
+                                
+
+
+<div class="field-wrapper row collapse mtl"
+     data-label="I accept the terms &amp; conditions"
+     data-row-name="id_accept"
+     
+>
+    <div class="columns small-12
+         checkboxWrap mll
+        ">
+        
+            
+
+<input type="checkbox" name="accept" data-form-required="checkbox" required id="id_accept" />
+<label for="id_accept">I accept the <a href="//about.jstor.org/terms/" target="_blank">terms & conditions</a> <span class='required' aria-hidden='true'>*</span><span class='visuallyhidden'> required</span></label>
+
+
+
+<div class="errorMessage pbs hide" id="id_accept_error"></div>
+
+        
+    </div>
+    
+</div>
+                            
+                            
+                                <input type="hidden" name="dataset_query" id="dataset_query" />
+                            
+                            <input class="button large mtl" data-sc="but click: dfr request dataset submit" type="submit" value="Request Dataset"/>
+                        </form>
+                    </div>
+                    <a href="#" class="close-button" data-qa="close-modal" data-close aria-label="Close modal">
+                        <span aria-hidden="true">&times;</span>
+                    </a>
+                </div>
+                <div id="browse_request_object" class="hide" data-browse="{&quot;start&quot;: 0, &quot;limit&quot;: 25, &quot;tokens&quot;: [&quot;123959834688505&quot;], &quot;ms_facet_fields&quot;: [{&quot;field&quot;: &quot;cty&quot;, &quot;efq&quot;: [&quot;am91cm5hbA==&quot;]}, {&quot;field&quot;: &quot;disc&quot;, &quot;efq&quot;: []}], &quot;hier_facet_fields&quot;: [], &quot;sort&quot;: &quot;rel&quot;, &quot;filter_queries&quot;: [], &quot;content_set_flags&quot;: [&quot;search_article&quot;, &quot;search_chapter&quot;, &quot;review&quot;, &quot;research_report&quot;, &quot;mp_research_report_part&quot;], &quot;additional_fields&quot;: [&quot;bn&quot;, &quot;collection_ids&quot;, &quot;collection_titles&quot;, &quot;eisbn&quot;, &quot;eissn&quot;, &quot;fpage&quot;, &quot;htopic_st&quot;, &quot;htopic_st_tokenized&quot;, &quot;isbn&quot;, &quot;issn&quot;, &quot;jcode&quot;, &quot;jo&quot;, &quot;lpage&quot;, &quot;no&quot;, &quot;pagect&quot;, &quot;published_date&quot;, &quot;raw_type&quot;, &quot;rectype&quot;, &quot;tb&quot;, &quot;tbsub&quot;, &quot;ti&quot;, &quot;vo&quot;, &quot;year&quot;]}"></div>
+            </script>
+        
+    </div>
+</div>
+
+    
+    
+        <section aria-label="Filter results">
+            <div class="small-12 large-3 columns search-facets">
+                <input id="toggle-facets" type="button" class="button hide-for-large-up expanded" value="Hide Search Filters" />
+                
+
+
+
+
+
+
+    <section id="facet-filters" class="pam">
+        <h2>Refine Results</h2>
+        <a href="#search-results-container" class="visuallyhidden">This is the search filters section. Skip to search results section.</a>
+        
+
+        <input type='hidden' name='csrfmiddlewaretoken' value='AbNEnlx1qnBnwUrGzFhw0N2x4jIxyXmEs9inElp4SvOJ9zIEvLxRvHsjibCBtvDN' />
+
+        <form class="form-jstor no-js-hide" action="" data-facet-submit-delay="1000" method="get" autocomplete="off">
+            <input type="hidden" name="searchType" value="facetSearch"/>
+            <button id="update-search-results" class="button secondary facet-submit-button disabled hide" type="submit" data-sc="but click:update results" disabled>Update Results</button>
+            
+                
+                    
+                        <fieldset id="cty" class="search-facet mbm">
+                            <legend class="mbs">
+                                <h3 class="mbn">Content Type:</h3>
+                            </legend>
+                            
+
+<ul class="no-bullet facet-item-list ">
+    
+        
+            <li>
+                <input
+                        id="cty_journal"
+                        name="cty_journal_facet"
+                        value="am91cm5hbA=="
+                        aria-label="Filter on Journals, which has 12.3 million results"
+                        type="checkbox" checked data-sc="check box:content type journal"
+                    ><label for="cty_journal"><span class="normal mls">Journals (12,287,072)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="cty_chapter"
+                        name="cty_chapter_facet"
+                        value="Y2hhcHRlcg=="
+                        aria-label="Filter on Book Chapters, which has 937409 results"
+                        type="checkbox"  data-sc="check box:content type chapter"
+                    ><label for="cty_chapter"><span class="normal mls">Book Chapters (937,409)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="cty_research_report"
+                        name="cty_research_report_facet"
+                        value="cmVzZWFyY2hfcmVwb3J0"
+                        aria-label="Filter on Research Reports, which has 82639 results"
+                        type="checkbox"  data-sc="check box:content type research_report"
+                    ><label for="cty_research_report"><span class="normal mls">Research Reports (82,639)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="cty_pamphlet"
+                        name="cty_pamphlet_facet"
+                        value="cGFtcGhsZXQ="
+                        aria-label="Filter on Pamphlets, which has 25976 results"
+                        type="checkbox"  data-sc="check box:content type pamphlet"
+                    ><label for="cty_pamphlet"><span class="normal mls">Pamphlets (25,976)</span></label>
+
+                
+            </li>
+        
+    
+</ul>
+                        </fieldset>
+                    
+
+                    
+                
+                    
+
+                    
+                        <fieldset id="publication_date" class="search-facet mbm">
+    <legend class="mbs">
+        <h3 class="mbn">Publication Date:</h3>
+    </legend>
+    <div class="row">
+        <div class="small-6 columns prs">
+            <label for="startDate">From</label>
+            <input
+                id="startDate"
+                class="mbs"
+                name="sd"
+                aria-label="Only include results published after this date (must be in 4 digit year, 4 digit year/2 digit month, or 4 digit year/2 digit month/2 digit day format)."
+                type="text"
+                value=""
+                data-publication-start-date
+            >
+        </div>
+        <div class="small-6 columns pls">
+            <label for="endDate">To</label>
+            <input
+                id="endDate"
+                class="mbs"
+                name="ed"
+                aria-label="Only include results published before this date (must be in 4 digit year, 4 digit year/2 digit month, or 4 digit year/2 digit month/2 digit day format)."
+                type="text"
+                value=""
+                data-publication-end-date
+            >
+        </div>
+        <span id="pub-date-message" class="small-12 columns">(yyyy or yyyy/mm or yyyy/mm/dd)</span>
+    </div>
+    
+</fieldset>
+                    
+                
+                    
+                        <fieldset id="disc" class="search-facet mbm">
+                            <legend class="mbs">
+                                <h3 class="mbn">Subject:</h3>
+                            </legend>
+                            
+
+<ul class="no-bullet facet-item-list ">
+    
+        
+            <li>
+                <input
+                        id="disc_africanamericanstudies-discipline"
+                        name="disc_africanamericanstudies-discipline_facet"
+                        value="YWZyaWNhbmFtZXJpY2Fuc3R1ZGllcy1kaXNjaXBsaW5l"
+                        aria-label="Filter on African American Studies, which has 51340 results"
+                        type="checkbox"  data-sc="check box:subject africanamericanstudies-discipline"
+                    ><label for="disc_africanamericanstudies-discipline"><span class="normal mls">African American Studies (51,340)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_africanstudies-discipline"
+                        name="disc_africanstudies-discipline_facet"
+                        value="YWZyaWNhbnN0dWRpZXMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on African Studies, which has 148176 results"
+                        type="checkbox"  data-sc="check box:subject africanstudies-discipline"
+                    ><label for="disc_africanstudies-discipline"><span class="normal mls">African Studies (148,176)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_agriculture-discipline"
+                        name="disc_agriculture-discipline_facet"
+                        value="YWdyaWN1bHR1cmUtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Agriculture, which has 39757 results"
+                        type="checkbox"  data-sc="check box:subject agriculture-discipline"
+                    ><label for="disc_agriculture-discipline"><span class="normal mls">Agriculture (39,757)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_americanindianstudies-discipline"
+                        name="disc_americanindianstudies-discipline_facet"
+                        value="YW1lcmljYW5pbmRpYW5zdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on American Indian Studies, which has 13419 results"
+                        type="checkbox"  data-sc="check box:subject americanindianstudies-discipline"
+                    ><label for="disc_americanindianstudies-discipline"><span class="normal mls">American Indian Studies (13,419)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_americanstudies-discipline"
+                        name="disc_americanstudies-discipline_facet"
+                        value="YW1lcmljYW5zdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on American Studies, which has 439391 results"
+                        type="checkbox"  data-sc="check box:subject americanstudies-discipline"
+                    ><label for="disc_americanstudies-discipline"><span class="normal mls">American Studies (439,391)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_anthropology-discipline"
+                        name="disc_anthropology-discipline_facet"
+                        value="YW50aHJvcG9sb2d5LWRpc2NpcGxpbmU="
+                        aria-label="Filter on Anthropology, which has 292213 results"
+                        type="checkbox"  data-sc="check box:subject anthropology-discipline"
+                    ><label for="disc_anthropology-discipline"><span class="normal mls">Anthropology (292,213)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_aquaticsciences-discipline"
+                        name="disc_aquaticsciences-discipline_facet"
+                        value="YXF1YXRpY3NjaWVuY2VzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Aquatic Sciences, which has 123463 results"
+                        type="checkbox"  data-sc="check box:subject aquaticsciences-discipline"
+                    ><label for="disc_aquaticsciences-discipline"><span class="normal mls">Aquatic Sciences (123,463)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_archeology-discipline"
+                        name="disc_archeology-discipline_facet"
+                        value="YXJjaGVvbG9neS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Archaeology, which has 294970 results"
+                        type="checkbox"  data-sc="check box:subject archeology-discipline"
+                    ><label for="disc_archeology-discipline"><span class="normal mls">Archaeology (294,970)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_architecture-discipline"
+                        name="disc_architecture-discipline_facet"
+                        value="YXJjaGl0ZWN0dXJlLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Architecture &amp; Architectural History, which has 65373 results"
+                        type="checkbox"  data-sc="check box:subject architecture-discipline"
+                    ><label for="disc_architecture-discipline"><span class="normal mls">Architecture &amp; Architectural History (65,373)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_arthistory-discipline"
+                        name="disc_arthistory-discipline_facet"
+                        value="YXJ0aGlzdG9yeS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Art &amp; Art History, which has 396547 results"
+                        type="checkbox"  data-sc="check box:subject arthistory-discipline"
+                    ><label for="disc_arthistory-discipline"><span class="normal mls">Art &amp; Art History (396,547)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_asianstudies-discipline"
+                        name="disc_asianstudies-discipline_facet"
+                        value="YXNpYW5zdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Asian Studies, which has 430992 results"
+                        type="checkbox"  data-sc="check box:subject asianstudies-discipline"
+                    ><label for="disc_asianstudies-discipline"><span class="normal mls">Asian Studies (430,992)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_astronomy-discipline"
+                        name="disc_astronomy-discipline_facet"
+                        value="YXN0cm9ub215LWRpc2NpcGxpbmU="
+                        aria-label="Filter on Astronomy, which has 16490 results"
+                        type="checkbox"  data-sc="check box:subject astronomy-discipline"
+                    ><label for="disc_astronomy-discipline"><span class="normal mls">Astronomy (16,490)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_bibliog-discipline"
+                        name="disc_bibliog-discipline_facet"
+                        value="YmlibGlvZy1kaXNjaXBsaW5l"
+                        aria-label="Filter on Bibliography, which has 147241 results"
+                        type="checkbox"  data-sc="check box:subject bibliog-discipline"
+                    ><label for="disc_bibliog-discipline"><span class="normal mls">Bibliography (147,241)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_biologicalsciences-discipline"
+                        name="disc_biologicalsciences-discipline_facet"
+                        value="YmlvbG9naWNhbHNjaWVuY2VzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Biological Sciences, which has 1.3 million results"
+                        type="checkbox"  data-sc="check box:subject biologicalsciences-discipline"
+                    ><label for="disc_biologicalsciences-discipline"><span class="normal mls">Biological Sciences (1,297,451)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_botany-discipline"
+                        name="disc_botany-discipline_facet"
+                        value="Ym90YW55LWRpc2NpcGxpbmU="
+                        aria-label="Filter on Botany &amp; Plant Sciences, which has 437557 results"
+                        type="checkbox"  data-sc="check box:subject botany-discipline"
+                    ><label for="disc_botany-discipline"><span class="normal mls">Botany &amp; Plant Sciences (437,557)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_britstud-discipline"
+                        name="disc_britstud-discipline_facet"
+                        value="YnJpdHN0dWQtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on British Studies, which has 75305 results"
+                        type="checkbox"  data-sc="check box:subject britstud-discipline"
+                    ><label for="disc_britstud-discipline"><span class="normal mls">British Studies (75,305)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_business-discipline"
+                        name="disc_business-discipline_facet"
+                        value="YnVzaW5lc3MtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Business, which has 749218 results"
+                        type="checkbox"  data-sc="check box:subject business-discipline"
+                    ><label for="disc_business-discipline"><span class="normal mls">Business (749,218)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_classicalstudies-discipline"
+                        name="disc_classicalstudies-discipline_facet"
+                        value="Y2xhc3NpY2Fsc3R1ZGllcy1kaXNjaXBsaW5l"
+                        aria-label="Filter on Classical Studies, which has 346456 results"
+                        type="checkbox"  data-sc="check box:subject classicalstudies-discipline"
+                    ><label for="disc_classicalstudies-discipline"><span class="normal mls">Classical Studies (346,456)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_communicationstudies-discipline"
+                        name="disc_communicationstudies-discipline_facet"
+                        value="Y29tbXVuaWNhdGlvbnN0dWRpZXMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Communication Studies, which has 12766 results"
+                        type="checkbox"  data-sc="check box:subject communicationstudies-discipline"
+                    ><label for="disc_communicationstudies-discipline"><span class="normal mls">Communication Studies (12,766)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_compsci-discipline"
+                        name="disc_compsci-discipline_facet"
+                        value="Y29tcHNjaS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Computer Science, which has 16148 results"
+                        type="checkbox"  data-sc="check box:subject compsci-discipline"
+                    ><label for="disc_compsci-discipline"><span class="normal mls">Computer Science (16,148)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_criminologycriminaljustice-discipline"
+                        name="disc_criminologycriminaljustice-discipline_facet"
+                        value="Y3JpbWlub2xvZ3ljcmltaW5hbGp1c3RpY2UtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Criminology &amp; Criminal Justice, which has 27288 results"
+                        type="checkbox"  data-sc="check box:subject criminologycriminaljustice-discipline"
+                    ><label for="disc_criminologycriminaljustice-discipline"><span class="normal mls">Criminology &amp; Criminal Justice (27,288)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_culturalstudies-discipline"
+                        name="disc_culturalstudies-discipline_facet"
+                        value="Y3VsdHVyYWxzdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Cultural Studies, which has 19269 results"
+                        type="checkbox"  data-sc="check box:subject culturalstudies-discipline"
+                    ><label for="disc_culturalstudies-discipline"><span class="normal mls">Cultural Studies (19,269)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_developmentstudies-discipline"
+                        name="disc_developmentstudies-discipline_facet"
+                        value="ZGV2ZWxvcG1lbnRzdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Development Studies, which has 42289 results"
+                        type="checkbox"  data-sc="check box:subject developmentstudies-discipline"
+                    ><label for="disc_developmentstudies-discipline"><span class="normal mls">Development Studies (42,289)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_developmentalcellbiology-discipline"
+                        name="disc_developmentalcellbiology-discipline_facet"
+                        value="ZGV2ZWxvcG1lbnRhbGNlbGxiaW9sb2d5LWRpc2NpcGxpbmU="
+                        aria-label="Filter on Developmental &amp; Cell Biology, which has 9948 results"
+                        type="checkbox"  data-sc="check box:subject developmentalcellbiology-discipline"
+                    ><label for="disc_developmentalcellbiology-discipline"><span class="normal mls">Developmental &amp; Cell Biology (9,948)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_ecology-discipline"
+                        name="disc_ecology-discipline_facet"
+                        value="ZWNvbG9neS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Ecology &amp; Evolutionary Biology, which has 346336 results"
+                        type="checkbox"  data-sc="check box:subject ecology-discipline"
+                    ><label for="disc_ecology-discipline"><span class="normal mls">Ecology &amp; Evolutionary Biology (346,336)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_economics-discipline"
+                        name="disc_economics-discipline_facet"
+                        value="ZWNvbm9taWNzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Economics, which has 696141 results"
+                        type="checkbox"  data-sc="check box:subject economics-discipline"
+                    ><label for="disc_economics-discipline"><span class="normal mls">Economics (696,141)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_education-discipline"
+                        name="disc_education-discipline_facet"
+                        value="ZWR1Y2F0aW9uLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Education, which has 881244 results"
+                        type="checkbox"  data-sc="check box:subject education-discipline"
+                    ><label for="disc_education-discipline"><span class="normal mls">Education (881,244)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_engineering-discipline"
+                        name="disc_engineering-discipline_facet"
+                        value="ZW5naW5lZXJpbmctZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Engineering, which has 84745 results"
+                        type="checkbox"  data-sc="check box:subject engineering-discipline"
+                    ><label for="disc_engineering-discipline"><span class="normal mls">Engineering (84,745)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_environmentalscience-discipline"
+                        name="disc_environmentalscience-discipline_facet"
+                        value="ZW52aXJvbm1lbnRhbHNjaWVuY2UtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Environmental Science, which has 107836 results"
+                        type="checkbox"  data-sc="check box:subject environmentalscience-discipline"
+                    ><label for="disc_environmentalscience-discipline"><span class="normal mls">Environmental Science (107,836)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_enviro-discipline"
+                        name="disc_enviro-discipline_facet"
+                        value="ZW52aXJvLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Environmental Studies, which has 33282 results"
+                        type="checkbox"  data-sc="check box:subject enviro-discipline"
+                    ><label for="disc_enviro-discipline"><span class="normal mls">Environmental Studies (33,282)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_europeanstudies-discipline"
+                        name="disc_europeanstudies-discipline_facet"
+                        value="ZXVyb3BlYW5zdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on European Studies, which has 26446 results"
+                        type="checkbox"  data-sc="check box:subject europeanstudies-discipline"
+                    ><label for="disc_europeanstudies-discipline"><span class="normal mls">European Studies (26,446)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_womensstudies-discipline"
+                        name="disc_womensstudies-discipline_facet"
+                        value="d29tZW5zc3R1ZGllcy1kaXNjaXBsaW5l"
+                        aria-label="Filter on Feminist &amp; Women&#39;s Studies, which has 66127 results"
+                        type="checkbox"  data-sc="check box:subject womensstudies-discipline"
+                    ><label for="disc_womensstudies-discipline"><span class="normal mls">Feminist &amp; Women&#39;s Studies (66,127)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_film-discipline"
+                        name="disc_film-discipline_facet"
+                        value="ZmlsbS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Film Studies, which has 36171 results"
+                        type="checkbox"  data-sc="check box:subject film-discipline"
+                    ><label for="disc_film-discipline"><span class="normal mls">Film Studies (36,171)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_finance-discipline"
+                        name="disc_finance-discipline_facet"
+                        value="ZmluYW5jZS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Finance, which has 81215 results"
+                        type="checkbox"  data-sc="check box:subject finance-discipline"
+                    ><label for="disc_finance-discipline"><span class="normal mls">Finance (81,215)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_folklore-discipline"
+                        name="disc_folklore-discipline_facet"
+                        value="Zm9sa2xvcmUtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Folklore, which has 58888 results"
+                        type="checkbox"  data-sc="check box:subject folklore-discipline"
+                    ><label for="disc_folklore-discipline"><span class="normal mls">Folklore (58,888)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_foodstudies-discipline"
+                        name="disc_foodstudies-discipline_facet"
+                        value="Zm9vZHN0dWRpZXMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Food Studies, which has 2196 results"
+                        type="checkbox"  data-sc="check box:subject foodstudies-discipline"
+                    ><label for="disc_foodstudies-discipline"><span class="normal mls">Food Studies (2,196)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_gardland-discipline"
+                        name="disc_gardland-discipline_facet"
+                        value="Z2FyZGxhbmQtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Garden &amp; Landscape, which has 3644 results"
+                        type="checkbox"  data-sc="check box:subject gardland-discipline"
+                    ><label for="disc_gardland-discipline"><span class="normal mls">Garden &amp; Landscape (3,644)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_genderstudies-discipline"
+                        name="disc_genderstudies-discipline_facet"
+                        value="Z2VuZGVyc3R1ZGllcy1kaXNjaXBsaW5l"
+                        aria-label="Filter on Gender Studies, which has 21788 results"
+                        type="checkbox"  data-sc="check box:subject genderstudies-discipline"
+                    ><label for="disc_genderstudies-discipline"><span class="normal mls">Gender Studies (21,788)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_generalscience-discipline"
+                        name="disc_generalscience-discipline_facet"
+                        value="Z2VuZXJhbHNjaWVuY2UtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on General Science, which has 824844 results"
+                        type="checkbox"  data-sc="check box:subject generalscience-discipline"
+                    ><label for="disc_generalscience-discipline"><span class="normal mls">General Science (824,844)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_geography-discipline"
+                        name="disc_geography-discipline_facet"
+                        value="Z2VvZ3JhcGh5LWRpc2NpcGxpbmU="
+                        aria-label="Filter on Geography, which has 171711 results"
+                        type="checkbox"  data-sc="check box:subject geography-discipline"
+                    ><label for="disc_geography-discipline"><span class="normal mls">Geography (171,711)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_geology-discipline"
+                        name="disc_geology-discipline_facet"
+                        value="Z2VvbG9neS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Geology, which has 13962 results"
+                        type="checkbox"  data-sc="check box:subject geology-discipline"
+                    ><label for="disc_geology-discipline"><span class="normal mls">Geology (13,962)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_health-discipline"
+                        name="disc_health-discipline_facet"
+                        value="aGVhbHRoLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Health Policy, which has 112421 results"
+                        type="checkbox"  data-sc="check box:subject health-discipline"
+                    ><label for="disc_health-discipline"><span class="normal mls">Health Policy (112,421)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_healthsciences-discipline"
+                        name="disc_healthsciences-discipline_facet"
+                        value="aGVhbHRoc2NpZW5jZXMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Health Sciences, which has 781555 results"
+                        type="checkbox"  data-sc="check box:subject healthsciences-discipline"
+                    ><label for="disc_healthsciences-discipline"><span class="normal mls">Health Sciences (781,555)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_history-discipline"
+                        name="disc_history-discipline_facet"
+                        value="aGlzdG9yeS1kaXNjaXBsaW5l"
+                        aria-label="Filter on History, which has 1.5 million results"
+                        type="checkbox"  data-sc="check box:subject history-discipline"
+                    ><label for="disc_history-discipline"><span class="normal mls">History (1,470,342)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_historyofscience-discipline"
+                        name="disc_historyofscience-discipline_facet"
+                        value="aGlzdG9yeW9mc2NpZW5jZS1kaXNjaXBsaW5l"
+                        aria-label="Filter on History of Science &amp; Technology, which has 177214 results"
+                        type="checkbox"  data-sc="check box:subject historyofscience-discipline"
+                    ><label for="disc_historyofscience-discipline"><span class="normal mls">History of Science &amp; Technology (177,214)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_horticulture-discipline"
+                        name="disc_horticulture-discipline_facet"
+                        value="aG9ydGljdWx0dXJlLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Horticulture, which has 8586 results"
+                        type="checkbox"  data-sc="check box:subject horticulture-discipline"
+                    ><label for="disc_horticulture-discipline"><span class="normal mls">Horticulture (8,586)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_interrela-discipline"
+                        name="disc_interrela-discipline_facet"
+                        value="aW50ZXJyZWxhLWRpc2NpcGxpbmU="
+                        aria-label="Filter on International Relations, which has 243380 results"
+                        type="checkbox"  data-sc="check box:subject interrela-discipline"
+                    ><label for="disc_interrela-discipline"><span class="normal mls">International Relations (243,380)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_irishstudies-discipline"
+                        name="disc_irishstudies-discipline_facet"
+                        value="aXJpc2hzdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Irish Studies, which has 111371 results"
+                        type="checkbox"  data-sc="check box:subject irishstudies-discipline"
+                    ><label for="disc_irishstudies-discipline"><span class="normal mls">Irish Studies (111,371)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_jewishstudies-discipline"
+                        name="disc_jewishstudies-discipline_facet"
+                        value="amV3aXNoc3R1ZGllcy1kaXNjaXBsaW5l"
+                        aria-label="Filter on Jewish Studies, which has 97321 results"
+                        type="checkbox"  data-sc="check box:subject jewishstudies-discipline"
+                    ><label for="disc_jewishstudies-discipline"><span class="normal mls">Jewish Studies (97,321)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_laboremploymentrelations-discipline"
+                        name="disc_laboremploymentrelations-discipline_facet"
+                        value="bGFib3JlbXBsb3ltZW50cmVsYXRpb25zLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Labor &amp; Employment Relations, which has 100184 results"
+                        type="checkbox"  data-sc="check box:subject laboremploymentrelations-discipline"
+                    ><label for="disc_laboremploymentrelations-discipline"><span class="normal mls">Labor &amp; Employment Relations (100,184)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_literature-discipline"
+                        name="disc_literature-discipline_facet"
+                        value="bGl0ZXJhdHVyZS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Language &amp; Literature, which has 1.6 million results"
+                        type="checkbox"  data-sc="check box:subject literature-discipline"
+                    ><label for="disc_literature-discipline"><span class="normal mls">Language &amp; Literature (1,587,951)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_latinamericanstudies-discipline"
+                        name="disc_latinamericanstudies-discipline_facet"
+                        value="bGF0aW5hbWVyaWNhbnN0dWRpZXMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Latin American Studies, which has 173304 results"
+                        type="checkbox"  data-sc="check box:subject latinamericanstudies-discipline"
+                    ><label for="disc_latinamericanstudies-discipline"><span class="normal mls">Latin American Studies (173,304)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_law-discipline"
+                        name="disc_law-discipline_facet"
+                        value="bGF3LWRpc2NpcGxpbmU="
+                        aria-label="Filter on Law, which has 643902 results"
+                        type="checkbox"  data-sc="check box:subject law-discipline"
+                    ><label for="disc_law-discipline"><span class="normal mls">Law (643,902)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_libraryscience-discipline"
+                        name="disc_libraryscience-discipline_facet"
+                        value="bGlicmFyeXNjaWVuY2UtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Library Science, which has 67949 results"
+                        type="checkbox"  data-sc="check box:subject libraryscience-discipline"
+                    ><label for="disc_libraryscience-discipline"><span class="normal mls">Library Science (67,949)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_linguistics-discipline"
+                        name="disc_linguistics-discipline_facet"
+                        value="bGluZ3Vpc3RpY3MtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Linguistics, which has 192745 results"
+                        type="checkbox"  data-sc="check box:subject linguistics-discipline"
+                    ><label for="disc_linguistics-discipline"><span class="normal mls">Linguistics (192,745)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_manorgbeha-discipline"
+                        name="disc_manorgbeha-discipline_facet"
+                        value="bWFub3JnYmVoYS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Management &amp; Organizational Behavior, which has 105152 results"
+                        type="checkbox"  data-sc="check box:subject manorgbeha-discipline"
+                    ><label for="disc_manorgbeha-discipline"><span class="normal mls">Management &amp; Organizational Behavior (105,152)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_markadvert-discipline"
+                        name="disc_markadvert-discipline_facet"
+                        value="bWFya2FkdmVydC1kaXNjaXBsaW5l"
+                        aria-label="Filter on Marketing &amp; Advertising, which has 26478 results"
+                        type="checkbox"  data-sc="check box:subject markadvert-discipline"
+                    ><label for="disc_markadvert-discipline"><span class="normal mls">Marketing &amp; Advertising (26,478)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_mathematics-discipline"
+                        name="disc_mathematics-discipline_facet"
+                        value="bWF0aGVtYXRpY3MtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Mathematics, which has 354121 results"
+                        type="checkbox"  data-sc="check box:subject mathematics-discipline"
+                    ><label for="disc_mathematics-discipline"><span class="normal mls">Mathematics (354,121)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_middleeaststudies-discipline"
+                        name="disc_middleeaststudies-discipline_facet"
+                        value="bWlkZGxlZWFzdHN0dWRpZXMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Middle East Studies, which has 166555 results"
+                        type="checkbox"  data-sc="check box:subject middleeaststudies-discipline"
+                    ><label for="disc_middleeaststudies-discipline"><span class="normal mls">Middle East Studies (166,555)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_militarystudies-discipline"
+                        name="disc_militarystudies-discipline_facet"
+                        value="bWlsaXRhcnlzdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Military Studies, which has 163438 results"
+                        type="checkbox"  data-sc="check box:subject militarystudies-discipline"
+                    ><label for="disc_militarystudies-discipline"><span class="normal mls">Military Studies (163,438)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_musestud-discipline"
+                        name="disc_musestud-discipline_facet"
+                        value="bXVzZXN0dWQtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Museum Studies, which has 25321 results"
+                        type="checkbox"  data-sc="check box:subject musestud-discipline"
+                    ><label for="disc_musestud-discipline"><span class="normal mls">Museum Studies (25,321)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_music-discipline"
+                        name="disc_music-discipline_facet"
+                        value="bXVzaWMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Music, which has 280126 results"
+                        type="checkbox"  data-sc="check box:subject music-discipline"
+                    ><label for="disc_music-discipline"><span class="normal mls">Music (280,126)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_paleontology-discipline"
+                        name="disc_paleontology-discipline_facet"
+                        value="cGFsZW9udG9sb2d5LWRpc2NpcGxpbmU="
+                        aria-label="Filter on Paleontology, which has 33682 results"
+                        type="checkbox"  data-sc="check box:subject paleontology-discipline"
+                    ><label for="disc_paleontology-discipline"><span class="normal mls">Paleontology (33,682)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_peaceconflictstudies-discipline"
+                        name="disc_peaceconflictstudies-discipline_facet"
+                        value="cGVhY2Vjb25mbGljdHN0dWRpZXMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Peace &amp; Conflict Studies, which has 223947 results"
+                        type="checkbox"  data-sc="check box:subject peaceconflictstudies-discipline"
+                    ><label for="disc_peaceconflictstudies-discipline"><span class="normal mls">Peace &amp; Conflict Studies (223,947)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_performingarts-discipline"
+                        name="disc_performingarts-discipline_facet"
+                        value="cGVyZm9ybWluZ2FydHMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Performing Arts, which has 41510 results"
+                        type="checkbox"  data-sc="check box:subject performingarts-discipline"
+                    ><label for="disc_performingarts-discipline"><span class="normal mls">Performing Arts (41,510)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_philosophy-discipline"
+                        name="disc_philosophy-discipline_facet"
+                        value="cGhpbG9zb3BoeS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Philosophy, which has 464454 results"
+                        type="checkbox"  data-sc="check box:subject philosophy-discipline"
+                    ><label for="disc_philosophy-discipline"><span class="normal mls">Philosophy (464,454)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_politicalscience-discipline"
+                        name="disc_politicalscience-discipline_facet"
+                        value="cG9saXRpY2Fsc2NpZW5jZS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Political Science, which has 878946 results"
+                        type="checkbox"  data-sc="check box:subject politicalscience-discipline"
+                    ><label for="disc_politicalscience-discipline"><span class="normal mls">Political Science (878,946)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_populationstudies-discipline"
+                        name="disc_populationstudies-discipline_facet"
+                        value="cG9wdWxhdGlvbnN0dWRpZXMtZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Population Studies, which has 75204 results"
+                        type="checkbox"  data-sc="check box:subject populationstudies-discipline"
+                    ><label for="disc_populationstudies-discipline"><span class="normal mls">Population Studies (75,204)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_psychology-discipline"
+                        name="disc_psychology-discipline_facet"
+                        value="cHN5Y2hvbG9neS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Psychology, which has 73655 results"
+                        type="checkbox"  data-sc="check box:subject psychology-discipline"
+                    ><label for="disc_psychology-discipline"><span class="normal mls">Psychology (73,655)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_publichealth-discipline"
+                        name="disc_publichealth-discipline_facet"
+                        value="cHVibGljaGVhbHRoLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Public Health, which has 77400 results"
+                        type="checkbox"  data-sc="check box:subject publichealth-discipline"
+                    ><label for="disc_publichealth-discipline"><span class="normal mls">Public Health (77,400)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_publicpolicy-discipline"
+                        name="disc_publicpolicy-discipline_facet"
+                        value="cHVibGljcG9saWN5LWRpc2NpcGxpbmU="
+                        aria-label="Filter on Public Policy &amp; Administration, which has 97131 results"
+                        type="checkbox"  data-sc="check box:subject publicpolicy-discipline"
+                    ><label for="disc_publicpolicy-discipline"><span class="normal mls">Public Policy &amp; Administration (97,131)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_religion-discipline"
+                        name="disc_religion-discipline_facet"
+                        value="cmVsaWdpb24tZGlzY2lwbGluZQ=="
+                        aria-label="Filter on Religion, which has 531826 results"
+                        type="checkbox"  data-sc="check box:subject religion-discipline"
+                    ><label for="disc_religion-discipline"><span class="normal mls">Religion (531,826)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_sciencetechstudies-discipline"
+                        name="disc_sciencetechstudies-discipline_facet"
+                        value="c2NpZW5jZXRlY2hzdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Science &amp; Technology Studies, which has 81498 results"
+                        type="checkbox"  data-sc="check box:subject sciencetechstudies-discipline"
+                    ><label for="disc_sciencetechstudies-discipline"><span class="normal mls">Science &amp; Technology Studies (81,498)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_slavicstudies-discipline"
+                        name="disc_slavicstudies-discipline_facet"
+                        value="c2xhdmljc3R1ZGllcy1kaXNjaXBsaW5l"
+                        aria-label="Filter on Slavic Studies, which has 113903 results"
+                        type="checkbox"  data-sc="check box:subject slavicstudies-discipline"
+                    ><label for="disc_slavicstudies-discipline"><span class="normal mls">Slavic Studies (113,903)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_socialwork-discipline"
+                        name="disc_socialwork-discipline_facet"
+                        value="c29jaWFsd29yay1kaXNjaXBsaW5l"
+                        aria-label="Filter on Social Work, which has 46271 results"
+                        type="checkbox"  data-sc="check box:subject socialwork-discipline"
+                    ><label for="disc_socialwork-discipline"><span class="normal mls">Social Work (46,271)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_sociology-discipline"
+                        name="disc_sociology-discipline_facet"
+                        value="c29jaW9sb2d5LWRpc2NpcGxpbmU="
+                        aria-label="Filter on Sociology, which has 515491 results"
+                        type="checkbox"  data-sc="check box:subject sociology-discipline"
+                    ><label for="disc_sociology-discipline"><span class="normal mls">Sociology (515,491)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_statistics-discipline"
+                        name="disc_statistics-discipline_facet"
+                        value="c3RhdGlzdGljcy1kaXNjaXBsaW5l"
+                        aria-label="Filter on Statistics, which has 131831 results"
+                        type="checkbox"  data-sc="check box:subject statistics-discipline"
+                    ><label for="disc_statistics-discipline"><span class="normal mls">Statistics (131,831)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_technology-discipline"
+                        name="disc_technology-discipline_facet"
+                        value="dGVjaG5vbG9neS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Technology, which has 67582 results"
+                        type="checkbox"  data-sc="check box:subject technology-discipline"
+                    ><label for="disc_technology-discipline"><span class="normal mls">Technology (67,582)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_transportationstudies-discipline"
+                        name="disc_transportationstudies-discipline_facet"
+                        value="dHJhbnNwb3J0YXRpb25zdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Transportation Studies, which has 17864 results"
+                        type="checkbox"  data-sc="check box:subject transportationstudies-discipline"
+                    ><label for="disc_transportationstudies-discipline"><span class="normal mls">Transportation Studies (17,864)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_urbanstudies-discipline"
+                        name="disc_urbanstudies-discipline_facet"
+                        value="dXJiYW5zdHVkaWVzLWRpc2NpcGxpbmU="
+                        aria-label="Filter on Urban Studies, which has 41483 results"
+                        type="checkbox"  data-sc="check box:subject urbanstudies-discipline"
+                    ><label for="disc_urbanstudies-discipline"><span class="normal mls">Urban Studies (41,483)</span></label>
+
+                
+            </li>
+        
+            <li>
+                <input
+                        id="disc_zoology-discipline"
+                        name="disc_zoology-discipline_facet"
+                        value="em9vbG9neS1kaXNjaXBsaW5l"
+                        aria-label="Filter on Zoology, which has 246075 results"
+                        type="checkbox"  data-sc="check box:subject zoology-discipline"
+                    ><label for="disc_zoology-discipline"><span class="normal mls">Zoology (246,075)</span></label>
+
+                
+            </li>
+        
+    
+</ul>
+                        </fieldset>
+                    
+
+                    
+                
+            
+
+            
+                
+                    
+                
+                    
+                
+                    
+                        
+                            
+                                <input type="hidden" name="acc" value="dfr">
+                            
+                        
+                            
+                                <input type="hidden" name="acc" value="dfr">
+                            
+                        
+                    
+                
+            
+        </form>
+
+        
+    </section>
+
+            </div>
+        </section>
+    
+
+    <main aria-label="Search results" id="search-results-container">
+        <a href="#facet-filters" class="visuallyhidden">This is the search results section. Skip to filters section.</a>
+        
+
+        <noscript>
+            <div class="notify-error mbl">You do not have JavaScript enabled. Please enable JavaScript to use all features on this page.</div>
+        </noscript>
+
+        <div id="search-container" data-ajax-search="true" data-modified-query="">
+            
+            <div class="small-12 large-9 columns phn">
+                
+                    <div class="row">
+                        
+                            
+
+
+
+<div class="small-12 medium-4 columns">
+     <h2 class="normal mts" data-qa="results-controls-header" data-result-count="12287072">
+        Showing <span class="bold">1-25</span> of
+        <span class="bold">12,287,072</span>
+    </h2>
+</div>
+<div class="small-12 medium-4 columns">
+    
+
+
+
+
+
+<ul id="sort-by-drop" class="dropdown menu dropdown-button mbn" data-qa="results-controls-sort-by" data-click-open="true" data-disable-hover="true" data-dropdown-menu>
+    <li>
+        <button class="button dropdown secondary sort txtl">
+            Sort by:
+            
+                Relevance
+            
+        </button>
+        <ul class="menu vertical">
+            <li class="active">
+                <a href="/dfr/results?si=1&amp;so=rel&amp;searchType=facetSearch&amp;cty_journal_facet=am91cm5hbA%3D%3D&amp;acc=dfr" data-search-sort>
+                    Relevance
+                </a>
+            </li>
+            <li>
+                <a href="/dfr/results?si=1&amp;so=new&amp;searchType=facetSearch&amp;cty_journal_facet=am91cm5hbA%3D%3D&amp;acc=dfr" data-search-sort>
+                    Newest
+                </a>
+            </li>
+            <li>
+                <a href="/dfr/results?si=1&amp;so=old&amp;searchType=facetSearch&amp;cty_journal_facet=am91cm5hbA%3D%3D&amp;acc=dfr" data-search-sort>
+                    Oldest
+                </a>
+            </li>
+        </ul>
+    </li>
+</ul>
+
+</div>
+<div class="small-12 medium-4 columns prn">
+    <span class="right prs">
+
+<ul class="pagination simple mvn text-right" id="pagination">
+    
+
+    <li><span class="show-for-sr">page</span><strong>1</strong> of 491,483</li>
+
+    
+        <li class="pagination-next">
+            <a id="next-page" href="/dfr/results?page=2&amp;searchType=facetSearch&amp;cty_journal_facet=am91cm5hbA%3D%3D&amp;acc=dfr" data-qa="pagination-next-page-url">Next<span class="show-for-sr">page</span></a>
+        </li>
+    
+</ul>
+</span>
+</div>
+
+                        
+                    </div>
+
+                    
+                        
+                    
+
+                    
+                        
+
+<div class="small-12 columns applied-filters small-text">
+    
+    
+        
+        <div class="facet-filters-container">
+            <span class="mln mts small-text upper bold">Content Type:</span>
+            <ul class="inline-list inline">
+                
+                    <li id="cty_journal" class="label facet-filter pvsx phxs mls mbs white-color dark-blue-background inline-block">Journals<a class="mlm inline white-color" href="#" aria-label="Remove Journals from the Content Type filter"><i class="icon-close icon-small"></i></a></li>
+                
+                
+                    
+                    
+                
+            </ul>
+        </div>
+        
+    
+        
+    
+        
+    
+
+    
+        
+        
+        
+    
+    
+</div>
+
+                    
+
+                    
+
+                    <div class="main-results">
+                        <form id="bulk_citation_export_form" action="/citation/bulk" method="post" class="form-jstor clearfix mbn">
+                            <input type="hidden" id="referring_requestid" name="referring_requestid" value="fastly-default:cb550053f8469abe0ed83f57449cf920" />
+                            <input type="hidden" id="ab_segments" name="ab_segments" value="" />
+                        </form>
+                        <form name="searchFormTools" id="searchFormTools" action="/action/doBasicResults" method="GET">
+
+                            <ol class="list-searchResults mln">
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:b5bfc7b3-6466-3551-ab23-5ce2c7be41ff doi:10.2307/26565752 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="1" data-id="b5bfc7b3-6466-3551-ab23-5ce2c7be41ff" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26565752?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            NOVEDADES EDITORIALES
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Omar+Quiroz%22">Omar Quiroz</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Foro Internacional</cite>, Vol. 59, No. 1 (235) (ENERO-MARZO, 2019), pp. 283-296
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="b5bfc7b3-6466-3551-ab23-5ce2c7be41ff">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:77bfeaf8-e972-37a3-a331-2c92cc3aa5fa doi:10.2307/26557208 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="2" data-id="77bfeaf8-e972-37a3-a331-2c92cc3aa5fa" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26557208?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            LA COMISIÓN NACIONAL DE COLONIZACIÓN Y LA EXPANSIÓN DE LA PEQUEÑA PROPIEDAD RURAL EN MÉXICO 1947-1963
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Luis+Aboites+Aguilar%22">Luis Aboites Aguilar</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Historia Mexicana</cite>, Vol. 68, No. 3 (271) (ENERO-MARZO 2019), pp. 1165-1204
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="77bfeaf8-e972-37a3-a331-2c92cc3aa5fa">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:db38a4af-382c-3353-bce7-3bcf884ce588 doi:10.2307/26559616 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="3" data-id="db38a4af-382c-3353-bce7-3bcf884ce588" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26559616?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Front Matter
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Columbia Law Review</cite>, Vol. 119, No. 1 (JANUARY 2019)
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="db38a4af-382c-3353-bce7-3bcf884ce588">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:a5addb19-11b0-319d-9f22-4d6c9513df4f doi:10.2307/26590553 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="4" data-id="a5addb19-11b0-319d-9f22-4d6c9513df4f" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26590553?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Front Matter
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>The University of Chicago Law Review</cite>, Vol. 86, No. 2, Symposium: Personalized Law (March 2019)
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="a5addb19-11b0-319d-9f22-4d6c9513df4f">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:53acd223-06c5-3273-be55-6c6d47369c09 doi:10.2307/26557616 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="5" data-id="53acd223-06c5-3273-be55-6c6d47369c09" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26557616?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            La mise en économie de la nature, contrepoints historiques et contemporains
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Harold+Levrel%22">Harold Levrel</a>,
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Antoine+Missemer%22">Antoine Missemer</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Revue économique</cite>, Vol. 70, No. 1 (janvier 2019), pp. 97-122
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="53acd223-06c5-3273-be55-6c6d47369c09">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:9662a6e4-d5ac-338b-ac69-5ab804d57527 doi:10.2307/26554412 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="6" data-id="9662a6e4-d5ac-338b-ac69-5ab804d57527" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26554412?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Back Matter
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Innovar: Revista de ciencias administrativas y sociales</cite>, Vol. 29, No. 71 (Enero-marzo 2019)
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="9662a6e4-d5ac-338b-ac69-5ab804d57527">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:abbb79d1-0b6b-3ed7-a513-7f5774f62f08 doi:10.2307/26565745 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="7" data-id="abbb79d1-0b6b-3ed7-a513-7f5774f62f08" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26565745?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            LOS NUEVOS RUMBOS DEL MERCOSUR. El CAMBIO DE MODELO Y LAS
+                    CONSECUENCIAS DE LA CRISIS BRASILEÑA / NEW DIRECTIONS FOR MERCOSUR. A CHANGE IN
+                    MODEL AND THE CONSEQUENCES OF THE BRAZILIAN CRISIS / LA NOUVELLE ORIENTATION DU
+                    MERCOSUR. LE CHANGEMENT DE MODÈLE AU BRÉSIL ET LES CONSÉQUENCES DE SA
+                    CRISE
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Gerardo+Caetano%22">Gerardo Caetano</a>,
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Gonzalo+Celorio+Morayta%22">Gonzalo Celorio Morayta</a>,
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Bernardo+Mabire%22">Bernardo Mabire</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Foro Internacional</cite>, Vol. 59, No. 1 (235) (ENERO-MARZO, 2019), pp. 47-88
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="abbb79d1-0b6b-3ed7-a513-7f5774f62f08">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:13595011-cbe8-34f1-8166-650d8db529c8 doi:10.2307/26596420 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="8" data-id="13595011-cbe8-34f1-8166-650d8db529c8" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26596420?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Front Matter
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Alif: Journal of Comparative Poetics</cite>, No. 39, Transnational Drama: Theater and Performance / <span dir="rtl">الدراما العابرة للقوميات: ﺍﻟﻤﺴﺮﺡ والأداء</span>&lrm; (2019)
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="13595011-cbe8-34f1-8166-650d8db529c8">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:f33134db-ed65-36a5-9359-9d24770bfebe doi:10.2307/26554409 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="9" data-id="f33134db-ed65-36a5-9359-9d24770bfebe" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26554409?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Risco de Falência de PME: evidência no setor da construção em Portugal
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Lu%C3%ADs+Miguel+Pacheco%22">Luís Miguel Pacheco</a>,
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Raquel+Rosa%22">Raquel Rosa</a>,
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Fernando+Oliveira+Tavares%22">Fernando Oliveira Tavares</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Innovar: Revista de ciencias administrativas y sociales</cite>, Vol. 29, No. 71 (Enero-marzo 2019), pp. 143-157
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="f33134db-ed65-36a5-9359-9d24770bfebe">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:c36688ec-d6fe-3a7b-974d-1fc7a03d4f39 doi:10.2307/26568719 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="10" data-id="c36688ec-d6fe-3a7b-974d-1fc7a03d4f39" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26568719?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            ALBERT CAMUS FACE À L’ALLEMAGNE: RÉACTIONS ET LECTURES
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Hans+Peter+Lund%22">Hans Peter Lund</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Revue d'Histoire littéraire de la France</cite>, 119e Année, No. 1 (JANVIER-MARS 2019), pp. 125-144
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="c36688ec-d6fe-3a7b-974d-1fc7a03d4f39">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:6e0287d1-cd49-3349-a302-9d7115a68c31 doi:10.2307/26542042 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="11" data-id="6e0287d1-cd49-3349-a302-9d7115a68c31" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26542042?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            La crítica de la metafísica budista en el sistema filosófico de Zhang Zai / The critique of Buddhist metaphysics in the philosophical system of Zhang Zai
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22FILIPPO+COSTANTINI%22">FILIPPO COSTANTINI</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Estudios de Asia y Africa</cite>, Vol. 54, No. 1 (168) (ENERO-ABRIL, 2019), pp. 5-26
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="6e0287d1-cd49-3349-a302-9d7115a68c31">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:9cf1cfe7-c6df-3830-98e8-36144ae901d0 doi:10.2307/26596441 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="12" data-id="9cf1cfe7-c6df-3830-98e8-36144ae901d0" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26596441?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            الملخصات العربية للمقالات / Arabic Abstracts of Articles
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Alif: Journal of Comparative Poetics</cite>, No. 39, Transnational Drama: Theater and Performance / <span dir="rtl">الدراما العابرة للقوميات: ﺍﻟﻤﺴﺮﺡ والأداء</span>&lrm; (2019), pp. ٢١٦-٢٢٢
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="9cf1cfe7-c6df-3830-98e8-36144ae901d0">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:e5e2c3cf-8fd5-3f6a-a01b-072d5ffddaf1 doi:10.2307/26566029 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="13" data-id="e5e2c3cf-8fd5-3f6a-a01b-072d5ffddaf1" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26566029?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            EL ANÁLISIS DEL <em>LAND GRABBING</em> A LA LUZ DE LA NORMA INTERNACIONAL DE LA SOBERANÍA TERRITORIAL
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Michele+Nino%22">Michele Nino</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Revista Española de Derecho Internacional</cite>, Vol. 71, No. 1 (ENERO-JUNIO 2019), pp. 207-214
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="e5e2c3cf-8fd5-3f6a-a01b-072d5ffddaf1">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:eb55ba2f-0e92-3af8-8df4-2a26df62e4e9 doi:10.2307/26540800 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="14" data-id="eb55ba2f-0e92-3af8-8df4-2a26df62e4e9" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26540800?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            UNA VOZ POÉTICO-MÉTRICA DE CERVANTES: <em>AQUELINDO</em> EN <em>EL RUFIÁN DICHOSO</em> / A CERVANTES’ POETIC-METRICAL WORD: <em>AQUELINDO</em> IN <em>EL RUFIÁN DICHOSO</em>
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Sonia+Fern%C3%A1ndez+Hoyos%22">Sonia Fernández Hoyos</a>,
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Jos%C3%A9+Luis+Fern%C3%A1ndez+de+la+Torre%22">José Luis Fernández de la Torre</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Nueva Revista de Filología Hispánica</cite>, T. 67, No. 1 (ENERO-JUNIO 2019), pp. 77-103
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="eb55ba2f-0e92-3af8-8df4-2a26df62e4e9">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:71923692-de6b-3856-abef-7eb98a76fb18 doi:10.2307/26566020 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="15" data-id="71923692-de6b-3856-abef-7eb98a76fb18" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26566020?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            <em>IN MEMORIAM</em> PALOMA GARCÍA PICAZO
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Esther+Barb%C3%A9+Izuel%22">Esther Barbé Izuel</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Revista Española de Derecho Internacional</cite>, Vol. 71, No. 1 (ENERO-JUNIO 2019), pp. 13-16
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="71923692-de6b-3856-abef-7eb98a76fb18">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:65e53b32-f71e-388b-acb4-e61c1274e20d doi:10.2307/26626858 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="16" data-id="65e53b32-f71e-388b-acb4-e61c1274e20d" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26626858?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Back Matter
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Journal of Coastal Research</cite>, Vol. 35, No. 2 (March 2019)
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="65e53b32-f71e-388b-acb4-e61c1274e20d">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:64922de0-02c3-37c8-9fea-32d376d53f11 doi:10.2307/26625457 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="17" data-id="64922de0-02c3-37c8-9fea-32d376d53f11" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26625457?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Front Matter
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Revista Portuguesa de Filosofia</cite>, T. 75, Fasc. 1, Ética e Política Contemporânea: Ressonâncias Kantianas / Contemporary Ethics and Politics: Kant Resonances (2019)
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="64922de0-02c3-37c8-9fea-32d376d53f11">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:10ca71ba-d18a-38ac-8ec3-89d5ed4f9b72 doi:10.2307/26625471 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="18" data-id="10ca71ba-d18a-38ac-8ec3-89d5ed4f9b72" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26625471?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Ética, Política e Democracia: Seguindo Aristóteles, Kant e Mill
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22LU%C3%8DS+G.+SOTO%22">LUÍS G. SOTO</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Revista Portuguesa de Filosofia</cite>, T. 75, Fasc. 1, Ética e Política Contemporânea: Ressonâncias Kantianas / Contemporary Ethics and Politics: Kant Resonances (2019), pp. 305-338
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="10ca71ba-d18a-38ac-8ec3-89d5ed4f9b72">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:89aac11a-8b09-3ee8-8100-40efaafdd30d doi:10.2307/26625469 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="19" data-id="89aac11a-8b09-3ee8-8100-40efaafdd30d" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26625469?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            “Nella lotta con gli ostacoli farsi degni dell’umanità”. Karl Jaspers legge Kant
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22ELENA+ALESSIATO%22">ELENA ALESSIATO</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Revista Portuguesa de Filosofia</cite>, T. 75, Fasc. 1, Ética e Política Contemporânea: Ressonâncias Kantianas / Contemporary Ethics and Politics: Kant Resonances (2019), pp. 247-278
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="89aac11a-8b09-3ee8-8100-40efaafdd30d">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:6256454e-c7f8-3cbf-b759-166e1dcb3011 doi:10.2307/26625481 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="20" data-id="6256454e-c7f8-3cbf-b759-166e1dcb3011" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26625481?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Espontaneidade Prática e Agir Racional: Apontamentos acerca de uma Possível Tensão na Relação entre as Leis Jurídicas e a Moralidade no Pensamento Kantiano
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22GEHAD+MARCON+BARK%22">GEHAD MARCON BARK</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Revista Portuguesa de Filosofia</cite>, T. 75, Fasc. 1, Ética e Política Contemporânea: Ressonâncias Kantianas / Contemporary Ethics and Politics: Kant Resonances (2019), pp. 599-636
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="6256454e-c7f8-3cbf-b759-166e1dcb3011">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:55d23cc6-0f43-3693-b478-52fc126aeb71 doi:10.2307/26634960 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="21" data-id="55d23cc6-0f43-3693-b478-52fc126aeb71" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26634960?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Violencia de género, feminismo y <em>representación</em> en Cuba
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Yuliuva+Hern%C3%A1ndez+Garc%C3%ADa%22">Yuliuva Hernández García</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Estudos Feministas</cite>, Vol. 27, No. 1 (2019), pp. 1-15
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="55d23cc6-0f43-3693-b478-52fc126aeb71">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:23047708-dc06-332f-b5d4-f62ebc719dc4 doi:10.2307/26634974 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="22" data-id="23047708-dc06-332f-b5d4-f62ebc719dc4" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26634974?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Feminismos transnacionais descoloniais: algumas questões em torno da colonialidade nos feminismos
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Caroline+Betemps+Bozzano%22">Caroline Betemps Bozzano</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Estudos Feministas</cite>, Vol. 27, No. 1 (2019), pp. 1-7
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="23047708-dc06-332f-b5d4-f62ebc719dc4">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:f31244b5-f30e-3ef6-9b1f-85e55a95640b doi:10.2307/26634945 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="23" data-id="f31244b5-f30e-3ef6-9b1f-85e55a95640b" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26634945?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Joana Nolais e o enigma de gênero: uma discussão psicanalítica da transexualidade
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Viviana+Carola+Velasco+Martinez%22">Viviana Carola Velasco Martinez</a>,
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Gustavo+Angeli%22">Gustavo Angeli</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Estudos Feministas</cite>, Vol. 27, No. 1 (2019), pp. 1-14
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="f31244b5-f30e-3ef6-9b1f-85e55a95640b">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:6e9f34a5-93aa-3c1c-9fe0-534e286d0c24 doi:10.2307/26634971 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="24" data-id="6e9f34a5-93aa-3c1c-9fe0-534e286d0c24" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26634971?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            O racismo, a moda, e a diversificação dos padrões de beleza: o exemplo de Iman, top model Somali dos anos 70/80
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Joana+Passos%22">Joana Passos</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Estudos Feministas</cite>, Vol. 27, No. 1 (2019), pp. 1-8
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="6e9f34a5-93aa-3c1c-9fe0-534e286d0c24">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                                    <li class="row result-item">
+                                        
+
+
+
+
+
+
+<!-- results markup common to all result items -->
+
+<!-- id:a8bf3b93-0a41-3b47-bacf-a5d46965649d doi:10.2307/26634950 -->
+<div class="small-12 columns mtl mbn media-object">
+    
+
+    
+    <div class="result-item-metadata media-body media-object-section main-section prn" data-rankinpage="25" data-id="a8bf3b93-0a41-3b47-bacf-a5d46965649d" data-resulttype="journal">
+        <div class="row">
+            <div class="small-12 large-8 xlarge-9 columns mbl">
+                
+                    <div class="badge">
+                        Journal Article
+                    </div>
+                
+
+                
+                
+
+
+
+
+<div class="title">
+    <h3 class="medium-heading">
+        
+            <a href="/stable/26634950?Search=yes&amp;resultItemClick=true&amp;&amp;searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bacc%3Ddfr&amp;ab_segments=0%2Fdefault-2%2Fcontrol"
+               data-itemtype="Article"
+               data-access="No"
+               data-mboxname="search-journal-click,search-content-access">
+            Gênero, reciprocidade e mercado no cuidado de idosos
+            </a>
+        
+    </h3>
+</div>
+
+
+
+
+
+    
+
+
+
+    
+        <div class="contrib">
+        
+    
+    
+        <a href="/dfr/results?si=1&amp;Query=au%3A%22Anna+B%C3%A1rbara+Araujo%22">Anna Bárbara Araujo</a>
+    
+        </div>
+
+
+    
+    
+        <div class="src break-word" data-qa="item-src-info">
+            <cite>Estudos Feministas</cite>, Vol. 27, No. 1 (2019), pp. 1-13
+        </div>
+    
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                
+                
+                    <div class="snippets mlm hide">
+                        <div class="evaluation-pane mtl inview no-js-hide" data-id="a8bf3b93-0a41-3b47-bacf-a5d46965649d">
+    Loading additional content...
+</div>
+
+                    </div>
+                
+
+                
+
+
+                
+                
+                <div class="sass-debug-fields">
+                    
+                </div>
+            </div>
+            
+                
+                    
+                        <div class="small-12 xlarge-3 columns">
+                            <ul class="action-buttons">
+                            <li>
+                            
+                                
+                                    <button disabled class="button secondary"><span class="visuallyhidden">You don't have access to </span>Download PDF</button>
+                                
+                            
+                            </li>
+                            </ul>
+                        </div>
+                    
+                
+            
+        </div>
+    </div>
+</div>
+
+                                    </li>
+                                
+                            </ol>
+
+                            <div class="small-12 large-5 columns prn right mbl">
+                                
+
+<ul class="pagination simple mvn text-right" id="pagination">
+    
+
+    <li><span class="show-for-sr">page</span><strong>1</strong> of 491,483</li>
+
+    
+        <li class="pagination-next">
+            <a id="next-page" data-next-page-mark=cGFnZU1hcms9Mg== href="/dfr/results?pagemark=cGFnZU1hcms9Mg%3D%3D&amp;searchType=facetSearch&amp;cty_journal_facet=am91cm5hbA%3D%3D&amp;acc=dfr" data-qa="pagination-next-page-url">Next<span class="show-for-sr">page</span></a>
+        </li>
+    
+</ul>
+
+                            </div>
+
+                            <input type="hidden" name="noDoi" value="yesDoi"/>
+                            <input type="hidden" name="redirectUri" value="/dfr/results?searchType=facetSearch&amp;amp;cty_journal_facet=am91cm5hbA%3D%3D&amp;amp;sd=&amp;amp;ed=&amp;amp;acc=dfr&amp;confirm=add" />
+                            <input type="hidden" name="sbq" value=""/>
+                            <input type="hidden" name="hp" value="25"/>
+                            <input type="hidden" name="la" value="None"/>
+                            <input type="hidden" name="wc" value="off"/>
+                            <input type="hidden" name="fc" value="off"/>
+                            <input type="hidden" name="acc" value="dfr"/>
+                            <input type="hidden" name="vf" value="all"/>
+                            <input type="hidden" name="bk" value="off"/>
+                            <input type="hidden" name="pm" value="off"/>
+                            <input type="hidden" name="jo" value="off"/>
+                            <input type="hidden" name="ar" value="off"/>
+                            <input type="hidden" name="re" value="off"/>
+                            <input type="hidden" name="ms" value="off"/>
+                            <input type="hidden" name="mxpg" value=""/>
+                            <input type="hidden" name="dpg" value=""/>
+                            <input type="hidden" name="si" value="0"/>
+                            <input type="hidden" name="gw" value="jtx"/>
+                            <input type="hidden" name="Query" value=""/>
+                        </form>
+                    </div>
+                
+            </div>
+        </div>
+        
+            <div id="loading-image" class="loading-image hide" aria-live="assertive">
+                <img src="//www.jstor.org/assets/global_20190617T1925/build/images/search-results-loading.gif" alt="Fetching your results...">
+            </div>
+            <div id="loading-cover" class="loading-results hide" aria-hidden="true"></div>
+        
+
+        
+    </main>
+</div>
+
+            
+        
+    
+
+    </div>
+
+        </div>
+    </div>
+
+        </div>
+
+        <div class="main-content-without-margin">
+             
+        </div>
+
+        
+    
+
+
+
+
+        
+            <div id="screen-reader-notification" class="show-for-sr" role="alert" aria-live="polite" aria-atomic="false" aria-relevant="additions"></div>
+            <div id="screen-reader-alert" class="show-for-sr" role="alert" aria-live="assertive" aria-atomic="false" aria-relevant="additions"></div>
+        
+
+        
+        
+            
+
+
+
+<footer class="footer">
+    
+
+    <div class="row">
+        <div class="columns">
+            <h2 class="xlarge-heading">Explore JSTOR</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="small-12 medium-5 large-3 columns">
+            <div class="row">
+                <div class="small-7 columns">
+                    <ul class="no-bullet mbn">
+                        <li><a href="/subjects" data-qa="ftr-by-subj">By Subject</a></li>
+                        <li><a href="/action/showJournals?browseType=title" data-qa="ftr-by-title">By Title</a></li>
+                        <li><a href="/publishers" data-qa="ftr-by-pub">By Publisher</a></li>
+                        <li><a href="/action/showAdvancedSearch" data-qa="ftr-adv-search">Advanced Search</a></li>
+                        <li><a href="/dfr" data-qa="ftr-dfr" data-sc="text link: dfr footer">Data for Research</a></li>
+                    </ul>
+                </div>
+                <div class="small-5 columns end">
+                    <ul class="no-bullet">
+                        <li><a href="https://support.jstor.org/hc/en-us/articles/360000313328-Need-Help-Logging-in-To-JSTOR-" target="_blank" title="This link opens in a new window" data-qa="ftr-get-access">Get Access</a></li>
+                        <li><a href="https://support.jstor.org" target="_blank" title="This link opens in a new window" data-qa="ftr-support">Support</a></li>
+                        <li><a href="https://guides.jstor.org" target="_blank" title="This link opens in a new window" data-qa="ftr-libguides">Libguides</a></li>
+                        <li><a href="https://guides.jstor.org/researchbasics" target="_blank" title="This link opens in a new window" data-qa="ftr-research-basics">Research Basics</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="small-12 medium-7 large-4 columns vertical-rule-footer">
+            <div class="row">
+                <div class="small-7 columns">
+                <ul class="no-bullet responsive-separator">
+                    <li><a href="https://about.jstor.org" target="_blank" title="This link opens in a new window" data-qa="ftr-about-jstor">About JSTOR</a></li>
+                    <li><a href="https://about.jstor.org/mission-history/" target="_blank" title="This link opens in a new window" data-qa="ftr-mission-and-history">Mission and History</a></li>
+                    <li><a href="https://about.jstor.org/whats-in-jstor/" target="_blank" title="This link opens in a new window" data-qa="ftr-whats-in-jstor">What's in JSTOR</a></li>
+                    <li><a href="https://about.jstor.org/get-jstor/" target="_blank" title="This link opens in a new window" data-qa="ftr-get-jstor">Get JSTOR</a></li>
+                    <li><a href="https://about.jstor.org/news/" target="_blank" title="This link opens in a new window" data-qa="ftr-news">News</a></li>
+                    <li><a href="https://about.jstor.org/events/" target="_blank" title="This link opens in a new window" data-qa="ftr-events">Events</a></li>
+                </ul>
+                </div>
+                <div class="small-5 columns end">
+                <ul class="no-bullet">
+                    <li><a href="https://labs.jstor.org/" target="_blank" title="This link opens in a new window" data-qa="ftr-labs">JSTOR Labs</a></li>
+                    <li><a href="https://daily.jstor.org/" target="_blank" title="This link opens in a new window" data-qa="ftr-daily">JSTOR Daily</a></li>
+                    <li><a href="https://www.ithaka.org/careers/" target="_blank" title="This link opens in a new window" data-qa="ftr-careers">Careers</a></li>
+                    <li><a href="/contact-us/" target="_blank" title="This link opens in a new window" data-qa="ftr-contact-us">Contact Us</a></li>
+                </ul>
+                </div>
+            </div>
+        </div>
+        <div class="small-12 large-2 columns">
+            <ul class="no-bullet">
+                <li><a href="/librarians" target="_blank" title="This link opens in a new window" class="button secondary" data-qa="ftr-for-librarians">For Librarians</a></li>
+                <li><a href="https://about.jstor.org/publishers/" target="_blank" title="This link opens in a new window" class="button secondary" data-qa="ftr-for-pub">For Publishers</a></li>
+            </ul>
+        </div>
+        <div class="small-12 large-3 columns small-text">
+            <ul class="menu simple no-bullet no-underline">
+                <li><a href="https://twitter.com/JSTOR" target="_blank" class="icon-twitter twitter-styling icon-large" aria-label="Twitter - This link opens in a new window"></a></li>
+                <li><a href="https://www.facebook.com/JSTOR.org" target="_blank" class="icon-facebook-official facebook-styling icon-large" aria-label="Facebook - This link opens in a new window"></a></li>
+            </ul>
+            <p class="small-text" data-qa="ftr-mission-statement">JSTOR is part of <a href="https://www.ithaka.org">ITHAKA</a>, a not-for-profit organization helping the academic community use digital technologies to preserve the scholarly record and to advance research and teaching in sustainable ways.</p>
+            <p class="small-text" data-qa="ftr-copyright-statement">&copy;2000-2019 ITHAKA. All Rights Reserved. JSTOR&reg;, the JSTOR logo, JPASS&reg;, Artstor&reg;, and ITHAKA&reg; are registered trademarks of ITHAKA.</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="small-12 medium-6 large-8 columns">
+            <ul class="menu simple no-bullet responsive-links">
+                <li><a class="pln" href="https://about.jstor.org/terms/" target="_blank" title="This link opens in a new window" data-qa="ftr-terms-and-conditions">Terms & Conditions of Use</a></li>
+                <li><a href="https://www.ithaka.org/privacypolicy" target="_blank" title="This link opens in a new window" data-qa="ftr-privacy-policy">Privacy Policy</a></li>
+                <li><a href=" https://www.ithaka.org/cookies" target="_blank" title="This link opens in a new window" data-qa="ftr-use-of-cookies">Cookie Policy</a></li>
+                <li><a class="prn" href="https://about.jstor.org/accessibility/" target="_blank" title="This link opens in a new window" data-qa="ftr-accessibility">Accessibility</a></li>
+                
+            </ul>
+        </div>
+        
+        <div class="small-12 medium-6 large-4 columns no-js-hide">
+            <div id="google_translate_element" aria-hidden="true"></div>
+        </div>
+        
+    </div>
+</footer>
+
+        
+
+        
+            <div id="csrfTokenCookie" class="hide">
+                <input type='hidden' name='csrfmiddlewaretoken' value='ATuQfHd6dZAEmTQOq1Hovnwc4V3RqXnWsRZzwH59F7N0Zy7Mm7XJ0hWYiNXVlvE5' />
+            </div>
+        
+
+        
+    
+    <div id="terms-and-conditions" class="reveal-modal reveal medium" data-reveal
+     data-icon="arrow-down" data-circle-color="dark-green" aria-labelledby="terms-and-conditions_title"
+     aria-hidden="true"  aria-live="polite" aria-atomic="true"
+     aria-relevant="additions" role="dialog">
+    <header>
+        <h1 id="terms-and-conditions_title">Loading</h1>
+    </header>
+    <div id="terms-and-conditions_body" class="reveal-body">
+        
+            
+                <p>Processing your request...</p>
+            
+        
+    </div>
+    <a href="#" class="close-reveal-modal close-button" data-close aria-label="Close Overlay">&#215; <span class="visuallyhidden">Close Overlay</span></a>
+</div>
+
+    
+
+
+        
+    
+            <script type="text/javascript" src="//www.jstor.org/assets/global_20190617T1925/build/global/js/global.min.js"></script>
+        
+
+    
+<div id="dynamic-loader-305">
+    
+
+<script src="//www.jstor.org/assets/search-results_20190611T1324/build/search-results/js/search-results.min.js"></script>
+
+</div>
+
+    <script type="text/javascript" src="//www.jstor.org/assets/dfr_20190424T1442/build/dfr/js/dfr.min.js"></script>
+
+
+        
+            
+                <script type="text/javascript">
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+            pageLanguage: 'en',
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false
+        }, 'google_translate_element');
+
+        var googleTranslateWindow = document.getElementsByClassName("goog-te-menu-frame")[0],
+            googleTranslateButton = document.getElementsByClassName("goog-te-gadget-simple")[0];
+        googleTranslateWindow.contentDocument.addEventListener("keydown", function(event) {
+            if (event.keyCode === 27) {
+                document.activeElement.blur();
+                googleTranslateButton.focus();
+                googleTranslateWindow.style.display = 'none';
+            }
+        });
+    }
+</script>
+<script defer type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+            
+        
+
+        <noscript>
+            <img src="/capns_log/nojs" alt="">
+        </noscript>
+
+        <div id="env_info" class="hide" data-debug="False"
+             data-env="prod">
+            
+        </div>
+
+        <script defer src="https://static.ithaka.org/gdpr-banner/js/banner.js" type="text/javascript"></script>
+
+        <script>
+    var logPerimeterXLoadingErrors = function() {
+    
+        if (window.perimeterXLoadingErrors) {
+            for (var property in window.perimeterXLoadingErrors) {
+                if (window.perimeterXLoadingErrors.hasOwnProperty(property)) {
+                    jslogger.log_event("error", "perimeterx." + property + ".loadingError", {errorType: window.perimeterXLoadingErrors[property]});
+                }
+            }
+        }
+    
+    }
+</script>
+    </body>
+</html>

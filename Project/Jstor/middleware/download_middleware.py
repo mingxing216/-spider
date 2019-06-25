@@ -5,9 +5,6 @@
 '''
 import sys
 import os
-import urllib3
-import re
-import time
 import requests
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
@@ -30,7 +27,9 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         # 设置请求头
         param['headers'] = {
             'User-Agent': user_agent_u.get_ua(),
+            'cache-control': "no-cache"
         }
+        print(param['headers']['User-Agent'])
         # 设置post参数
         param['data'] = data
         # 设置cookies
@@ -45,7 +44,8 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             resp = self.getResp(url=url, mode='GET')
             if resp['status'] == 0:
                 # print(resp.cookies)
-                return requests.utils.dict_from_cookiejar(resp.cookies)
+                return requests.utils.dict_from_cookiejar(resp['data'].cookies)
         except:
             self.logging.info('cookie创建异常')
             return None
+
