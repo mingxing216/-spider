@@ -44,12 +44,13 @@ def _error(func):
 
 
 class BaseDownloaderMiddleware(object):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
+    def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         self.logging = logging
         self.downloader = Downloader(logging=logging,
                                      proxy_type=proxy_type,
                                      timeout=timeout,
-                                     proxy_country=proxy_country)
+                                     proxy_country=proxy_country,
+                                     proxy_city=proxy_city)
 
     def _startDownload(self, param):
         try:
@@ -89,11 +90,11 @@ class BaseDownloaderMiddleware(object):
 
 
 class Downloader(object):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
+    def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         self.logging = logging
         self.timeout = timeout
         self.proxy_type = proxy_type
-        self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country)
+        self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
     @_error
     def get(self, url, headers, cookies, timeout, proxies):

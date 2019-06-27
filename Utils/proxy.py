@@ -23,7 +23,7 @@ import settings
 
 # 代理IP操作类
 class ProxyUtils(object):
-    def __init__(self, logging, type=None, random=0, country=1):
+    def __init__(self, logging, type=None, random=0, country=1, city=0):
         '''
         :param logging: log对象，实例化参数
         :param type: 所需代理IP种类，实例化参数
@@ -36,7 +36,7 @@ class ProxyUtils(object):
         self.type = type
         self.random = random
         self.country = country
-        self.city = 0
+        self.city = city
 
     def __del(self, ip):
         url = '{}?ip={}'.format(settings.DELETE_PROXY_API, ip)

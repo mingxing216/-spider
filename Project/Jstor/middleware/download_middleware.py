@@ -13,11 +13,12 @@ from Utils import user_agent_u
 
 
 class Downloader(downloader.BaseDownloaderMiddleware):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
+    def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         super(Downloader, self).__init__(logging=logging,
                                          timeout=timeout,
                                          proxy_type=proxy_type,
-                                         proxy_country=proxy_country)
+                                         proxy_country=proxy_country,
+                                         proxy_city=proxy_city)
 
     def getResp(self, url, mode, data=None, cookies=None):
         param = {'url': url}
@@ -27,7 +28,9 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         # 设置请求头
         param['headers'] = {
             'User-Agent': user_agent_u.get_ua(),
-            'cache-control': "no-cache"
+            'upgrade-insecure-requests': '1',
+            'cache-control': 'max-age=0'
+            # 'cache-control': "no-cache"
         }
         print(param['headers']['User-Agent'])
         # 设置post参数
@@ -44,8 +47,9 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             resp = self.getResp(url=url, mode='GET')
             if resp['status'] == 0:
                 # print(resp.cookies)
+                self.logging.info('cookie创建成功')
                 return requests.utils.dict_from_cookiejar(resp['data'].cookies)
         except:
-            self.logging.info('cookie创建异常')
+            self.logging.error('cookie创建异常')
             return None
 

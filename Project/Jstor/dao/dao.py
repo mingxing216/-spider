@@ -35,7 +35,7 @@ class Dao(storage.Dao):
             }
             try:
                 self.mysql_client.insert_one(table=table, data=data)
-                self.logging.info(sha)
+                self.logging.info('已存储种子: {}'.format(url))
             except Exception as e:
                 self.logging.warning('数据存储警告: {}'.format(e))
 
