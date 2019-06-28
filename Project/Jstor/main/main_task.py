@@ -7,6 +7,7 @@ import sys
 import os
 import time
 import traceback
+import datetime
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -65,103 +66,110 @@ class SpiderMain(BastSpiderMain):
                 return None
 
     def start(self):
-        # 存放详情种子
-        # detail_urls = []
+        # 存放带年份的期刊种子
+        catalog_urls = []
         # 获取cookie
         self.cookie_dict = self.download_middleware.create_cookie()
         # cookie创建失败，停止程序
         if not self.cookie_dict:
             return
-        # 请求页面，获取响应
-        index_resp = self.__getResp(func=self.download_middleware.getResp,
-                                    url=self.index_url,
-                                    mode='GET',
-                                    cookies=self.cookie_dict)
 
-        if not index_resp:
-            LOGGING.error('首页响应获取失败, url: {}'.format(self.index_url))
-            return
+        # 1660年至今,入口种子添加年份参数，获取到所有期刊论文种子
+        for n in range(1660, datetime.datetime.now().year+1):
+            catalog_urls.append('https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=' + str(n) + '&ed=' + str(n+1) + '&acc=dfr')
 
-        index_text = index_resp.text
-
-        # 遍历所有学科，获取到学科名称及种子
-        subject_url_list = self.server.getSubjectUrlList(index_text, index_url=self.index_url)
-
-        # subject_url_list = [{'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_music-discipline_facet=bXVzaWMtZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Music'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_paleontology-discipline_facet=cGFsZW9udG9sb2d5LWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Paleontology'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_peaceconflictstudies-discipline_facet=cGVhY2Vjb25mbGljdHN0dWRpZXMtZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Peace & Conflict Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_performingarts-discipline_facet=cGVyZm9ybWluZ2FydHMtZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Performing Arts'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_philosophy-discipline_facet=cGhpbG9zb3BoeS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Philosophy'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_politicalscience-discipline_facet=cG9saXRpY2Fsc2NpZW5jZS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Political Science'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_populationstudies-discipline_facet=cG9wdWxhdGlvbnN0dWRpZXMtZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Population Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_psychology-discipline_facet=cHN5Y2hvbG9neS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Psychology'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_publichealth-discipline_facet=cHVibGljaGVhbHRoLWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Public Health'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_publicpolicy-discipline_facet=cHVibGljcG9saWN5LWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Public Policy & Administration'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_religion-discipline_facet=cmVsaWdpb24tZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Religion'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_sciencetechstudies-discipline_facet=c2NpZW5jZXRlY2hzdHVkaWVzLWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Science & Technology Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_slavicstudies-discipline_facet=c2xhdmljc3R1ZGllcy1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Slavic Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_socialwork-discipline_facet=c29jaWFsd29yay1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Social Work'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_sociology-discipline_facet=c29jaW9sb2d5LWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Sociology'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_statistics-discipline_facet=c3RhdGlzdGljcy1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Statistics'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_technology-discipline_facet=dGVjaG5vbG9neS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Technology'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_transportationstudies-discipline_facet=dHJhbnNwb3J0YXRpb25zdHVkaWVzLWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Transportation Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_urbanstudies-discipline_facet=dXJiYW5zdHVkaWVzLWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Urban Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_zoology-discipline_facet=em9vbG9neS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Zoology'}]
-
-        # 遍历所有各学科列表url,获取详情url
-        for subject in subject_url_list:
-            first_url = subject['url']
-            # first_url = 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&disc_developmentalcellbiology-discipline_facet=ZGV2ZWxvcG1lbnRhbGNlbGxiaW9sb2d5LWRpc2NpcGxpbmU%3D'
-
-            # 获取cookie
-            self.cookie_dict = self.download_middleware.create_cookie()
-
-            if not self.cookie_dict:
-                return
-            # 请求页面，获取响应
-            first_resp = self.__getResp(func=self.download_middleware.getResp,
-                                        url=first_url,
+        # 遍历每个带年份的期刊种子，获取响应
+        for catalog_url in catalog_urls:
+            index_resp = self.__getResp(func=self.download_middleware.getResp,
+                                        url=catalog_url,
                                         mode='GET',
                                         cookies=self.cookie_dict)
-            # 获取首页详情url及传递学科名称
-            if first_resp:
-                first_urls = self.server.getDetailUrl(resp=first_resp.text, xueke=subject['xueKeLeiBie'])
-                for url in first_urls:
-                    # 保存url
-                    self.num += 1
-                    LOGGING.info('当前已抓种子数量: {}'.format(self.num))
-                    self.dao.saveProjectUrlToMysql(table=config.MYSQL_PAPER, memo=url)
-                    # detail_urls.append(url)
 
-            # 判断是否有下一页
-            next_page = self.server.hasNextPage(resp=first_resp.text)
-            # 翻页
-            num = 2
+            if not index_resp:
+                LOGGING.error('首页响应获取失败, url: {}'.format(self.index_url))
+                return
 
-            while True:
-                # 如果有，请求下一页，获得响应
-                if next_page:
-                    next_url = next_page
-                    print(next_url)
-                    # 获取cookie
-                    # self.cookie_dict = self.download_middleware.create_cookie()
-                    # if not self.cookie_dict:
-                    #     return
-                    next_resp = self.__getResp(func=self.download_middleware.getResp,
-                                               url=next_url,
-                                               mode='GET',
-                                               cookies=self.cookie_dict)
+            index_text = index_resp.text
 
-                    # 如果响应获取失败，跳过这一页，获取下一页，并记录这一页种子
-                    if not next_resp:
-                        LOGGING.error('第{}页响应获取失败, url: {}'.format(num, next_url))
-                        continue
+            # 遍历所有学科，获取到学科名称及种子
+            subject_url_list = self.server.getSubjectUrlList(index_text, index_url=catalog_url)
+            # return
+            if not subject_url_list:
+                continue
+            # subject_url_list = [{'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_music-discipline_facet=bXVzaWMtZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Music'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_paleontology-discipline_facet=cGFsZW9udG9sb2d5LWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Paleontology'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_peaceconflictstudies-discipline_facet=cGVhY2Vjb25mbGljdHN0dWRpZXMtZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Peace & Conflict Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_performingarts-discipline_facet=cGVyZm9ybWluZ2FydHMtZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Performing Arts'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_philosophy-discipline_facet=cGhpbG9zb3BoeS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Philosophy'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_politicalscience-discipline_facet=cG9saXRpY2Fsc2NpZW5jZS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Political Science'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_populationstudies-discipline_facet=cG9wdWxhdGlvbnN0dWRpZXMtZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Population Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_psychology-discipline_facet=cHN5Y2hvbG9neS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Psychology'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_publichealth-discipline_facet=cHVibGljaGVhbHRoLWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Public Health'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_publicpolicy-discipline_facet=cHVibGljcG9saWN5LWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Public Policy & Administration'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_religion-discipline_facet=cmVsaWdpb24tZGlzY2lwbGluZQ==', 'xueKeLeiBie': 'Religion'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_sciencetechstudies-discipline_facet=c2NpZW5jZXRlY2hzdHVkaWVzLWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Science & Technology Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_slavicstudies-discipline_facet=c2xhdmljc3R1ZGllcy1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Slavic Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_socialwork-discipline_facet=c29jaWFsd29yay1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Social Work'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_sociology-discipline_facet=c29jaW9sb2d5LWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Sociology'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_statistics-discipline_facet=c3RhdGlzdGljcy1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Statistics'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_technology-discipline_facet=dGVjaG5vbG9neS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Technology'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_transportationstudies-discipline_facet=dHJhbnNwb3J0YXRpb25zdHVkaWVzLWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Transportation Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_urbanstudies-discipline_facet=dXJiYW5zdHVkaWVzLWRpc2NpcGxpbmU=', 'xueKeLeiBie': 'Urban Studies'}, {'url': 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr&disc_zoology-discipline_facet=em9vbG9neS1kaXNjaXBsaW5l', 'xueKeLeiBie': 'Zoology'}]
 
-                    num += 1
+            # 遍历所有各学科列表url,获取详情url
+            for subject in subject_url_list:
+                first_url = subject['url']
+                # first_url = 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&disc_developmentalcellbiology-discipline_facet=ZGV2ZWxvcG1lbnRhbGNlbGxiaW9sb2d5LWRpc2NpcGxpbmU%3D'
 
-                    # 获得响应成功，提取详情页种子
-                    next_text = next_resp.text
-                    next_urls = self.server.getDetailUrl(resp=next_text, xueke=subject['xueKeLeiBie'])
-                    # print(next_urls)
-                    for url in next_urls:
+                # 获取cookie
+                self.cookie_dict = self.download_middleware.create_cookie()
+
+                if not self.cookie_dict:
+                    return
+                # 请求页面，获取响应
+                first_resp = self.__getResp(func=self.download_middleware.getResp,
+                                            url=first_url,
+                                            mode='GET',
+                                            cookies=self.cookie_dict)
+                # 获取首页详情url及传递学科名称
+                if first_resp:
+                    first_urls = self.server.getDetailUrl(resp=first_resp.text, xueke=subject['xueKeLeiBie'])
+                    for url in first_urls:
                         # 保存url
                         self.num += 1
                         LOGGING.info('当前已抓种子数量: {}'.format(self.num))
                         self.dao.saveProjectUrlToMysql(table=config.MYSQL_PAPER, memo=url)
                         # detail_urls.append(url)
 
-                    # print(len(detail_urls))
+                # 判断是否有下一页
+                next_page = self.server.hasNextPage(resp=first_resp.text)
+                # 翻页
+                num = 2
 
-                    # 判断是否有下一页
-                    next_page = self.server.hasNextPage(resp=next_text)
+                while True:
+                    # 如果有，请求下一页，获得响应
+                    if next_page:
+                        next_url = next_page
+                        # 获取cookie
+                        # self.cookie_dict = self.download_middleware.create_cookie()
+                        # if not self.cookie_dict:
+                        #     return
+                        next_resp = self.__getResp(func=self.download_middleware.getResp,
+                                                   url=next_url,
+                                                   mode='GET',
+                                                   cookies=self.cookie_dict)
 
-                    # break
-                else:
-                    LOGGING.info('已翻到最后一页')
-                    break
+                        # 如果响应获取失败，跳过这一页，获取下一页，并记录这一页种子
+                        if not next_resp:
+                            LOGGING.error('第{}页响应获取失败, url: {}'.format(num, next_url))
+                            continue
 
-            # break
+                        num += 1
+
+                        # 获得响应成功，提取详情页种子
+                        next_text = next_resp.text
+                        next_urls = self.server.getDetailUrl(resp=next_text, xueke=subject['xueKeLeiBie'])
+                        # print(next_urls)
+                        for url in next_urls:
+                            # 保存url
+                            self.num += 1
+                            LOGGING.info('当前已抓种子数量: {}'.format(self.num))
+                            self.dao.saveProjectUrlToMysql(table=config.MYSQL_PAPER, memo=url)
+                            # detail_urls.append(url)
+
+                        # print(len(detail_urls))
+
+                        # 判断是否有下一页
+                        next_page = self.server.hasNextPage(resp=next_text)
+
+                        # break
+                    else:
+                        LOGGING.info('已翻到最后一页')
+                        break
+
+                # break
 
 def process_start():
     main = SpiderMain()

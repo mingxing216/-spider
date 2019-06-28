@@ -28,11 +28,10 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         # 设置请求头
         param['headers'] = {
             'User-Agent': user_agent_u.get_ua(),
-            'upgrade-insecure-requests': '1',
-            'cache-control': 'max-age=0'
+            'upgrade-insecure-requests': '1'
+            # 'cache-control': 'max-age=0'
             # 'cache-control': "no-cache"
         }
-        print(param['headers']['User-Agent'])
         # 设置post参数
         param['data'] = data
         # 设置cookies

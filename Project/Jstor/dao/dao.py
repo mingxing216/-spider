@@ -21,13 +21,14 @@ class Dao(storage.Dao):
     def saveProjectUrlToMysql(self, table, memo):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
+        ctx = str(memo).replace('\'', '"')
         # 查询数据库是否含有此数据
         data_status_sql = "select * from {} where `sha` = '{}'".format(table, sha)
         data_status = self.mysql_client.get_result(sql=data_status_sql)
         if not data_status:
             data = {
                 'sha': sha,
-                'ctx': str(memo).replace('\'', '"'),
+                'ctx': ctx,
                 'url': url,
                 'es': 'qikan',
                 'ws': 'jstor',
