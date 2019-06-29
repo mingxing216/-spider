@@ -8,12 +8,13 @@ import sys
 import os
 import requests
 import time
+import random
 from requests.exceptions import ConnectTimeout
 from requests.exceptions import ConnectionError
 from requests.exceptions import ReadTimeout
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
-from settings import DOWNLOAD_DELAY
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 from Utils import proxy
 
 
@@ -105,7 +106,8 @@ class Downloader(object):
         return requests.post(url=url, headers=headers, data=data, proxies=proxies, timeout=timeout, cookies=cookies)
 
     def start(self, url, headers, data, cookies, timeout, proxies, connect_type):
-        time.sleep(int(DOWNLOAD_DELAY))
+        # time.sleep(int(DOWNLOAD_DELAY))
+        time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
 
         if connect_type == 'GET':
             return self.get(url=url, headers=headers, cookies=cookies,

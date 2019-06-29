@@ -27,8 +27,8 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         param['mode'] = mode
         # 设置请求头
         param['headers'] = {
-            'User-Agent': user_agent_u.get_ua(),
-            'upgrade-insecure-requests': '1'
+            'User-Agent': user_agent_u.get_ua()
+            # 'upgrade-insecure-requests': '1',
             # 'cache-control': 'max-age=0'
             # 'cache-control': "no-cache"
         }

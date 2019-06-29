@@ -5,7 +5,8 @@
 '''
 
 # 下载延时
-DOWNLOAD_DELAY = 0.3
+DOWNLOAD_MIN_DELAY = 0.2
+DOWNLOAD_MAX_DELAY = 0.5
 
 # Mysql
 DB_HOST='127.0.0.1'
