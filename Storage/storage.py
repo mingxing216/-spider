@@ -62,7 +62,7 @@ class Dao(object):
     def QueueTask(self, key, data):
         if data:
             for url_data in data:
-                url = url_data['memo']
+                url = url_data['ctx']
                 self.redis_client.sadd(key=key, value=url)
 
         else:

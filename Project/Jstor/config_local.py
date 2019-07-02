@@ -13,5 +13,15 @@ REDIS_POOL_NUMBER = 1 # Redis连接池数量
 # ----------------------------
 # mysql表名配置
 # ----------------------------
-# 论文任务表
-MYSQL_PAPER = 'job_paper'
+MYSQL_PAPER = 'job_paper' # Mysql论文任务表
+REDIS_PAPER = 'job_paper' # Redis论文任务表
+
+# ----------------------------
+# 锁配置
+# ----------------------------
+REDIS_PAPER_LOCK = 'job_paper_lock' # Redis分布式锁名
+
+# ----------------------------
+# 进程数配置
+# ----------------------------
+DATA_SCRIPT_PROCESS = 8 # 数据爬虫进程数

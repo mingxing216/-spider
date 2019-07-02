@@ -20,15 +20,16 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                                          proxy_country=proxy_country,
                                          proxy_city=proxy_city)
 
-    def getResp(self, url, mode, data=None, cookies=None):
+    def getResp(self, url, mode, data=None, cookies=None, referer=None):
         param = {'url': url}
 
         # 设置请求方式：GET或POST
         param['mode'] = mode
         # 设置请求头
         param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-            # 'upgrade-insecure-requests': '1',
+            'User-Agent': user_agent_u.get_ua(),
+            'referer': referer
+            # 'upgrade-insecure-requests': '1'
             # 'cache-control': 'max-age=0'
             # 'cache-control': "no-cache"
         }
