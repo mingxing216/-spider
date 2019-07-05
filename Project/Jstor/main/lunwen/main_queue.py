@@ -9,7 +9,7 @@ import time
 import traceback
 from multiprocessing import Pool
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
+sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
 from Project.Jstor.middleware import download_middleware
 from Project.Jstor.service import service

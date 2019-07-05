@@ -73,9 +73,9 @@ class Dao(object):
         save_data = json.dumps(data)
         url = '{}'.format(settings.SpiderDataSaveUrl)
         save_data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
-                "wid": "python",
-                "ref": "",
-                "item": save_data}
+                     "wid": "python",
+                     "ref": "",
+                     "item": save_data}
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
         }
@@ -124,6 +124,7 @@ class Dao(object):
                 "wid": "100",
                 "url": "{}".format(media_url),
                 "content": "{}".format(content_bs64.decode('utf-8')),
+                "length": "{}".format(len(content_bs64.decode('utf-8'))),
                 "type": "{}".format(type),
                 "ref": "",
                 "item": json.dumps(item)
@@ -260,3 +261,23 @@ class Dao(object):
     # 获取任务
     def getTask(self, key, count, lockname):
         return self.redis_client.queue_spops(key=key, count=count, lockname=lockname)
+
+    # 物理删除任务
+    def deleteTask(self, table, sha):
+        sql = "delete from {} where `sha` = '{}'".format(table, sha)
+        try:
+            self.mysql_client.execute(sql=sql)
+            self.logging.info('任务已删除: {}'.format(sha))
+        except:
+            self.logging.warning('任务删除异常: {}'.format(sha))
+
+    # 逻辑删除任务
+    def deleteLogicTask(self, table, sha):
+        data = {
+            'del': '1'
+        }
+        try:
+            self.mysql_client.update(table=table, data=data, where="sha = '{}'".format(sha))
+            self.logging.info('任务已逻辑删除: {}'.format(sha))
+        except:
+            self.logging.warning('任务逻辑删除异常: {}'.format(sha))
