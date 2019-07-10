@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 
 
 
-class Server(object):
+class QiKanLunWen_LunWenServer(object):
     def __init__(self, logging):
         self.logging = logging
 
@@ -169,6 +169,7 @@ class Server(object):
 
         return return_pics
 
+
     # 获取参考文献
     def getCanKaoWenXian(self, script):
         data_list = []
@@ -186,27 +187,47 @@ class Server(object):
                             data_dict = {}
                             if second_dict:
                                 data = second_dict['text']
-                                try:
-                                    data_dict['作者'] = re.findall(r"(.*?)\s*[\(\（]*\d+", data)[0]
-                                except Exception:
-                                    data_dict['作者'] = ""
-                                try:
-                                    data_dict['日期'] = re.findall(r"\.\s*[\(\（]*([\d-]+?)[\)\）]*\.", data)[0]
-                                except Exception:
-                                    data_dict['日期'] = ""
-                                try:
-                                    if 'http' in data:
-                                        data_dict['标题'] = re.findall(r"\d+[\)\）]*\.\s*(.*?)\.\s*http", data)[0]
-                                    else:
-                                        data_dict['标题'] = re.findall(r"\d+[\)\）]*\.\s*(.*)", data)[0]
-                                except Exception:
-                                    data_dict['标题'] = ""
-                                try:
-                                    data_dict['doi'] = re.findall(r"https://doi.org/(.*)", data)[0]
-                                except Exception:
+
+                                if 'http' in data:
+                                    try:
+                                        data_dict['内容'] = re.findall(r"(.*)\s*http", data)[0]
+                                    except Exception:
+                                        data_dict['内容'] = ""
+                                    try:
+                                        data_dict['doi'] = re.findall(r"https://doi.org/(.*)", data)[0]
+                                    except Exception:
+                                        data_dict['doi'] = ""
+                                else:
+                                    try:
+                                        data_dict['内容'] = data
+                                    except Exception:
+                                        data_dict['内容'] = ""
+
                                     data_dict['doi'] = ""
 
-                                print(data_dict)
+                                # try:
+                                #     data_dict['作者'] = re.findall(r"(.*?)\s*[\(\（]*\d+", data)[0]
+                                # except Exception:
+                                #     data_dict['作者'] = ""
+                                # try:
+                                #     data_dict['日期'] = re.findall(r"\.\s*[\(\（]*([\d-]+?)[\)\）]*\.", data)[0]
+                                # except Exception:
+                                #     data_dict['日期'] = ""
+                                # try:
+                                #     if not data_dict['作者']:
+                                #         data_dict['标题'] = data
+                                #     else:
+                                #         if 'http' in data:
+                                #             data_dict['标题'] = re.findall(r"\d+[\)\）]*\.\s*(.*?)\.\s*http", data)[0]
+                                #         else:
+                                #             data_dict['标题'] = re.findall(r"\d+[\)\）]*\.\s*(.*)", data)[0]
+                                # except Exception:
+                                #     data_dict['标题'] = ""
+                                # try:
+                                #     data_dict['doi'] = re.findall(r"https://doi.org/(.*)", data)[0]
+                                # except Exception:
+                                #     data_dict['doi'] = ""
+
                                 data_list.append(data_dict)
 
         except:
@@ -361,3 +382,100 @@ class Server(object):
             return e
 
         return e
+
+class QiKanLunWen_QiKanServer(object):
+    def __init__(self, logging):
+        self.logging = logging
+
+    # 数据类型转换
+    def getEvalResponse(self, task_data):
+        return ast.literal_eval(task_data)
+
+    # 获取选择器
+    def getSelector(self, resp):
+        selector = Selector(text=resp)
+
+        return selector
+
+    # 获取标题
+    def getTitle(self, select):
+        selector = select
+        try:
+            tit = selector.xpath("//h1[contains(@class, 'journal-name')]//text()").extract()
+            title = ''.join(tit).strip()
+
+        except Exception:
+            title = ""
+
+        return title
+
+    # 获取摘要
+    def getZhaiYao(self, select):
+        selector = select
+        try:
+            zhai = selector.xpath("//div[contains(@class, 'journal_description')]")
+            zhaiyao = zhai.xpath("string(.)").extract_first().strip()
+
+        except Exception:
+            zhaiyao = ""
+
+        return zhaiyao
+
+
+
+    # 获取覆盖范围
+    def getFuGaiFanWei(self, select):
+        selector = select
+        try:
+            fugaifanwei = selector.xpath("//div[contains(@class, 'coverage-period')]/text()").extract_first().strip()
+
+        except Exception:
+            fugaifanwei = ""
+
+        return fugaifanwei
+
+    # 获取国际标刊号
+    def getIssn(self, select):
+        selector = select
+        try:
+            issn = selector.xpath("//div[@class='issn mtm']/text()").extract_first().strip()
+
+        except Exception:
+            issn = ""
+
+        return issn
+
+    # 获取EISSN
+    def getEissn(self, select):
+        selector = select
+        try:
+            eissn = selector.xpath("//div[@class='eissn mtm']/text()").extract_first().strip()
+
+        except Exception:
+            eissn = ""
+
+        return eissn
+
+    # 获取学科类别
+    def getXueKeLeiBie(self, select):
+        selector = select
+        try:
+            xuekeleibie = selector.xpath("//div[contains(@class, 'subjects')]/text()").extract_first().strip()
+            # xuekeleibie = re.findall(r"(Vol.*No.*?)[,，]\s*", juan)[0]
+
+        except Exception:
+            xuekeleibie = ""
+
+        return xuekeleibie
+
+    # 获取出版社
+    def getChuBanShe(self, select):
+        selector = select
+        try:
+            chubanshe = selector.xpath("//div[@class='publisher']/text()").extract_first().strip()
+            # chubanshe = re.findall(r"[,，]\s*(pp\.\s*[\d-]*)", juan)[0]
+
+        except Exception:
+            chubanshe = ""
+
+        return chubanshe

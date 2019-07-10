@@ -6,6 +6,7 @@
 import sys
 import os
 import time
+import copy
 import traceback
 import hashlib
 import datetime
@@ -35,7 +36,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.Server(logging=LOGGING)
+        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -48,7 +49,6 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
-        # cookie
         # self.cookie_dict = ''
 
     def __getResp(self, func, url, mode, data=None, cookies=None):
@@ -72,7 +72,7 @@ class SpiderMain(BastSpiderMain):
             return None
 
     # 模板1
-    def templateOne(self, save_data, script):
+    def templateOne(self, save_data, script, url):
         # 获取标题
         save_data['title'] = self.server.getField(script, 'displayTitle')
         print(save_data['title'])
@@ -114,27 +114,41 @@ class SpiderMain(BastSpiderMain):
         # 获取内容
         save_data['neiRong'] = self.server.getPics(script)
         print(save_data['neiRong'])
-        # # 下载图片
-        # if save_data['neiRong']:
-        #     for url in save_data['neiRong']:
-            # # 获取真正图片url链接
-            # media_resp = self.__getResp(func=self.download_middleware.getResp, url=url, mode='GET')
-            # media_url = base64.b64decode(media_resp.text.replace("data:image/gif;base64,", ""))
-            # # 获取图片内容
-            # img_resp = self.__getResp(func=self.download_middleware.getResp, url=media_url, mode='GET')
-            # print(img_resp.content)
+        # 下载图片
+        if save_data['neiRong']:
+            for url in save_data['neiRong']:
+                img_dict = {}
+                # 获取真正图片url链接
+                media_resp = self.__getResp(func=self.download_middleware.getResp, url=url, mode='GET')
+                img_content = media_resp.text
+                # 存储图片
+                self.dao.saveMediaToHbase(media_url=url, content=img_content, type='image')
+
         # 获取关键词
         save_data['guanJianCi'] = self.server.getMoreField(script, 'topics')
         print(save_data['guanJianCi'])
         # 获取参考文献
         save_data['canKaoWenXian'] = self.server.getCanKaoWenXian(script)
+        print(save_data['canKaoWenXian'])
         # 获取关联期刊
         save_data['guanLianQiKan'] = self.server.getGuanLianQiKan(script)
+        print(save_data['guanLianQiKan'])
+        # 存储期刊种子
+        if save_data['guanLianQiKan']:
+            self.dao.saveProjectUrlToMysql(table=config.MYSQL_MAGAZINE, memo=save_data['guanLianQiKan'])
         # 获取关联文档
         save_data['guanLianWenDang'] = self.server.getGuanLianWenDang(script)
+        print(save_data['guanLianWenDang'])
+        if save_data['guanLianWenDang']:
+            # 深拷贝关联文档字典，目的为了修改拷贝的内容后，原文档字典不变
+            document = copy.deepcopy(save_data['guanLianWenDang'])
+            document['lunWenUrl'] = url
+            document['title'] = save_data['title']
+            # 存储文档种子
+            self.dao.saveProjectUrlToMysql(table=config.MYSQL_DOCUMENT, memo=document)
 
     # 模板2
-    def templateTwo(self, save_data, select):
+    def templateTwo(self, save_data, select, url):
         # 获取标题
         save_data['title'] = self.server.getTitle(select)
         print(save_data['title'])
@@ -173,6 +187,10 @@ class SpiderMain(BastSpiderMain):
         save_data['canKaoWenXian'] = ''
         # 获取关联期刊
         save_data['guanLianQiKan'] = self.server.getGuanLianQiKans(select)
+        print(save_data['guanLianQiKan'])
+        # 存储期刊种子
+        if save_data['guanLianQiKan']:
+            self.dao.saveProjectUrlToMysql(table=config.MYSQL_MAGAZINE, memo=save_data['guanLianQiKan'])
         # 获取关联文档
         save_data['guanLianWenDang'] = {}
 
@@ -214,10 +232,10 @@ class SpiderMain(BastSpiderMain):
 
         # 如果script标签中有内容，执行第一套模板
         if script:
-            self.templateOne(save_data=save_data, script=script)
+            self.templateOne(save_data=save_data, script=script, url=url)
         # 如果能从页面直接获取标题，执行第二套模板
         else:
-            self.templateTwo(save_data=save_data, select=selector)
+            self.templateTwo(save_data=save_data, select=selector, url=url)
 
         # ===================公共字段
         # 获取学科类别
@@ -278,7 +296,7 @@ def process_start():
     main = SpiderMain()
     try:
         # main.start()
-        main.run(task='{\"url\": \"https://www.jstor.org/stable/24672540?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mjk%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr%26amp%3Bdisc_archeology-discipline_facet%3DYXJjaGVvbG9neS1kaXNjaXBsaW5l&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#references_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
+        main.run(task='{\"url\": \"https://www.jstor.org/stable/26618567?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#metadata_info_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
         # main.run(task='{\"url\": \"https://www.jstor.org/stable/26604983?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#page_scan_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
     except:
         LOGGING.error(str(traceback.format_exc()))

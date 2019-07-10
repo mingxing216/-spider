@@ -120,6 +120,7 @@ class Downloader(object):
         down_data = self.start(url=url, headers=headers, data=data,
                                cookies=cookies, timeout=self.timeout, proxies=proxies,
                                connect_type=connect_type.upper())
+        # print(headers)
 
         end_time = int(time.time())
 
