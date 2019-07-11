@@ -197,7 +197,7 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_YEAR,
-                                         count=10,
+                                         count=5,
                                          lockname=config.REDIS_YEAR_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

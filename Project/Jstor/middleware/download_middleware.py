@@ -34,10 +34,11 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 'Cache-Control': 'max-age=0',
                 # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
                 'Upgrade-Insecure-Requests': '1',
-                'Referer': referer,
+                # 'accept-language': 'zh-CN,zh;q=0.9',
+                # 'Referer': referer,
                 'User-Agent': user_agent_u.get_ua(),
                 # 'accept-encoding': 'gzip, deflate, br',
-                'accept-language': 'zh-CN,zh;q=0.9'
+
 
             }
             # 设置post参数
