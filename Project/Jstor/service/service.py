@@ -10,6 +10,8 @@ import ast
 import json
 import hashlib
 from scrapy.selector import Selector
+from lxml import etree
+from lxml.html import fromstring, tostring
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 
@@ -119,7 +121,7 @@ class QiKanLunWen_LunWenServer(object):
         text_dict = script
         try:
             if text_dict:
-                juanQi = text_dict['contentData']['volume'].strip() + ' ' + text_dict['contentData']['issue'].strip()
+                juanQi = text_dict['contentData']['volume'].strip() + ', ' + text_dict['contentData']['issue'].strip()
             else:
                 juanQi = ""
         except Exception:
@@ -290,7 +292,7 @@ class QiKanLunWen_LunWenServer(object):
         selector = select
         try:
             zuozhe_data = selector.xpath("//div[@class='contrib']/text()").extract_first().strip()
-            zuozhe = re.sub(r"\s*[,，]\s*", "|", re.sub(r"\s*and\s*", "|", zuozhe_data))
+            zuozhe = re.sub(r"\s*[,，]\s*", "|", re.sub(r"\s*and\s*", "|", re.sub(r".*[:：]", "", zuozhe_data).strip()))
 
         except Exception:
             zuozhe = ""
@@ -313,7 +315,7 @@ class QiKanLunWen_LunWenServer(object):
         selector = select
         try:
             juan = selector.xpath("//div[contains(@class, 'break-word')]/text()").extract_first().strip()
-            juanqi = re.findall(r"(Vol.*No.*?)[,，]\s*", juan)[0]
+            juanqi = re.findall(r"(Vol.*No\.\s*\d+)", juan)[0]
 
         except Exception:
             juanqi = ""
@@ -356,6 +358,18 @@ class QiKanLunWen_LunWenServer(object):
             chubanshang = ""
 
         return chubanshang
+
+    # 获取摘要
+    def getZhaiYaos(self, html):
+        tree = etree.HTML(html)
+        try:
+            result = tree.xpath("//div[contains(@class, 'journal_description')]")[0]
+            zhaiyao = re.sub(r"\n", "", re.sub(r"<strong>.*</strong>", "", tostring(result).decode('utf-8'))).strip()
+
+        except Exception:
+            zhaiyao = ""
+
+        return zhaiyao
 
     # 获取关键词
     def getGuanJianCi(self, select):
@@ -410,24 +424,22 @@ class QiKanLunWen_QiKanServer(object):
         return title
 
     # 获取摘要
-    def getZhaiYao(self, select):
-        selector = select
+    def getZhaiYao(self, html):
+        tree = etree.HTML(html)
         try:
-            zhai = selector.xpath("//div[contains(@class, 'journal_description')]")
-            zhaiyao = zhai.xpath("string(.)").extract_first().strip()
+            result = tree.xpath("//div[contains(@class, 'journal_description')]")[0]
+            zhaiyao = re.sub(r"\n", "", re.sub(r"<strong>.*</strong>", "", tostring(result).decode('utf-8'))).strip()
 
         except Exception:
             zhaiyao = ""
 
         return zhaiyao
 
-
-
     # 获取覆盖范围
     def getFuGaiFanWei(self, select):
         selector = select
         try:
-            fugaifanwei = selector.xpath("//div[contains(@class, 'coverage-period')]/text()").extract_first().strip()
+            fugaifanwei = selector.xpath("//div[@id='journal_info_drop']/div[contains(@class, 'coverage-period')]/text()").extract_first().strip()
 
         except Exception:
             fugaifanwei = ""
@@ -460,8 +472,8 @@ class QiKanLunWen_QiKanServer(object):
     def getXueKeLeiBie(self, select):
         selector = select
         try:
-            xuekeleibie = selector.xpath("//div[contains(@class, 'subjects')]/text()").extract_first().strip()
-            # xuekeleibie = re.findall(r"(Vol.*No.*?)[,，]\s*", juan)[0]
+            xueke = selector.xpath("//div[contains(@class, 'subjects')]/text()").extract_first().strip()
+            xuekeleibie = re.sub(r"\n", "", xueke)
 
         except Exception:
             xuekeleibie = ""
@@ -472,8 +484,9 @@ class QiKanLunWen_QiKanServer(object):
     def getChuBanShe(self, select):
         selector = select
         try:
-            chubanshe = selector.xpath("//div[@class='publisher']/text()").extract_first().strip()
-            # chubanshe = re.findall(r"[,，]\s*(pp\.\s*[\d-]*)", juan)[0]
+            chu = selector.xpath("//div[@class='publisher']//text()").extract()
+            chuban = ''.join(chu).strip()
+            chubanshe = re.findall(r"[:：]\s*(.*)", chuban)[0]
 
         except Exception:
             chubanshe = ""

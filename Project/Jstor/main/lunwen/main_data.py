@@ -75,22 +75,16 @@ class SpiderMain(BastSpiderMain):
     def templateOne(self, save_data, script, url):
         # 获取标题
         save_data['title'] = self.server.getField(script, 'displayTitle')
-        print(save_data['title'])
         # 获取作者
         save_data['zuoZhe'] = self.server.getMoreField(script, 'authors')
-        print(save_data['zuoZhe'])
         # 获取期刊名称
         save_data['qiKanMingCheng'] = self.server.getField(script, 'journal')
-        print(save_data['qiKanMingCheng'])
         # 获取DOI
-        save_data['doi'] = self.server.getField(script, 'doi')
-        print(save_data['doi'])
+        save_data['DOI'] = self.server.getField(script, 'doi')
         # 获取ISSN
-        save_data['issn'] = self.server.getField(script, 'issn')
-        print(save_data['issn'])
+        save_data['ISSN'] = self.server.getField(script, 'issn')
         # 获取卷期
         save_data['juanQi'] = self.server.getJuanQi(script)
-        print(save_data['juanQi'])
         # 获取时间
         shijian = self.server.getField(script, 'publishedDate')
         if shijian:
@@ -98,47 +92,48 @@ class SpiderMain(BastSpiderMain):
                 save_data['shiJian'] = str(datetime.datetime.strptime(shijian, '%B %Y'))
             except:
                 save_data['shiJian'] = shijian
-            print(save_data['shiJian'])
         # 获取所在页码
         save_data['suoZaiYeMa'] = self.server.getField(script, 'pageRange')
-        print(save_data['suoZaiYeMa'])
         # 获取页数
         save_data['yeShu'] = self.server.getField(script, 'pageCount')
-        print(save_data['yeShu'])
         # 获取出版商
         save_data['chuBanShang'] = self.server.getChuBanShang(script)
-        print(save_data['chuBanShang'])
         # 获取摘要
         save_data['zhaiYao'] = self.server.getZhaiYao(script)
-        print(save_data['zhaiYao'])
         # 获取内容
         save_data['neiRong'] = self.server.getPics(script)
-        print(save_data['neiRong'])
         # 下载图片
         if save_data['neiRong']:
-            for url in save_data['neiRong']:
+            for img_url in save_data['neiRong']:
+                title = save_data['title']
+                relation = {
+                    'url': url,
+                    'sha': hashlib.sha1(url.encode('utf-8')).hexdigest(),
+                    'ss': '论文'
+                }
                 img_dict = {}
-                # 获取真正图片url链接
-                media_resp = self.__getResp(func=self.download_middleware.getResp, url=url, mode='GET')
-                img_content = media_resp.text
-                # 存储图片
-                self.dao.saveMediaToHbase(media_url=url, content=img_content, type='image')
+                img_dict['bizTitle'] = title
+                img_dict['relEsse'] = relation
+                img_dict['url'] = img_url
+                # 存储图片种子
+                self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
+                # # 获取真正图片url链接
+                # media_resp = self.__getResp(func=self.download_middleware.getResp, url=img_url, mode='GET')
+                # img_content = media_resp.text
+                # # 存储图片
+                # self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
 
         # 获取关键词
         save_data['guanJianCi'] = self.server.getMoreField(script, 'topics')
-        print(save_data['guanJianCi'])
         # 获取参考文献
         save_data['canKaoWenXian'] = self.server.getCanKaoWenXian(script)
-        print(save_data['canKaoWenXian'])
         # 获取关联期刊
         save_data['guanLianQiKan'] = self.server.getGuanLianQiKan(script)
-        print(save_data['guanLianQiKan'])
         # 存储期刊种子
         if save_data['guanLianQiKan']:
             self.dao.saveProjectUrlToMysql(table=config.MYSQL_MAGAZINE, memo=save_data['guanLianQiKan'])
         # 获取关联文档
         save_data['guanLianWenDang'] = self.server.getGuanLianWenDang(script)
-        print(save_data['guanLianWenDang'])
         if save_data['guanLianWenDang']:
             # 深拷贝关联文档字典，目的为了修改拷贝的内容后，原文档字典不变
             document = copy.deepcopy(save_data['guanLianWenDang'])
@@ -148,46 +143,37 @@ class SpiderMain(BastSpiderMain):
             self.dao.saveProjectUrlToMysql(table=config.MYSQL_DOCUMENT, memo=document)
 
     # 模板2
-    def templateTwo(self, save_data, select, url):
+    def templateTwo(self, save_data, select, html):
         # 获取标题
         save_data['title'] = self.server.getTitle(select)
-        print(save_data['title'])
         # 获取作者
         save_data['zuoZhe'] = self.server.getZuoZhe(select)
-        print(save_data['zuoZhe'])
         # 获取期刊名称
         save_data['qiKanMingCheng'] = ''
         # 获取DOI
-        save_data['doi'] = ''
+        save_data['DOI'] = ''
         # 获取ISSN
-        save_data['issn'] = self.server.getIssn(select)
-        print(save_data['issn'])
+        save_data['ISSN'] = self.server.getIssn(select)
         # 获取卷期
         save_data['juanQi'] = self.server.getJuanQis(select)
-        print(save_data['juanQi'])
         # 获取时间
         save_data['shiJian'] = ''
         # 获取所在页码
         save_data['suoZaiYeMa'] = self.server.getSuoZaiYeMa(select)
-        print(save_data['suoZaiYeMa'])
         # 获取页数
         save_data['yeShu'] = self.server.getYeShu(select)
-        print(save_data['yeShu'])
         # 获取出版商
         save_data['chuBanShang'] = self.server.getChuBanShangs(select)
-        print(save_data['chuBanShang'])
         # 获取摘要
-        save_data['zhaiYao'] = ''
+        save_data['zhaiYao'] = self.server.getZhaiYaos(html)
         # 获取内容
         save_data['neiRong'] = ''
         # 获取关键词
         save_data['guanJianCi'] = self.server.getGuanJianCi(select)
-        print(save_data['guanJianCi'])
         # 获取参考文献
         save_data['canKaoWenXian'] = ''
         # 获取关联期刊
         save_data['guanLianQiKan'] = self.server.getGuanLianQiKans(select)
-        print(save_data['guanLianQiKan'])
         # 存储期刊种子
         if save_data['guanLianQiKan']:
             self.dao.saveProjectUrlToMysql(table=config.MYSQL_MAGAZINE, memo=save_data['guanLianQiKan'])
@@ -206,9 +192,11 @@ class SpiderMain(BastSpiderMain):
 
         # 获取cookie
         self.cookie_dict = self.download_middleware.create_cookie()
-        # # cookie创建失败，停止程序
-        # if not self.cookie_dict:
-        #     return
+        # cookie创建失败，停止程序
+        if not self.cookie_dict:
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            return
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
@@ -235,7 +223,7 @@ class SpiderMain(BastSpiderMain):
             self.templateOne(save_data=save_data, script=script, url=url)
         # 如果能从页面直接获取标题，执行第二套模板
         else:
-            self.templateTwo(save_data=save_data, select=selector, url=url)
+            self.templateTwo(save_data=save_data, select=selector, html=response)
 
         # ===================公共字段
         # 获取学科类别
@@ -295,9 +283,9 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{\"url\": \"https://www.jstor.org/stable/26618567?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#metadata_info_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
-        # main.run(task='{\"url\": \"https://www.jstor.org/stable/26604983?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#page_scan_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
+        main.start()
+        # main.run(task='{\"url\": \"https://www.jstor.org/stable/42816994?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9MzY%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D1908%26amp%3Bed%3D1909%26amp%3Bacc%3Ddfr%26amp%3Bdisc_education-discipline_facet%3DZWR1Y2F0aW9uLWRpc2NpcGxpbmU%253D&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#metadata_info_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
+        # main.run(task='{\"url\": \"https://www.jstor.org/stable/43691751?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D2001%26amp%3Bed%3D2002%26amp%3Bpagemark%3DcGFnZU1hcms9MTg%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"abc\"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -305,13 +293,13 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
-
-    # po = Pool(config.DATA_SCRIPT_PROCESS)
-    # for i in range(config.DATA_SCRIPT_PROCESS):
+    # po = Pool(1)
+    # for i in range(1):
     #     po.apply_async(func=process_start)
+
+    po = Pool(config.DATA_SCRIPT_PROCESS)
+    for i in range(config.DATA_SCRIPT_PROCESS):
+        po.apply_async(func=process_start)
 
     po.close()
     po.join()

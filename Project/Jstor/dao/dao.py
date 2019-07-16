@@ -41,4 +41,4 @@ class Dao(storage.Dao):
                 self.logging.warning('数据存储警告: {}'.format(e))
 
         else:
-            self.logging.warning('数据已存在: {}'.format(sha))
+            self.logging.warning('种子已存在: {}'.format(sha))

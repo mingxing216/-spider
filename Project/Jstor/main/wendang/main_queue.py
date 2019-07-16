@@ -17,8 +17,8 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = '<Jstor_期刊_queue>'  # LOG名
-NAME = 'Jstor_期刊_queue'  # 爬虫名
+LOGNAME = '<Jstor_文档_queue>'  # LOG名
+NAME = 'Jstor_文档_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -32,7 +32,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_QiKanServer(logging=LOGGING)
+        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -49,17 +49,17 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_MAGAZINE)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_DOCUMENT)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
 
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_MAGAZINE, count=2000)
-                # print(new_task_list)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_DOCUMENT, count=2000)
+                print(new_task_list)
                 LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_MAGAZINE, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_DOCUMENT, data=new_task_list)
                 LOGGING.info('已成功向redis队列{}个任务'.format(len(new_task_list)))
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))

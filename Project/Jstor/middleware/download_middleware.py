@@ -31,15 +31,12 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['headers'] = {
                 # 'Authority': 'www.jstor.org',
                 # 'Scheme': 'https',
-                'Cache-Control': 'max-age=0',
-                # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                'Upgrade-Insecure-Requests': '1',
-                # 'accept-language': 'zh-CN,zh;q=0.9',
-                # 'Referer': referer,
-                'User-Agent': user_agent_u.get_ua(),
+                # 'Cache-Control': 'max-age=0',
+                # 'Upgrade-Insecure-Requests': '1',
+                'accept-language': 'zh-CN,zh;q=0.9',
                 # 'accept-encoding': 'gzip, deflate, br',
-
-
+                # 'Referer': referer,
+                'User-Agent': user_agent_u.get_ua()
             }
             # 设置post参数
             param['data'] = data
@@ -73,7 +70,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 else:
                     # 获取当前时间戳
                     now = int(time.time())
-                    if now - err_time >= 70:
+                    if now - err_time >= 150:
                         return {'status': 1, 'data': url}
                     else:
                         continue

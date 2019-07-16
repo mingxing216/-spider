@@ -129,19 +129,8 @@ class Dao(object):
         #     except:
         #         return resp
 
-        # r = requests.get("https://www.jstor.org/stable/get_image/26618567?path=czM6Ly9zZXF1b2lhLWNlZGFyL2NpZC1wcm9kLTEvZGFhMjUyMTMvZjE0OC8zOGM2LzkxOGQvY2RmMDk0MTQ1MWE1L2UyNjYxODU1NC8yNjYxODU2Ny9pbWFnZXMvcGFnZXMvMS5qcGVn")
-
-        # s = r.content[24:]
-        # r = """data:image/jpeg;base64,/9j/4A...2Q=="""
-        # s = r[23:]
-        # print(s[:30])
-        # d = base64.b64decode(s)
-        # im = Image.open(BytesIO(d))
-        # print(im)
-        # print(len(d))
-
     # 保存流媒体到hbase
-    def saveMediaToHbase(self, media_url, content, type):
+    def saveMediaToHbase(self, media_url, content, item, type):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
         # # 二进制图片文件转成base64文件
         # content_bs64 = base64.b64encode(content)
@@ -152,22 +141,29 @@ class Dao(object):
         dbs = base64.b64decode(bs)
         # 内存中打开图片
         img = Image.open(BytesIO(dbs))
-        print(img)
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
-        item = {
-            'pk': sha,
-            'type': type,
-            'url': media_url,
-            'length': "{}".format(len(dbs))
-
-        }
+        # item = {
+        #     'pk': sha,
+        #     'type': type,
+        #     'url': media_url,
+        #     'biz_title':
+        #     'length': "{}".format(len(dbs)),
+        #     'natural_height': str(img['height']),
+        #     'natural_width': str(img['width']),
+        #     'rel_esse':
+        #
+        # }
+        item['pk'] = sha
+        item['type'] = type
+        item['url'] = media_url
+        item['tagSrc'] = media_url,
+        item['length'] = "{}".format(len(dbs))
+        item['naturalHeight'] = "{}".format(img.height)
+        item['naturalWidth'] = "{}".format(img.width)
         data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
                 "wid": "100",
-                "url": "{}".format(media_url),
                 # "content": "{}".format(content_bs64.decode('utf-8')),
                 "content": "{}".format(bs),
-                # "length": "{}".format(len(dbs)),
-                "type": "{}".format(type),
                 "ref": "",
                 "item": json.dumps(item)
         }

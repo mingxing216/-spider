@@ -21,8 +21,8 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = '<Jstor_期刊_data>'  # LOG名
-NAME = 'Jstor_期刊_data'  # 爬虫名
+LOGNAME = '<Jstor_文档_data>'  # LOG名
+NAME = 'Jstor_文档_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -36,7 +36,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_QiKanServer(logging=LOGGING)
+        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -71,63 +71,40 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('页面出现验证码: {}'.format(url))
             return None
 
-    # 模板
-    def template(self, save_data, select, html):
-        # 获取标题
-        save_data['title'] = self.server.getTitle(select)
-        print(save_data['title'])
-        # 获取摘要
-        save_data['zhaiYao'] = self.server.getZhaiYao(html)
-        print(save_data['zhaiYao'])
-        # 获取覆盖范围
-        save_data['fuGaiFanWei'] = self.server.getFuGaiFanWei(select)
-        print(save_data['fuGaiFanWei'])
-        # 获取国际标准刊号
-        save_data['ISSN'] = self.server.getIssn(select)
-        print(save_data['ISSN'])
-        # 获取EISSN
-        save_data['EISSN'] = self.server.getEissn(select)
-        print(save_data['EISSN'])
-        # 获取学科类别
-        save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(select)
-        print(save_data['xueKeLeiBie'])
-        # 获取出版社
-        save_data['chuBanShe'] = self.server.getChuBanShe(select)
-        print(save_data['chuBanShe'])
-
-
-
-
-
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
 
         url = task_data['url']
         sha = task_data['sha']
+        lunwenurl = task_data['lunWenUrl']
+        title = task_data['title']
 
-        # 获取cookie
-        self.cookie_dict = self.download_middleware.create_cookie()
-
-        # 获取页面响应
-        resp = self.__getResp(func=self.download_middleware.getResp,
-                              url=url,
-                              mode='GET',
-                              cookies=self.cookie_dict)
-        if not resp:
-            LOGGING.error('页面响应获取失败, url: {}'.format(url))
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
-            return
-
-        response = resp.text
-        # print(response)
-
-        # 转为selector选择器
-        selector = self.server.getSelector(response)
-
-        # 获取字段值
-        self.template(save_data=save_data, select=selector, html=response)
+        # 获取标题
+        save_data['title'] = title
+        print(save_data['title'])
+        # 获取URL
+        save_data['xiaZaiLianJie'] = url
+        print(save_data['xiaZaiLianJie'])
+        # 获取格式
+        save_data['geShi'] = ""
+        print(save_data['geShi'])
+        # 获取大小
+        save_data['daXiao'] = ""
+        print(save_data['daXiao'])
+        # 获取标签
+        save_data['biaoQian'] = ""
+        print(save_data['biaoQian'])
+        # 获取来源网站
+        save_data['laiYuanWangZhan'] = ""
+        print(save_data['laiYuanWangZhan'])
+        # 获取关联论文
+        e = {}
+        e['url'] = lunwenurl
+        e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
+        e['ss'] = '论文'
+        save_data['guanLianLunWen'] = e
+        print(save_data['guanLianLunWen'])
 
         # =========================公共字段
         # url
@@ -137,11 +114,11 @@ class SpiderMain(BastSpiderMain):
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
-        save_data['ss'] = '期刊'
+        save_data['ss'] = '文档'
         # 生成ws ——目标网站
         save_data['ws'] = 'JSTOR'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '期刊'
+        save_data['clazz'] = '文档_论文文档'
         # 生成es ——栏目名称
         save_data['es'] = 'Journals'
         # 生成biz ——项目
@@ -163,12 +140,12 @@ class SpiderMain(BastSpiderMain):
         self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_MAGAZINE, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_DOCUMENT, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=100, lockname=config.REDIS_MAGAZINE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=100, lockname=config.REDIS_DOCUMENT_LOCK)
             print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
