@@ -153,6 +153,7 @@ class Dao(object):
         #     'rel_esse':
         #
         # }
+        item['relEsse'] = str(item['relEsse'])
         item['pk'] = sha
         item['type'] = type
         item['url'] = media_url

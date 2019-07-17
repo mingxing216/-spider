@@ -121,7 +121,7 @@ class SpiderMain(BastSpiderMain):
                 # media_resp = self.__getResp(func=self.download_middleware.getResp, url=img_url, mode='GET')
                 # img_content = media_resp.text
                 # # 存储图片
-                # self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
+                self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
 
         # 获取关键词
         save_data['guanJianCi'] = self.server.getMoreField(script, 'topics')
@@ -293,13 +293,13 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    # po = Pool(1)
-    # for i in range(1):
-    #     po.apply_async(func=process_start)
-
-    po = Pool(config.DATA_SCRIPT_PROCESS)
-    for i in range(config.DATA_SCRIPT_PROCESS):
+    po = Pool(1)
+    for i in range(1):
         po.apply_async(func=process_start)
+
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
 
     po.close()
     po.join()
