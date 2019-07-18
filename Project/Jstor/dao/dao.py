@@ -18,6 +18,7 @@ class Dao(storage.Dao):
                                   mysqlpool_number=mysqlpool_number,
                                   redispool_number=redispool_number)
 
+    # 种子字典存入数据库
     def saveProjectUrlToMysql(self, table, memo):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()

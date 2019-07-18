@@ -30,7 +30,6 @@ class Server(object):
         try:
             # 获取所有发布单位所在的a标签的url
             url_list = selector.xpath("//h1[contains(text(), 'Browse Publishers')]/../../../tr[4]/td/table/tr/td/a[@href]/@href").extract()
-            print(len(url_list))
             # 遍历每个发布单位url，添加到列表中
             for i in url_list:
                 return_list.append(i)
@@ -49,6 +48,31 @@ class Server(object):
             url = ''
 
         return url
+
+    # 获取详情url
+    def getDetailUrl(self, resp):
+        return_list = []
+        selector = Selector(text=resp)
+        try:
+            # 获取一页所有详情url
+            url_list = selector.xpath("//a[@class='document-name']/@href").extract()
+            # 遍历每个详情url，存入列表
+            for url in url_list:
+                return_list.append({'url':url})
+        except Exception:
+            return return_list
+
+        return return_list
+
+    # 是否有下一页
+    def hasNextPage(self, resp):
+        selector = Selector(text=resp)
+        try:
+            next_page = selector.xpath("//a[contains(text(), 'next-page')]/@href").extract_first()
+        except:
+            next_page = None
+
+        return next_page
 
 
 

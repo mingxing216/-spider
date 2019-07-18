@@ -49,6 +49,8 @@ class SpiderMain(BastSpiderMain):
         self.index_url = 'https://global.ihs.com/standards.cfm?&rid=IHS'
         # 列表页种子存放列表
         self.catalog_url_list = []
+        # 记录已存储种子数量
+        self.num = 0
 
     def __getResp(self, func, url, mode, data=None, cookies=None):
         while 1:
@@ -65,15 +67,13 @@ class SpiderMain(BastSpiderMain):
             if resp['status'] == 1:
                 return None
 
-    def start(self):
+    def getCatalog(self):
         # 访问发布单位列表页
         index_resp = self.__getResp(func=self.download_middleware.getResp,
                                     url=self.index_url,
                                     mode='GET')
         if not index_resp:
-            LOGGING.error('发布单位页面响应获取失败, url: {}'.format(self.index_url))
-            # # 队列一条任务
-            # self.dao.QueueOneTask(key=config.REDIS_YEAR, data=self.index_url)
+            LOGGING.error('发布单位列表页面响应获取失败, url: {}'.format(self.index_url))
             return
 
         index_text = index_resp.text
@@ -85,18 +85,17 @@ class SpiderMain(BastSpiderMain):
             return
 
         print(publish_url_list)
+        print(len(publish_url_list))
 
         # 访问每个发布单位url，获取列表页种子
         for publish_url in publish_url_list:
-            # 访问发布单位详情页
+            # 访问发布单位页面
             catalog_resp = self.__getResp(func=self.download_middleware.getResp,
                                         url=publish_url,
                                         mode='GET')
             if not catalog_resp:
-                LOGGING.error('列表页响应获取失败, url: {}'.format(publish_url))
-                # # 队列一条任务
-                # self.dao.QueueOneTask(key=config.REDIS_YEAR, data=publish_url)
-                return
+                LOGGING.error('发布单位详情页面响应获取失败, url: {}'.format(publish_url))
+                continue
 
             catalog_text = catalog_resp.text
 
@@ -105,10 +104,97 @@ class SpiderMain(BastSpiderMain):
             print(catalog_url)
             self.catalog_url_list.append(catalog_url)
 
+        print(self.catalog_url_list)
+        print(len(self.catalog_url_list))
         # 队列任务
-        self.dao.QueueJobTask(key=config.REDIS_YEAR, data=self.catalog_url_list)
+        self.dao.QueueJobTask(key=config.REDIS_CATALOG, data=self.catalog_url_list)
 
+    def run(self, catalog_url):
+        # 请求列表页，获取首页响应
+        first_resp = self.__getResp(func=self.download_middleware.getResp,
+                                    url=catalog_url,
+                                    mode='GET')
+        if not first_resp:
+            LOGGING.error('列表首页响应获取失败, url: {}'.format(catalog_url))
+            # 队列一条任务
+            self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=catalog_url)
+            return
+        # 响应成功，添加log日志
+        LOGGING.info('已进入列表第1页')
+        # 获取首页详情url并存入数据库
+        if first_resp:
+            first_urls = self.server.getDetailUrl(resp=first_resp.text)
+            for url in first_urls:
+                # 保存url
+                self.num += 1
+                LOGGING.info('当前已抓种子数量: {}'.format(self.num))
+                self.dao.saveProjectUrlToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
+                # detail_urls.append(url)
 
+        # 判断是否有下一页
+        next_page = self.server.hasNextPage(resp=first_resp.text)
+        # 翻页
+        num = 2
+
+        while True:
+            # 如果有，请求下一页，获得响应
+            if next_page:
+                next_url = next_page
+
+                next_resp = self.__getResp(func=self.download_middleware.getResp,
+                                           url=next_url,
+                                           mode='GET')
+
+                # 如果响应获取失败，重新访问，并记录这一页种子
+                if not next_resp:
+                    LOGGING.error('第{}页响应获取失败, url: {}'.format(num, next_url))
+                    continue
+                # 响应成功，添加log日志
+                LOGGING.info('已翻到第{}页'.format(num))
+
+                num += 1
+
+                # 获得响应成功，提取详情页种子
+                next_text = next_resp.text
+                next_urls = self.server.getDetailUrl(resp=next_text)
+                # print(next_urls)
+                for url in next_urls:
+                    # 保存url
+                    self.num += 1
+                    LOGGING.info('当前已抓种子数量: {}'.format(self.num))
+                    self.dao.saveProjectUrlToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
+                    # detail_urls.append(url)
+
+                # print(len(detail_urls))
+
+                # 判断是否有下一页
+                next_page = self.server.hasNextPage(resp=next_text)
+
+            else:
+                LOGGING.info('已翻到最后一页')
+                break
+
+    def start(self):
+        while 1:
+            # 获取任务
+            task_list = self.dao.getTask(key=config.REDIS_CATALOG,
+                                         count=3,
+                                         lockname=config.REDIS_CATALOG_LOCK)
+            LOGGING.info('获取{}个任务'.format(len(task_list)))
+
+            if task_list:
+                # 创建线程池
+                threadpool = ThreadPool()
+                for url in task_list:
+                    threadpool.apply_async(func=self.run, args=(url,))
+
+                threadpool.close()
+                threadpool.join()
+
+                time.sleep(1)
+            else:
+                LOGGING.info('队列中已无任务，结束程序')
+                return
 
 def process_start():
     main = SpiderMain()
@@ -120,6 +206,13 @@ def process_start():
 
 if __name__ == '__main__':
     begin_time = time.time()
+    # 获取列表页并使之进入队列
+    main = SpiderMain()
+    try:
+        main.getCatalog()
+    except:
+        LOGGING.error(str(traceback.format_exc()))
+    # 创建进程池
     po = Pool(1)
     for i in range(1):
         po.apply_async(func=process_start)
