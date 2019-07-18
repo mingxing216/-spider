@@ -114,13 +114,16 @@ class SpiderMain(BastSpiderMain):
                 img_dict = {}
                 img_dict['bizTitle'] = title
                 img_dict['relEsse'] = relation
-                img_dict['url'] = img_url
-                # 存储图片种子
-                self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
-                # # 获取真正图片url链接
-                # media_resp = self.__getResp(func=self.download_middleware.getResp, url=img_url, mode='GET')
-                # img_content = media_resp.text
-                # # 存储图片
+                # img_dict['url'] = img_url
+                # # 存储图片种子
+                # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
+                # 获取真正图片url链接
+                media_resp = self.__getResp(func=self.download_middleware.getResp, url=img_url, mode='GET')
+                if not media_resp:
+                    LOGGING.error('图片响应失败, url: {}'.format(img_url))
+                    continue
+                img_content = media_resp.text
+                # 存储图片
                 self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
 
         # 获取关键词
