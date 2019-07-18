@@ -31,9 +31,11 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['mode'] = mode
             # 设置请求头
             param['headers'] = {
-                # 'Cache-Control': 'max-age=0',
+                # 'Authority': 'www.jstor.org',
+                # 'Scheme': 'https',
+                'Cache-Control': 'max-age=0',
                 # 'Upgrade-Insecure-Requests': '1',
-                # 'accept-language': 'zh-CN,zh;q=0.9',
+                'accept-language': 'zh-CN,zh;q=0.9',
                 # 'accept-encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
                 'User-Agent': user_agent_u.get_ua()
