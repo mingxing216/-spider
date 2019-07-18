@@ -80,7 +80,6 @@ class SpiderMain(BastSpiderMain):
 
         # 获取列表中的发布单位url
         publish_url_list = self.server.getPublishUrlList(resp=index_text)
-        # return
         if not publish_url_list:
             return
 
@@ -101,7 +100,7 @@ class SpiderMain(BastSpiderMain):
 
             # 获取列表页种子
             catalog_url = self.server.getCatalogUrl(resp=catalog_text)
-            print(catalog_url)
+            # print(catalog_url)
             self.catalog_url_list.append(catalog_url)
 
         print(self.catalog_url_list)
@@ -178,7 +177,7 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_CATALOG,
-                                         count=3,
+                                         count=10,
                                          lockname=config.REDIS_CATALOG_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -213,8 +212,8 @@ if __name__ == '__main__':
     except:
         LOGGING.error(str(traceback.format_exc()))
     # 创建进程池
-    po = Pool(1)
-    for i in range(1):
+    po = Pool(4)
+    for i in range(4):
         po.apply_async(func=process_start)
     po.close()
     po.join()

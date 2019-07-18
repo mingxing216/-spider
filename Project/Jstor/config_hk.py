@@ -32,7 +32,7 @@ REDIS_IMG = 'job_img' # Redis图片任务表
 # ----------------------------
 REDIS_YEAR_LOCK = 'job_year_lock' # redis年分布式锁名
 
-REDIS_PAPER_LOCK = 'job_paper_lock' # Redis分布式锁名
+REDIS_PAPER_LOCK = 'job_paper_lock' # Redis论文分布式锁名
 REDIS_MAGAZINE_LOCK = 'job_magazine_lock' # Redis期刊分布式锁名
 REDIS_DOCUMENT_LOCK = 'job_document_lock' # Redis文档分布式锁名
 REDIS_IMG_LOCK = 'job_img_lock' # Redis图片分布式锁名
