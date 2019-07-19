@@ -155,8 +155,34 @@ class QiKanLunWen_LunWenServer(object):
 
         return zhaiYao
 
+    # 关联组图
+    def guanLianPics(self, url):
+        # 创建关联对象
+        e = {}
+        try:
+            e['url'] = url
+            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
+            e['ss'] = '组图'
+        except Exception:
+            return e
+
+        return e
+
+    # 关联论文
+    def guanLianLunWen(self, url):
+        # 创建关联对象
+        e = {}
+        try:
+            e['url'] = url
+            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
+            e['ss'] = '论文'
+        except Exception:
+            return e
+
+        return e
+
     # 获取组图
-    def getPics(self, script):
+    def getPicUrl(self, script):
         return_pics = []
         text_dict = script
         try:
@@ -170,6 +196,29 @@ class QiKanLunWen_LunWenServer(object):
             return return_pics
 
         return return_pics
+
+    # 获取组图
+    def getPics(self, script, title):
+        labelObj = {}
+        return_pics = []
+        text_dict = script
+        try:
+            if text_dict:
+                pics = text_dict['contentData']['pageImages']
+                shortDOI = text_dict['contentData']['shortDOI']
+                if pics:
+                    for pic in pics:
+                        picObj = {
+                            'url': 'https://www.jstor.org/stable/get_image/' + shortDOI + '?path=' + pic,
+                            'title': title,
+                            'desc': ""
+                        }
+                        return_pics.append(picObj)
+                labelObj['全部'] = return_pics
+        except Exception:
+            labelObj['全部'] = []
+
+        return labelObj
 
 
     # 获取参考文献
