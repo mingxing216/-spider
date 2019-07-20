@@ -203,7 +203,7 @@ class SpiderMain(BastSpiderMain):
         # 获取关键词
         save_data['guanJianCi'] = self.server.getGuanJianCi(select)
         # 获取参考文献
-        save_data['canKaoWenXian'] = ""
+        save_data['canKaoWenXian'] = []
         # 获取关联期刊
         save_data['guanLianQiKan'] = self.server.getGuanLianQiKans(select)
         # 存储期刊种子
@@ -316,7 +316,7 @@ def process_start():
     main = SpiderMain()
     try:
         # main.start()
-        main.run(task='{\"url\": \"https://www.jstor.org/stable/42816994?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9MzY%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D1908%26amp%3Bed%3D1909%26amp%3Bacc%3Ddfr%26amp%3Bdisc_education-discipline_facet%3DZWR1Y2F0aW9uLWRpc2NpcGxpbmU%253D&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#metadata_info_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
+        main.run(task='{\"url\": \"https://www.jstor.org/stable/26659972?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bdisc_astronomy-discipline_facet%3DYXN0cm9ub215LWRpc2NpcGxpbmU%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#references_tab_contents\", \"xueKeLeiBie\": \"Astronomy\"}')
         # main.run(task='{\"url\": \"https://www.jstor.org/stable/43691751?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D2001%26amp%3Bed%3D2002%26amp%3Bpagemark%3DcGFnZU1hcms9MTg%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"abc\"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
