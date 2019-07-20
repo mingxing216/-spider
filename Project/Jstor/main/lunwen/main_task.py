@@ -76,7 +76,7 @@ class SpiderMain(BastSpiderMain):
         #
         # print(catalog_urls)
 
-        catalog_urls = ['https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1929&ed=1930&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1931&ed=1932&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1940&ed=1941&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1941&ed=1942&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1946&ed=1947&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1947&ed=1948&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1948&ed=1949&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1949&ed=1950&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1954&ed=1955&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1958&ed=1959&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1963&ed=1964&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1965&ed=1966&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1975&ed=1976&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1981&ed=1982&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1987&ed=1988&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1990&ed=1991&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1994&ed=1995&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1996&ed=1997&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1997&ed=1998&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1998&ed=1999&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=2002&ed=2003&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=2011&ed=2012&acc=dfr']
+        catalog_urls = ['https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1929&ed=1930&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1940&ed=1941&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1941&ed=1942&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1946&ed=1947&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1948&ed=1949&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1954&ed=1955&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1958&ed=1959&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1963&ed=1964&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1975&ed=1976&acc=dfr', 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=1994&ed=1995&acc=dfr']
         print(len(catalog_urls))
 
         # 队列任务
@@ -198,7 +198,7 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_YEAR,
-                                         count=3,
+                                         count=2,
                                          lockname=config.REDIS_YEAR_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -231,8 +231,8 @@ if __name__ == '__main__':
         main.get_yearTask()
     except:
         LOGGING.error(str(traceback.format_exc()))
-    po = Pool(4)
-    for i in range(4):
+    po = Pool(5)
+    for i in range(5):
         po.apply_async(func=process_start)
     po.close()
     po.join()
