@@ -72,7 +72,7 @@ class SpiderMain(BastSpiderMain):
             return None
 
     # 模板1
-    def templateOne(self, save_data, script, url):
+    def templateOne(self, save_data, script, url, sha):
         # 获取标题
         save_data['title'] = self.server.getField(script, 'displayTitle')
         # 获取作者
@@ -102,7 +102,6 @@ class SpiderMain(BastSpiderMain):
         save_data['zhaiYao'] = self.server.getZhaiYao(script)
         # 获取图片链接
         picUrl = self.server.getPicUrl(script)
-        print(picUrl)
         if picUrl:
             # 获取内容(关联组图)
             save_data['relationPics'] = self.server.guanLianPics(url)
@@ -145,9 +144,14 @@ class SpiderMain(BastSpiderMain):
                 # # 存储图片种子
                 # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
                 # 获取真正图片url链接
-                media_resp = self.__getResp(func=self.download_middleware.getResp, url=img_url, mode='GET')
+                media_resp = self.__getResp(func=self.download_middleware.getResp,
+                                            url=img_url,
+                                            mode='GET',
+                                            cookies=self.cookie_dict)
                 if not media_resp:
                     LOGGING.error('图片响应失败, url: {}'.format(img_url))
+                    # 逻辑删除任务
+                    self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                     continue
                 img_content = media_resp.text
                 # 存储图片
@@ -155,7 +159,7 @@ class SpiderMain(BastSpiderMain):
         else:
             # 获取内容(关联组图)
             save_data['relationPics'] = {}
-            # 获取关键词
+        # 获取关键词
         save_data['guanJianCi'] = self.server.getMoreField(script, 'topics')
         # 获取参考文献
         save_data['canKaoWenXian'] = self.server.getCanKaoWenXian(script)
@@ -252,7 +256,7 @@ class SpiderMain(BastSpiderMain):
 
         # 如果script标签中有内容，执行第一套模板
         if script:
-            self.templateOne(save_data=save_data, script=script, url=url)
+            self.templateOne(save_data=save_data, script=script, url=url, sha=sha)
         # 如果能从页面直接获取标题，执行第二套模板
         else:
             self.templateTwo(save_data=save_data, select=selector, html=response)
@@ -315,8 +319,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{\"url\": \"https://www.jstor.org/stable/26659972?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bdisc_astronomy-discipline_facet%3DYXN0cm9ub215LWRpc2NpcGxpbmU%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#references_tab_contents\", \"xueKeLeiBie\": \"Astronomy\"}')
+        main.start()
+        # main.run(task='{\"url\": \"https://www.jstor.org/stable/26607681?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bdisc_anthropology-discipline_facet%3DYW50aHJvcG9sb2d5LWRpc2NpcGxpbmU%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"Anthropology\"}')
         # main.run(task='{\"url\": \"https://www.jstor.org/stable/43691751?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D2001%26amp%3Bed%3D2002%26amp%3Bpagemark%3DcGFnZU1hcms9MTg%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"abc\"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
@@ -325,13 +329,13 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
-
-    # po = Pool(config.DATA_SCRIPT_PROCESS)
-    # for i in range(config.DATA_SCRIPT_PROCESS):
+    # po = Pool(1)
+    # for i in range(1):
     #     po.apply_async(func=process_start)
+
+    po = Pool(config.DATA_SCRIPT_PROCESS)
+    for i in range(config.DATA_SCRIPT_PROCESS):
+        po.apply_async(func=process_start)
 
     po.close()
     po.join()

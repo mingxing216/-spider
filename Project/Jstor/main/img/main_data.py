@@ -74,6 +74,7 @@ class SpiderMain(BastSpiderMain):
     def run(self, task):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
+        print(task_data)
         # 创建数据存储字典
         save_data = {}
         save_data['bizTitle'] = task_data['bizTitle']
@@ -111,7 +112,6 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_IMG, count=100, lockname=config.REDIS_IMG_LOCK)
-            print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             # 创建线程池

@@ -162,7 +162,7 @@ class Dao(object):
         # content_bs64 = base64.b64encode(content)
 
         # 截取base64图片文件
-        bs = re.sub(r".*base64,", "", content)
+        bs = re.sub(r".*base64,", "", content, 1)
         # 解码base64图片文件
         dbs = base64.b64decode(bs)
         # 内存中打开图片
@@ -184,7 +184,9 @@ class Dao(object):
         item['pk'] = sha
         item['type'] = type
         item['url'] = media_url
-        item['tagSrc'] = media_url,
+        print(item['url'])
+        item['tagSrc'] = media_url
+        print(item['tagSrc'])
         item['length'] = "{}".format(len(dbs))
         item['naturalHeight'] = "{}".format(img.height)
         item['naturalWidth'] = "{}".format(img.width)
