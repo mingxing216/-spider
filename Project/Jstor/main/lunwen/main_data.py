@@ -100,20 +100,47 @@ class SpiderMain(BastSpiderMain):
         save_data['chuBanShang'] = self.server.getChuBanShang(script)
         # 获取摘要
         save_data['zhaiYao'] = self.server.getZhaiYao(script)
-        # 获取内容
-        save_data['neiRong'] = self.server.getPics(script)
-        # 下载图片
-        if save_data['neiRong']:
-            for img_url in save_data['neiRong']:
-                title = save_data['title']
-                relation = {
-                    'url': url,
-                    'sha': hashlib.sha1(url.encode('utf-8')).hexdigest(),
-                    'ss': '论文'
-                }
+        # 获取图片链接
+        picUrl = self.server.getPicUrl(script)
+        print(picUrl)
+        if picUrl:
+            # 获取内容(关联组图)
+            save_data['relationPics'] = self.server.guanLianPics(url)
+            # 组图实体
+            pics = {}
+            # 标题
+            pics['title'] = save_data['title']
+            # 组图内容
+            pics['labelObj'] = self.server.getPics(script, title=pics['title'])
+            # 关联论文
+            pics['picsRelationParent'] = self.server.guanLianLunWen(url)
+            # url
+            pics['url'] = url
+            # 生成key
+            pics['key'] = url
+            # 生成sha
+            pics['sha'] = hashlib.sha1(pics['key'].encode('utf-8')).hexdigest()
+            # 生成ss ——实体
+            pics['ss'] = '组图'
+            # 生成ws ——目标网站
+            pics['ws'] = 'JSTOR'
+            # 生成clazz ——层级关系
+            pics['clazz'] = '组图_实体'
+            # 生成es ——栏目名称
+            pics['es'] = 'Journals'
+            # 生成biz ——项目
+            pics['biz'] = '文献大数据'
+            # 生成ref
+            pics['ref'] = ''
+            # 保存组图实体到Hbase
+            self.dao.saveDataToHbase(data=pics)
+
+            # 下载图片
+            for img_url in picUrl:
                 img_dict = {}
-                img_dict['bizTitle'] = title
-                img_dict['relEsse'] = relation
+                img_dict['bizTitle'] = save_data['title']
+                img_dict['relEsse'] = self.server.guanLianLunWen(url)
+                img_dict['relPics'] = self.server.guanLianPics(url)
                 # img_dict['url'] = img_url
                 # # 存储图片种子
                 # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
@@ -125,8 +152,10 @@ class SpiderMain(BastSpiderMain):
                 img_content = media_resp.text
                 # 存储图片
                 self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
-
-        # 获取关键词
+        else:
+            # 获取内容(关联组图)
+            save_data['relationPics'] = {}
+            # 获取关键词
         save_data['guanJianCi'] = self.server.getMoreField(script, 'topics')
         # 获取参考文献
         save_data['canKaoWenXian'] = self.server.getCanKaoWenXian(script)
@@ -152,15 +181,15 @@ class SpiderMain(BastSpiderMain):
         # 获取作者
         save_data['zuoZhe'] = self.server.getZuoZhe(select)
         # 获取期刊名称
-        save_data['qiKanMingCheng'] = ''
+        save_data['qiKanMingCheng'] = ""
         # 获取DOI
-        save_data['DOI'] = ''
+        save_data['DOI'] = ""
         # 获取ISSN
         save_data['ISSN'] = self.server.getIssn(select)
         # 获取卷期
         save_data['juanQi'] = self.server.getJuanQis(select)
         # 获取时间
-        save_data['shiJian'] = ''
+        save_data['shiJian'] = ""
         # 获取所在页码
         save_data['suoZaiYeMa'] = self.server.getSuoZaiYeMa(select)
         # 获取页数
@@ -169,12 +198,12 @@ class SpiderMain(BastSpiderMain):
         save_data['chuBanShang'] = self.server.getChuBanShangs(select)
         # 获取摘要
         save_data['zhaiYao'] = self.server.getZhaiYaos(html)
-        # 获取内容
-        save_data['neiRong'] = ''
+        # 获取内容(关联组图)
+        save_data['relationPics'] = {}
         # 获取关键词
         save_data['guanJianCi'] = self.server.getGuanJianCi(select)
         # 获取参考文献
-        save_data['canKaoWenXian'] = ''
+        save_data['canKaoWenXian'] = []
         # 获取关联期刊
         save_data['guanLianQiKan'] = self.server.getGuanLianQiKans(select)
         # 存储期刊种子
@@ -286,8 +315,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{\"url\": \"https://www.jstor.org/stable/42816994?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9MzY%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D1908%26amp%3Bed%3D1909%26amp%3Bacc%3Ddfr%26amp%3Bdisc_education-discipline_facet%3DZWR1Y2F0aW9uLWRpc2NpcGxpbmU%253D&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#metadata_info_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
+        # main.start()
+        main.run(task='{\"url\": \"https://www.jstor.org/stable/26659972?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bdisc_astronomy-discipline_facet%3DYXN0cm9ub215LWRpc2NpcGxpbmU%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#references_tab_contents\", \"xueKeLeiBie\": \"Astronomy\"}')
         # main.run(task='{\"url\": \"https://www.jstor.org/stable/43691751?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D2001%26amp%3Bed%3D2002%26amp%3Bpagemark%3DcGFnZU1hcms9MTg%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"abc\"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
