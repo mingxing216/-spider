@@ -89,10 +89,15 @@ class SpiderMain(BastSpiderMain):
             # 逻辑删除任务
             self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
             return
-        # 访问链接，获取响应
-        media_resp = self.__getResp(func=self.download_middleware.getResp, url=img_url, mode='GET')
+        # 访问图片url，获取响应
+        media_resp = self.__getResp(func=self.download_middleware.getResp,
+                                    url=img_url,
+                                    mode='GET',
+                                    cookies=self.cookie_dict)
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_url))
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
             return
         img_content = media_resp.text
 
@@ -124,8 +129,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{\"url\": \"https://www.jstor.org/journal/divedist\", \"sha\": \"6376ea57bdf856df6700a7cee849e27a21c391fe\", \"ss\": \"期刊\"}')
-        # main.run(task='{\"url\": \"https://www.jstor.org/stable/26604983?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#page_scan_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
+        # main.run(task="{\"bizTitle\": \"Back Matter\", \"relEsse\": {\"url\": \"https://www.jstor.org/stable/40693082?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D1912%26amp%3Bed%3D1913%26amp%3Bacc%3Ddfr%26amp%3Bdisc_astronomy-discipline_facet%3DYXN0cm9ub215LWRpc2NpcGxpbmU%253D&ab_segments=0%2Fdefault-2%2Fcontrol\", \"sha\": \"00a3cf208165a551473f065c2e43f8b6f90a42b4\", \"ss\": \"\xe8\xae\xba\xe6\x96\x87\"}, \"url\": \"https://www.jstor.org/stable/get_image/40693082?path=czM6Ly9zZXF1b2lhLWNlZGFyL2NpZC1wcm9kLTEvOTUwNzcxYzEvODQwMC8zYjc4LzkwMjEvMTE0NDM5YjFjYjNlL2k0MDAzMDQzMy80MDY5MzA4Mi9ncmFwaGljL3BhZ2VzL2R0Yy42Ny50aWYuZ2lm\"}")
     except:
         LOGGING.error(str(traceback.format_exc()))
 
