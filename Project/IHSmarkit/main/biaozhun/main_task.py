@@ -121,14 +121,13 @@ class SpiderMain(BastSpiderMain):
         # 响应成功，添加log日志
         LOGGING.info('已进入列表第1页')
         # 获取首页详情url并存入数据库
-        if first_resp:
-            first_urls = self.server.getDetailUrl(resp=first_resp.text)
-            for url in first_urls:
-                # 保存url
-                self.num += 1
-                LOGGING.info('当前已抓种子数量: {}'.format(self.num))
-                self.dao.saveProjectUrlToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
-                # detail_urls.append(url)
+        first_urls = self.server.getDetailUrl(resp=first_resp.text)
+        for url in first_urls:
+            # 保存url
+            self.num += 1
+            LOGGING.info('当前已抓种子数量: {}'.format(self.num))
+            self.dao.saveProjectUrlToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
+            # detail_urls.append(url)
 
         # 判断是否有下一页
         next_page = self.server.hasNextPage(resp=first_resp.text)

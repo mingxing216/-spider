@@ -68,7 +68,7 @@ class Server(object):
     def hasNextPage(self, resp):
         selector = Selector(text=resp)
         try:
-            next_page = selector.xpath("//a[contains(text(), 'next-page')]/@href").extract_first()
+            next_page = selector.xpath("//a[contains(text(), 'Next Page')]/@href").extract_first()
         except:
             next_page = None
 

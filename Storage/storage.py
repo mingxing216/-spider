@@ -184,9 +184,7 @@ class Dao(object):
         item['pk'] = sha
         item['type'] = type
         item['url'] = media_url
-        print(item['url'])
         item['tagSrc'] = media_url
-        print(item['tagSrc'])
         item['length'] = "{}".format(len(dbs))
         item['naturalHeight'] = "{}".format(img.height)
         item['naturalWidth'] = "{}".format(img.width)

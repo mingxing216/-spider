@@ -32,8 +32,8 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             # 设置请求头
             param['headers'] = {
                 # 'Cache-Control': 'max-age=0',
-                # 'Upgrade-Insecure-Requests': '1',
-                # 'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Upgrade-Insecure-Requests': '1',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'accept-encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
                 'User-Agent': user_agent_u.get_ua()
@@ -70,7 +70,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 else:
                     # 获取当前时间戳
                     now = int(time.time())
-                    if now - err_time >= 150:
+                    if now - err_time >= 90:
                         return {'status': 1, 'data': url}
                     else:
                         continue

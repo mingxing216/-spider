@@ -66,7 +66,7 @@ class ProxyUtils(object):
             'http': proxy,
             'https': proxy
         }
-        # 获取本地IP
+        # 获取本地外网IP
         local_resp = requests.get('https://httpbin.org/get')
         if local_resp.status_code == 200:
             local_ip = json.loads(local_resp.content.decode('utf-8'))['origin']

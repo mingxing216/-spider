@@ -31,7 +31,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['headers'] = {
                 # 'Authority': 'www.jstor.org',
                 # 'Scheme': 'https',
-                'Cache-Control': 'max-age=0',
+                # 'Cache-Control': 'max-age=0',
                 # 'Upgrade-Insecure-Requests': '1',
                 'accept-language': 'zh-CN,zh;q=0.9',
                 # 'accept-encoding': 'gzip, deflate, br',
@@ -70,7 +70,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 else:
                     # 获取当前时间戳
                     now = int(time.time())
-                    if now - err_time >= 150:
+                    if now - err_time >= 90:
                         return {'status': 1, 'data': url}
                     else:
                         continue
