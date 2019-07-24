@@ -330,9 +330,6 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    # # 获取EventLoop:
-    # loop = asyncio.get_event_loop()
-
     # po = Pool(1)
     # for i in range(1):
     #     po.apply_async(func=process_start)
