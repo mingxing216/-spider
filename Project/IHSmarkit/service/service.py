@@ -8,6 +8,7 @@ import os
 import ast
 import re
 import hashlib
+from urllib.parse import quote,unquote
 import requests
 from lxml import etree
 from lxml.html import fromstring, tostring
@@ -34,7 +35,8 @@ class BiaoZhunServer(object):
             url_list = selector.xpath("//h1[contains(text(), 'Browse Publishers')]/../../../tr[4]/td/table/tr/td/a[@href]/@href").extract()
             # 遍历每个发布单位url，添加到列表中
             for i in url_list:
-                return_list.append(i)
+                url = unquote(i)
+                return_list.append({'url': url})
         except Exception:
             return return_list
 
@@ -273,6 +275,56 @@ class BiaoZhunServer(object):
             e['url'] = url
             e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
             e['ss'] = '标准'
+        except Exception:
+            return e
+
+        return e
+
+class JiGouServer(object):
+    def __init__(self, logging):
+        self.logging = logging
+
+    # 数据类型转换
+    def getEvalResponse(self, task_data):
+        return ast.literal_eval(task_data)
+
+    # 获取选择器
+    def getSelector(self, resp):
+        selector = Selector(text=resp)
+
+        return selector
+
+    # 获取标题
+    def getTitle(self, select):
+        selector = select
+        try:
+            tit = selector.xpath("//h1[@class='standards_heading']/text()").extract_first()
+            title = re.sub(r"\n", "", tit).strip()
+
+        except Exception:
+            title = ""
+
+        return title
+
+    # 获取标识
+    def getBiaoShi(self, select):
+        selector = select
+        try:
+            pic = selector.xpath("//td/img/@src").extract_first().strip()
+
+        except Exception:
+            pic = ""
+
+        return pic
+
+    # 关联机构
+    def guanLianJiGou(self, url):
+        # 创建关联对象
+        e = {}
+        try:
+            e['url'] = url
+            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
+            e['ss'] = '机构'
         except Exception:
             return e
 

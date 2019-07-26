@@ -83,10 +83,17 @@ class SpiderMain(BastSpiderMain):
         if not publish_url_list:
             return
 
+        # print(publish_url_list)
         print(len(publish_url_list))
 
         # 访问每个发布单位url，获取列表页种子
-        for publish_url in publish_url_list:
+        for publish in publish_url_list:
+            # 存入数据库
+            self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=publish, es='出版商', ws='IHSmarkit')
+
+            # 获取出版商详情种子
+            publish_url = publish['url']
+            # print(publish_url)
             # 访问发布单位页面
             catalog_resp = self.__getResp(func=self.download_middleware.getResp,
                                         url=publish_url,

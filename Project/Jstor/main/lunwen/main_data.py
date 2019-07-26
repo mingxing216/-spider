@@ -320,8 +320,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{\"url\": \"https://www.jstor.org/stable/26607681?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bdisc_anthropology-discipline_facet%3DYW50aHJvcG9sb2d5LWRpc2NpcGxpbmU%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"Anthropology\"}')
+        # main.start()
+        main.run(task='{\"url\": \"https://www.jstor.org/stable/26607681?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bdisc_anthropology-discipline_facet%3DYW50aHJvcG9sb2d5LWRpc2NpcGxpbmU%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"Anthropology\"}')
         # main.run(task='{\"url\": \"https://www.jstor.org/stable/43691751?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D2001%26amp%3Bed%3D2002%26amp%3Bpagemark%3DcGFnZU1hcms9MTg%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"abc\"}')
     except:
         LOGGING.error(str(traceback.format_exc()))

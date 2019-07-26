@@ -10,19 +10,20 @@ import copy
 import traceback
 import hashlib
 import datetime
+import asyncio
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.Jstor.middleware import download_middleware
-from Project.Jstor.service import service
-from Project.Jstor.dao import dao
-from Project.Jstor import config
+from Project.IHSmarkit.middleware import download_middleware
+from Project.IHSmarkit.service import service
+from Project.IHSmarkit.dao import dao
+from Project.IHSmarkit import config
 
-log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = '<Jstor_期刊_data>'  # LOG名
-NAME = 'Jstor_期刊_data'  # 爬虫名
+log_file_dir = 'IHSmarkit'  # LOG日志存放路径
+LOGNAME = '<IHSmarkit_机构_data>'  # LOG名
+NAME = 'IHSmarkit_机构_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -36,7 +37,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_QiKanServer(logging=LOGGING)
+        self.server = service.JiGouServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -71,62 +72,68 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('页面出现验证码: {}'.format(url))
             return None
 
-    # 模板
-    def template(self, save_data, select, html):
-        # 获取标题
-        save_data['title'] = self.server.getTitle(select)
-        print(save_data['title'])
-        # 获取摘要
-        save_data['zhaiYao'] = self.server.getZhaiYao(html)
-        print(save_data['zhaiYao'])
-        # 获取覆盖范围
-        save_data['fuGaiFanWei'] = self.server.getFuGaiFanWei(select)
-        print(save_data['fuGaiFanWei'])
-        # 获取国际标准刊号
-        save_data['ISSN'] = self.server.getIssn(select)
-        print(save_data['ISSN'])
-        # 获取EISSN
-        save_data['EISSN'] = self.server.getEissn(select)
-        print(save_data['EISSN'])
-        # 获取学科类别
-        save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(select)
-        print(save_data['xueKeLeiBie'])
-        # 获取出版社
-        save_data['chuBanShe'] = self.server.getChuBanShe(select)
-        print(save_data['chuBanShe'])
-
-
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
 
         url = task_data['url']
-        sha = task_data['sha']
+        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
-        # 获取cookie
-        self.cookie_dict = self.download_middleware.create_cookie()
+        # # 获取cookie
+        # self.cookie_dict = self.download_middleware.create_cookie()
+        # # cookie创建失败，停止程序
+        # if not self.cookie_dict:
+        #     # 逻辑删除任务
+        #     self.dao.deleteLogicTask(table=config.MYSQL_STANTARD, sha=sha)
+        #     return
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
-                              mode='GET',
-                              cookies=self.cookie_dict)
+                              mode='GET')
         if not resp:
-            LOGGING.error('页面响应获取失败, url: {}'.format(url))
+            LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_STANTARD, sha=sha)
             return
 
         response = resp.text
-        # print(response)
+
+        with open('index.html', 'w') as f:
+            f.write(response)
 
         # 转为selector选择器
         selector = self.server.getSelector(response)
 
-        # 获取字段值
-        self.template(save_data=save_data, select=selector, html=response)
+        # 获取标题
+        save_data['title'] = self.server.getTitle(selector)
+        # 获取标识
+        save_data['biaoShi'] = self.server.getBiaoShi(selector)
+        # 存储图片
+        if save_data['biaoShi']:
+            img_dict = {}
+            img_dict['bizTitle'] = save_data['title']
+            img_dict['relEsse'] = self.server.guanLianJiGou(url)
+            img_dict['relPics'] = {}
+            img_url = save_data['biaoShi']
+            # # 存储图片种子
+            # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
+            # 获取真正图片url链接
+            media_resp = self.__getResp(func=self.download_middleware.getResp,
+                                        url=img_url,
+                                        mode='GET')
+            if not media_resp:
+                LOGGING.error('图片响应失败, url: {}'.format(img_url))
+                # 逻辑删除任务
+                self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+                return
 
-        # =========================公共字段
+            img_content = media_resp.content
+            # 存储图片
+            self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
+
+
+        # ===================公共字段
         # url
         save_data['url'] = url
         # 生成key
@@ -134,14 +141,14 @@ class SpiderMain(BastSpiderMain):
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
-        save_data['ss'] = '期刊'
-        # 生成ws ——目标网站
-        save_data['ws'] = 'JSTOR'
+        save_data['ss'] = '机构'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '期刊'
+        save_data['clazz'] = '机构_标准职能机构'
         # 生成es ——栏目名称
-        save_data['es'] = 'Journals'
-        # 生成biz ——项目
+        save_data['es'] = '出版商'
+        # 生成ws ——网站名称
+        save_data['ws'] = 'IHS markit'
+        # 生成biz ——项目名称
         save_data['biz'] = '文献大数据'
         # 生成ref
         save_data['ref'] = ''
@@ -160,13 +167,12 @@ class SpiderMain(BastSpiderMain):
         self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_MAGAZINE, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_STANTARD, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=100, lockname=config.REDIS_MAGAZINE_LOCK)
-            print(task_list)
+            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=10, lockname=config.REDIS_INSTITUTE_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             # 创建线程池
@@ -183,9 +189,9 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{\"url\": \"https://www.jstor.org/journal/divedist\", \"sha\": \"6376ea57bdf856df6700a7cee849e27a21c391fe\", \"ss\": \"期刊\"}')
-        # main.run(task='{\"url\": \"https://www.jstor.org/stable/26604983?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#page_scan_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
+        main.start()
+        # main.run(task='{\"url\": \"https://global.ihs.com/standards.cfm?publisher=9000STORE&rid=IHS\"}')
+        # main.run(task='{\"url\": \"https://global.ihs.com/doc_detail.cfm?&rid=IHS&input_search_filter=ISO&item_s_key=00286778&item_key_date=060530&input_doc_number=&input_doc_title=&org_code=ISO\"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -200,7 +206,7 @@ if __name__ == '__main__':
     # po = Pool(config.DATA_SCRIPT_PROCESS)
     # for i in range(config.DATA_SCRIPT_PROCESS):
     #     po.apply_async(func=process_start)
-
+    #
     po.close()
     po.join()
     end_time = time.time()

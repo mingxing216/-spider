@@ -158,15 +158,12 @@ class Dao(object):
     # 保存流媒体到hbase
     def saveMediaToHbase(self, media_url, content, item, type):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
-        # # 二进制图片文件转成base64文件
-        # content_bs64 = base64.b64encode(content)
-
-        # 截取base64图片文件
-        bs = re.sub(r".*base64,", "", content, 1)
+        # 二进制图片文件转成base64文件
+        content_bs64 = base64.b64encode(content)
         # 解码base64图片文件
-        dbs = base64.b64decode(bs)
+        dbs = base64.b64decode(content_bs64)
         # 内存中打开图片
-        img = Image.open(BytesIO(dbs))
+        img = Image.open(BytesIO(content))
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
         # item = {
         #     'pk': sha,
@@ -190,8 +187,8 @@ class Dao(object):
         item['naturalWidth'] = "{}".format(img.width)
         data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
                 "wid": "100",
-                # "content": "{}".format(content_bs64.decode('utf-8')),
-                "content": "{}".format(bs),
+                "content": "{}".format(content_bs64.decode('utf-8')),
+                # "content": "{}".format(content_bs64),
                 "ref": "",
                 "item": json.dumps(item)
         }
