@@ -83,7 +83,6 @@ class SpiderMain(BastSpiderMain):
         if not publish_url_list:
             return
 
-        print(publish_url_list)
         print(len(publish_url_list))
 
         # 访问每个发布单位url，获取列表页种子
@@ -104,7 +103,6 @@ class SpiderMain(BastSpiderMain):
             # print(catalog_url)
             self.catalog_url_list.append(catalog_url)
 
-        print(self.catalog_url_list)
         print(len(self.catalog_url_list))
         # 队列任务
         self.dao.QueueJobTask(key=config.REDIS_CATALOG, data=self.catalog_url_list)
