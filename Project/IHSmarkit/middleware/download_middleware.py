@@ -32,10 +32,11 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             # 设置请求头
             param['headers'] = {
                 # 'Cache-Control': 'max-age=0',
-                'Upgrade-Insecure-Requests': '1',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
+                # 'Upgrade-Insecure-Requests': '1',
+                # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'accept-encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
+                'Host': 'global.ihs.com',
                 'User-Agent': user_agent_u.get_ua()
             }
             # 设置post参数
@@ -82,7 +83,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             resp = self.getResp(url=url, mode='GET')
             if resp['status'] == 0:
                 # print(resp.cookies)
-                return requests.utils.dict_from_cookiejar(resp.cookies)
+                return requests.utils.dict_from_cookiejar(resp['data'].cookies)
         except:
             self.logging.info('cookie创建异常')
             return None

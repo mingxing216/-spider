@@ -47,7 +47,7 @@ class Dao(object):
         return self.redis_client.scard(key=key)
 
     # 种子任务存入Mysql数据库
-    def saveProjectUrlToMysql(self, table, memo, es, ws):
+    def saveTaskToMysql(self, table, memo, es, ws):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         ctx = str(memo).replace('\'', '"')

@@ -241,7 +241,7 @@ class SpiderMain(BastSpiderMain):
                               mode='GET',
                               cookies=self.cookie_dict)
         if not resp:
-            LOGGING.error('页面响应获取失败, url: {}'.format(url))
+            LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
             self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             return
@@ -330,13 +330,13 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    # po = Pool(1)
-    # for i in range(1):
-    #     po.apply_async(func=process_start)
-
-    po = Pool(config.DATA_SCRIPT_PROCESS)
-    for i in range(config.DATA_SCRIPT_PROCESS):
+    po = Pool(1)
+    for i in range(1):
         po.apply_async(func=process_start)
+
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
     #
     po.close()
     po.join()

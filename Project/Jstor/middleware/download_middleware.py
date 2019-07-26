@@ -31,9 +31,9 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['headers'] = {
                 # 'Authority': 'www.jstor.org',
                 # 'Scheme': 'https',
-                # 'Cache-Control': 'max-age=0',
-                # 'Upgrade-Insecure-Requests': '1',
-                'accept-language': 'zh-CN,zh;q=0.9',
+                'Cache-Control': 'max-age=0',
+                'Upgrade-Insecure-Requests': '1',
+                # 'accept-language': 'zh-CN,zh;q=0.9',
                 # 'accept-encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
                 'User-Agent': user_agent_u.get_ua()

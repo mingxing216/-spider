@@ -1,7 +1,7 @@
 #-*-coding:utf-8-*-
 
 '''
-测试环境配置参数
+本地环境配置参数
 '''
 
 # 下载延时
@@ -9,17 +9,17 @@ DOWNLOAD_MIN_DELAY = 0.2
 DOWNLOAD_MAX_DELAY = 0.5
 
 # Mysql
-DB_HOST='60.195.249.104'
+DB_HOST='127.0.0.1'
 DB_PORT=3306
-DB_USER='spider'
-DB_PASS='spider'
+DB_USER='root'
+DB_PASS='onecooo'
 DB_NAME='spider'
 # DB_POOL_NUMBER=10 # 连接池内连接默认数量
 
 # redis
 REDIS_HOST='127.0.0.1'
 REDIS_PORT=6379
-REDIS_PASSWORD='spider'
+REDIS_PASSWORD='onecooo'
 # REDIS_POOL_MAX_NUMBER=10 # redis链接池最大连接数
 
 # MongoDB
@@ -39,9 +39,9 @@ Orange_Pid=46808
 
 # ======================================================
 # hbase存储爬虫输出数据
-SpiderDataSaveUrl='http://60.195.249.117:8090/hbaseserver/dat/saveStructuredData?'
+SpiderDataSaveUrl='http://60.195.249.89:8086/dataserver/dat/saveStructuredData?'
 # hbase存储爬虫输出多媒体文件
-SpiderMediaSaveUrl='http://60.195.249.117:8090/hbaseserver/dat/saveMediaData?'
+SpiderMediaSaveUrl='http://60.195.249.89:8086/dataserver/dat/saveMediaData?'
 
 # ==================《adsl代理池》==================
 # 获取代理接口
@@ -81,6 +81,7 @@ TASK_TABLE = 'ss_task'
 # DB_EXECUTE = '{}/mysql-execute'.format(DB_API_HOST)
 # # 任务插入接口
 # DB_INSERT_TASK = '{}/mysql-insertTask'.format(DB_API_HOST)
+
 
 # # oss
 # ACCESSKEYID='LTAITx7i8MVIqSWh'

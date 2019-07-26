@@ -32,7 +32,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.Server(logging=LOGGING)
+        self.server = service.BiaoZhunServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -94,6 +94,7 @@ class SpiderMain(BastSpiderMain):
                                         mode='GET')
             if not catalog_resp:
                 LOGGING.error('发布单位详情页面响应获取失败, url: {}'.format(publish_url))
+                publish_url_list.append(publish_url)
                 continue
 
             catalog_text = catalog_resp.text
@@ -120,13 +121,14 @@ class SpiderMain(BastSpiderMain):
             return
         # 响应成功，添加log日志
         LOGGING.info('已进入列表第1页')
-        # 获取首页详情url并存入数据库
+        # 获取首页详情url
         first_urls = self.server.getDetailUrl(resp=first_resp.text)
         for url in first_urls:
             # 保存url
             self.num += 1
             LOGGING.info('当前已抓种子数量: {}'.format(self.num))
-            self.dao.saveProjectUrlToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
+            # 存入数据库
+            self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
             # detail_urls.append(url)
 
         # 判断是否有下一页
@@ -160,7 +162,8 @@ class SpiderMain(BastSpiderMain):
                     # 保存url
                     self.num += 1
                     LOGGING.info('当前已抓种子数量: {}'.format(self.num))
-                    self.dao.saveProjectUrlToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
+                    # 存入数据库
+                    self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
                     # detail_urls.append(url)
 
                 # print(len(detail_urls))
