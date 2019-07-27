@@ -55,7 +55,7 @@ class SpiderMain(BastSpiderMain):
     def __getResp(self, func, url, mode, data=None, cookies=None):
         while 1:
             resp = func(url=url, mode=mode, data=data, cookies=cookies)
-            if resp['status'] == 0:
+            if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
                     LOGGING.info('出现验证码')

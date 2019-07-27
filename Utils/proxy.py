@@ -125,13 +125,13 @@ class ProxyUtils(object):
 
                 else:
                     self.logging.error('代理池代理获取失败')
-                    time.sleep(10)
+                    time.sleep(5)
 
                 continue
 
             else:
                 self.logging.error('代理池代理获取失败')
-                time.sleep(10)
+                time.sleep(5)
                 continue
 
     # 删除代理

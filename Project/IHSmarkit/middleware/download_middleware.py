@@ -48,17 +48,17 @@ class Downloader(downloader.BaseDownloaderMiddleware):
 
             down_data = self._startDownload(param=param)
 
-            if down_data['status'] == 0:
-                return {'status': 0, 'data': down_data['data'], 'proxies': param['proxies']}
+            if down_data['code'] == 0:
+                return {'code': 0, 'data': down_data['data'], 'proxies': param['proxies']}
 
-            if down_data['status'] == 1:
-                status_code = str(down_data['code'])
+            if down_data['code'] == 1:
+                status_code = str(down_data['status'])
                 if status_code != '404':
                     continue
                 else:
-                    return {'status': 1, 'data': url}
+                    return {'code': 1, 'data': url}
 
-            if down_data['status'] == 2:
+            if down_data['code'] == 2:
                 '''
                 如果未设置请求异常的时间戳，则现在设置；
                 如果已经设置了异常的时间戳，则获取当前时间戳，然后对比之前设置的时间戳，如果时间超过了3分钟，说明url有问题，直接返回
@@ -72,7 +72,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                     # 获取当前时间戳
                     now = int(time.time())
                     if now - err_time >= 90:
-                        return {'status': 1, 'data': url}
+                        return {'code': 1, 'data': url}
                     else:
                         continue
 
@@ -81,7 +81,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         url = 'https://www.jstor.org/'
         try:
             resp = self.getResp(url=url, mode='GET')
-            if resp['status'] == 0:
+            if resp['code'] == 0:
                 # print(resp.cookies)
                 return requests.utils.dict_from_cookiejar(resp['data'].cookies)
         except:

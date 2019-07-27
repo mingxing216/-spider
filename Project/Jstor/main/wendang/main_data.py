@@ -56,7 +56,7 @@ class SpiderMain(BastSpiderMain):
         # 最多访问页面10次
         for i in range(10):
             resp = func(url=url, mode=mode, data=data, cookies=cookies)
-            if resp['status'] == 0:
+            if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
                     LOGGING.info('出现验证码')
@@ -146,7 +146,6 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=100, lockname=config.REDIS_DOCUMENT_LOCK)
-            print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             # 创建线程池

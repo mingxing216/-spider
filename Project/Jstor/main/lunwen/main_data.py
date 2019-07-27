@@ -50,14 +50,14 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
-        # self.cookie_dict = ''
+        self.cookie_dict = ''
 
     def __getResp(self, func, url, mode, data=None, cookies=None):
         # while 1:
         # 最多访问页面10次
         for i in range(10):
             resp = func(url=url, mode=mode, data=data, cookies=cookies)
-            if resp['status'] == 0:
+            if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
                     LOGGING.info('出现验证码')
@@ -66,7 +66,7 @@ class SpiderMain(BastSpiderMain):
                 else:
                     return response
 
-            if resp['status'] == 1:
+            if resp['code'] == 1:
                 return None
         else:
             LOGGING.error('页面出现验证码: {}'.format(url))
@@ -147,8 +147,7 @@ class SpiderMain(BastSpiderMain):
                 # 获取真正图片url链接
                 media_resp = self.__getResp(func=self.download_middleware.getResp,
                                             url=img_url,
-                                            mode='GET',
-                                            cookies=self.cookie_dict)
+                                            mode='GET')
                 if not media_resp:
                     LOGGING.error('图片响应失败, url: {}'.format(img_url))
                     # 逻辑删除任务
@@ -227,19 +226,18 @@ class SpiderMain(BastSpiderMain):
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         xueKeLeiBie = task_data['xueKeLeiBie']
 
-        # 获取cookie
-        self.cookie_dict = self.download_middleware.create_cookie()
-        # cookie创建失败，停止程序
-        if not self.cookie_dict:
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-            return
+        # # 获取cookie
+        # self.cookie_dict = self.download_middleware.create_cookie()
+        # # cookie创建失败，停止程序
+        # if not self.cookie_dict:
+        #     # 逻辑删除任务
+        #     self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+        #     return
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
-                              mode='GET',
-                              cookies=self.cookie_dict)
+                              mode='GET')
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
@@ -320,8 +318,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{\"url\": \"https://www.jstor.org/stable/26607681?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bdisc_anthropology-discipline_facet%3DYW50aHJvcG9sb2d5LWRpc2NpcGxpbmU%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"Anthropology\"}')
+        main.start()
+        # main.run(task='{\"url\": \"https://www.jstor.org/stable/26607681?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bdisc_anthropology-discipline_facet%3DYW50aHJvcG9sb2d5LWRpc2NpcGxpbmU%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"Anthropology\"}')
         # main.run(task='{\"url\": \"https://www.jstor.org/stable/43691751?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D2001%26amp%3Bed%3D2002%26amp%3Bpagemark%3DcGFnZU1hcms9MTg%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"abc\"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
@@ -330,13 +328,13 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
-
-    # po = Pool(config.DATA_SCRIPT_PROCESS)
-    # for i in range(config.DATA_SCRIPT_PROCESS):
+    # po = Pool(1)
+    # for i in range(1):
     #     po.apply_async(func=process_start)
+
+    po = Pool(config.DATA_SCRIPT_PROCESS)
+    for i in range(config.DATA_SCRIPT_PROCESS):
+        po.apply_async(func=process_start)
     #
     po.close()
     po.join()

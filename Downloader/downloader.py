@@ -23,23 +23,23 @@ def _error(func):
         try:
             data = func(self, *args, **kwargs)
             if data.status_code == 200:
-                return {'status': 0, 'data': data, 'code': data.status_code}
+                return {'code': 0, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
             else:
-                return {'status': 1, 'data': None, 'code': data.status_code}
+                return {'code': 1, 'data': None, 'status': data.status_code, 'message': 'OK'}
 
-        except ConnectTimeout or ReadTimeout:
+        except ConnectTimeout or ReadTimeout as e:
             # self.logging.error("Downloader" + " | " + "request timeout: {}s".format(kwargs['timeout']) + " | "
             #                         + kwargs['url'])
-            return {'status': 2, 'data': None}
+            return {'code': 2, 'data': None, 'status': None, 'message': e}
 
         except ConnectionError as e:
             # self.logging.error("Downloader" + " | " + "connection error" + " | " + kwargs['url'] + " | " + str(e))
-            return {'status': 2, 'data': None}
+            return {'code': 2, 'data': None, 'status': None, 'message': e}
 
         except Exception as e:
             # self.logging.error("Downloader" + " | " + "unknown error" + " | " + kwargs['url'] + " | " + str(e))
-            return {'status': 2, 'data': None}
+            return {'code': 2, 'data': None, 'status': None, 'message': e}
 
     return wrapper
 
@@ -97,11 +97,17 @@ class Downloader(object):
 
     @_error
     def get(self, url, headers, cookies, timeout, proxies):
-        return requests.get(url=url, headers=headers, proxies=proxies, timeout=timeout, cookies=cookies)
+        # start_time = float(time.time())
+        r =requests.get(url=url, headers=headers, proxies=proxies, timeout=timeout, cookies=cookies)
+        # end_time = float(time.time())
+        # print(round(end_time - start_time, 4))
+        # print(r.elapsed.total_seconds())
+        return r
 
     @_error
     def post(self, url, headers, data, cookies, timeout, proxies):
-        return requests.post(url=url, headers=headers, data=data, proxies=proxies, timeout=timeout, cookies=cookies)
+        r = requests.post(url=url, headers=headers, data=data, proxies=proxies, timeout=timeout, cookies=cookies)
+        return r
 
     def start(self, url, headers, data, cookies, timeout, proxies, connect_type):
         # time.sleep(int(DOWNLOAD_DELAY))
@@ -124,13 +130,13 @@ class Downloader(object):
 
         end_time = int(time.time())
 
-        try:
-            code = down_data['code']
-        except:
-            code = None
+        # try:
+        #     code = down_data['code']
+        # except:
+        #     code = None
 
-        self.logging.info("request for url: {} | status: {} | code: {} | mode: {} | data: {} | proxy: {} | use time: {}".format(
-            url, down_data['status'], code, connect_type, data, proxies, '{}s'.format(end_time - start_time)
+        self.logging.info("request for url: {} | code: {} | status: {} | message: {} | mode: {} | data: {} | proxy: {} | use time: {}".format(
+            url, down_data['code'], down_data['status'], down_data['message'], connect_type, data, proxies, '{}s'.format(end_time - start_time)
         ))
 
         return down_data

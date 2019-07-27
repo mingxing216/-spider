@@ -57,7 +57,7 @@ class SpiderMain(BastSpiderMain):
         # 最多访问页面10次
         for i in range(10):
             resp = func(url=url, mode=mode, data=data, cookies=cookies)
-            if resp['status'] == 0:
+            if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
                     LOGGING.info('出现验证码')
@@ -98,9 +98,6 @@ class SpiderMain(BastSpiderMain):
             return
 
         response = resp.text
-
-        with open('index.html', 'w') as f:
-            f.write(response)
 
         # 转为selector选择器
         selector = self.server.getSelector(response)
@@ -189,8 +186,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{\"url\": \"https://global.ihs.com/standards.cfm?publisher=9000STORE&rid=IHS\"}')
+        # main.start()
+        main.run(task='{\"url\": \"https://global.ihs.com/standards.cfm?publisher=9000STORE&rid=IHS\"}')
         # main.run(task='{\"url\": \"https://global.ihs.com/doc_detail.cfm?&rid=IHS&input_search_filter=ISO&item_s_key=00286778&item_key_date=060530&input_doc_number=&input_doc_title=&org_code=ISO\"}')
     except:
         LOGGING.error(str(traceback.format_exc()))

@@ -56,7 +56,7 @@ class SpiderMain(BastSpiderMain):
         # 最多访问页面10次
         for i in range(10):
             resp = func(url=url, mode=mode, data=data, cookies=cookies)
-            if resp['status'] == 0:
+            if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
                     LOGGING.info('出现验证码')
