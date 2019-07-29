@@ -328,13 +328,13 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    # po = Pool(1)
-    # for i in range(1):
-    #     po.apply_async(func=process_start)
-
-    po = Pool(config.DATA_SCRIPT_PROCESS)
-    for i in range(config.DATA_SCRIPT_PROCESS):
+    po = Pool(1)
+    for i in range(1):
         po.apply_async(func=process_start)
+
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
     #
     po.close()
     po.join()
