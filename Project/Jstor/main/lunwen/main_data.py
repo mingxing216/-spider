@@ -301,7 +301,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=10, lockname=config.REDIS_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=5, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             # 创建线程池
@@ -328,13 +328,13 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
-
-    # po = Pool(config.DATA_SCRIPT_PROCESS)
-    # for i in range(config.DATA_SCRIPT_PROCESS):
+    # po = Pool(1)
+    # for i in range(1):
     #     po.apply_async(func=process_start)
+
+    po = Pool(config.DATA_SCRIPT_PROCESS)
+    for i in range(config.DATA_SCRIPT_PROCESS):
+        po.apply_async(func=process_start)
     #
     po.close()
     po.join()
