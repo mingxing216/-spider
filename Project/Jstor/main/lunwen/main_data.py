@@ -3,6 +3,10 @@
 '''
 
 '''
+from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
+monkey.patch_all()
+import gevent
 import sys
 import os
 import time
@@ -10,7 +14,6 @@ import copy
 import traceback
 import hashlib
 import datetime
-import asyncio
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -72,6 +75,22 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('页面出现验证码: {}'.format(url))
             return None
 
+    def imgDownload(self, img_task):
+        # 获取图片响应
+        media_resp = self.__getResp(func=self.download_middleware.getResp,
+                                    url=img_task['url'],
+                                    mode='GET')
+        if not media_resp:
+            LOGGING.error('图片响应失败, url: {}'.format(img_task['url']))
+            # 存储图片种子
+            self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'])
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=img_task['sha'])
+
+        img_content = media_resp.text
+        # 存储图片
+        self.dao.saveMediaToHbase(media_url=img_task['url'], content=img_content, item=img_task['img_dict'], type='image')
+
     # 模板1
     def templateOne(self, save_data, script, url, sha):
         # 获取标题
@@ -101,7 +120,7 @@ class SpiderMain(BastSpiderMain):
         save_data['chuBanShang'] = self.server.getChuBanShang(script)
         # 获取摘要
         save_data['zhaiYao'] = self.server.getZhaiYao(script)
-        # 获取图片链接
+        # 获取所有图片链接
         picUrl = self.server.getPicUrl(script)
         if picUrl:
             # 获取内容(关联组图)
@@ -135,27 +154,28 @@ class SpiderMain(BastSpiderMain):
             # 保存组图实体到Hbase
             self.dao.saveDataToHbase(data=pics)
 
+            # 创建图片任务列表
+            img_tasks = []
+
             # 下载图片
             for img_url in picUrl:
-                img_dict = {}
-                img_dict['bizTitle'] = save_data['title']
-                img_dict['relEsse'] = self.server.guanLianLunWen(url)
-                img_dict['relPics'] = self.server.guanLianPics(url)
-                # img_dict['url'] = img_url
-                # # 存储图片种子
-                # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
-                # 获取真正图片url链接
-                media_resp = self.__getResp(func=self.download_middleware.getResp,
-                                            url=img_url,
-                                            mode='GET')
-                if not media_resp:
-                    LOGGING.error('图片响应失败, url: {}'.format(img_url))
-                    # 逻辑删除任务
-                    self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                    continue
-                img_content = media_resp.text
-                # 存储图片
-                self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
+                dict = {}
+                dict['url'] = img_url
+                dict['sha'] = sha
+                dict['img_dict'] = {}
+                dict['img_dict']['url'] = img_url
+                dict['img_dict']['bizTitle'] = save_data['title']
+                dict['img_dict']['relEsse'] = self.server.guanLianLunWen(url)
+                dict['img_dict']['relPics'] = self.server.guanLianPics(url)
+                img_tasks.append(dict)
+
+            # 创建gevent协程
+            img_list = []
+            for img_task in img_tasks:
+                s = gevent.spawn(self.imgDownload, img_task)
+                img_list.append(s)
+            gevent.joinall(img_list)
+
         else:
             # 获取内容(关联组图)
             save_data['relationPics'] = {}
@@ -301,18 +321,27 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=10, lockname=config.REDIS_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=5, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
-                # 创建线程池
-                threadpool = ThreadPool()
+                # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
+
+                # 创建gevent协程
+                g_list = []
                 for task in task_list:
-                    threadpool.apply_async(func=self.run, args=(task,))
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
 
-                threadpool.close()
-                threadpool.join()
-
+            # # 创建线程池
+            #     threadpool = ThreadPool()
+            #     for task in task_list:
+            #         threadpool.apply_async(func=self.run, args=(task,))
+            #
+            #     threadpool.close()
+            #     threadpool.join()
+                #
                 time.sleep(1)
             else:
                 LOGGING.info('队列中已无任务，结束程序')
@@ -323,7 +352,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://www.jstor.org/stable/26604983?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#page_scan_tab_contents", "xueKeLeiBie": "Anthropology"}')
+        # main.run(task='{"url": "https://www.jstor.org/stable/26422068?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bsd%3D%26amp%3Bfacet_journal%3Dam91cm5hbA%253D%253D%26amp%3Bpage%3D1%26amp%3Bed%3D&seq=1#metadata_info_tab_contents", "xueKeLeiBie": "Anthropology"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -331,16 +360,18 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
+    process_start()
+
     # po = Pool(1)
     # for i in range(1):
     #     po.apply_async(func=process_start)
 
-    po = Pool(config.DATA_SCRIPT_PROCESS)
-    for i in range(config.DATA_SCRIPT_PROCESS):
-        po.apply_async(func=process_start)
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
     #
-    po.close()
-    po.join()
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))
