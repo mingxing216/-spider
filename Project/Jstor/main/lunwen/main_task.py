@@ -19,7 +19,7 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = '<JSTOR_期刊论文_task>'  # LOG名
+LOGNAME = 'JSTOR_期刊论文_task'  # LOG名
 NAME = 'JSTOR_期刊论文_task'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 

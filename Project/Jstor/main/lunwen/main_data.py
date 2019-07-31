@@ -22,7 +22,7 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = '<Jstor_期刊论文_data>'  # LOG名
+LOGNAME = 'Jstor_期刊论文_data'  # LOG名
 NAME = 'Jstor_期刊论文_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
@@ -185,7 +185,7 @@ class SpiderMain(BastSpiderMain):
         # 获取作者
         save_data['zuoZhe'] = self.server.getZuoZhe(select)
         # 获取期刊名称
-        save_data['qiKanMingCheng'] = ""
+        save_data['qiKanMingCheng'] = self.server.getQiKanMingCheng(select)
         # 获取DOI
         save_data['DOI'] = ""
         # 获取ISSN
@@ -304,23 +304,26 @@ class SpiderMain(BastSpiderMain):
             task_list = self.dao.getTask(key=config.REDIS_PAPER, count=5, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
-            # 创建线程池
-            threadpool = ThreadPool()
-            for task in task_list:
-                threadpool.apply_async(func=self.run, args=(task,))
+            if task_list:
+                # 创建线程池
+                threadpool = ThreadPool()
+                for task in task_list:
+                    threadpool.apply_async(func=self.run, args=(task,))
 
-            threadpool.close()
-            threadpool.join()
+                threadpool.close()
+                threadpool.join()
 
-            time.sleep(1)
+                time.sleep(1)
+            else:
+                LOGGING.info('队列中已无任务，结束程序')
+                return
 
 
 def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{\"url\": \"https://www.jstor.org/stable/26607681?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D%26amp%3Bed%3D%26amp%3Bdisc_anthropology-discipline_facet%3DYW50aHJvcG9sb2d5LWRpc2NpcGxpbmU%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"Anthropology\"}')
-        # main.run(task='{\"url\": \"https://www.jstor.org/stable/43691751?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D2001%26amp%3Bed%3D2002%26amp%3Bpagemark%3DcGFnZU1hcms9MTg%253D%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol\", \"xueKeLeiBie\": \"abc\"}')
+        # main.run(task='{"url": "https://www.jstor.org/stable/26604983?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#page_scan_tab_contents", "xueKeLeiBie": "Anthropology"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

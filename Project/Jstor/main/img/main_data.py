@@ -21,7 +21,7 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = '<Jstor_图片_data>'  # LOG名
+LOGNAME = 'Jstor_图片_data'  # LOG名
 NAME = 'Jstor_图片_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 

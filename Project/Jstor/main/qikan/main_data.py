@@ -21,7 +21,7 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = '<Jstor_期刊_data>'  # LOG名
+LOGNAME = 'Jstor_期刊_data'  # LOG名
 NAME = 'Jstor_期刊_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
@@ -75,25 +75,18 @@ class SpiderMain(BastSpiderMain):
     def template(self, save_data, select, html):
         # 获取标题
         save_data['title'] = self.server.getTitle(select)
-        print(save_data['title'])
         # 获取摘要
         save_data['zhaiYao'] = self.server.getZhaiYao(html)
-        print(save_data['zhaiYao'])
         # 获取覆盖范围
         save_data['fuGaiFanWei'] = self.server.getFuGaiFanWei(select)
-        print(save_data['fuGaiFanWei'])
         # 获取国际标准刊号
         save_data['ISSN'] = self.server.getIssn(select)
-        print(save_data['ISSN'])
         # 获取EISSN
         save_data['EISSN'] = self.server.getEissn(select)
-        print(save_data['EISSN'])
         # 获取学科类别
         save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(select)
-        print(save_data['xueKeLeiBie'])
         # 获取出版社
         save_data['chuBanShe'] = self.server.getChuBanShe(select)
-        print(save_data['chuBanShe'])
 
 
     def handle(self, task, save_data):
@@ -103,14 +96,13 @@ class SpiderMain(BastSpiderMain):
         url = task_data['url']
         sha = task_data['sha']
 
-        # 获取cookie
-        self.cookie_dict = self.download_middleware.create_cookie()
+        # # 获取cookie
+        # self.cookie_dict = self.download_middleware.create_cookie()
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
-                              mode='GET',
-                              cookies=self.cookie_dict)
+                              mode='GET')
         if not resp:
             LOGGING.error('页面响应获取失败, url: {}'.format(url))
             # 逻辑删除任务
@@ -165,27 +157,30 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=100, lockname=config.REDIS_MAGAZINE_LOCK)
-            print(task_list)
+            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=5, lockname=config.REDIS_MAGAZINE_LOCK)
+            # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
-            # 创建线程池
-            threadpool = ThreadPool()
-            for task in task_list:
-                threadpool.apply_async(func=self.run, args=(task,))
+            if task_list:
+                # 创建线程池
+                threadpool = ThreadPool()
+                for task in task_list:
+                    threadpool.apply_async(func=self.run, args=(task,))
 
-            threadpool.close()
-            threadpool.join()
+                threadpool.close()
+                threadpool.join()
 
-            time.sleep(1)
+                time.sleep(1)
+            else:
+                LOGGING.info('队列中已无任务，结束程序')
+                return
 
 
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{\"url\": \"https://www.jstor.org/journal/divedist\", \"sha\": \"6376ea57bdf856df6700a7cee849e27a21c391fe\", \"ss\": \"期刊\"}')
-        # main.run(task='{\"url\": \"https://www.jstor.org/stable/26604983?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bacc%3Ddfr&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#page_scan_tab_contents\", \"xueKeLeiBie\": \"Education\"}')
+        main.start()
+        # main.run(task='{"url": "https://www.jstor.org/journal/oceanography", "sha": "70de09416305f41f2ae5c0195edc9602856a9e4d", "ss": "期刊"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -193,13 +188,13 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
-
-    # po = Pool(config.DATA_SCRIPT_PROCESS)
-    # for i in range(config.DATA_SCRIPT_PROCESS):
+    # po = Pool(1)
+    # for i in range(1):
     #     po.apply_async(func=process_start)
+
+    po = Pool(config.DATA_SCRIPT_PROCESS)
+    for i in range(config.DATA_SCRIPT_PROCESS):
+        po.apply_async(func=process_start)
 
     po.close()
     po.join()

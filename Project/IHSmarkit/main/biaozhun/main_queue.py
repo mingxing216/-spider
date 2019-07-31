@@ -17,7 +17,7 @@ from Project.IHSmarkit.dao import dao
 from Project.IHSmarkit import config
 
 log_file_dir = 'IHSmarkit'  # LOG日志存放路径
-LOGNAME = '<IHSmarkit_标准_queue>'  # LOG名
+LOGNAME = 'IHSmarkit_标准_queue'  # LOG名
 NAME = 'IHSmarkit_标准_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 

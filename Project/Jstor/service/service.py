@@ -349,6 +349,17 @@ class QiKanLunWen_LunWenServer(object):
         return zuozhe
 
     # 获取期刊名称
+    def getQiKanMingCheng(self, select):
+        selector = select
+        try:
+            qikan = selector.xpath("//div[@class='journal']/cite/text()").extract_first().strip()
+
+        except Exception:
+            qikan = ""
+
+        return qikan
+
+    # 获取ISSN
     def getIssn(self, select):
         selector = select
         try:
@@ -438,7 +449,7 @@ class QiKanLunWen_LunWenServer(object):
         # 创建关联对象
         e = {}
         try:
-            e['url'] = 'https://www.jstor.org'+ selector.xpath("//li[contains(@class, 'breadcrumb-issue')]/a/@href").extract_first()
+            e['url'] = 'https://www.jstor.org'+ selector.xpath("//li[contains(@class, 'breadcrumb-journal')]/a/@href").extract_first()
             e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
             e['ss'] = '期刊'
         except Exception:

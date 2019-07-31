@@ -22,7 +22,7 @@ from Project.IHSmarkit.dao import dao
 from Project.IHSmarkit import config
 
 log_file_dir = 'IHSmarkit'  # LOG日志存放路径
-LOGNAME = '<IHSmarkit_机构_data>'  # LOG名
+LOGNAME = 'IHSmarkit_机构_data'  # LOG名
 NAME = 'IHSmarkit_机构_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
@@ -172,23 +172,25 @@ class SpiderMain(BastSpiderMain):
             task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=10, lockname=config.REDIS_INSTITUTE_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
-            # 创建线程池
-            threadpool = ThreadPool()
-            for task in task_list:
-                threadpool.apply_async(func=self.run, args=(task,))
+            if task_list:
+                # 创建线程池
+                threadpool = ThreadPool()
+                for task in task_list:
+                    threadpool.apply_async(func=self.run, args=(task,))
 
-            threadpool.close()
-            threadpool.join()
+                threadpool.close()
+                threadpool.join()
 
-            time.sleep(1)
-
+                time.sleep(1)
+            else:
+                LOGGING.info('队列中已无任务，结束程序')
+                return
 
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{\"url\": \"https://global.ihs.com/standards.cfm?publisher=9000STORE&rid=IHS\"}')
-        # main.run(task='{\"url\": \"https://global.ihs.com/doc_detail.cfm?&rid=IHS&input_search_filter=ISO&item_s_key=00286778&item_key_date=060530&input_doc_number=&input_doc_title=&org_code=ISO\"}')
+        main.start()
+        # main.run(task='{"url": "https://global.ihs.com/standards.cfm?publisher=PACKT&rid=IHS"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -196,13 +198,13 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
-
-    # po = Pool(config.DATA_SCRIPT_PROCESS)
-    # for i in range(config.DATA_SCRIPT_PROCESS):
+    # po = Pool(1)
+    # for i in range(1):
     #     po.apply_async(func=process_start)
+
+    po = Pool(config.DATA_SCRIPT_PROCESS)
+    for i in range(config.DATA_SCRIPT_PROCESS):
+        po.apply_async(func=process_start)
     #
     po.close()
     po.join()

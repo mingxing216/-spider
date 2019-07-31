@@ -17,7 +17,7 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = '<Jstor_文档_queue>'  # LOG名
+LOGNAME = 'Jstor_文档_queue'  # LOG名
 NAME = 'Jstor_文档_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
@@ -55,7 +55,7 @@ class SpiderMain(BastSpiderMain):
 
                 # 获取任务
                 new_task_list = self.dao.getNewTaskList(table=config.MYSQL_DOCUMENT, count=2000)
-                print(new_task_list)
+                # print(new_task_list)
                 LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 
                 # 队列任务

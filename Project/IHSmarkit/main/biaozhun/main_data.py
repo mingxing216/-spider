@@ -22,7 +22,7 @@ from Project.IHSmarkit.dao import dao
 from Project.IHSmarkit import config
 
 log_file_dir = 'IHSmarkit'  # LOG日志存放路径
-LOGNAME = '<IHSmarkit_标准_data>'  # LOG名
+LOGNAME = 'IHSmarkit_标准_data'  # LOG名
 NAME = 'IHSmarkit_标准_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
@@ -209,23 +209,25 @@ class SpiderMain(BastSpiderMain):
             task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=10, lockname=config.REDIS_STANTARD_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
-            # 创建线程池
-            threadpool = ThreadPool()
-            for task in task_list:
-                threadpool.apply_async(func=self.run, args=(task,))
+            if task_list:
+                # 创建线程池
+                threadpool = ThreadPool()
+                for task in task_list:
+                    threadpool.apply_async(func=self.run, args=(task,))
 
-            threadpool.close()
-            threadpool.join()
+                threadpool.close()
+                threadpool.join()
 
-            time.sleep(1)
-
+                time.sleep(1)
+            else:
+                LOGGING.info('队列中已无任务，结束程序')
+                return
 
 def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{\"url\": \"https://global.ihs.com/doc_detail.cfm?&rid=IHS&input_search_filter=%28NFPA%29&input_doc_number=&input_doc_title=&org_code=%28NFPA%29&document_name=NFPA%20T2%2E13%2E5&item_s_key=00130382&item_key_date=871231&origin=DSSC\"}')
-        # main.run(task='{\"url\": \"https://global.ihs.com/doc_detail.cfm?&rid=IHS&input_search_filter=ISO&item_s_key=00286778&item_key_date=060530&input_doc_number=&input_doc_title=&org_code=ISO\"}')
+        # main.run(task='{"url": "https://global.ihs.com/doc_detail.cfm?&rid=IHS&input_search_filter=%28NFPA%29&item_s_key=00007531&item_key_date=171230&input_doc_number=&input_doc_title=&org_code=%28NFPA%29#product-details-list"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
