@@ -3,6 +3,10 @@
 '''
 
 '''
+from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
+monkey.patch_all()
+import gevent
 import sys
 import os
 import time
@@ -78,14 +82,6 @@ class SpiderMain(BastSpiderMain):
 
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-
-        # # 获取cookie
-        # self.cookie_dict = self.download_middleware.create_cookie()
-        # # cookie创建失败，停止程序
-        # if not self.cookie_dict:
-        #     # 逻辑删除任务
-        #     self.dao.deleteLogicTask(table=config.MYSQL_STANTARD, sha=sha)
-        #     return
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
@@ -169,17 +165,24 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=10, lockname=config.REDIS_INSTITUTE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=5, lockname=config.REDIS_INSTITUTE_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
-                # 创建线程池
-                threadpool = ThreadPool()
+                # 创建gevent协程
+                g_list = []
                 for task in task_list:
-                    threadpool.apply_async(func=self.run, args=(task,))
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
 
-                threadpool.close()
-                threadpool.join()
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for task in task_list:
+                #     threadpool.apply_async(func=self.run, args=(task,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
                 time.sleep(1)
             else:
@@ -198,16 +201,18 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
+    process_start()
+
     # po = Pool(1)
     # for i in range(1):
     #     po.apply_async(func=process_start)
 
-    po = Pool(config.DATA_SCRIPT_PROCESS)
-    for i in range(config.DATA_SCRIPT_PROCESS):
-        po.apply_async(func=process_start)
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
     #
-    po.close()
-    po.join()
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))
