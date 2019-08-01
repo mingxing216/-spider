@@ -47,7 +47,7 @@ class Dao(object):
         return self.redis_client.scard(key=key)
 
     # 种子任务存入Mysql数据库
-    def saveTaskToMysql(self, table, memo, es, ws):
+    def saveTaskToMysql(self, table, memo, ws, es):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         ctx = str(memo).replace('\'', '"')
@@ -73,8 +73,8 @@ class Dao(object):
             self.logging.warning('种子已存在: {}'.format(sha))
 
     # 从Mysql获取任务
-    def getNewTaskList(self, table, count):
-        sql = "select * from {} where `del` = '0' limit {}".format(table, count)
+    def getNewTaskList(self, table, ws, es, count):
+        sql = "select * from {} where `del` = '0' and `ws` = '{}' and `es` = '{}' limit {}".format(table, ws, es, count)
 
         data_list = self.mysql_client.get_results(sql=sql)
 

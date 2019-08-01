@@ -89,7 +89,7 @@ class SpiderMain(BastSpiderMain):
         # 访问每个发布单位url，获取列表页种子
         for publish in publish_url_list:
             # 存入数据库
-            self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=publish, es='出版商', ws='IHSmarkit')
+            self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=publish, ws='IHSmarkit', es='出版商')
 
             # 获取出版商详情种子
             publish_url = publish['url']
@@ -133,7 +133,7 @@ class SpiderMain(BastSpiderMain):
             self.num += 1
             LOGGING.info('当前已抓种子数量: {}'.format(self.num))
             # 存入数据库
-            self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
+            self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, ws='IHSmarkit', es='标准')
             # detail_urls.append(url)
 
         # 判断是否有下一页
@@ -168,7 +168,7 @@ class SpiderMain(BastSpiderMain):
                     self.num += 1
                     LOGGING.info('当前已抓种子数量: {}'.format(self.num))
                     # 存入数据库
-                    self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, es='标准', ws='IHSmarkit')
+                    self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, ws='IHSmarkit', es='标准')
                     # detail_urls.append(url)
 
                 # print(len(detail_urls))

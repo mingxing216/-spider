@@ -90,7 +90,7 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_STANTARD, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
             return
 
         response = resp.text
@@ -160,7 +160,7 @@ class SpiderMain(BastSpiderMain):
         self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_STANTARD, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
 
     def start(self):
         while 1:

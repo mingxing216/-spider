@@ -54,7 +54,7 @@ class SpiderMain(BastSpiderMain):
                 LOGGING.info('redis已无任务，准备开始队列任务。')
 
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_DOCUMENT, count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_DOCUMENT, ws='jstor', es='qikan', count=2000)
                 # print(new_task_list)
                 LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 
