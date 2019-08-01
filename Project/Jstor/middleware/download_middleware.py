@@ -37,6 +37,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'Accept-Encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
+                'Connection': 'close',
                 'User-Agent': user_agent_u.get_ua()
             }
             # 设置post参数

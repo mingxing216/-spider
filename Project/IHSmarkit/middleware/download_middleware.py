@@ -37,6 +37,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 # 'accept-encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
                 'Host': 'global.ihs.com',
+                'Connection': 'close',
                 'User-Agent': user_agent_u.get_ua()
             }
             # 设置post参数

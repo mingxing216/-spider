@@ -341,7 +341,7 @@ class SpiderMain(BastSpiderMain):
             #
             #     threadpool.close()
             #     threadpool.join()
-                #
+
                 time.sleep(1)
             else:
                 LOGGING.info('队列中已无任务，结束程序')
