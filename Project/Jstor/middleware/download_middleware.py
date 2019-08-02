@@ -30,7 +30,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['mode'] = mode
             # 设置请求头
             param['headers'] = {
-                # 'Authority': 'www.jstor.org',
+                'Authority': 'www.jstor.org',
                 # 'Scheme': 'https',
                 'Cache-Control': 'max-age=0',
                 # 'Upgrade-Insecure-Requests': '1',
