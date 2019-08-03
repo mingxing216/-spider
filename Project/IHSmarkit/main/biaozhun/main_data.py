@@ -194,6 +194,13 @@ class SpiderMain(BastSpiderMain):
         sha = self.handle(task=task, save_data=save_data)
 
         # 保存数据到Hbase
+        if not save_data:
+            LOGGING.info('没有获取数据，存储失败, sha: {}'.format(sha))
+            return
+        if 'sha' not in save_data:
+            LOGGING.info('数据获取不完整，存储失败, sha: {}'.format(sha))
+            return
+
         self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
@@ -202,7 +209,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=5, lockname=config.REDIS_STANTARD_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=50, lockname=config.REDIS_STANTARD_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:

@@ -9,11 +9,13 @@ import urllib3
 import re
 import time
 import requests
+import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
 from Utils import user_agent_u
 from Utils import proxy
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
 class Downloader(downloader.BaseDownloaderMiddleware):
@@ -26,6 +28,10 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         # 请求异常时间戳
         err_time = 0
         while 1:
+            # 每次请求的等待时间
+            time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
+
+            # 设置参数
             param = {'url': url}
             # 设置请求方式：GET或POST
             param['mode'] = mode
