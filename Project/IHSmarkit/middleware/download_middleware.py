@@ -27,6 +27,8 @@ class Downloader(downloader.BaseDownloaderMiddleware):
     def getResp(self, url, mode, data=None, cookies=None, referer=None):
         # 请求异常时间戳
         err_time = 0
+        # 响应状态码错误时间戳
+        stat_time = 0
         while 1:
             # 每次请求的等待时间
             time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
@@ -61,7 +63,17 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             if down_data['code'] == 1:
                 status_code = str(down_data['status'])
                 if status_code != '404':
-                    continue
+                    if stat_time == 0:
+                        # 获取错误状态吗时间戳
+                        stat_time = int(time.time())
+                        continue
+                    else:
+                        # 获取当前时间戳
+                        now_time = int(time.time())
+                        if now_time - stat_time >= 90:
+                            return {'code': 1, 'data': url}
+                        else:
+                            continue
                 else:
                     return {'code': 1, 'data': url}
 

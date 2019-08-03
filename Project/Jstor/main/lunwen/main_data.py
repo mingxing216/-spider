@@ -315,10 +315,10 @@ class SpiderMain(BastSpiderMain):
 
         # 保存数据到Hbase
         if not save_data:
-            LOGGING.info('没有获取数据，存储失败, sha: {}'.format(sha))
+            LOGGING.info('没有获取数据, 存储失败')
             return
         if 'sha' not in save_data:
-            LOGGING.info('数据获取不完整，存储失败, sha: {}'.format(sha))
+            LOGGING.info('数据获取不完整, 存储失败')
             return
 
         self.dao.saveDataToHbase(data=save_data)
