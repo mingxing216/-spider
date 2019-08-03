@@ -58,7 +58,7 @@ class SpiderMain(BastSpiderMain):
 
     def __getResp(self, func, url, mode, data=None, cookies=None):
         # while 1:
-        # 最多访问页面10次
+        # 发现验证码，最多访问页面10次
         for i in range(10):
             resp = func(url=url, mode=mode, data=data, cookies=cookies)
             if resp['code'] == 0:

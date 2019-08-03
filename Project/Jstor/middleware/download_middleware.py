@@ -69,7 +69,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                     else:
                         # 获取当前时间戳
                         now_time = int(time.time())
-                        if now_time - stat_time >= 90:
+                        if now_time - stat_time >= 120:
                             return {'code': 1, 'data': url}
                         else:
                             continue
