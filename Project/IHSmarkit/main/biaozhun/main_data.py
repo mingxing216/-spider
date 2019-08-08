@@ -70,7 +70,7 @@ class SpiderMain(BastSpiderMain):
                 else:
                     return response
 
-            if resp['status'] == 1:
+            if resp['code'] == 1:
                 return None
         else:
             LOGGING.error('页面出现验证码: {}'.format(url))

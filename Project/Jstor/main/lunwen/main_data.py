@@ -177,6 +177,14 @@ class SpiderMain(BastSpiderMain):
                 img_list.append(s)
             gevent.joinall(img_list)
 
+            # # 创建线程池
+            # threadpool = ThreadPool()
+            # for img_task in img_tasks:
+            #     threadpool.apply_async(func=self.imgDownload, args=(img_task,))
+            #
+            # threadpool.close()
+            # threadpool.join()
+
         else:
             # 获取内容(关联组图)
             save_data['relationPics'] = {}
@@ -329,7 +337,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=20, lockname=config.REDIS_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=16, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -342,13 +350,13 @@ class SpiderMain(BastSpiderMain):
                     g_list.append(s)
                 gevent.joinall(g_list)
 
-            # # 创建线程池
-            #     threadpool = ThreadPool()
-            #     for task in task_list:
-            #         threadpool.apply_async(func=self.run, args=(task,))
-            #
-            #     threadpool.close()
-            #     threadpool.join()
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for task in task_list:
+                #     threadpool.apply_async(func=self.run, args=(task,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
                 time.sleep(1)
             else:

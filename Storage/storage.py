@@ -78,6 +78,8 @@ class Dao(object):
 
         data_list = self.mysql_client.get_results(sql=sql)
 
+        self.logging.info('已从Mysql获取到{}个任务'.format(len(data_list)))
+
         # 进入redis队列的数据，在mysql数据库中改变`del`字段值为'1'，表示正在执行
         # for data in data_list:
         #     sha = data['sha']
@@ -91,6 +93,7 @@ class Dao(object):
         if data:
             for url in data:
                 self.redis_client.sadd(key=key, value=url)
+            self.logging.info('已队列 {} 条种子'.format(len(data)))
 
         else:
             return
@@ -99,6 +102,7 @@ class Dao(object):
     def QueueOneTask(self, key, data):
         if data:
             self.redis_client.sadd(key=key, value=data)
+            self.logging.info('已队列1条种子')
 
         else:
             return
@@ -109,6 +113,8 @@ class Dao(object):
             for url_data in data:
                 url = url_data['ctx']
                 self.redis_client.sadd(key=key, value=url)
+
+            self.logging.info('已成功向redis队列{}个任务'.format(len(data)))
 
         else:
             return

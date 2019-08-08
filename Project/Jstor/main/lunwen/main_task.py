@@ -62,7 +62,7 @@ class SpiderMain(BastSpiderMain):
                 else:
                     return response
 
-            if resp['status'] == 1:
+            if resp['code'] == 1:
                 return None
 
     def get_yearTask(self):

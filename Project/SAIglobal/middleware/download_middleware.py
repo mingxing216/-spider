@@ -5,6 +5,8 @@
 '''
 import sys
 import os
+import urllib3
+import re
 import time
 import requests
 import random
@@ -28,7 +30,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         # 响应状态码错误时间戳
         stat_time = 0
         while 1:
-            # 下载延时
+            # 每次请求的等待时间
             time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
 
             # 设置参数
@@ -37,14 +39,13 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['mode'] = mode
             # 设置请求头
             param['headers'] = {
-                'Authority': 'www.jstor.org',
-                # 'Scheme': 'https',
                 # 'Cache-Control': 'max-age=0',
                 'Upgrade-Insecure-Requests': '1',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
+                # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'Accept-Encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
                 'Connection': 'close',
+                'Host': 'infostore.saiglobal.com',
                 'User-Agent': user_agent_u.get_ua()
             }
             # 设置post参数
@@ -52,13 +53,12 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             # 设置cookies
             param['cookies'] = cookies
             # 设置proxy
-            if self.proxy_type:
-                param['proxies'] = self.proxy_obj.getProxy()
+            param['proxies'] = self.proxy_obj.getProxy()
 
             down_data = self._startDownload(param=param)
 
             if down_data['code'] == 0:
-                return {'code': 0, 'data': down_data['data']}
+                return {'code': 0, 'data': down_data['data'], 'proxies': param['proxies']}
 
             if down_data['code'] == 1:
                 status_code = str(down_data['status'])
@@ -81,7 +81,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 '''
                 如果未设置请求异常的时间戳，则现在设置；
                 如果已经设置了异常的时间戳，则获取当前时间戳，然后对比之前设置的时间戳，如果时间超过了3分钟，说明url有问题，直接返回
-                {'code': 1}
+                {'status': 1}
                 '''
                 if err_time == 0:
                     err_time = int(time.time())
@@ -94,18 +94,3 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                         return {'code': 1, 'data': url}
                     else:
                         continue
-
-    # 创建COOKIE
-    def create_cookie(self):
-        url = 'https://www.jstor.org/'
-        try:
-            resp = self.getResp(url=url, mode='GET')
-            if resp['code'] == 0:
-                # print(resp.cookies)
-                self.logging.info('cookie创建成功')
-                return requests.utils.dict_from_cookiejar(resp['data'].cookies)
-
-        except:
-            self.logging.error('cookie创建异常')
-            return None
-

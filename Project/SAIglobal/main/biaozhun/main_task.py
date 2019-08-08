@@ -12,14 +12,14 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.IHSmarkit.middleware import download_middleware
-from Project.IHSmarkit.service import service
-from Project.IHSmarkit.dao import dao
-from Project.IHSmarkit import config
+from Project.SAIglobal.middleware import download_middleware
+from Project.SAIglobal.service import service
+from Project.SAIglobal.dao import dao
+from Project.SAIglobal import config
 
-log_file_dir = 'IHSmarkit'  # LOG日志存放路径
-LOGNAME = 'IHSmarkit_标准_task'  # LOG名
-NAME = 'IHSmarkit_标准_task'  # 爬虫名
+log_file_dir = 'SAIglobal'  # LOG日志存放路径
+LOGNAME = 'SAIglobal_标准_task'  # LOG名
+NAME = 'SAIglobal_标准_task'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = INSERT_DATA_NUMBER = False # 爬虫名入库, 记录抓取数据量
@@ -46,7 +46,7 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
         # 入口种子
-        self.index_url = 'https://global.ihs.com/standards.cfm?&rid=IHS'
+        self.index_url = 'https://infostore.saiglobal.com/en-au/Search/Standard/?productFamily=STANDARD'
         # 列表页种子存放列表
         self.catalog_url_list = []
         # 记录已存储种子数量
@@ -68,32 +68,26 @@ class SpiderMain(BastSpiderMain):
                 return None
 
     def getCatalog(self):
-        # 访问发布单位列表页
+        # 访问入口页，获取所有发布单位
         index_resp = self.__getResp(func=self.download_middleware.getResp,
                                     url=self.index_url,
                                     mode='GET')
         if not index_resp:
-            LOGGING.error('发布单位列表页面响应获取失败, url: {}'.format(self.index_url))
+            LOGGING.error('入口页面响应获取失败, url: {}'.format(self.index_url))
             return
 
         index_text = index_resp.text
 
-        # 获取列表中的发布单位url
-        publish_url_list = self.server.getPublishUrlList(resp=index_text)
+        # 获取列表中的所有发布单位url
+        publish_url_list = self.server.getPublishUrlList(resp=index_text, index_url=self.index_url)
         if not publish_url_list:
             return
 
         # print(publish_url_list)
         print(len(publish_url_list))
 
-        # 访问每个发布单位url，获取列表页种子
-        for publish in publish_url_list:
-            # 存入数据库
-            self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=publish, ws='IHSmarkit', es='出版商')
-
-            # 获取出版商详情种子
-            publish_url = publish['url']
-            # print(publish_url)
+        # 访问每个发布单位url，获取所有类别种子
+        for publish_url in publish_url_list:
             # 访问发布单位页面
             catalog_resp = self.__getResp(func=self.download_middleware.getResp,
                                         url=publish_url,
@@ -106,13 +100,11 @@ class SpiderMain(BastSpiderMain):
             catalog_text = catalog_resp.text
 
             # 获取列表页种子
-            catalog_url = self.server.getCatalogUrl(resp=catalog_text)
+            catalog_url = self.server.getCatalogUrl(resp=catalog_text, pub_url=publish_url)
             # print(catalog_url)
-            self.catalog_url_list.append(catalog_url)
-
-        print(len(self.catalog_url_list))
-        # 队列任务
-        self.dao.QueueJobTask(key=config.REDIS_CATALOG, data=self.catalog_url_list)
+            # print(len(catalog_url))
+            # 队列任务
+            self.dao.QueueJobTask(key=config.REDIS_CATALOG, data=catalog_url)
 
     def run(self, catalog_url):
         # 请求列表页，获取首页响应
@@ -128,13 +120,13 @@ class SpiderMain(BastSpiderMain):
         LOGGING.info('已进入列表第1页')
         # 获取首页详情url
         first_urls = self.server.getDetailUrl(resp=first_resp.text)
+        # print(first_urls)
         for url in first_urls:
             # 保存url
             self.num += 1
             LOGGING.info('当前已抓种子数量: {}'.format(self.num))
             # 存入数据库
-            self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, ws='IHSmarkit', es='标准')
-            # detail_urls.append(url)
+            self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, ws='SAI GLOBAL', es='标准')
 
         # 判断是否有下一页
         next_page = self.server.hasNextPage(resp=first_resp.text)
@@ -168,10 +160,7 @@ class SpiderMain(BastSpiderMain):
                     self.num += 1
                     LOGGING.info('当前已抓种子数量: {}'.format(self.num))
                     # 存入数据库
-                    self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, ws='IHSmarkit', es='标准')
-                    # detail_urls.append(url)
-
-                # print(len(detail_urls))
+                    self.dao.saveTaskToMysql(table=config.MYSQL_STANTARD, memo=url, ws='SAI GLOBAL', es='标准')
 
                 # 判断是否有下一页
                 next_page = self.server.hasNextPage(resp=next_text)
