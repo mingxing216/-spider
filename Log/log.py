@@ -8,6 +8,7 @@ import logging
 import time
 import os
 from logging import FileHandler
+from logging.handlers import TimedRotatingFileHandler
 import traceback
 import sys
 
@@ -41,6 +42,7 @@ class ILog(object):
         if not self.logger.handlers:
             filename = os.path.dirname(__file__) + os.sep + "../../../../../opt/Log/{}/{}_{}.log".format(self.file_dir, self.name, now_date)
             log_formatter = logging.Formatter('%(asctime)s {} %(levelname)s %(message)s'.format(self.name))
+            # fileTimeHandler = TimedRotatingFileHandler(filename, when='D', interval=1, backupCount=0)
             log_handler = FileHandler(filename)
             log_handler.setFormatter(log_formatter)
             log_handler.suffix = '%Y%m%d'

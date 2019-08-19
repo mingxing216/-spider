@@ -96,7 +96,7 @@ class BiaoZhunServer(object):
     def getBiaoZhunBianHao(self, select):
         selector = select
         try:
-            biaozhunhao = selector.xpath("//h1[contains(@class, 'basic-info-header-docno')]/text()").extract_first().strip()
+            biaozhunhao = selector.xpath("//h1/text()").extract_first().strip()
 
         except Exception:
             biaozhunhao = ""
@@ -107,13 +107,228 @@ class BiaoZhunServer(object):
     def getTitle(self, select):
         selector = select
         try:
-            tit = selector.xpath("//h1[@class='doc-title']/text()").extract_first()
+            tit = selector.xpath("//h1/following-sibling::p[1]/text()").extract_first()
             title = re.sub(r"\n", "", tit).strip()
 
         except Exception:
             title = ""
 
         return title
+
+    # 获取html类型值（摘要、描述）
+    def getHtmlField(self, html, value):
+        tree = etree.HTML(html)
+        try:
+            result = tree.xpath("//a[contains(text(), '" + value + "')]/../following-sibling::div[1]//div[@class='wysiwyg-content']/p")[0]
+            htmlValue = re.sub(r"[\n\r\t]", "", tostring(result).decode('utf-8')).strip()
+
+        except Exception:
+            htmlValue = ""
+
+        return htmlValue
+
+    # 获取文本类型值（标准类型、标准状态、标准发布组织）
+    def getField(self, select, para):
+        selector = select
+        try:
+            result = selector.xpath("//strong[contains(text(), '" + para + "')]/../following-sibling::td[1]/text()").extract_first().strip()
+
+        except Exception:
+            result = ""
+
+        return result
+
+    # 获取标准发布组织
+    def getFaBuZuZhi(self, select):
+        selector = select
+        try:
+            result = selector.xpath("//span[@id='lnkPublisherGeneral']/text()").extract_first().strip()
+
+        except Exception:
+            result = ""
+
+        return result
+
+    # 获取序列字段（被代替标准、代替标准）
+    def getXuLieField(self, select, para):
+        result = []
+        selector = select
+        try:
+            biaozhun = selector.xpath("//strong[contains(text(), '" + para + "')]/../following-sibling::td[1]/ul/li/a")
+            for i in range(len(biaozhun)):
+                dict = {}
+                try:
+                    dict['标准号'] = biaozhun[i].xpath("./text()").extract_first().strip()
+                except Exception:
+                    dict['标准号'] = ""
+                try:
+                    dict['链接'] = 'https://infostore.saiglobal.com' + biaozhun[i].xpath("./@href").extract_first().strip()
+                except Exception:
+                    dict['链接'] = ""
+
+                result.append(dict)
+
+        except Exception:
+            return result
+
+        return result
+
+    # 获取引用标准
+    def getYinYongBiaoZhun(self, select):
+        result = []
+        selector = select
+        try:
+            biaozhun = selector.xpath("//a[contains(text(), 'Standards Referenced By This Book')]/../following-sibling::div[1]//table//a")
+            for i in range(len(biaozhun)):
+                dict = {}
+                try:
+                    dict['标准号'] = biaozhun[i].xpath("./text()").extract_first().strip()
+                except Exception:
+                    dict['标准号'] = ""
+                try:
+                    dict['链接'] = 'https://infostore.saiglobal.com' + biaozhun[i].xpath("./@href").extract_first().strip()
+                except Exception:
+                    dict['链接'] = ""
+                try:
+                    dict['标题'] = biaozhun[i].xpath("../../following-sibling::td[1]/text()").extract_first().strip()
+                except Exception:
+                    dict['标题'] = ""
+
+                result.append(dict)
+
+        except Exception:
+            return result
+
+        return result
+
+    # 获取国际标准类别
+    def getGuoJiBiaoZhunLeiBie(self, html):
+        tree = etree.HTML(html)
+        result_list = []
+        try:
+            result = tree.xpath("//h2[text()='Category']/../small")
+            for i in result:
+                lei = re.sub(r"[\n\r\t]", "", tostring(i).decode('utf-8')).strip()
+                result_list.append(lei)
+            leibie = '\n'.join(result_list)
+
+        except Exception:
+            leibie = ""
+
+        return leibie
+
+    # 获取等效标准
+    def getDengXiaoBiaoZhun(self, select):
+        result = []
+        selector = select
+        try:
+            biaozhun = selector.xpath("//a[contains(text(), 'International Equivalents – Equivalent Standard(s) & Relationship')]/../following-sibling::div[1]//table//a")
+            for i in range(len(biaozhun)):
+                dict = {}
+                try:
+                    dict['Equivalent Standard(s)'] = biaozhun[i].xpath("./text()").extract_first().strip()
+                except Exception:
+                    dict['Equivalent Standard(s)'] = ""
+                try:
+                    dict['链接'] = 'https://infostore.saiglobal.com' + biaozhun[i].xpath("./@href").extract_first().strip()
+                except Exception:
+                    dict['链接'] = ""
+                try:
+                    dict['Relationship'] = biaozhun[i].xpath("../following-sibling::td[1]/text()").extract_first().strip()
+                except Exception:
+                    dict['Relationship'] = ""
+
+                result.append(dict)
+
+        except Exception:
+            return result
+
+        return result
+
+    # 关联文档
+    def guanLianWenDang(self, select):
+        selector = select
+        e = {}
+        try:
+            e['url'] = selector.xpath("//a[text()='Preview']/@href").extract_first().strip()
+            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
+            e['ss'] = '文档'
+        except Exception:
+            return e
+
+        return e
+
+    # 获取variationSKU
+    def getSku(self, select):
+        selector = select
+        try:
+            faburiqi = selector.xpath("//select[contains(@class, 'ddlProductVariations')]/option[@selected]/@value").extract_first().strip()
+
+        except Exception:
+            faburiqi = ""
+
+        return faburiqi
+
+    # 获取发布日期
+    def getFaBuRiQi(self, json):
+        json_dict = json
+        try:
+            faburiqi = json_dict['d']['PublicationDate']
+
+        except Exception:
+            faburiqi = ""
+
+        return faburiqi
+
+    # 获取页数
+    def getYeShu(self, json):
+        json_dict = json
+        try:
+            yeshu = json_dict['d']['Pages']
+
+        except Exception:
+            yeshu = ""
+
+        return yeshu
+
+    # 获取国际标准书号
+    def getIsbn(self, json):
+        json_dict = json
+        try:
+            isbn = json_dict['d']['ISBN']
+
+        except Exception:
+            isbn = ""
+
+        return isbn
+
+    # 获取价格接口参数及价格名称
+    def getName(self, select):
+        selector = select
+        price_list = []
+        try:
+            skus = selector.xpath("//select[contains(@class, 'ddlProductVariations')]/option/@value").extract()
+            names = selector.xpath("//select[contains(@class, 'ddlProductVariations')]/option/text()").extract()
+            for i in range(len(skus)):
+                sku = skus[i]
+                name = names[i]
+                price_list.append((sku, name))
+
+        except Exception:
+            return price_list
+
+        return price_list
+
+    # 获取价格
+    def getPrice(self, json):
+        json_dict = json
+        try:
+            price = '$' + str(json_dict['d']['Price'])
+
+        except Exception:
+            price = ""
+
+        return price
 
     # 获取版本
     def getBanBen(self, select):
@@ -127,122 +342,7 @@ class BiaoZhunServer(object):
 
         return banben
 
-    # 获取出版日期
-    def getChuBanRiQi(self, select):
-        selector = select
-        try:
-            chuban = selector.xpath("//ul[@class='product-details-list']/li/strong[contains(text(), 'Published Date')]/../text()").extract()
-            chubanriqi = re.sub(r"[\n\r\t]", "", ''.join(chuban)).strip()
 
-        except Exception:
-            chubanriqi = ""
-
-        return chubanriqi
-
-    # 获取字段值
-    def getField(self, select, para):
-        selector = select
-        try:
-            field = selector.xpath("//ul[@class='product-details-list']/li/strong[contains(text(), '" +  para + "')]/../text()").extract()
-            fieldValue = re.sub(r"[\n\r\t]", "", ''.join(field)).strip()
-
-        except Exception:
-            fieldValue = ""
-
-        return fieldValue
-
-    # 获取标准发布组织
-    def getFaBuZuZhi(self, select):
-        selector = select
-        try:
-            zuzhi = selector.xpath("//ul[@class='product-details-list']/li/strong[contains(text(), 'Published By')]/following-sibling::a[1]/text()").extract_first().strip()
-
-        except Exception:
-            zuzhi = ""
-
-        return zuzhi
-
-    # 获取摘要
-    def getZhaiYao(self, html):
-        tree = etree.HTML(html)
-        try:
-            result = tree.xpath("//div[@class='abstract-section']")[0]
-            zhaiyao = re.sub(r"[\n\r\t]", "", tostring(result).decode('utf-8')).strip()
-
-        except Exception:
-            zhaiyao = ""
-
-        return zhaiyao
-
-    # 获取被代替标准
-    def getBeiDaiTiBiaoZhun(self, select):
-        result = []
-        selector = select
-        try:
-            biaozhunhao = selector.xpath("//div[@class='doc-detail-button']/following-sibling::div[@class='hidden']/a[@class='doc-detail-link']/text()").extract()
-            link = selector.xpath("//div[@class='doc-detail-button']/following-sibling::div[@class='hidden']/a[@class='doc-detail-link']/@href").extract()
-            banben = selector.xpath("//div[@class='doc-detail-button']/following-sibling::div[@class='hidden']/div[@class='document-history-popup-revision']/span/text()").extract()
-            for i in range(len(biaozhunhao)):
-                dict = {}
-                try:
-                    dict['标准号'] = biaozhunhao[i].strip()
-                except Exception:
-                    dict['标准号'] = ""
-                try:
-                    dict['链接'] = link[i].strip()
-                except Exception:
-                    dict['链接'] = ""
-                try:
-                    dict['版本'] = re.findall(r"(.*Edition)", banben[i])[0].strip()
-                except Exception:
-                    dict['版本'] = ""
-                try:
-                    dict['出版日期'] = re.findall(r"Edition,\s+(.*)", banben[i])[0].strip()
-                except Exception:
-                    dict['出版日期'] = ""
-                result.append(dict)
-
-        except Exception:
-            return result
-
-        return result
-
-    # 获取代替标准
-    def getDaiTiBiaoZhun(self, select):
-        result = []
-        selector = select
-        try:
-            biaozhun = selector.xpath("//ul[@class='product-details-list']/li/strong[contains(text(), 'Superseded By')]/../a")
-            for i in range(len(biaozhun)):
-                dict = {}
-                try:
-                    dict['标准号'] = biaozhun[i].xpath("./text()").extract_first().strip()
-                except Exception:
-                    dict['标准号'] = ""
-                try:
-                    dict['链接'] = biaozhun[i].xpath("./@href").extract_first().strip()
-                except Exception:
-                    dict['链接'] = ""
-
-                result.append(dict)
-
-        except Exception:
-            return result
-
-        return result
-
-   # 关联机构
-    def guanLianJiGou(self, select):
-        selector = select
-        e = {}
-        try:
-            e['url'] = selector.xpath("//ul[@class='product-details-list']/li/strong[contains(text(), 'Published By')]/following-sibling::a[1]/@href").extract_first().strip()
-            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-            e['ss'] = '机构'
-        except Exception:
-            return e
-
-        return e
 
    # 获取价格
     def getJiaGe(self, select):
@@ -275,8 +375,7 @@ class BiaoZhunServer(object):
         return result
 
    # 关联标准
-    def guanLianBiaoZhun(self, select, url):
-        selector = select
+    def guanLianBiaoZhun(self, url):
         e = {}
         try:
             e['url'] = url

@@ -255,18 +255,19 @@ class SpiderMain(BastSpiderMain):
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         xueKeLeiBie = task_data['xueKeLeiBie']
 
-        # # 获取cookie
-        # self.cookie_dict = self.download_middleware.create_cookie()
-        # # cookie创建失败，停止程序
-        # if not self.cookie_dict:
-        #     # 逻辑删除任务
-        #     self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-        #     return
+        # 获取cookie
+        self.cookie_dict = self.download_middleware.create_cookie()
+        # cookie创建失败，停止程序
+        if not self.cookie_dict:
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            return
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
-                              mode='GET')
+                              mode='GET',
+                              cookies=self.cookie_dict)
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
@@ -337,7 +338,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=16, lockname=config.REDIS_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=8, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:

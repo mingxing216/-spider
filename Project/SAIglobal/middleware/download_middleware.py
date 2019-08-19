@@ -44,6 +44,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'Accept-Encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
+                'Content-Type':'application/json; charset=UTF-8', # post RequestPayload请求需要
                 'Connection': 'close',
                 'Host': 'infostore.saiglobal.com',
                 'User-Agent': user_agent_u.get_ua()

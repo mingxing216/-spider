@@ -41,7 +41,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 # 'Scheme': 'https',
                 # 'Cache-Control': 'max-age=0',
                 'Upgrade-Insecure-Requests': '1',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
+                # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'Accept-Encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
                 'Connection': 'close',

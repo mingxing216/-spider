@@ -3,20 +3,20 @@
 '''
 
 '''
-from gevent import monkey
-# 猴子补丁一定要先打，不然就会报错
-monkey.patch_all()
-import gevent
 import sys
 import os
 import time
 import copy
 import traceback
 import hashlib
+import json
 import datetime
 import asyncio
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
+import gevent
+from gevent import monkey
+monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
@@ -54,6 +54,7 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
+        self.xml_url = 'https://infostore.saiglobal.com/Components/Service/HomePageService.asmx/GetProductVariationDetail'
 
     def __getResp(self, func, url, mode, data=None, cookies=None):
         # while 1:
@@ -77,35 +78,58 @@ class SpiderMain(BastSpiderMain):
 
     # 获取价格实体字段
     def price(self, select, title, url):
-        price_data = {}
-        # 标题
-        price_data['title'] = title
-        # 价格
-        price_data['jiaGe'] = self.server.getJiaGe(select)
-        # 关联标准
-        price_data['guanLianBiaoZhun'] = self.server.guanLianBiaoZhun(select, url)
-        # ===================公共字段
-        # url
-        price_data['url'] = url
-        # 生成key
-        price_data['key'] = url
-        # 生成sha
-        price_data['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        # 生成ss ——实体
-        price_data['ss'] = '价格'
-        # 生成clazz ——层级关系
-        price_data['clazz'] = '价格'
-        # 生成es ——栏目名称
-        price_data['es'] = '标准'
-        # 生成ws ——目标网站
-        price_data['ws'] = 'IHS markit'
-        # 生成biz ——项目
-        price_data['biz'] = '文献大数据'
-        # 生成ref
-        price_data['ref'] = ''
+        # 获取价格接口访问参数
+        names = self.server.getName(select)
+        if names:
+            # 价格数据存储字典
+            price_data = {}
+            # 标题
+            price_data['title'] = title
+            # 价格
+            price_data['shangPinJiaGe'] = []
+            for name in names:
+                payloadData = {
+                    'currencyMnemonic': 'AUD',
+                    'languageID': 0,
+                    'variationSKU': name[0]
+                }
+                # 原网页post请求参数为Request Payload,而非Form Data。所以参数变为json字符串
+                jsonData = json.dumps(payloadData)
 
-        # 保存数据到Hbase
-        self.dao.saveDataToHbase(data=price_data)
+                respon = self.__getResp(func=self.download_middleware.getResp,
+                                        url=self.xml_url,
+                                        mode='POST',
+                                        data=jsonData)
+                # 响应结果变为json对象
+                json_dict = json.loads(respon.text)
+                price_dict = {}
+                price_dict['PRODUCT FORMAT'] = name[1]
+                price_dict['Price'] = self.server.getPrice(json=json_dict)
+                price_data['shangPinJiaGe'].append(price_dict)
+            # 关联标准
+            price_data['guanLianBiaoZhun'] = self.server.guanLianBiaoZhun(url)
+            # ===================公共字段
+            # url
+            price_data['url'] = url
+            # 生成key
+            price_data['key'] = url
+            # 生成sha
+            price_data['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
+            # 生成ss ——实体
+            price_data['ss'] = '价格'
+            # 生成clazz ——层级关系
+            price_data['clazz'] = '价格'
+            # 生成es ——栏目名称
+            price_data['es'] = '标准'
+            # 生成ws ——目标网站
+            price_data['ws'] = 'SAI GLOBAL'
+            # 生成biz ——项目
+            price_data['biz'] = '文献大数据'
+            # 生成ref
+            price_data['ref'] = ''
+
+            # 保存数据到Hbase
+            self.dao.saveDataToHbase(data=price_data)
 
     # 获取标准实体字段
     def standard(self, save_data, select, html, url):
@@ -113,26 +137,67 @@ class SpiderMain(BastSpiderMain):
         save_data['biaoZhunBianHao'] = self.server.getBiaoZhunBianHao(select)
         # 获取标题
         save_data['title'] = self.server.getTitle(select)
-        # 获取版本
-        save_data['banBen'] = self.server.getBanBen(select)
-        # 获取出版日期
-        save_data['chuBanRiQi'] = self.server.getField(select, 'Published Date')
+        # 获取摘要
+        save_data['zhaiYao'] = self.server.getHtmlField(html, 'Abstract')
+        # 获取描述
+        save_data['miaoShu'] = self.server.getHtmlField(html, 'Scope')
+        # 获取标准类型
+        save_data['biaoZhunLeiXing'] = self.server.getField(select, 'Document Type')
         # 获取标准状态
-        save_data['biaoZhunZhuangTai'] = self.server.getField(select, 'Status')
-        # 获取语种
-        save_data['yuZhong'] = self.server.getField(select, 'Document Language')
+        save_data['biaoZhunZhaungTai'] = self.server.getField(select, 'Status')
         # 获取标准发布组织
         save_data['biaoZhunFaBuZuZhi'] = self.server.getFaBuZuZhi(select)
-        # 获取页数
-        save_data['yeShu'] = self.server.getField(select, 'Page Count')
-        # 获取摘要
-        save_data['ZhaiYao'] = self.server.getZhaiYao(html)
         # 获取被代替标准
-        save_data['beiDaiTiBiaoZhun'] = self.server.getBeiDaiTiBiaoZhun(select)
+        save_data['beiDaiTiBiaoZhun'] = self.server.getXuLieField(select, 'Supersedes')
         # 获取代替标准
-        save_data['daiTiBiaoZhun'] = self.server.getDaiTiBiaoZhun(select)
-        # 获取关联机构
-        save_data['guanLianJiGou'] = self.server.guanLianJiGou(select)
+        save_data['daiTiBiaoZhun'] = self.server.getXuLieField(select, 'Superseded By')
+        # 获取引用标准
+        save_data['yinYongBiaoZhun'] = self.server.getYinYongBiaoZhun(select)
+        # 获取国际标准类别
+        save_data['guoJiBiaoZhunLeiBie'] = self.server.getGuoJiBiaoZhunLeiBie(html)
+        # 获取等效标准
+        save_data['dengXiaoBiaoZhun'] = self.server.getDengXiaoBiaoZhun(select)
+        # 获取关联文档
+        save_data['guanLianWenDang'] = self.server.guanLianWenDang(select)
+        if save_data['guanLianWenDang']:
+            # 深拷贝关联文档字典，目的为了修改拷贝的内容后，原文档字典不变
+            document = copy.deepcopy(save_data['guanLianWenDang'])
+            document['parentUrl'] = url
+            document['title'] = save_data['title']
+            # 存储文档种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=document, ws='SAI GLOBAL', es='标准')
+
+        # 获取variationSKU参数
+        sku = self.server.getSku(select)
+        if sku:
+            payloadData = {
+                'currencyMnemonic': 'AUD',
+                'languageID': 0,
+                'variationSKU': sku
+            }
+            # post请求参数变为json字符串
+            jsonData = json.dumps(payloadData)
+
+            respon = self.__getResp(func=self.download_middleware.getResp,
+                                    url=self.xml_url,
+                                    mode='POST',
+                                    data=jsonData)
+            # 响应结果变为json对象
+            json_dict = json.loads(respon.text)
+
+            # 获取发布日期
+            save_data['faBuRiQi'] = self.server.getFaBuRiQi(json=json_dict)
+            # 获取页数
+            save_data['yeShu'] = self.server.getYeShu(json=json_dict)
+            # 获取国际标准书号
+            save_data['ISBN'] = self.server.getIsbn(json=json_dict)
+        else:
+            # 获取发布日期
+            save_data['faBuRiQi'] = ""
+            # 获取页数
+            save_data['yeShu'] = ""
+            # 获取国际标准书号
+            save_data['ISBN'] = ""
 
         # ============价格实体
         self.price(select, save_data['title'], url)
@@ -155,7 +220,6 @@ class SpiderMain(BastSpiderMain):
             return
 
         response = resp.text
-        # print(response)
 
         # 转为selector选择器
         selector = self.server.getSelector(response)
@@ -176,7 +240,7 @@ class SpiderMain(BastSpiderMain):
         # 生成es ——栏目名称
         save_data['es'] = '标准'
         # 生成ws ——网站名称
-        save_data['ws'] = 'IHS markit'
+        save_data['ws'] = 'SAI GLOBAL'
         # 生成biz ——项目名称
         save_data['biz'] = '文献大数据'
         # 生成ref
@@ -188,10 +252,8 @@ class SpiderMain(BastSpiderMain):
     def run(self, task):
         # 创建数据存储字典
         save_data = {}
-
         # 获取字段值存入字典并返回sha
         sha = self.handle(task=task, save_data=save_data)
-
         # 保存数据到Hbase
         if not save_data:
             LOGGING.info('没有获取数据, 存储失败')
@@ -201,14 +263,13 @@ class SpiderMain(BastSpiderMain):
             return
 
         self.dao.saveDataToHbase(data=save_data)
-
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_STANTARD, sha=sha)
+        # self.dao.deleteTask(table=config.MYSQL_STANTARD, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=50, lockname=config.REDIS_STANTARD_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=24, lockname=config.REDIS_STANTARD_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -229,21 +290,22 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                LOGGING.info('队列中已无任务，结束程序')
-                return
+                time.sleep(3)
+                continue
+                # LOGGING.info('队列中已无任务，结束程序')
+                # return
 
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{"url": "https://global.ihs.com/doc_detail.cfm?&rid=IHS&input_search_filter=%28NFPA%29&item_s_key=00007531&item_key_date=171230&input_doc_number=&input_doc_title=&org_code=%28NFPA%29#product-details-list"}')
+        # main.start()
+        main.run(task='{"url": "https://infostore.saiglobal.com/en-au/Standards/AS-ISO-IEC-25063-2019-1154349_SAIG_AS_AS_2740572/"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
     begin_time = time.time()
-
     process_start()
 
     # po = Pool(1)
