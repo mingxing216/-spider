@@ -10,22 +10,24 @@ import copy
 import traceback
 import hashlib
 import datetime
+import asyncio
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 import gevent
 from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
 monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.SAIglobal.middleware import download_middleware
-from Project.SAIglobal.service import service
-from Project.SAIglobal.dao import dao
-from Project.SAIglobal import config
+from Project.Engineering360.middleware import download_middleware
+from Project.Engineering360.service import service
+from Project.Engineering360.dao import dao
+from Project.Engineering360 import config
 
-log_file_dir = 'SAIglobal'  # LOG日志存放路径
-LOGNAME = 'SAIglobal_文档_data'  # LOG名
-NAME = 'SAIglobal_文档_data'  # 爬虫名
+log_file_dir = 'Engineering360'  # LOG日志存放路径
+LOGNAME = 'Engineering360_标准_data'  # LOG名
+NAME = 'Engineering360_标准_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -56,7 +58,7 @@ class SpiderMain(BastSpiderMain):
 
     def __getResp(self, func, url, mode, data=None, cookies=None):
         # while 1:
-        # 最多访问页面10次
+        # 发现验证码，最多访问页面10次
         for i in range(10):
             resp = func(url=url, mode=mode, data=data, cookies=cookies)
             if resp['code'] == 0:
@@ -74,32 +76,61 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('页面出现验证码: {}'.format(url))
             return None
 
+    # 获取标准实体字段
+    def standard(self, save_data, select, html, url):
+        # 获取标准编号
+        save_data['biaoZhunBianHao'] = self.server.getBiaoZhunBianHao(select)
+        # 获取标题
+        save_data['title'] = self.server.getTitle(select)
+        # 获取标准发布组织
+        save_data['biaoZhunFaBuZuZhi'] = self.server.getFaBuZuZhi(select)
+        # 获取出版日期
+        save_data['chuBanRiQi'] = self.server.getField(select, 'Publication Date')
+        # 获取标准状态
+        save_data['biaoZhunZhuangTai'] = self.server.getField(select, 'Status')
+        # 获取页数
+        save_data['yeShu'] = self.server.getField(select, 'Page Count')
+        # 获取描述
+        save_data['miaoShu'] = self.server.getMiaoShu(html)
+        # 获取被代替标准
+        save_data['beiDaiTiBiaoZhun'] = self.server.getBeiDaiTiBiaoZhun(select)
+        # 获取引用标准
+        save_data['yinYongBiaoZhun'] = self.server.getYinYongBiaoZhun(select)
+        # 获取代替标准
+        save_data['daiTiBiaoZhun'] = self.server.getDaiTiBiaoZhun(select)
+        # 获取国际标准分类号
+        save_data['guoJiBiaoZhunFenLeiHao'] = self.server.getFenLeiHao(select)
+        # 关联机构
+        save_data['guanLianJiGou'] = self.server.guanLianJiGou(select)
+        # 存储机构种子
+        if save_data['guanLianJiGou']:
+            self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=save_data['guanLianJiGou'], ws='Engineering360', es='标准')
+
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
+
         url = task_data['url']
-        sha = task_data['sha']
-        parentUrl = task_data['parentUrl']
-        title = task_data['title']
-        # 获取标题
-        save_data['title'] = title
-        # 获取URL
-        save_data['xiaZaiLianJie'] = url
-        # 获取格式
-        save_data['geShi'] = ""
-        # 获取大小
-        save_data['daXiao'] = ""
-        # 获取标签
-        save_data['biaoQian'] = ""
-        # 获取来源网站
-        save_data['laiYuanWangZhan'] = ""
-        # 获取关联标准
-        e = {}
-        e['url'] = parentUrl
-        e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-        e['ss'] = '标准'
-        save_data['guanLianBiaoZhun'] = e
-        # =========================公共字段
+        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
+
+        # 获取页面响应
+        resp = self.__getResp(func=self.download_middleware.getResp,
+                              url=url,
+                              mode='GET')
+        if not resp:
+            LOGGING.error('页面响应失败, url: {}'.format(url))
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_STANTARD, sha=sha)
+            return
+
+        response = resp.text
+        # print(response)
+        # 转为selector选择器
+        selector = self.server.getSelector(response)
+        # 获取标准实体字段
+        self.standard(save_data=save_data, select=selector, html=response, url=url)
+
+        # ===================公共字段
         # url
         save_data['url'] = url
         # 生成key
@@ -107,14 +138,14 @@ class SpiderMain(BastSpiderMain):
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
-        save_data['ss'] = '文档'
+        save_data['ss'] = '标准'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '文档_标准文档'
+        save_data['clazz'] = '标准_国际标准'
         # 生成es ——栏目名称
         save_data['es'] = '标准'
-        # 生成ws ——目标网站
-        save_data['ws'] = 'SAI GLOBAL'
-        # 生成biz ——项目
+        # 生成ws ——网站名称
+        save_data['ws'] = 'Engineering360'
+        # 生成biz ——项目名称
         save_data['biz'] = '文献大数据'
         # 生成ref
         save_data['ref'] = ''
@@ -136,12 +167,13 @@ class SpiderMain(BastSpiderMain):
             return
         self.dao.saveDataToHbase(data=save_data)
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_DOCUMENT, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_STANTARD, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=32, lockname=config.REDIS_DOCUMENT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=24, lockname=config.REDIS_STANTARD_LOCK)
+            # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -162,17 +194,14 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                time.sleep(3)
-                continue
-                # LOGGING.info('队列中已无任务，结束程序')
-                # return
-
+                LOGGING.info('队列中已无任务，结束程序')
+                return
 
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{"url": "https://infostore.saiglobal.com/preview/480232435226.pdf?sku=1154349_SAIG_AS_AS_2740572", "sha": "e31a210696e020af8f3ce2e6715765cc7bd6600e", "ss": "文档", "parentUrl": "https://infostore.saiglobal.com/en-au/Standards/AS-ISO-IEC-25063-2019-1154349_SAIG_AS_AS_2740572/", "title": "Systems and software engineering - Systems and software product Quality Requirements and Evaluation (SQuaRE) - Common Industry Format (CIF) for usability: Context of use description"}')
+        # main.start()
+        main.run(task='{"url": "https://standards.globalspec.com/std/1684/din-iso-8116-6"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

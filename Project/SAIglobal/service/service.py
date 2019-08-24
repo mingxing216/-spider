@@ -330,50 +330,6 @@ class BiaoZhunServer(object):
 
         return price
 
-    # 获取版本
-    def getBanBen(self, select):
-        selector = select
-        try:
-            ban = selector.xpath("//ul[@class='product-details-list']/li/strong[contains(text(), 'Revision')]/following-sibling::span[1]/text()").extract_first()
-            banben = re.findall(r"(.*Edition)", ban)[0].strip()
-
-        except Exception:
-            banben = ""
-
-        return banben
-
-
-
-   # 获取价格
-    def getJiaGe(self, select):
-        result = []
-        selector = select
-        try:
-            geshi = selector.xpath("//div[contains(@class, 'pricing-format-cell')]/strong/text()").extract()
-            xiangxi = selector.xpath("//div[contains(@class, 'pricing-details-cell')]/div[contains(@class, 'label')]/text()").extract()
-            price = selector.xpath("//div[contains(@class, 'pricing-price-cell')]/span[@class='price-value-text']/text()").extract()
-            for i in range(len(geshi)):
-                dict = {}
-                try:
-                    dict['Format'] = geshi[i].strip()
-                except Exception:
-                    dict['Format'] = ""
-                try:
-                    dict['Details'] = xiangxi[i].strip()
-                except Exception:
-                    dict['Details'] = ""
-                try:
-                    dict['Price (USD)'] = price[i].strip()
-                except Exception:
-                    dict['Price (USD)'] = ""
-
-                result.append(dict)
-
-        except Exception:
-            return result
-
-        return result
-
    # 关联标准
     def guanLianBiaoZhun(self, url):
         e = {}
@@ -381,56 +337,6 @@ class BiaoZhunServer(object):
             e['url'] = url
             e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
             e['ss'] = '标准'
-        except Exception:
-            return e
-
-        return e
-
-class JiGouServer(object):
-    def __init__(self, logging):
-        self.logging = logging
-
-    # 数据类型转换
-    def getEvalResponse(self, task_data):
-        return ast.literal_eval(task_data)
-
-    # 获取选择器
-    def getSelector(self, resp):
-        selector = Selector(text=resp)
-
-        return selector
-
-    # 获取标题
-    def getTitle(self, select):
-        selector = select
-        try:
-            tit = selector.xpath("//h1[@class='standards_heading']/text()").extract_first()
-            title = re.sub(r"\n", "", tit).strip()
-
-        except Exception:
-            title = ""
-
-        return title
-
-    # 获取标识
-    def getBiaoShi(self, select):
-        selector = select
-        try:
-            pic = selector.xpath("//td/img/@src").extract_first().strip()
-
-        except Exception:
-            pic = ""
-
-        return pic
-
-    # 关联机构
-    def guanLianJiGou(self, url):
-        # 创建关联对象
-        e = {}
-        try:
-            e['url'] = url
-            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-            e['ss'] = '机构'
         except Exception:
             return e
 

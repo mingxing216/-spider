@@ -333,7 +333,7 @@ class Dao(object):
 
     # 物理删除任务
     def deleteTask(self, table, sha):
-        sql = "delete from {} where `sha` = '{}'".format(table, sha)
+        sql = "delete from {} where `sha` = '{}' and `del` = '0'".format(table, sha)
         try:
             self.mysql_client.execute(sql=sql)
             self.logging.info('任务已删除: {}'.format(sha))

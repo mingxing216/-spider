@@ -10,22 +10,24 @@ import copy
 import traceback
 import hashlib
 import datetime
+import asyncio
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 import gevent
 from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
 monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.SAIglobal.middleware import download_middleware
-from Project.SAIglobal.service import service
-from Project.SAIglobal.dao import dao
-from Project.SAIglobal import config
+from Project.Engineering360.middleware import download_middleware
+from Project.Engineering360.service import service
+from Project.Engineering360.dao import dao
+from Project.Engineering360 import config
 
-log_file_dir = 'SAIglobal'  # LOG日志存放路径
-LOGNAME = 'SAIglobal_文档_data'  # LOG名
-NAME = 'SAIglobal_文档_data'  # 爬虫名
+log_file_dir = 'Engineering360'  # LOG日志存放路径
+LOGNAME = 'Engineering360_机构_data'  # LOG名
+NAME = 'Engineering360_机构_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -39,7 +41,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.BiaoZhunServer(logging=LOGGING)
+        self.server = service.JiGouServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -77,29 +79,77 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
+
         url = task_data['url']
-        sha = task_data['sha']
-        parentUrl = task_data['parentUrl']
-        title = task_data['title']
+        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
+
+        # 获取页面响应
+        resp = self.__getResp(func=self.download_middleware.getResp,
+                              url=url,
+                              mode='GET')
+        if not resp:
+            LOGGING.error('页面响应失败, url: {}'.format(url))
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            return
+
+        text = resp.text
+
+        # 响应内容转为selector选择器
+        selector = self.server.getSelector(text)
+
+        # 图片url存储列表
+        img_list = []
         # 获取标题
-        save_data['title'] = title
-        # 获取URL
-        save_data['xiaZaiLianJie'] = url
-        # 获取格式
-        save_data['geShi'] = ""
-        # 获取大小
-        save_data['daXiao'] = ""
-        # 获取标签
-        save_data['biaoQian'] = ""
-        # 获取来源网站
-        save_data['laiYuanWangZhan'] = ""
-        # 获取关联标准
-        e = {}
-        e['url'] = parentUrl
-        e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-        e['ss'] = '标准'
-        save_data['guanLianBiaoZhun'] = e
-        # =========================公共字段
+        save_data['title'] = self.server.getTitle(select=selector)
+        # 获取标识
+        save_data['biaoShi'] = self.server.getBiaoShi(select=selector)
+        # 存入图片列表
+        if save_data['biaoShi']:
+            img_list.append(save_data['biaoShi'])
+        # 获取简介
+        save_data['jianJie'] = self.server.getJianJie(html=text)
+        # 获取简介中图片url
+        imgs = self.server.getJianJieUrl(select=selector)
+        # 存入图片列表
+        if imgs:
+            for img in imgs:
+                img_list.append(img)
+        # 获取通讯地址
+        save_data['tongXunDiZhi'] = self.server.getTongXunDiZhi(html=text)
+        # 获取电话
+        save_data['dianHua'] = self.server.getField(select=selector, para='Phone')
+        # 获取传真
+        save_data['chuanZhen'] = self.server.getField(select=selector, para='Fax')
+        # 获取企业类型
+        save_data['qiYeLeiXing'] = self.server.getField(select=selector, para='Business Type')
+        # 获取主页
+        save_data['zhuYe'] = self.server.getZhuYe(selector)
+        # 存储图片
+        if img_list:
+            for img in img_list:
+                img_dict = {}
+                img_dict['bizTitle'] = save_data['title']
+                img_dict['relEsse'] = self.server.guanLianJiGou(url)
+                img_dict['relPics'] = {}
+                img_url = img
+                # # 存储图片种子
+                # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
+                # 获取图片响应
+                media_resp = self.__getResp(func=self.download_middleware.getResp,
+                                            url=img_url,
+                                            mode='GET')
+                if not media_resp:
+                    LOGGING.error('图片响应失败, url: {}'.format(img_url))
+                    # 逻辑删除任务
+                    self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+                    return
+
+                img_content = media_resp.content
+                # 存储图片
+                self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
+
+        # ===================公共字段
         # url
         save_data['url'] = url
         # 生成key
@@ -107,14 +157,14 @@ class SpiderMain(BastSpiderMain):
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
-        save_data['ss'] = '文档'
+        save_data['ss'] = '机构'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '文档_标准文档'
+        save_data['clazz'] = '机构_标准职能机构'
         # 生成es ——栏目名称
         save_data['es'] = '标准'
-        # 生成ws ——目标网站
-        save_data['ws'] = 'SAI GLOBAL'
-        # 生成biz ——项目
+        # 生成ws ——网站名称
+        save_data['ws'] = 'Engineering360'
+        # 生成biz ——项目名称
         save_data['biz'] = '文献大数据'
         # 生成ref
         save_data['ref'] = ''
@@ -125,23 +175,20 @@ class SpiderMain(BastSpiderMain):
     def run(self, task):
         # 创建数据存储字典
         save_data = {}
+
         # 获取字段值存入字典并返回sha
         sha = self.handle(task=task, save_data=save_data)
+
         # 保存数据到Hbase
-        if not save_data:
-            LOGGING.info('没有获取数据, 存储失败')
-            return
-        if 'sha' not in save_data:
-            LOGGING.info('数据获取不完整, 存储失败')
-            return
         self.dao.saveDataToHbase(data=save_data)
+
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_DOCUMENT, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=32, lockname=config.REDIS_DOCUMENT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=24, lockname=config.REDIS_INSTITUTE_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -162,17 +209,14 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                time.sleep(3)
-                continue
-                # LOGGING.info('队列中已无任务，结束程序')
-                # return
-
+                LOGGING.info('队列中已无任务，结束程序')
+                return
 
 def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://infostore.saiglobal.com/preview/480232435226.pdf?sku=1154349_SAIG_AS_AS_2740572", "sha": "e31a210696e020af8f3ce2e6715765cc7bd6600e", "ss": "文档", "parentUrl": "https://infostore.saiglobal.com/en-au/Standards/AS-ISO-IEC-25063-2019-1154349_SAIG_AS_AS_2740572/", "title": "Systems and software engineering - Systems and software product Quality Requirements and Evaluation (SQuaRE) - Common Industry Format (CIF) for usability: Context of use description"}')
+        # main.run(task='{"url": "https://www.globalspec.com/supplier/profile/IECInternationalElectrotechnicalCommission"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

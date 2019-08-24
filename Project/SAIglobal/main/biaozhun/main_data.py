@@ -77,7 +77,7 @@ class SpiderMain(BastSpiderMain):
             return None
 
     # 获取价格实体字段
-    def price(self, select, title, url):
+    def price(self, select, title, url, sha):
         # 获取价格接口访问参数
         names = self.server.getName(select)
         if names:
@@ -93,13 +93,18 @@ class SpiderMain(BastSpiderMain):
                     'languageID': 0,
                     'variationSKU': name[0]
                 }
-                # 原网页post请求参数为Request Payload,而非Form Data。所以参数变为json字符串
+                # 原网页post请求参数为Request Payload,而非Form Data。所以参数变为json字符串,同时请求头需要加一行
                 jsonData = json.dumps(payloadData)
 
                 respon = self.__getResp(func=self.download_middleware.getResp,
                                         url=self.xml_url,
                                         mode='POST',
                                         data=jsonData)
+                if not respon:
+                    LOGGING.error('接口响应失败, url: {}'.format(self.xml_url))
+                    # 逻辑删除任务
+                    self.dao.deleteLogicTask(table=config.MYSQL_STANTARD, sha=sha)
+                    return "中断"
                 # 响应结果变为json对象
                 json_dict = json.loads(respon.text)
                 price_dict = {}
@@ -132,7 +137,7 @@ class SpiderMain(BastSpiderMain):
             self.dao.saveDataToHbase(data=price_data)
 
     # 获取标准实体字段
-    def standard(self, save_data, select, html, url):
+    def standard(self, save_data, select, html, url, sha):
         # 获取标准编号
         save_data['biaoZhunBianHao'] = self.server.getBiaoZhunBianHao(select)
         # 获取标题
@@ -182,6 +187,11 @@ class SpiderMain(BastSpiderMain):
                                     url=self.xml_url,
                                     mode='POST',
                                     data=jsonData)
+            if not respon:
+                LOGGING.error('接口响应失败, url: {}'.format(self.xml_url))
+                # 逻辑删除任务
+                self.dao.deleteLogicTask(table=config.MYSQL_STANTARD, sha=sha)
+                return "中断"
             # 响应结果变为json对象
             json_dict = json.loads(respon.text)
 
@@ -200,7 +210,7 @@ class SpiderMain(BastSpiderMain):
             save_data['ISBN'] = ""
 
         # ============价格实体
-        self.price(select, save_data['title'], url)
+        return self.price(select, save_data['title'], url, sha)
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -223,9 +233,11 @@ class SpiderMain(BastSpiderMain):
 
         # 转为selector选择器
         selector = self.server.getSelector(response)
-
-        self.standard(save_data=save_data, select=selector, html=response, url=url)
-
+        # =======获取标准实体，并返回结果
+        result = self.standard(save_data=save_data, select=selector, html=response, url=url, sha=sha)
+        # 如果返回结果为"中断"，该种子所抓数据不存储
+        if result:
+            return
         # ===================公共字段
         # url
         save_data['url'] = url
@@ -264,12 +276,12 @@ class SpiderMain(BastSpiderMain):
 
         self.dao.saveDataToHbase(data=save_data)
         # 删除任务
-        # self.dao.deleteTask(table=config.MYSQL_STANTARD, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_STANTARD, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=24, lockname=config.REDIS_STANTARD_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=1, lockname=config.REDIS_STANTARD_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -298,8 +310,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{"url": "https://infostore.saiglobal.com/en-au/Standards/AS-ISO-IEC-25063-2019-1154349_SAIG_AS_AS_2740572/"}')
+        main.start()
+        # main.run(task='{"url": "https://infostore.saiglobal.com/en-au/Standards/AS-2560-1-2002-124146_SAIG_AS_AS_261011/"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -307,7 +319,6 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
     process_start()
-
     # po = Pool(1)
     # for i in range(1):
     #     po.apply_async(func=process_start)
