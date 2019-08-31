@@ -3,10 +3,6 @@
 '''
 
 '''
-from gevent import monkey
-# 猴子补丁一定要先打，不然就会报错
-monkey.patch_all()
-import gevent
 import sys
 import os
 import time
@@ -16,6 +12,11 @@ import hashlib
 import datetime
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
+import gevent
+from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
+monkey.patch_all()
+
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
@@ -338,8 +339,9 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=8, lockname=config.REDIS_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=2, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
+            # print(task_list)
 
             if task_list:
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])

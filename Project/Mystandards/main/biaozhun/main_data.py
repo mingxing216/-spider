@@ -3,31 +3,31 @@
 '''
 
 '''
-from gevent import monkey
-# 猴子补丁一定要先打，不然就会报错
-monkey.patch_all()
-import gevent
 import sys
 import os
 import time
 import copy
 import traceback
 import hashlib
+import json
 import datetime
 import asyncio
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
+import gevent
+from gevent import monkey
+monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.IHSmarkit.middleware import download_middleware
-from Project.IHSmarkit.service import service
-from Project.IHSmarkit.dao import dao
-from Project.IHSmarkit import config
+from Project.Mystandards.middleware import download_middleware
+from Project.Mystandards.service import service
+from Project.Mystandards.dao import dao
+from Project.Mystandards import config
 
-log_file_dir = 'IHSmarkit'  # LOG日志存放路径
-LOGNAME = 'IHSmarkit_标准_data'  # LOG名
-NAME = 'IHSmarkit_标准_data'  # 爬虫名
+log_file_dir = 'Mystandards'  # LOG日志存放路径
+LOGNAME = 'Mystandards_标准_data'  # LOG名
+NAME = 'Mystandards_标准_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -54,7 +54,7 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
-        # self.cookie_dict = ''
+        self.xml_url = 'https://infostore.saiglobal.com/Components/Service/HomePageService.asmx/GetProductVariationDetail'
 
     def __getResp(self, func, url, mode, data=None, cookies=None):
         # while 1:
@@ -77,21 +77,22 @@ class SpiderMain(BastSpiderMain):
             return None
 
     # 获取价格实体字段
-    def price(self, select, title, url):
+    def price(self, select, title, url, sha):
+        # 价格数据存储字典
         price_data = {}
         # 标题
         price_data['title'] = title
-        # 价格
-        price_data['jiaGe'] = self.server.getJiaGe(select)
+        # 商品价格
+        price_data['shangPinJiaGe'] = self.server.getPrice(select=select)
         # 关联标准
-        price_data['guanLianBiaoZhun'] = self.server.guanLianBiaoZhun(select, url)
+        price_data['guanLianBiaoZhun'] = self.server.guanLianBiaoZhun(url=url, sha=sha)
         # ===================公共字段
         # url
         price_data['url'] = url
         # 生成key
         price_data['key'] = url
         # 生成sha
-        price_data['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
+        price_data['sha'] = sha
         # 生成ss ——实体
         price_data['ss'] = '价格'
         # 生成clazz ——层级关系
@@ -99,7 +100,7 @@ class SpiderMain(BastSpiderMain):
         # 生成es ——栏目名称
         price_data['es'] = '标准'
         # 生成ws ——目标网站
-        price_data['ws'] = 'IHS markit'
+        price_data['ws'] = 'mystandards'
         # 生成biz ——项目
         price_data['biz'] = '文献大数据'
         # 生成ref
@@ -109,34 +110,40 @@ class SpiderMain(BastSpiderMain):
         self.dao.saveDataToHbase(data=price_data)
 
     # 获取标准实体字段
-    def standard(self, save_data, select, html, url):
+    def standard(self, save_data, select, html, url, sha):
         # 获取标准编号
         save_data['biaoZhunBianHao'] = self.server.getBiaoZhunBianHao(select)
         # 获取标题
         save_data['title'] = self.server.getTitle(select)
-        # 获取版本
-        save_data['banBen'] = self.server.getBanBen(select)
         # 获取出版日期
-        save_data['chuBanRiQi'] = self.server.getField(select, 'Published Date')
-        # 获取标准状态
-        save_data['biaoZhunZhuangTai'] = self.server.getField(select, 'Status')
-        # 获取语种
-        save_data['yuZhong'] = self.server.getField(select, 'Document Language')
-        # 获取标准发布组织
-        save_data['biaoZhunFaBuZuZhi'] = self.server.getFaBuZuZhi(select)
+        save_data['chuBanRiQi'] = self.server.getChuBanRiQi(select)
         # 获取页数
-        save_data['yeShu'] = self.server.getField(select, 'Page Count')
-        # 获取摘要
-        save_data['ZhaiYao'] = self.server.getZhaiYao(html)
-        # 获取被代替标准
-        save_data['beiDaiTiBiaoZhun'] = self.server.getBeiDaiTiBiaoZhun(select)
-        # 获取代替标准
-        save_data['daiTiBiaoZhun'] = self.server.getDaiTiBiaoZhun(select)
-        # 获取关联机构
+        save_data['yeShu'] = self.server.getYeShu(select)
+        # 获取国别
+        save_data['guoBie'] = self.server.getGuoBie(select)
+        # 获取国际组织机构
+        save_data['guoJiZuZhiJiGou'] = self.server.getGuoJiZuZhiJiGou(select)
+        # 获取国际标准分类号
+        save_data['guoJiBiaoZhunFenLeiHao'] = self.server.getGuoJiBiaoZhunFenLeiHao(select)
+        # 获取描述
+        save_data['miaoShu'] = self.server.getMiaoShu(html)
+        # 关联文档
+        save_data['guanLianWenDang'] = self.server.guanLianWenDang(select)
+        if save_data['guanLianWenDang']:
+            # 深拷贝关联文档字典，目的为了修改拷贝的内容后，原文档字典不变
+            document = copy.deepcopy(save_data['guanLianWenDang'])
+            document['parentUrl'] = url
+            document['title'] = save_data['title']
+            # 存储文档种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=document, ws='mystandards', es='标准')
+        # 关联机构
         save_data['guanLianJiGou'] = self.server.guanLianJiGou(select)
+        if save_data['guanLianJiGou']:
+            # 存储机构种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=save_data['guanLianJiGou'], ws='mystandards', es='标准')
 
         # ============价格实体
-        self.price(select, save_data['title'], url)
+        self.price(select=select, title=save_data['title'], url=url, sha=sha)
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -144,6 +151,7 @@ class SpiderMain(BastSpiderMain):
 
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
+        zhuangtai = task_data['biaoZhunZhuangTai']
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
@@ -152,18 +160,20 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_STANTARD, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_STANDARD, sha=sha)
             return
 
         response = resp.text
-        # print(response)
 
         # 转为selector选择器
-        selector = self.server.getSelector(response)
+        selector = self.server.getSelector(resp=response)
 
-        self.standard(save_data=save_data, select=selector, html=response, url=url)
+        # =======获取标准实体，并返回结果
+        self.standard(save_data=save_data, select=selector, html=response, url=url, sha=sha)
 
         # ===================公共字段
+        # 获取标准状态
+        save_data['biaoZhunZhuangTai'] = zhuangtai
         # url
         save_data['url'] = url
         # 生成key
@@ -177,7 +187,7 @@ class SpiderMain(BastSpiderMain):
         # 生成es ——栏目名称
         save_data['es'] = '标准'
         # 生成ws ——网站名称
-        save_data['ws'] = 'IHS markit'
+        save_data['ws'] = 'mystandards'
         # 生成biz ——项目名称
         save_data['biz'] = '文献大数据'
         # 生成ref
@@ -189,10 +199,8 @@ class SpiderMain(BastSpiderMain):
     def run(self, task):
         # 创建数据存储字典
         save_data = {}
-
         # 获取字段值存入字典并返回sha
         sha = self.handle(task=task, save_data=save_data)
-
         # 保存数据到Hbase
         if not save_data:
             LOGGING.info('没有获取数据, 存储失败')
@@ -202,14 +210,13 @@ class SpiderMain(BastSpiderMain):
             return
 
         self.dao.saveDataToHbase(data=save_data)
-
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_STANTARD, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_STANDARD, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=8, lockname=config.REDIS_STANTARD_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANDARD, count=20, lockname=config.REDIS_STANDARD_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -230,26 +237,23 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                LOGGING.info('队列中已无任务，结束程序')
-                return
+                time.sleep(3)
+                continue
+                # LOGGING.info('队列中已无任务，结束程序')
+                # return
 
 def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://global.ihs.com/doc_detail.cfm?&rid=IHS&input_search_filter=%28NFPA%29&item_s_key=00007531&item_key_date=171230&input_doc_number=&input_doc_title=&org_code=%28NFPA%29#product-details-list"}')
+        # main.run(task='{"url": "https://www.mystandards.biz/standard/iso-1-2016-26.8.2016.html", "biaoZhunZhuangTai": "Historical"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
     begin_time = time.time()
-
     process_start()
-
-    # po = Pool(1)
-    # for i in range(1):
-    #     po.apply_async(func=process_start)
 
     # po = Pool(config.DATA_SCRIPT_PROCESS)
     # for i in range(config.DATA_SCRIPT_PROCESS):

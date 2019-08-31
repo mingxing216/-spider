@@ -20,14 +20,14 @@ monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.Engineering360.middleware import download_middleware
-from Project.Engineering360.service import service
-from Project.Engineering360.dao import dao
-from Project.Engineering360 import config
+from Project.Mystandards.middleware import download_middleware
+from Project.Mystandards.service import service
+from Project.Mystandards.dao import dao
+from Project.Mystandards import config
 
-log_file_dir = 'Engineering360'  # LOG日志存放路径
-LOGNAME = 'Engineering360_机构_data'  # LOG名
-NAME = 'Engineering360_机构_data'  # 爬虫名
+log_file_dir = 'Mystandards'  # LOG日志存放路径
+LOGNAME = 'Mystandards_机构_data'  # LOG名
+NAME = 'Mystandards_机构_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -188,7 +188,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=20, lockname=config.REDIS_INSTITUTE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=1, lockname=config.REDIS_INSTITUTE_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:

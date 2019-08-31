@@ -101,27 +101,52 @@ class ProxyUtils(object):
                 data = json.loads(proxy_data)
                 if data['status'] == 0:
                     ip = data['ip']
-                    port = data['port']
+                    # port = data['port']
 
                     # 判断协议种类
                     if self.type == 'http':
+                        return {'http': 'http://{}'.format(ip)}
 
-                        return {'http': 'http://{}:{}'.format(ip, port)}
                     elif self.type == 'https':
+                        return {'https': 'https://{}'.format(ip)}
 
-                        return {'https': 'https://{}:{}'.format(ip, port)}
                     elif self.type == 'socks5':
+                        return {'http': 'socks5://{}'.format(ip),
+                                'https': 'socks5://{}'.format(ip)}
 
-                        return {'http': 'socks5://{}:{}'.format(ip, port),
-                                'https': 'socks5://{}:{}'.format(ip, port)}
                     elif self.type == 'adsl':
+                        return {'http': 'http://{}:{}'.format(ip, port)}
 
-                        return {'http': 'http://{}:{}'.format(ip, port),
-                                'https': 'https://{}:{}'.format(ip, port)}
+                        # return {'http': 'http://{}:{}'.format(ip, port),
+                        #         'https': 'https://{}:{}'.format(ip, port)}
+
                     else:
                         self.logging.error('status: False | err: type error!!! | from: getProxy')
 
                         continue
+
+                    # ip = data['ip']
+                    # port = data['port']
+                    #
+                    # # 判断协议种类
+                    # if self.type == 'http':
+                    #
+                    #     return {'http': 'http://{}:{}'.format(ip, port)}
+                    # elif self.type == 'https':
+                    #
+                    #     return {'https': 'https://{}:{}'.format(ip, port)}
+                    # elif self.type == 'socks5':
+                    #
+                    #     return {'http': 'socks5://{}:{}'.format(ip, port),
+                    #             'https': 'socks5://{}:{}'.format(ip, port)}
+                    # elif self.type == 'adsl':
+                    #
+                    #     return {'http': 'http://{}:{}'.format(ip, port),
+                    #             'https': 'https://{}:{}'.format(ip, port)}
+                    # else:
+                    #     self.logging.error('status: False | err: type error!!! | from: getProxy')
+                    #
+                    #     continue
 
                 else:
                     self.logging.error('代理池代理获取失败')

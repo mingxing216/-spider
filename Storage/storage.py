@@ -50,7 +50,7 @@ class Dao(object):
     def saveTaskToMysql(self, table, memo, ws, es):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        ctx = str(memo).replace('\'', '"')
+        ctx = json.dumps(memo, ensure_ascii=False)  # 参数防止中文字符串变成Unicode字节码
         # 查询数据库是否含有此数据
         data_status_sql = "select * from {} where `sha` = '{}'".format(table, sha)
         data_status = self.mysql_client.get_result(sql=data_status_sql)
@@ -259,7 +259,7 @@ class Dao(object):
     def saveSpiderName(self, name):
         # 查询爬虫是否存在
         sha = hashlib.sha1(name.encode('utf-8')).hexdigest()
-        select_sql = "select * from {} where sha = '{}'".format(settings.SPIDER_TABLE, sha)
+        select_sql = "select * from {} where `sha` = '{}'".format(settings.SPIDER_TABLE, sha)
         spider_status = self.mysql_client.get_results(sql=select_sql)
         if spider_status:
             # 有

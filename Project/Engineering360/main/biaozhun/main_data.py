@@ -172,7 +172,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=24, lockname=config.REDIS_STANTARD_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=20, lockname=config.REDIS_STANTARD_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -194,14 +194,16 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                LOGGING.info('队列中已无任务，结束程序')
-                return
+                time.sleep(2)
+                continue
+                # LOGGING.info('队列中已无任务，结束程序')
+                # return
 
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{"url": "https://standards.globalspec.com/std/1684/din-iso-8116-6"}')
+        main.start()
+        # main.run(task='{"url": "https://standards.globalspec.com/std/971598/tir16142"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
