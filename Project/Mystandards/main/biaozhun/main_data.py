@@ -245,8 +245,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{"url": "https://www.mystandards.biz/standard/iso-1-2016-26.8.2016.html", "biaoZhunZhuangTai": "Historical"}')
+        # main.start()
+        main.run(task='{"url": "https://www.mystandards.biz/standard/iso-1-2016-26.8.2016.html", "biaoZhunZhuangTai": "Historical"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

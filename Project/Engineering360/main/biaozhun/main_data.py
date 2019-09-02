@@ -172,7 +172,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=20, lockname=config.REDIS_STANTARD_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=30, lockname=config.REDIS_STANTARD_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
