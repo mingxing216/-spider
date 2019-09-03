@@ -53,8 +53,8 @@ class BiaoZhunServer(object):
             url_list = selector.xpath("//div[contains(@class, 'searchDuplicateRow')]/div[2]")
             # 遍历元素，获取详情url、"状态"
             for i in url_list:
-                url = 'https://www.mystandards.biz' + i.xpath("./a[1]/@href").extract_first()
-                text = i.xpath("./p[last()]/strong[1]/text()").extract_first()
+                url = 'https://www.mystandards.biz' + i.xpath("./a[1]/@href").extract_first().strip()
+                text = i.xpath("./p[last()]/strong[1]/text()").extract_first().strip()
                 if text:
                     field = text
                 else:
@@ -254,3 +254,57 @@ class JiGouServer(object):
     # 数据类型转换
     def getEvalResponse(self, task_data):
         return ast.literal_eval(task_data)
+
+    # 获取选择器
+    def getSelector(self, resp):
+        selector = Selector(text=resp)
+
+        return selector
+
+    # 获取标题
+    def getTitle(self, select):
+        selector = select
+        try:
+            tit = selector.xpath("//h1/text()").extract_first()
+            title = re.sub(r"[\n\r\t]", "", tit).strip()
+
+        except Exception:
+            title = ""
+
+        return title
+
+    # 获取标识
+    def getBiaoShi(self, select):
+        selector = select
+        try:
+            img = selector.xpath("//h1/preceding-sibling::img[1]/@src").extract_first().strip()
+            img_src = 'https://www.mystandards.biz' + img
+
+        except Exception:
+            img_src = ""
+
+        return img_src
+
+    # 获取简介
+    def getJianJie(self, html):
+        tree = etree.HTML(html)
+        try:
+            result = tree.xpath("//h1/following-sibling::p[1]")[0]
+            htmlValue = re.sub(r"[\n\r\t]", "", tostring(result).decode('utf-8')).strip()
+
+        except Exception:
+            htmlValue = ""
+
+        return htmlValue
+
+    # 图片关联机构url
+    def guanLianJiGou(self, url, sha):
+        e = {}
+        try:
+            e['url'] = url
+            e['sha'] = sha
+            e['ss'] = '机构'
+        except Exception:
+            return e
+
+        return e

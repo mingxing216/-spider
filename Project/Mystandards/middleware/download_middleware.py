@@ -40,7 +40,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             # 设置请求头
             param['headers'] = {
                 # 'Cache-Control': 'max-age=0',
-                'Upgrade-Insecure-Requests': '1',
+                # 'Upgrade-Insecure-Requests': '1',
                 # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'Accept-Encoding': 'gzip, deflate, br',
                 # 'Referer': referer,

@@ -96,10 +96,11 @@ class SpiderMain(BastSpiderMain):
         text = resp.text
 
         # 响应内容转为selector选择器
-        selector = self.server.getSelector(text)
+        selector = self.server.getSelector(resp=text)
 
         # 图片url存储列表
         img_list = []
+
         # 获取标题
         save_data['title'] = self.server.getTitle(select=selector)
         # 获取标识
@@ -109,28 +110,13 @@ class SpiderMain(BastSpiderMain):
             img_list.append(save_data['biaoShi'])
         # 获取简介
         save_data['jianJie'] = self.server.getJianJie(html=text)
-        # 获取简介中图片url
-        imgs = self.server.getJianJieUrl(select=selector)
-        # 存入图片列表
-        if imgs:
-            for img in imgs:
-                img_list.append(img)
-        # 获取通讯地址
-        save_data['tongXunDiZhi'] = self.server.getTongXunDiZhi(html=text)
-        # 获取电话
-        save_data['dianHua'] = self.server.getField(select=selector, para='Phone')
-        # 获取传真
-        save_data['chuanZhen'] = self.server.getField(select=selector, para='Fax')
-        # 获取企业类型
-        save_data['qiYeLeiXing'] = self.server.getField(select=selector, para='Business Type')
-        # 获取主页
-        save_data['zhuYe'] = self.server.getZhuYe(selector)
+
         # 存储图片
         if img_list:
             for img in img_list:
                 img_dict = {}
                 img_dict['bizTitle'] = save_data['title']
-                img_dict['relEsse'] = self.server.guanLianJiGou(url)
+                img_dict['relEsse'] = self.server.guanLianJiGou(url=url, sha=sha)
                 img_dict['relPics'] = {}
                 img_url = img
                 # # 存储图片种子
@@ -163,7 +149,7 @@ class SpiderMain(BastSpiderMain):
         # 生成es ——栏目名称
         save_data['es'] = '标准'
         # 生成ws ——网站名称
-        save_data['ws'] = 'Engineering360'
+        save_data['ws'] = 'mystandards'
         # 生成biz ——项目名称
         save_data['biz'] = '文献大数据'
         # 生成ref
@@ -183,12 +169,12 @@ class SpiderMain(BastSpiderMain):
         self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
+        # self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=1, lockname=config.REDIS_INSTITUTE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=20, lockname=config.REDIS_INSTITUTE_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -216,7 +202,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://www.globalspec.com/supplier/profile/IECInternationalElectrotechnicalCommission"}')
+        # main.run(task='{"url": "https://www.mystandards.biz/publisher/international-technical-standards-iso/"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

@@ -113,7 +113,7 @@ class SpiderMain(BastSpiderMain):
         # 生成es ——栏目名称
         save_data['es'] = '标准'
         # 生成ws ——目标网站
-        save_data['ws'] = 'SAI GLOBAL'
+        save_data['ws'] = 'mystandards'
         # 生成biz ——项目
         save_data['biz'] = '文献大数据'
         # 生成ref
@@ -141,7 +141,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=32, lockname=config.REDIS_DOCUMENT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=30, lockname=config.REDIS_DOCUMENT_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -162,7 +162,7 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                time.sleep(3)
+                time.sleep(2)
                 continue
                 # LOGGING.info('队列中已无任务，结束程序')
                 # return

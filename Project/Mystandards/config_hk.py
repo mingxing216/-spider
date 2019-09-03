@@ -13,21 +13,25 @@ REDIS_POOL_NUMBER = 1 # Redis连接池数量
 # ----------------------------
 # mysql表名配置/redis表名配置
 # ----------------------------
-REDIS_CATALOG = 'job_catalog' # redis列表种子任务表
-REDIS_CATALOG_LOCK = 'job_catalog_lock' # redis列表种子分布式锁名
+REDIS_CATALOG = 'my_catalog' # redis列表种子任务表
+REDIS_CATALOG_LOCK = 'my_catalog_lock' # redis列表种子分布式锁名
 
 
-MYSQL_STANTARD = 'job_standard' # Mysql标准任务表
-REDIS_STANTARD = 'job_standard' # Redis标准任务表
-REDIS_STANTARD_LOCK = 'job_standard_lock' # Redis标准分布式锁名
+MYSQL_STANDARD = 'job_standard' # Mysql标准任务表
+REDIS_STANDARD = 'my_standard' # Redis标准任务表
+REDIS_STANDARD_LOCK = 'my_standard_lock' # Redis标准分布式锁名
+
+MYSQL_PRICE = 'job_price' # Mysql价格任务表
+REDIS_PRICE = 'my_price' # Redis价格任务表
+REDIS_PRICE_LOCK = 'my_price_lock' # Redis价格分布式锁名
 
 MYSQL_INSTITUTE = 'job_institute' # Mysql机构任务表
-REDIS_INSTITUTE = 'job_institute' # Redis机构任务表
-REDIS_INSTITUTE_LOCK = 'job_institute_lock' # Redis机构分布式锁名
+REDIS_INSTITUTE = 'my_institute' # Redis机构任务表
+REDIS_INSTITUTE_LOCK = 'my_institute_lock' # Redis机构分布式锁名
 
-MYSQL_IMG = 'job_img' # Mysql图片任务表
-REDIS_IMG = 'job_img' # Redis图片任务表
-REDIS_IMG_LOCK = 'job_img_lock' # Redis图片分布式锁名
+MYSQL_DOCUMENT = 'job_document' # Mysql文档任务表
+REDIS_DOCUMENT = 'my_document' # Redis文档任务表
+REDIS_DOCUMENT_LOCK = 'my_document_lock' # Redis文档分布式锁名
 
 # ----------------------------
 # 进程数配置
