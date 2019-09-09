@@ -12,6 +12,10 @@ import hashlib
 import datetime
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
+import gevent
+from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
+monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
@@ -84,17 +88,16 @@ class SpiderMain(BastSpiderMain):
         img_url = task_data['url']
         sha = hashlib.sha1(img_url.encode('utf-8')).hexdigest()
 
-        # 获取cookie
-        self.cookie_dict = self.download_middleware.create_cookie()
-        if not self.cookie_dict:
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
-            return
+        # # 获取cookie
+        # self.cookie_dict = self.download_middleware.create_cookie()
+        # if not self.cookie_dict:
+        #     # 逻辑删除任务
+        #     self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
+        #     return
         # 访问图片url，获取响应
         media_resp = self.__getResp(func=self.download_middleware.getResp,
                                     url=img_url,
-                                    mode='GET',
-                                    cookies=self.cookie_dict)
+                                    mode='GET')
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_url))
             # 逻辑删除任务
@@ -111,19 +114,33 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_IMG, count=100, lockname=config.REDIS_IMG_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_IMG, count=10, lockname=config.REDIS_IMG_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
-            # 创建线程池
-            threadpool = ThreadPool()
-            for task in task_list:
-                threadpool.apply_async(func=self.run, args=(task,))
+            if task_list:
+                # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-            threadpool.close()
-            threadpool.join()
+                # 创建gevent协程
+                g_list = []
+                for task in task_list:
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
 
-            time.sleep(1)
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for task in task_list:
+                #     threadpool.apply_async(func=self.run, args=(task,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
+                time.sleep(1)
+            else:
+                time.sleep(2)
+                continue
+                # LOGGING.info('队列中已无任务，结束程序')
+                # return
 
 def process_start():
     main = SpiderMain()
@@ -137,16 +154,14 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
+    process_start()
 
     # po = Pool(config.DATA_SCRIPT_PROCESS)
     # for i in range(config.DATA_SCRIPT_PROCESS):
     #     po.apply_async(func=process_start)
 
-    po.close()
-    po.join()
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

@@ -84,6 +84,7 @@ class SpiderMain(BastSpiderMain):
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_task['url']))
             # 存储图片种子
+            img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
             self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'])
             return
             # # 逻辑删除任务
@@ -204,7 +205,7 @@ class SpiderMain(BastSpiderMain):
             # 深拷贝关联文档字典，目的为了修改拷贝的内容后，原文档字典不变
             document = copy.deepcopy(save_data['guanLianWenDang'])
             document['lunWenUrl'] = url
-            document['title'] = save_data['title']
+            document['title'] = save_data['title'].replace('"', '\\"').replace("'", "''")
             # 存储文档种子
             self.dao.saveProjectUrlToMysql(table=config.MYSQL_DOCUMENT, memo=document)
 
@@ -256,19 +257,18 @@ class SpiderMain(BastSpiderMain):
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         xueKeLeiBie = task_data['xueKeLeiBie']
 
-        # 获取cookie
-        self.cookie_dict = self.download_middleware.create_cookie()
-        # cookie创建失败，停止程序
-        if not self.cookie_dict:
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-            return
+        # # 获取cookie
+        # self.cookie_dict = self.download_middleware.create_cookie()
+        # # cookie创建失败，停止程序
+        # if not self.cookie_dict:
+        #     # 逻辑删除任务
+        #     self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+        #     return
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
-                              mode='GET',
-                              cookies=self.cookie_dict)
+                              mode='GET')
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
@@ -339,7 +339,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=2, lockname=config.REDIS_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=10, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
             # print(task_list)
 
@@ -371,7 +371,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://www.jstor.org/stable/26422068?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bsd%3D%26amp%3Bfacet_journal%3Dam91cm5hbA%253D%253D%26amp%3Bpage%3D1%26amp%3Bed%3D&seq=1#metadata_info_tab_contents", "xueKeLeiBie": "Anthropology"}')
+        # main.run(task='{"url": "https://www.jstor.org/stable/44744545?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9OA%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D1873%26amp%3Bed%3D1874%26amp%3Bacc%3Ddfr%26amp%3Bdisc_literature-discipline_facet%3DbGl0ZXJhdHVyZS1kaXNjaXBsaW5l&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#metadata_info_tab_contents", "xueKeLeiBie": "Anthropology"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -380,10 +380,6 @@ if __name__ == '__main__':
     begin_time = time.time()
 
     process_start()
-
-    # po = Pool(1)
-    # for i in range(1):
-    #     po.apply_async(func=process_start)
 
     # po = Pool(config.DATA_SCRIPT_PROCESS)
     # for i in range(config.DATA_SCRIPT_PROCESS):

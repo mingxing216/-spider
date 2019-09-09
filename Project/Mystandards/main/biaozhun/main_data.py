@@ -133,7 +133,7 @@ class SpiderMain(BastSpiderMain):
             # 深拷贝关联文档字典，目的为了修改拷贝的内容后，原文档字典不变
             document = copy.deepcopy(save_data['guanLianWenDang'])
             document['parentUrl'] = url
-            document['title'] = save_data['title']
+            document['title'] = save_data['title'].replace('"', '\\"').replace("'", "''")
             # 存储文档种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=document, ws='mystandards', es='标准')
         # 关联机构
@@ -245,8 +245,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{"url": "https://www.mystandards.biz/standard/tpp-60504-1.11.2016.html", "biaoZhunZhuangTai": "Standard "}')
+        # main.start()
+        main.run(task='{"url": "https://www.mystandards.biz/standard/csnen-16602-70-20-1.7.2015.html", "biaoZhunZhuangTai": "Standard "}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

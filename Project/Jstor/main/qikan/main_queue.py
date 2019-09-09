@@ -77,11 +77,7 @@ def process_start():
 
 if __name__ == '__main__':
     begin_time = time.time()
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
-    po.close()
-    po.join()
+    process_start()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

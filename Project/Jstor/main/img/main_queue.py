@@ -56,11 +56,11 @@ class SpiderMain(BastSpiderMain):
                 # 获取任务
                 new_task_list = self.dao.getNewTaskList(table=config.MYSQL_IMG, ws='jstor', es='qikan', count=2000)
                 # print(new_task_list)
-                LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
+                # LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 
                 # 队列任务
                 self.dao.QueueTask(key=config.REDIS_IMG, data=new_task_list)
-                LOGGING.info('已成功向redis队列{}个任务'.format(len(new_task_list)))
+                # LOGGING.info('已成功向redis队列{}个任务'.format(len(new_task_list)))
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 
@@ -77,11 +77,7 @@ def process_start():
 
 if __name__ == '__main__':
     begin_time = time.time()
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
-    po.close()
-    po.join()
+    process_start()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

@@ -12,6 +12,10 @@ import hashlib
 import datetime
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
+# import gevent
+# from gevent import monkey
+# # 猴子补丁一定要先打，不然就会报错
+# monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
@@ -96,13 +100,14 @@ class SpiderMain(BastSpiderMain):
         url = task_data['url']
         sha = task_data['sha']
 
-        # # 获取cookie
-        # self.cookie_dict = self.download_middleware.create_cookie()
+        # 获取cookie
+        self.cookie_dict = self.download_middleware.create_cookie()
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
-                              mode='GET')
+                              mode='GET',
+                              cookies=self.cookie_dict)
         if not resp:
             LOGGING.error('页面响应获取失败, url: {}'.format(url))
             # 逻辑删除任务
@@ -149,6 +154,12 @@ class SpiderMain(BastSpiderMain):
         sha = self.handle(task=task, save_data=save_data)
 
         # 保存数据到Hbase
+        if not save_data:
+            LOGGING.info('没有获取数据, 存储失败')
+            return
+        if 'sha' not in save_data:
+            LOGGING.info('数据获取不完整, 存储失败')
+            return
         self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
@@ -157,11 +168,20 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=5, lockname=config.REDIS_MAGAZINE_LOCK)
-            # print(task_list)
+            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=1, lockname=config.REDIS_MAGAZINE_LOCK)
+            print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
+                # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
+
+                # # 创建gevent协程
+                # g_list = []
+                # for task in task_list:
+                #     s = gevent.spawn(self.run, task)
+                #     g_list.append(s)
+                # gevent.joinall(g_list)
+
                 # 创建线程池
                 threadpool = ThreadPool()
                 for task in task_list:
@@ -172,8 +192,10 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                LOGGING.info('队列中已无任务，结束程序')
-                return
+                time.sleep(2)
+                continue
+                # LOGGING.info('队列中已无任务，结束程序')
+                # return
 
 
 def process_start():
@@ -188,16 +210,14 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
 
-    # po = Pool(1)
-    # for i in range(1):
+    process_start()
+
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
     #     po.apply_async(func=process_start)
-
-    po = Pool(config.DATA_SCRIPT_PROCESS)
-    for i in range(config.DATA_SCRIPT_PROCESS):
-        po.apply_async(func=process_start)
-
-    po.close()
-    po.join()
+    #
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

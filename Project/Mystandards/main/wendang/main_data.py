@@ -12,9 +12,9 @@ import hashlib
 import datetime
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
-import gevent
-from gevent import monkey
-monkey.patch_all()
+# import gevent
+# from gevent import monkey
+# monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
@@ -141,24 +141,25 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=30, lockname=config.REDIS_DOCUMENT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=1, lockname=config.REDIS_DOCUMENT_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
+            print(task_list)
 
             if task_list:
-                # 创建gevent协程
-                g_list = []
-                for task in task_list:
-                    s = gevent.spawn(self.run, task)
-                    g_list.append(s)
-                gevent.joinall(g_list)
-
-                # # 创建线程池
-                # threadpool = ThreadPool()
+                # # 创建gevent协程
+                # g_list = []
                 # for task in task_list:
-                #     threadpool.apply_async(func=self.run, args=(task,))
-                #
-                # threadpool.close()
-                # threadpool.join()
+                #     s = gevent.spawn(self.run, task)
+                #     g_list.append(s)
+                # gevent.joinall(g_list)
+
+                # 创建线程池
+                threadpool = ThreadPool()
+                for task in task_list:
+                    threadpool.apply_async(func=self.run, args=(task,))
+
+                threadpool.close()
+                threadpool.join()
 
                 time.sleep(1)
             else:
@@ -172,7 +173,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://infostore.saiglobal.com/preview/480232435226.pdf?sku=1154349_SAIG_AS_AS_2740572", "sha": "e31a210696e020af8f3ce2e6715765cc7bd6600e", "ss": "文档", "parentUrl": "https://infostore.saiglobal.com/en-au/Standards/AS-ISO-IEC-25063-2019-1154349_SAIG_AS_AS_2740572/", "title": "Systems and software engineering - Systems and software product Quality Requirements and Evaluation (SQuaRE) - Common Industry Format (CIF) for usability: Context of use description"}')
+        # main.run(task='{"url": "https://www.mystandards.biz/nahledy/view/csn/31/97323/97323_nahled.pdf", "sha": "f051b9aa90317258d8c3296ca434a0b9b1e8f910", "ss": "文档", "parentUrl": "https://www.mystandards.biz/standard/csnen-16602-70-20-1.7.2015.html", "title": "Space product assurance - Determination of the susceptibility of silver-plated copper wire and cable to \"red-plague\" corrosion"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

@@ -101,7 +101,7 @@ class ProxyUtils(object):
                 data = json.loads(proxy_data)
                 if data['status'] == 0:
                     ip = data['ip']
-                    # port = data['port']
+                    port = data['port']
 
                     # 判断协议种类
                     if self.type == 'http':

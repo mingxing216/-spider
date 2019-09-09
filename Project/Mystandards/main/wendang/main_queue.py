@@ -55,7 +55,7 @@ class SpiderMain(BastSpiderMain):
 
                 # 获取任务
                 new_task_list = self.dao.getNewTaskList(table=config.MYSQL_DOCUMENT, ws='mystandards', es='标准', count=2000)
-                # print(new_task_list)
+                print(new_task_list)
                 LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 
                 # 队列任务

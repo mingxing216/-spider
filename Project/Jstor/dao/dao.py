@@ -31,7 +31,7 @@ class Dao(storage.Dao):
     def saveProjectUrlToMysql(self, table, memo):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        ctx = str(memo).replace('\'', '"')
+        ctx = json.dumps(memo, ensure_ascii=False)  # 参数防止中文字符串变成Unicode字节码
         # 查询数据库是否含有此数据
         data_status_sql = "select * from {} where `sha` = '{}'".format(table, sha)
         data_status = self.mysql_client.get_result(sql=data_status_sql)

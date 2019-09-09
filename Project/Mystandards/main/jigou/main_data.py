@@ -169,7 +169,7 @@ class SpiderMain(BastSpiderMain):
         self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
-        # self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
 
     def start(self):
         while 1:

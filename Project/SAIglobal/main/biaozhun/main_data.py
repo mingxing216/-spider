@@ -168,7 +168,7 @@ class SpiderMain(BastSpiderMain):
             # 深拷贝关联文档字典，目的为了修改拷贝的内容后，原文档字典不变
             document = copy.deepcopy(save_data['guanLianWenDang'])
             document['parentUrl'] = url
-            document['title'] = save_data['title']
+            document['title'] = save_data['title'].replace('"', '\\"').replace("'", "''")
             # 存储文档种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=document, ws='SAI GLOBAL', es='标准')
 
@@ -281,7 +281,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=30, lockname=config.REDIS_STANTARD_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=3, lockname=config.REDIS_STANTARD_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -302,7 +302,7 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                time.sleep(3)
+                time.sleep(2)
                 continue
                 # LOGGING.info('队列中已无任务，结束程序')
                 # return
@@ -310,8 +310,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{"url": "https://infostore.saiglobal.com/en-au/Standards/AS-2560-1-2002-124146_SAIG_AS_AS_261011/"}')
+        # main.start()
+        main.run(task='{"url": "https://infostore.saiglobal.com/en-au/Standards/AS-NZS-4067-2004-116690_SAIG_AS_AS_244011/"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
