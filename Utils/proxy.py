@@ -38,6 +38,7 @@ class ProxyUtils(object):
         self.country = country
         self.city = city
 
+
     def __del(self, ip):
         url = '{}?ip={}'.format(settings.DELETE_PROXY_API, ip)
         try:
@@ -59,31 +60,26 @@ class ProxyUtils(object):
             pass
 
     # 检测代理IP是否是高匿代理， 高匿返回True， 否则返回Fales
-    def __jianChaNiMingDu(self, proxy, logging):
+    def __jianChaNiMingDu(self, **proxies):
         local_ip = ''
         proxy_ip = ''
-        proxies = {
-            'http': proxy,
-            'https': proxy
-        }
+        # proxies = proxies
         # 获取本地外网IP
-        local_resp = requests.get('https://httpbin.org/get')
+        local_resp = requests.get('https://httpbin.org/ip')
         if local_resp.status_code == 200:
             local_ip = json.loads(local_resp.content.decode('utf-8'))['origin']
-            logging.info('检测到本地IP: %s' % local_ip)
+            # self.logging.info('检测到本地IP: %s' % local_ip)
 
         # 获取使用代理返回IP
-        proxy_resp = requests.get(url='https://httpbin.org/get', proxies=proxies)
+        proxy_resp = requests.get(url='https://httpbin.org/ip', proxies=proxies)
         if proxy_resp.status_code == 200:
             proxy_ip = json.loads(proxy_resp.content.decode('utf-8'))['origin']
-            logging.info('检测到代理ip: %s' % proxy_ip)
+            # self.logging.info('检测到代理IP: %s' % proxy_ip)
 
         # 判断代理是否高匿
         if local_ip not in proxy_ip:
-
             return True
         else:
-
             return False
 
     # 获取代理
@@ -102,6 +98,11 @@ class ProxyUtils(object):
                 if data['status'] == 0:
                     ip = data['ip']
                     port = data['port']
+                    # proxy_ip = 'https://' + ip + ':' + port
+
+                    # # 判断是否为高匿代理
+                    # allow = self.__jianChaNiMingDu(https=proxy_ip)
+                    # if allow:
 
                     # 判断协议种类
                     if self.type == 'http':
@@ -115,35 +116,18 @@ class ProxyUtils(object):
                                 'https': 'socks5://{}'.format(ip)}
 
                     elif self.type == 'adsl':
-                        return {'http': 'http://{}:{}'.format(ip, port),
-                                'https': 'https://{}:{}'.format(ip, port)}
+                        return {'http': 'http://{}:{}'.format(ip, port)}
+
+                        # return {'http': 'http://{}:{}'.format(ip, port),
+                        #         'https': 'https://{}:{}'.format(ip, port)}
 
                     else:
                         self.logging.error('status: False | err: type error!!! | from: getProxy')
 
                         continue
 
-                    # ip = data['ip']
-                    # port = data['port']
-                    #
-                    # # 判断协议种类
-                    # if self.type == 'http':
-                    #
-                    #     return {'http': 'http://{}:{}'.format(ip, port)}
-                    # elif self.type == 'https':
-                    #
-                    #     return {'https': 'https://{}:{}'.format(ip, port)}
-                    # elif self.type == 'socks5':
-                    #
-                    #     return {'http': 'socks5://{}:{}'.format(ip, port),
-                    #             'https': 'socks5://{}:{}'.format(ip, port)}
-                    # elif self.type == 'adsl':
-                    #
-                    #     return {'http': 'http://{}:{}'.format(ip, port),
-                    #             'https': 'https://{}:{}'.format(ip, port)}
                     # else:
-                    #     self.logging.error('status: False | err: type error!!! | from: getProxy')
-                    #
+                    #     self.logging.error('代理非高匿代理，获取失败')
                     #     continue
 
                 else:
@@ -201,7 +185,7 @@ class ProxyUtils(object):
         }
         return proxies
 
-    # 获取本机IP
+    # 获取本机内网IP
     def getLocalIP(self):
         global s
         try:
@@ -209,6 +193,7 @@ class ProxyUtils(object):
             s.connect(('8.8.8.8', 80))
             ip = s.getsockname()[0]
             s.close()
+            # self.logging.info('本地内网IP: %s' % ip)
 
             return ip
         except:

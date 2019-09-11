@@ -310,8 +310,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{"url": "https://infostore.saiglobal.com/en-au/Standards/AS-NZS-4067-2004-116690_SAIG_AS_AS_244011/"}')
+        main.start()
+        # main.run(task='{"url": "https://infostore.saiglobal.com/en-au/Standards/AS-NZS-4067-2004-116690_SAIG_AS_AS_244011/"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

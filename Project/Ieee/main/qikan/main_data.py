@@ -24,8 +24,8 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = 'Jstor_图片_data'  # LOG名
-NAME = 'Jstor_图片_data'  # 爬虫名
+LOGNAME = 'Jstor_期刊_data'  # LOG名
+NAME = 'Jstor_期刊_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -39,7 +39,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.QiKanLunWen_QiKanServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -74,46 +74,106 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('页面出现验证码: {}'.format(url))
             return None
 
-    def run(self, task):
+    # 模板
+    def template(self, save_data, select, html):
+        # 获取标题
+        save_data['title'] = self.server.getTitle(select)
+        # 获取摘要
+        save_data['zhaiYao'] = self.server.getZhaiYao(html)
+        # 获取覆盖范围
+        save_data['fuGaiFanWei'] = self.server.getFuGaiFanWei(select)
+        # 获取国际标准刊号
+        save_data['ISSN'] = self.server.getIssn(select)
+        # 获取EISSN
+        save_data['EISSN'] = self.server.getEissn(select)
+        # 获取学科类别
+        save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(select)
+        # 获取出版社
+        save_data['chuBanShe'] = self.server.getChuBanShe(select)
+
+
+    def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
-        print(task_data)
+
+        url = task_data['url']
+        sha = task_data['sha']
+
+        # 获取cookie
+        self.cookie_dict = self.download_middleware.create_cookie()
+
+        if not self.cookie_dict:
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            return
+
+        # 获取页面响应
+        resp = self.__getResp(func=self.download_middleware.getResp,
+                              url=url,
+                              mode='GET',
+                              cookies=self.cookie_dict)
+        if not resp:
+            LOGGING.error('页面响应获取失败, url: {}'.format(url))
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
+            return
+
+        response = resp.text
+        # print(response)
+
+        # 转为selector选择器
+        selector = self.server.getSelector(response)
+
+        # 获取字段值
+        self.template(save_data=save_data, select=selector, html=response)
+
+        # =========================公共字段
+        # url
+        save_data['url'] = url
+        # 生成key
+        save_data['key'] = url
+        # 生成sha
+        save_data['sha'] = sha
+        # 生成ss ——实体
+        save_data['ss'] = '期刊'
+        # 生成ws ——目标网站
+        save_data['ws'] = 'JSTOR'
+        # 生成clazz ——层级关系
+        save_data['clazz'] = '期刊'
+        # 生成es ——栏目名称
+        save_data['es'] = 'Journals'
+        # 生成biz ——项目
+        save_data['biz'] = '文献大数据'
+        # 生成ref
+        save_data['ref'] = ''
+
+        # 返回sha为删除任务做准备
+        return sha
+
+    def run(self, task):
         # 创建数据存储字典
         save_data = {}
-        save_data['bizTitle'] = task_data['bizTitle']
-        save_data['relEsse'] = task_data['relEsse']
-        save_data['relPics'] = task_data['relPics']
 
-        img_url = task_data['url']
-        sha = hashlib.sha1(img_url.encode('utf-8')).hexdigest()
+        # 获取字段值存入字典并返回sha
+        sha = self.handle(task=task, save_data=save_data)
 
-        # # 获取cookie
-        # self.cookie_dict = self.download_middleware.create_cookie()
-        # if not self.cookie_dict:
-        #     # 逻辑删除任务
-        #     self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
-        #     return
-        # 访问图片url，获取响应
-        media_resp = self.__getResp(func=self.download_middleware.getResp,
-                                    url=img_url,
-                                    mode='GET')
-        if not media_resp:
-            LOGGING.error('图片响应失败, url: {}'.format(img_url))
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
+        # 保存数据到Hbase
+        if not save_data:
+            LOGGING.info('没有获取数据, 存储失败')
             return
-        img_content = media_resp.text
-
-        # 存储图片
-        self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=save_data, type='image')
+        if 'sha' not in save_data:
+            LOGGING.info('数据获取不完整, 存储失败')
+            return
+        self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_IMG, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_MAGAZINE, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_IMG, count=10, lockname=config.REDIS_IMG_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=3, lockname=config.REDIS_MAGAZINE_LOCK)
+            print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -141,11 +201,12 @@ class SpiderMain(BastSpiderMain):
                 # LOGGING.info('队列中已无任务，结束程序')
                 # return
 
+
 def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task="{\"bizTitle\": \"Back Matter\", \"relEsse\": {\"url\": \"https://www.jstor.org/stable/40693082?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D1912%26amp%3Bed%3D1913%26amp%3Bacc%3Ddfr%26amp%3Bdisc_astronomy-discipline_facet%3DYXN0cm9ub215LWRpc2NpcGxpbmU%253D&ab_segments=0%2Fdefault-2%2Fcontrol\", \"sha\": \"00a3cf208165a551473f065c2e43f8b6f90a42b4\", \"ss\": \"\xe8\xae\xba\xe6\x96\x87\"}, \"url\": \"https://www.jstor.org/stable/get_image/40693082?path=czM6Ly9zZXF1b2lhLWNlZGFyL2NpZC1wcm9kLTEvOTUwNzcxYzEvODQwMC8zYjc4LzkwMjEvMTE0NDM5YjFjYjNlL2k0MDAzMDQzMy80MDY5MzA4Mi9ncmFwaGljL3BhZ2VzL2R0Yy42Ny50aWYuZ2lm\"}")
+        # main.run(task='{"url": "https://www.jstor.org/journal/oceanography", "sha": "70de09416305f41f2ae5c0195edc9602856a9e4d", "ss": "期刊"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -158,7 +219,7 @@ if __name__ == '__main__':
     # po = Pool(config.DATA_SCRIPT_PROCESS)
     # for i in range(config.DATA_SCRIPT_PROCESS):
     #     po.apply_async(func=process_start)
-
+    #
     # po.close()
     # po.join()
     end_time = time.time()
