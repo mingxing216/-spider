@@ -8,6 +8,7 @@ import os
 import ast
 import re
 import hashlib
+from datetime import datetime
 from urllib.parse import quote,unquote
 import requests
 from lxml import etree
@@ -94,7 +95,7 @@ class BiaoZhunServer(object):
     def getBiaoZhunBianHao(self, select):
         selector = select
         try:
-            biaozhun = selector.xpath("//h1[@class='page-title']/text()").extract_first()
+            biaozhun = selector.xpath("//h1/text()").extract_first()
             biaozhunhao = re.sub(r"[\r\n\t]", "", biaozhun).strip()
 
         except Exception:
@@ -106,7 +107,7 @@ class BiaoZhunServer(object):
     def getTitle(self, select):
         selector = select
         try:
-            tit = selector.xpath("//span[@class='doc-name']/text()").extract_first()
+            tit = selector.xpath("//h2[@class='short-description']/text()").extract_first()
             title = re.sub(r"[\r\n\t]", "", tit).strip()
 
         except Exception:
@@ -114,22 +115,38 @@ class BiaoZhunServer(object):
 
         return title
 
-    # 获取标准发布组织
-    def getFaBuZuZhi(self, select):
+    # 获取标准状态
+    def getZhuangTai(self, select):
         selector = select
         try:
-            zuzhi = selector.xpath("//h1[contains(@class, 'supplier-name')]/text()").extract_first().strip()
+            tag = selector.xpath("//table[@class='data-table']/tbody/tr/th[contains(text(), 'expiration_de_validite')]")[0]
+            if tag:
+                zhuangtai = "失效"
+            else:
+                zhuangtai = "现行"
 
         except Exception:
-            zuzhi = ""
+            zhuangtai = "现行"
 
-        return zuzhi
+        return zhuangtai
 
-    # 获取字段值(出版日期,标准状态,页数)
+    # 获取描述
+    def getMiaoShu(self, html):
+        tree = etree.HTML(html)
+        try:
+            result = tree.xpath("//h2[text()='Details']/following-sibling::div[1]")[0]
+            zhaiyao = re.sub(r"[\n\r\t]", "", tostring(result).decode('utf-8')).strip()
+
+        except Exception:
+            zhaiyao = ""
+
+        return zhaiyao
+
+    # 获取字段值(作者信息,标准发布组织,标准类型、版本、页数)
     def getField(self, select, para):
         selector = select
         try:
-            field = selector.xpath("//td[@class='label' and contains(text(), '" + para + "')]/following-sibling::td[contains(@class, 'data')]/text()").extract_first()
+            field = selector.xpath("//table[@class='data-table']/tbody/tr/th[contains(text(), '" + para + "')]/following-sibling::td[1]/text()").extract_first()
             fieldValue = re.sub(r"[\n\r\t]", "", field).strip()
 
         except Exception:
@@ -137,290 +154,128 @@ class BiaoZhunServer(object):
 
         return fieldValue
 
-    # 获取描述
-    def getMiaoShu(self, html):
-        tree = etree.HTML(html)
-        result_list = []
-        try:
-            results = tree.xpath("//h5[contains(text(), 'scope')]/following-sibling::*")
-            for result in results:
-                zhai = re.sub(r"[\n\r\t]", "", tostring(result).decode('utf-8')).strip()
-                result_list.append(zhai)
-            zhaiyao = ''.join(result_list)
-
-        except Exception:
-            zhaiyao = ""
-
-        return zhaiyao
-
-    # 获取被代替标准
-    def getBeiDaiTiBiaoZhun(self, select):
-        result = []
+    # 获取关键词
+    def getGuanJianCi(self, select):
         selector = select
         try:
-            biaozhunhao = selector.xpath("//div[@class='document selected']/following-sibling::div[@class='document']/div[@class='document-history-card']")
-            for i in range(len(biaozhunhao)):
-                dict = {}
-                try:
-                    dict['标准号'] = biaozhunhao[i].xpath("./div[@class='document-heading']/div[@class='document-title']/a/text()").extract_first().strip()
-                except Exception:
-                    dict['标准号'] = ""
-                try:
-                    dict['链接'] = biaozhunhao[i].xpath("./div[@class='document-heading']/div[@class='document-title']/a/@href").extract_first().strip()
-                except Exception:
-                    dict['链接'] = ""
-                try:
-                    dict['出版日期'] = biaozhunhao[i].xpath("./div[@class='document-heading']/div[@class='publish-date']/text()").extract_first().strip()
-                except Exception:
-                    dict['出版日期'] = ""
-                try:
-                    dict['标题'] = biaozhunhao[i].xpath("./div[@class='document-name']/text()").extract_first().strip()
-                except Exception:
-                    dict['标题'] = ""
-                try:
-                    dict['简介'] = biaozhunhao[i].xpath("./div[@class='document-description']/text()").extract_first().strip()
-                except Exception:
-                    dict['简介'] = ""
-                result.append(dict)
-
-        except Exception:
-            return result
-
-        return result
-
-    # 获取引用标准
-    def getYinYongBiaoZhun(self, select):
-        result = []
-        selector = select
-        try:
-            biaozhun = selector.xpath("//div[@class='related-doc content-item']")
-            for i in range(len(biaozhun)):
-                dict = {}
-                try:
-                    biaozhunhao = biaozhun[i].xpath("./a[@class='title']/text()").extract_first().strip()
-                    dict['标准号'] = re.findall(r"(.*?)\s+-\s+", biaozhunhao)[0].strip()
-                except Exception:
-                    dict['标准号'] = ""
-                try:
-                    dict['链接'] = biaozhun[i].xpath("./a[@class='title']/@href").extract_first().strip()
-                except Exception:
-                    dict['链接'] = ""
-                try:
-                    tit = biaozhun[i].xpath("./a[@class='title']/text()").extract_first().strip()
-                    dict['标题'] = re.findall(r"\s+-\s+(.*)", tit)[0].strip()
-                except Exception:
-                    dict['标题'] = ""
-                try:
-                    dict['状态'] = biaozhun[i].xpath("./div[@class='attributes']/span[contains(@class, 'status')]/@title").extract_first().strip()
-                except Exception:
-                    dict['状态'] = ""
-                try:
-                    ri = biaozhun[i].xpath("./div[@class='attributes']/text()").extract()
-                    riqi = re.sub(r"[\r\n\t]", "", ''.join(ri)).strip()
-                    if 'Published by' in riqi:
-                        dict['Published by'] = re.findall(r"by\s+(.*)\s+.*", riqi)[0].strip()
-                    else:
-                        dict['Published by'] = ""
-                except Exception:
-                    dict['Published by'] = ""
-                try:
-                    dict['日期'] = biaozhun[i].xpath("./div[@class='attributes']/span[contains(@class, 'status')]/following-sibling::span[1]/text()").extract_first().strip()
-                except Exception:
-                    dict['日期'] = ""
-                try:
-                    dict['简介'] = biaozhun[i].xpath("./div[@class='description']/text()").extract_first().strip()
-                except Exception:
-                    dict['简介'] = ""
-                result.append(dict)
-
-        except Exception:
-            return result
-
-        return result
-
-    # 获取代替标准
-    def getDaiTiBiaoZhun(self, select):
-        result = []
-        selector = select
-        try:
-            biaozhunhao = selector.xpath("//div[@class='document selected']/preceding-sibling::div[@class='document']/div[@class='document-history-card']")
-            for i in range(len(biaozhunhao)):
-                dict = {}
-                try:
-                    dict['标准号'] = biaozhunhao[i].xpath("./div[@class='document-heading']/div[@class='document-title']/a/text()").extract_first().strip()
-                except Exception:
-                    dict['标准号'] = ""
-                try:
-                    dict['链接'] = biaozhunhao[i].xpath("./div[@class='document-heading']/div[@class='document-title']/a/@href").extract_first().strip()
-                except Exception:
-                    dict['链接'] = ""
-                try:
-                    dict['出版日期'] = biaozhunhao[i].xpath("./div[@class='document-heading']/div[@class='publish-date']/text()").extract_first().strip()
-                except Exception:
-                    dict['出版日期'] = ""
-                try:
-                    dict['标题'] = biaozhunhao[i].xpath("./div[@class='document-name']/text()").extract_first().strip()
-                except Exception:
-                    dict['标题'] = ""
-                try:
-                    dict['简介'] = biaozhunhao[i].xpath("./div[@class='document-description']/text()").extract_first().strip()
-                except Exception:
-                    dict['简介'] = ""
-                result.append(dict)
-
-        except Exception:
-            return result
-
-        return result
-
-    # 获取分类号
-    def getFenLeiHao(self, select):
-        result = []
-        selector = select
-        try:
-            fenlei_list = selector.xpath("//td[@class='label' and contains(text(), 'ICS')]/parent::tr")
-            for fenlei in fenlei_list:
-                try:
-                    fen = fenlei.xpath("string(.)").extract_first().strip()
-                    ics = re.sub(r"[\r\n\t]", " ", fen)
-                except Exception:
-                    ics = ""
-                result.append(ics)
-            fenleihao = '|'.join(result)
-
-        except Exception:
-            fenleihao = ""
-
-        return fenleihao
-
-   # 关联机构
-    def guanLianJiGou(self, select):
-        selector = select
-        e = {}
-        try:
-            url = selector.xpath("//div[@class='logo-container']/a/@href").extract_first().strip()
-            if url:
-                e['url'] = url
-                e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-                e['ss'] = '机构'
-            else:
-                return e
-        except Exception:
-            return e
-
-        return e
-
-class JiGouServer(object):
-    def __init__(self, logging):
-        self.logging = logging
-
-    # 数据类型转换
-    def getEvalResponse(self, task_data):
-        return ast.literal_eval(task_data)
-
-    # 获取选择器
-    def getSelector(self, resp):
-        selector = Selector(text=resp)
-
-        return selector
-
-    # 获取标题
-    def getTitle(self, select):
-        selector = select
-        try:
-            title = selector.xpath("//h1[contains(@class, 'supplier-name')]/text()").extract_first().strip()
-
-        except Exception:
-            title = ""
-
-        return title
-
-    # 获取标识
-    def getBiaoShi(self, select):
-        selector = select
-        try:
-            pic = selector.xpath("//div[@class='logo-container']/a/img/@src").extract_first().strip()
-
-        except Exception:
-            pic = ""
-
-        return pic
-
-    # 关联机构
-    def guanLianJiGou(self, url):
-        # 创建关联对象
-        e = {}
-        try:
-            e['url'] = url
-            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-            e['ss'] = '机构'
-        except Exception:
-            return e
-
-        return e
-
-   # 获取简介
-    def getJianJie(self, html):
-        result_list = []
-        tree = etree.HTML(html)
-        try:
-            tags = tree.xpath("//div[@id='sp-profile-body']/div[not(@class='view-more')]")
-            for tag in tags:
-                content = re.sub(r"src=\"", "src=\"https://www.globalspec.com", tostring(tag).decode('utf-8'))
-                result = re.sub(r"[\n\r\t]", "", content).strip()
-                result_list.append(result)
-            jianjie = ''.join(result_list)
-
-        except Exception:
-            jianjie = ""
-
-        return jianjie
-
-    # 获取简介中图片url
-    def getJianJieUrl(self, select):
-        url_list = []
-        selector = select
-        try:
-            urls = selector.xpath("//div[@id='sp-profile-body']//img/@src").extract()
-            for i in urls:
-                url = 'https://www.globalspec.com' + i
-                url_list.append(url)
-
-        except Exception:
-            return url_list
-
-        return url_list
-
-   # 获取通讯地址
-    def getTongXunDiZhi(self, html):
-        tree = etree.HTML(html)
-        try:
-            tongxun = tree.xpath("//div[@class='supplier-address']")[0]
-            dizhi = re.sub(r"[\n\r\t]", "", tostring(tongxun).decode('utf-8')).strip()
-
-        except Exception:
-            dizhi = ""
-
-        return dizhi
-
-   # 获取字段值（电话、传真、企业类型）
-    def getField(self, select, para):
-        selector = select
-        try:
-            fieldValue = selector.xpath("//div[@class='label' and contains(text(), '" + para + "')]/following-sibling::div[@class='data']/text()").extract_first().strip()
+            field = selector.xpath("//table[@class='data-table']/tbody/tr/th[contains(text(), 'Keyword')]/following-sibling::td[1]/text()").extract_first()
+            fieldValue = re.sub(r"[\n\r\t]", "", field).strip().replace(';', '|')
 
         except Exception:
             fieldValue = ""
 
         return fieldValue
 
-   # 获取主页
-    def getZhuYe(self, select):
+    # 获取国际标准分类号
+    def getFenLeiHao(self, select):
         selector = select
         try:
-            zhuye = selector.xpath("//a[contains(@class, 'icon-accompanying-link')]/@href").extract_first().strip()
+            fenleihaos = selector.xpath("//table[@class='data-table']/tbody/tr/th[contains(text(), 'ICS')]/following-sibling::td[1]/a/text()").extract()
+            fenleihao = '|'.join(fenleihaos)
 
         except Exception:
-            zhuye = ""
+            fenleihao = ""
 
-        return zhuye
+        return fenleihao
+
+    # 获取标准(被代替标准、引用标准)
+    def getBiaoZhun(self, select, para):
+        # value_list = []
+        selector = select
+        # tree = etree.HTML(html)
+        try:
+            fields = selector.xpath("//table[@class='data-table']/tbody/tr/th[contains(text(), '" + para + "')]/following-sibling::td[1]//text()").extract()
+            value_list = [i.strip() for i in fields]
+            fieldValues = [value for value in value_list if (len(str(value)) != 0)]
+            beiDaiTi = '|'.join(fieldValues).strip()
+            # beiDaiTi = fields.xpath('string(.)').strip()
+            # if fieldValue[-1] is '|':
+            #     beiDaiTi = fieldValue[:-1]
+            # else:
+            #     beiDaiTi = fieldValue
+
+        except Exception:
+            beiDaiTi = ""
+
+        return beiDaiTi
+
+    # 获取日期(废止日期、确认日期)
+    def getRiQi(self, select, para):
+        selector = select
+        try:
+            riqi = selector.xpath("//table[@class='data-table']/tbody/tr/th[contains(text(), '" + para + "')]/following-sibling::td[1]/text()").extract_first().strip()
+            try:
+                date = str(datetime.strptime(riqi, "%Y-%m-%d"))
+            except Exception:
+                date = riqi
+
+        except Exception:
+            date = ""
+
+        return date
+
+    # 获取修订标准(修订标准、被修订标准)
+    def getXiuDing(self, select, para):
+        return_list = []
+        selector = select
+        try:
+            xiuding = selector.xpath("//table[@class='data-table']/tbody/tr/th[contains(text(), '" + para + "')]/following-sibling::td[1]/a")
+            if xiuding:
+                for i in xiuding:
+                    dict = {}
+                    try:
+                        dict['标准号'] = i.xpath("./text()").extract_first().strip()
+                    except Exception:
+                        dict['标准号'] = ""
+                    try:
+                        dict['链接'] = 'http://www.normadoc.com/english/' + i.xpath("./@href").extract_first().strip()
+                    except Exception:
+                        dict['链接'] = ""
+
+                    return_list.append(dict)
+            else:
+                biaozhun = selector.xpath("//table[@class='data-table']/tbody/tr/th[contains(text(), '" + para + "')]/following-sibling::td[1]/text()").extract()
+                value_list = [i.strip() for i in biaozhun]
+                fieldValues = [value for value in value_list if (len(str(value)) != 0)]
+                for j in fieldValues:
+                    dict = {}
+                    dict['标准号'] = j
+                    dict['链接'] = ""
+                    return_list.append(dict)
+
+        except Exception:
+            return return_list
+
+        return return_list
+
+    # 获取价格
+    def getPrice(self, select):
+        selector = select
+        price_list = []
+        try:
+            value_list = selector.xpath("//table[@class='table_link']/tbody/tr")
+            keys = selector.xpath("//table[@class='table_link']/thead/tr/th/text()").extract()
+            for i in value_list:
+                dict = {}
+                values = i.xpath("./td[not(button)]")
+                for j in range(len(keys)):
+                    dict[keys[j]] = ''.join(values[j].xpath(".//text()").extract()).strip()
+                    # jiage = re.sub(r"[\r\n\t]", "", ''.join(j.xpath("./text()").extract())).strip()
+                price_list.append(dict)
+
+        except Exception:
+            return price_list
+
+        return price_list
+
+   # 关联标准
+    def guanLianBiaoZhun(self, url, sha):
+        e = {}
+        try:
+            e['url'] = url
+            e['sha'] = sha
+            e['ss'] = '标准'
+        except Exception:
+            return e
+
+        return e

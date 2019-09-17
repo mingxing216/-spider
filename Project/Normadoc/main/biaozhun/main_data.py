@@ -3,6 +3,9 @@
 '''
 
 '''
+import gevent
+from gevent import monkey
+monkey.patch_all()
 import sys
 import os
 import time
@@ -13,10 +16,6 @@ import datetime
 import asyncio
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
-import gevent
-from gevent import monkey
-# 猴子补丁一定要先打，不然就会报错
-monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
@@ -76,35 +75,83 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('页面出现验证码: {}'.format(url))
             return None
 
+    # 获取价格实体字段
+    def price(self, select, title, url, sha):
+        # 价格数据存储字典
+        price_data = {}
+        # 标题
+        price_data['title'] = title
+        # 商品价格
+        price_data['shangPinJiaGe'] = self.server.getPrice(select=select)
+        # 关联标准
+        price_data['guanLianBiaoZhun'] = self.server.guanLianBiaoZhun(url=url, sha=sha)
+        # ===================公共字段
+        # url
+        price_data['url'] = url
+        # 生成key
+        price_data['key'] = url
+        # 生成sha
+        price_data['sha'] = sha
+        # 生成ss ——实体
+        price_data['ss'] = '价格'
+        # 生成clazz ——层级关系
+        price_data['clazz'] = '价格'
+        # 生成es ——栏目名称
+        price_data['es'] = '标准'
+        # 生成ws ——目标网站
+        price_data['ws'] = 'normadoc'
+        # 生成biz ——项目
+        price_data['biz'] = '文献大数据'
+        # 生成ref
+        price_data['ref'] = ''
+
+        # 保存数据到Hbase
+        self.dao.saveDataToHbase(data=price_data)
+
     # 获取标准实体字段
-    def standard(self, save_data, select, html, url):
+    def standard(self, save_data, select, html, url, sha):
         # 获取标准编号
         save_data['biaoZhunBianHao'] = self.server.getBiaoZhunBianHao(select)
         # 获取标题
         save_data['title'] = self.server.getTitle(select)
-        # 获取标准发布组织
-        save_data['biaoZhunFaBuZuZhi'] = self.server.getFaBuZuZhi(select)
-        # 获取出版日期
-        save_data['chuBanRiQi'] = self.server.getField(select, 'Publication Date')
         # 获取标准状态
-        save_data['biaoZhunZhuangTai'] = self.server.getField(select, 'Status')
-        # 获取页数
-        save_data['yeShu'] = self.server.getField(select, 'Page Count')
+        save_data['biaoZhunZhuangTai'] = self.server.getZhuangTai(select)
         # 获取描述
         save_data['miaoShu'] = self.server.getMiaoShu(html)
-        # 获取被代替标准
-        save_data['beiDaiTiBiaoZhun'] = self.server.getBeiDaiTiBiaoZhun(select)
-        # 获取引用标准
-        save_data['yinYongBiaoZhun'] = self.server.getYinYongBiaoZhun(select)
-        # 获取代替标准
-        save_data['daiTiBiaoZhun'] = self.server.getDaiTiBiaoZhun(select)
+        # 获取作者信息
+        save_data['zuoZheXinXi'] = self.server.getField(select, 'Author')
+        # 获取标准发布组织
+        save_data['biaoZhunFaBuZuZhi'] = self.server.getField(select, 'Editor')
+        # 获取标准类型
+        save_data['biaoZhunLeiXing'] = self.server.getField(select, 'Document type')
+        # 获取版本
+        save_data['banBen'] = self.server.getField(select, 'Edition')
         # 获取国际标准分类号
         save_data['guoJiBiaoZhunFenLeiHao'] = self.server.getFenLeiHao(select)
-        # 关联机构
-        save_data['guanLianJiGou'] = self.server.guanLianJiGou(select)
-        # 存储机构种子
-        if save_data['guanLianJiGou']:
-            self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=save_data['guanLianJiGou'], ws='Engineering360', es='标准')
+        # 获取页数
+        save_data['yeShu'] = self.server.getField(select, 'Number of pages')
+        # 获取被代替标准
+        save_data['beiDaiTiBiaoZhun'] = self.server.getBiaoZhun(select, 'Replace')
+        # 获取引用标准
+        save_data['yinYongBiaoZhun'] = self.server.getBiaoZhun(select, 'Cross references')
+        # 获取发布日期
+        save_data['faBuRiQi'] = self.server.getField(select, 'Year')
+        # 获取国别
+        save_data['guoBie'] = self.server.getField(select, 'Country')
+        # 获取关键词
+        save_data['guanJianCi'] = self.server.getGuanJianCi(select)
+        # 获取废止日期
+        save_data['feiZhiRiQi'] = self.server.getRiQi(select, 'expiration_de_validite')
+        # 获取修订标准
+        save_data['xiuDingBiaoZhun'] = self.server.getXiuDing(select, 'Modified by')
+        # 获取被修订标准
+        save_data['beiXiuDingBiaoZhun'] = self.server.getXiuDing(select, 'Modify')
+        # 获取确认日期
+        save_data['queRenRiQi'] = self.server.getRiQi(select, 'Confirmation date')
+
+        # 获取价格实体
+        self.price(select=select, title=save_data['title'], url=url, sha=sha)
+
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -120,15 +167,15 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_STANTARD, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_STANDARD, sha=sha)
             return
 
         response = resp.text
-        # print(response)
+
         # 转为selector选择器
         selector = self.server.getSelector(response)
         # 获取标准实体字段
-        self.standard(save_data=save_data, select=selector, html=response, url=url)
+        self.standard(save_data=save_data, select=selector, html=response, url=url, sha=sha)
 
         # ===================公共字段
         # url
@@ -144,7 +191,7 @@ class SpiderMain(BastSpiderMain):
         # 生成es ——栏目名称
         save_data['es'] = '标准'
         # 生成ws ——网站名称
-        save_data['ws'] = 'Engineering360'
+        save_data['ws'] = 'normadoc'
         # 生成biz ——项目名称
         save_data['biz'] = '文献大数据'
         # 生成ref
@@ -167,12 +214,12 @@ class SpiderMain(BastSpiderMain):
             return
         self.dao.saveDataToHbase(data=save_data)
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_STANTARD, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_STANDARD, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_STANTARD, count=30, lockname=config.REDIS_STANTARD_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANDARD, count=30, lockname=config.REDIS_STANDARD_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -203,7 +250,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://standards.globalspec.com/std/971598/tir16142"}')
+        # main.run(task='{"url": "http://www.normadoc.com/english/bs-en-60730-2-5-2002-a2-2010-1768174.html"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
