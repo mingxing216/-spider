@@ -37,15 +37,16 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['mode'] = mode
             # 设置请求头
             param['headers'] = {
-                'Authority': 'www.jstor.org',
-                # 'Scheme': 'https',
-                'Cache-Control': 'max-age=0',
-                'Upgrade-Insecure-Requests': '1',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
+                # 'Accept': 'application/json, text/plain, */*',
+                # 'Cache-Control': 'max-age=0',
+                # 'Upgrade-Insecure-Requests': '1',
+                # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'Accept-Encoding': 'gzip, deflate, br',
-                'Sec-Fetch-Mode': 'navigate',
-                # 'sec-fetch-user': '?1',
+                # 'Sec-Fetch-Mode': 'cors',
                 # 'Referer': referer,
+                'Content-Type': 'application/json',
+                'Origin': 'https://ieeexplore.ieee.org',
+                'Host': 'ieeexplore.ieee.org',
                 'Connection': 'close',
                 'User-Agent': user_agent_u.get_ua()
             }
@@ -97,17 +98,4 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                     else:
                         continue
 
-    # 创建COOKIE
-    def create_cookie(self):
-        url = 'https://www.jstor.org/'
-        try:
-            resp = self.getResp(url=url, mode='GET')
-            if resp['code'] == 0:
-                # print(resp.cookies)
-                self.logging.info('cookie创建成功')
-                return requests.utils.dict_from_cookiejar(resp['data'].cookies)
-
-        except:
-            self.logging.error('cookie创建异常')
-            return None
 

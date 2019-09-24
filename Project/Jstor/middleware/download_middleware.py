@@ -22,6 +22,98 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         self.proxy_type = proxy_type
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
+    def get_headers(self):
+        headers_list = [
+            {
+                'Authority': 'www.jstor.org',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Upgrade-Insecure-Requests': '1',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Sec-Fetch-Mode': 'navigate',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Scheme': 'https',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Scheme': 'https',
+                'Cache-Control': 'max-age=0',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Scheme': 'https',
+                'Upgrade-Insecure-Requests': '1',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Scheme': 'https',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Cache-Control': 'max-age=0',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Upgrade-Insecure-Requests': '1',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Upgrade-Insecure-Requests': '1',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Upgrade-Insecure-Requests': '1',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Sec-Fetch-Mode': 'navigate',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Cache-Control': 'max-age=0',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Sec-Fetch-Mode': 'navigate',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            }
+        ]
+
+        headers = random.choice(headers_list)
+        return headers
+
     def getResp(self, url, mode, data=None, cookies=None, referer=None):
         # 请求异常时间戳
         err_time = 0
@@ -36,19 +128,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             # 设置请求方式：GET或POST
             param['mode'] = mode
             # 设置请求头
-            param['headers'] = {
-                'Authority': 'www.jstor.org',
-                # 'Scheme': 'https',
-                'Cache-Control': 'max-age=0',
-                'Upgrade-Insecure-Requests': '1',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
-                # 'Accept-Encoding': 'gzip, deflate, br',
-                'Sec-Fetch-Mode': 'navigate',
-                # 'sec-fetch-user': '?1',
-                # 'Referer': referer,
-                'Connection': 'close',
-                'User-Agent': user_agent_u.get_ua()
-            }
+            param['headers'] = self.get_headers()
             # 设置post参数
             param['data'] = data
             # 设置cookies

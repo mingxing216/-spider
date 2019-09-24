@@ -44,7 +44,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'accept-encoding': 'gzip, deflate, br',
                 # 'Referer': referer,
-                'Authority': 'standards.globalspec.com',
+                'Host': 'www.normadoc.com',
                 'Connection': 'close',
                 'User-Agent': user_agent_u.get_ua()
             }

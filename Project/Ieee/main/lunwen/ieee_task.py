@@ -8,19 +8,20 @@ import os
 import time
 import traceback
 import datetime
+import json
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.Jstor.middleware import download_middleware
-from Project.Jstor.service import service
-from Project.Jstor.dao import dao
-from Project.Jstor import config
+from Project.Ieee.middleware import download_middleware
+from Project.Ieee.service import service
+from Project.Ieee.dao import dao
+from Project.Ieee import config
 
-log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = 'JSTOR_期刊论文_task'  # LOG名
-NAME = 'JSTOR_期刊论文_task'  # 爬虫名
+log_file_dir = 'Ieee'  # LOG日志存放路径
+LOGNAME = 'Ieee_期刊论文_task'  # LOG名
+NAME = 'Ieee_期刊论文_task'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = INSERT_DATA_NUMBER = False # 爬虫名入库, 记录抓取数据量
@@ -46,7 +47,7 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
-        self.index_url = 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&acc=dfr'
+        self.index_url = 'https://ieeexplore.ieee.org/rest/publication'
         self.cookie_dict = ''
         self.num = 0
 
@@ -65,7 +66,28 @@ class SpiderMain(BastSpiderMain):
             if resp['code'] == 1:
                 return None
 
-    def get_yearTask(self):
+    def get_catalog(self):
+
+        payloadData = {
+            'contentType': "conferences",
+            'publisher': None,
+            'pageNumber': 15,
+            # 'selectedValue': "Topic:Computing and Processing",
+            'tabId': "topic"
+        }
+
+        jsonData = json.dumps(payloadData)
+
+        index_resp = self.__getResp(func=self.download_middleware.getResp,
+                                    url=self.index_url,
+                                    mode='POST',
+                                    data=jsonData)
+
+        index_text = index_resp.text
+
+        # with open('index.json', 'w') as f:
+        #     f.write(index_text)
+        #
         # 存放带年份的期刊种子
         catalog_urls = []
 
@@ -139,7 +161,7 @@ class SpiderMain(BastSpiderMain):
                     # 保存url
                     self.num += 1
                     LOGGING.info('当前已抓种子数量: {}'.format(self.num))
-                    self.dao.saveProjectUrlToMysql(table=config.MYSQL_PAPER, memo=url)
+                    self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=url, ws='Ieee', es='会议论文')
                     # detail_urls.append(url)
 
             # 判断是否有下一页
@@ -178,7 +200,7 @@ class SpiderMain(BastSpiderMain):
                         # 保存url
                         self.num += 1
                         LOGGING.info('当前已抓种子数量: {}'.format(self.num))
-                        self.dao.saveProjectUrlToMysql(table=config.MYSQL_PAPER, memo=url)
+                        self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=url, ws='Ieee', es='会议论文')
                         # detail_urls.append(url)
 
                     # print(len(detail_urls))
@@ -218,6 +240,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
+        main.get_catalog()
+        return
         main.start()
     except:
         LOGGING.error(str(traceback.format_exc()))
@@ -225,16 +249,17 @@ def process_start():
 
 if __name__ == '__main__':
     begin_time = time.time()
-    main = SpiderMain()
-    try:
-        main.get_yearTask()
-    except:
-        LOGGING.error(str(traceback.format_exc()))
-    po = Pool(4)
-    for i in range(4):
-        po.apply_async(func=process_start)
-    po.close()
-    po.join()
+    process_start()
+    # main = SpiderMain()
+    # try:
+    #     main.get_catalog()
+    # except:
+    #     LOGGING.error(str(traceback.format_exc()))
+    # po = Pool(4)
+    # for i in range(4):
+    #     po.apply_async(func=process_start)
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))
