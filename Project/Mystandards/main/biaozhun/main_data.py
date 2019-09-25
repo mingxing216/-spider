@@ -237,7 +237,7 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                time.sleep(3)
+                time.sleep(2)
                 continue
                 # LOGGING.info('队列中已无任务，结束程序')
                 # return

@@ -71,7 +71,7 @@ class SpiderMain(BastSpiderMain):
         payloadData = {
             'contentType': "conferences",
             'publisher': None,
-            'pageNumber': 15,
+            # 'pageNumber': 15,
             # 'selectedValue': "Topic:Computing and Processing",
             'tabId': "topic"
         }
@@ -83,11 +83,13 @@ class SpiderMain(BastSpiderMain):
                                     mode='POST',
                                     data=jsonData)
 
-        index_text = index_resp.text
+        index_json = index_resp.json()['topics']
+        print(index_json)
 
         # with open('index.json', 'w') as f:
-        #     f.write(index_text)
-        #
+        #     f.write(index_json)
+
+        return
         # 存放带年份的期刊种子
         catalog_urls = []
 

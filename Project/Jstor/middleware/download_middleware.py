@@ -25,11 +25,6 @@ class Downloader(downloader.BaseDownloaderMiddleware):
     def get_headers(self):
         headers_list = [
             {
-                'Authority': 'www.jstor.org',
-                'Connection': 'close',
-                'User-Agent': user_agent_u.get_ua()
-            },
-            {
                 'Upgrade-Insecure-Requests': '1',
                 'Connection': 'close',
                 'User-Agent': user_agent_u.get_ua()
@@ -90,13 +85,6 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 'Authority': 'www.jstor.org',
                 'Upgrade-Insecure-Requests': '1',
                 'Accept-Language': 'zh-CN,zh;q=0.9',
-                'Connection': 'close',
-                'User-Agent': user_agent_u.get_ua()
-            },
-            {
-                'Authority': 'www.jstor.org',
-                'Upgrade-Insecure-Requests': '1',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
                 'Sec-Fetch-Mode': 'navigate',
                 'Connection': 'close',
                 'User-Agent': user_agent_u.get_ua()
@@ -128,7 +116,12 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             # 设置请求方式：GET或POST
             param['mode'] = mode
             # 设置请求头
-            param['headers'] = self.get_headers()
+            param['headers'] = {
+                'Scheme': 'https',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            }
             # 设置post参数
             param['data'] = data
             # 设置cookies

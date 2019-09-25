@@ -258,14 +258,6 @@ class SpiderMain(BastSpiderMain):
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         xueKeLeiBie = task_data['xueKeLeiBie']
 
-        # 获取cookie
-        self.cookie_dict = self.download_middleware.create_cookie()
-        # cookie创建失败，停止程序
-        if not self.cookie_dict:
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-            return
-
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
@@ -346,6 +338,12 @@ class SpiderMain(BastSpiderMain):
             # print(task_list)
 
             if task_list:
+                # 获取cookie
+                self.cookie_dict = self.download_middleware.create_cookie()
+                # cookie创建失败，重新创建
+                if not self.cookie_dict:
+                    continue
+
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
                 # 创建gevent协程
@@ -365,8 +363,10 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                LOGGING.info('队列中已无任务，结束程序')
-                return
+                time.sleep(2)
+                continue
+                # LOGGING.info('队列中已无任务，结束程序')
+                # return
 
 def process_start():
     main = SpiderMain()
