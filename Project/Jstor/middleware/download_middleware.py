@@ -117,8 +117,14 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['mode'] = mode
             # 设置请求头
             param['headers'] = {
+                'Authority': 'www.jstor.org',
                 'Scheme': 'https',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
+                # 'Cache-Control': 'max-age=0',
+                # 'Upgrade-Insecure-Requests': '1',
+                # 'Accept-Language': 'zh-CN,zh;q=0.9',
+                # 'Accept-Encoding': 'gzip, deflate, br',
+                # 'Sec-Fetch-Mode': 'navigate',
+                # 'Referer': referer,
                 'Connection': 'close',
                 'User-Agent': user_agent_u.get_ua()
             }

@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 
 
 
-class QiKanLunWen_LunWenServer(object):
+class HuiYiLunWen_LunWenServer(object):
     def __init__(self, logging):
         self.logging = logging
 
@@ -25,298 +25,21 @@ class QiKanLunWen_LunWenServer(object):
     def getEvalResponse(self, task_data):
         return ast.literal_eval(task_data)
 
-    # 获取各学科列表url
-    def getSubjectUrlList(self, resp, index_url):
-        return_list = []
-        selector = Selector(text=resp)
-        # 获取所有学科url所在的input标签
-        url_list = selector.xpath("//fieldset[@id='disc']/ul/li/input")
-        # 获取所有学科名称所在的label标签
-        name_list = selector.xpath("//fieldset[@id='disc']/ul/li/label")
-        # 遍历所有学科标签，获取每个学科中的name-value属性值,并拼成新的列表url,以及获取学科名称
-        for i in range(len(url_list)):
-            name = url_list[i].xpath("./@name").extract_first()
-            value = url_list[i].xpath("./@value").extract_first()
-            subject = re.sub(r'\s*\(.*\)', '', name_list[i].xpath("./span/text()").extract_first())
-            url = index_url + '&' + name + '=' + value
-            return_list.append({'url':url, 'xueKeLeiBie':subject})
-
-        return return_list
-
-    # 获取详情url
-    def getDetailUrl(self, resp, xueke):
-        return_list = []
-        selector = Selector(text=resp)
-        # 获取一页所有详情url
-        url_list = selector.xpath("//div[@class='title']/h3/a/@href").extract()
-        # 遍历每个详情url，加上域名，拼接成完整的url
-        for url in url_list:
-            url = 'https://www.jstor.org' + url
-            return_list.append({'url':url, 'xueKeLeiBie':xueke})
-
-        return return_list
-
-    # 是否有下一页
-    def hasNextPage(self, resp):
-        selector = Selector(text=resp)
-        try:
-            next_page = 'https://www.jstor.org' + selector.xpath("//form[@id='searchFormTools']/div/ul/li/a[@id='next-page']/@href").extract_first()
-        except:
-            next_page = None
-
-        return next_page
-
-    # ================================= 获取字段值(模板1)
-
     # 获取script标签中的内容
     def getScript(self, resp):
         selector = Selector(text=resp)
         try:
-            script_text = selector.xpath("//script[contains(text(),'contentData')]/text()").extract_first().strip()
-            script = '{' + re.sub(r";$", "", re.sub(r"\s*utilsData\s*=\s*", "\"utilsData\":", re.sub(r"\s*userData\s*=\s*", "\"userData\":", re.sub(r"\s*reviveData\s*=\s*", "\"reviveData\":", re.sub(r"\s*parentContentData\s*=\s*", "\"parentContentData\":", re.sub(r"\s*searchData\s*=\s*", "\"searchData\":", re.sub(r"\s*contentData\s*=\s*", "\"contentData\":", re.sub(r"var\s+authorizationData\s*=\s*", "\"authorizationData\":", script_text)))))))) + '}'
+            script_text = selector.xpath("//script[contains(text(),'global.document.metadata')]/text()").extract_first().strip()
+            script = re.sub(r";$", "", re.sub(r".*global\.document\.metadata=", "", re.sub(r"[\n\r\t]", "", script_text)))
             script_dict = json.loads(script)
             # print(json.dumps(script_dict, indent=4))
             # with open('script.txt', 'w')as f:
-            #     f.write(scri)
+            #     f.write(script)
             # print(script_list[0]['creativeCommons'])
         except Exception:
             script_dict = {}
 
         return script_dict
-
-    # 获取字段
-    def getField(self, script, para):
-        text_dict = script
-        try:
-            if text_dict:
-                fieldValue = str(text_dict['contentData'][para]).strip()
-            else:
-                fieldValue = ""
-        except Exception:
-            fieldValue = ""
-
-        return fieldValue
-
-    # 获取多值字段
-    def getMoreField(self, script, para):
-        text_dict = script
-        try:
-            if text_dict:
-                moreDataList = text_dict['contentData'][para]
-                if isinstance(moreDataList, list):
-                    moreData = "|".join(moreDataList)
-                elif isinstance(moreDataList, str):
-                    moreData = moreDataList.strip()
-                else:
-                    moreData = ""
-            else:
-                moreData = ""
-        except Exception:
-            moreData = ""
-
-        return moreData
-
-    # 获取卷期
-    def getJuanQi(self, script):
-        text_dict = script
-        try:
-            if text_dict:
-                juanQi = text_dict['contentData']['volume'].strip() + ', ' + text_dict['contentData']['issue'].strip()
-            else:
-                juanQi = ""
-        except Exception:
-            juanQi = ""
-
-        return juanQi
-
-    # 获取出版商
-    def getChuBanShang(self, script):
-        text_dict = script
-        try:
-            if text_dict:
-                chuBanShang = str(text_dict['contentData']['primaryPublisher']['publisherName']).strip()
-            else:
-                chuBanShang = ""
-        except Exception:
-            chuBanShang = ""
-
-        return chuBanShang
-
-    # 获取摘要
-    def getZhaiYao(self, script):
-        text_dict = script
-        try:
-            if text_dict:
-                zhaiYao = re.findall(r"Abstract</h4>([\s\S]*</div>)</article>", str(text_dict['contentData']['infoTabRendition']))[0].replace("\n", "")
-            else:
-                zhaiYao = ""
-        except Exception:
-            zhaiYao = ""
-
-        return zhaiYao
-
-    # 关联组图
-    def guanLianPics(self, url):
-        # 创建关联对象
-        e = {}
-        try:
-            e['url'] = url
-            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-            e['ss'] = '组图'
-        except Exception:
-            return e
-
-        return e
-
-    # 关联论文
-    def guanLianLunWen(self, url):
-        # 创建关联对象
-        e = {}
-        try:
-            e['url'] = url
-            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-            e['ss'] = '论文'
-        except Exception:
-            return e
-
-        return e
-
-    # 获取组图
-    def getPicUrl(self, script):
-        return_pics = []
-        text_dict = script
-        try:
-            if text_dict:
-                pics = text_dict['contentData']['pageImages']
-                shortDOI = text_dict['contentData']['shortDOI']
-                if pics:
-                    for pic in pics:
-                        return_pics.append('https://www.jstor.org/stable/get_image/' + shortDOI + '?path=' + pic)
-        except Exception:
-            return return_pics
-
-        return return_pics
-
-    # 获取组图
-    def getPics(self, script, title):
-        labelObj = {}
-        return_pics = []
-        text_dict = script
-        try:
-            if text_dict:
-                pics = text_dict['contentData']['pageImages']
-                shortDOI = text_dict['contentData']['shortDOI']
-                if pics:
-                    for pic in pics:
-                        picObj = {
-                            'url': 'https://www.jstor.org/stable/get_image/' + shortDOI + '?path=' + pic,
-                            'title': title,
-                            'desc': ""
-                        }
-                        return_pics.append(picObj)
-                labelObj['全部'] = return_pics
-        except Exception:
-            labelObj['全部'] = []
-
-        return labelObj
-
-
-    # 获取参考文献
-    def getCanKaoWenXian(self, script):
-        data_list = []
-        text_dict = script
-        try:
-            if text_dict:
-                first_list = text_dict['contentData']['references']['reference_blocks'][0]['reference_content']
-                # print(json.dumps(first_list, indent=4))
-                if first_list:
-                    for first in first_list:
-                        label = first['label']
-                        if not label:
-                            second_dict = first['reference_data'][0]
-                            # print(json.dumps(second_dict, indent=4))
-                            data_dict = {}
-                            if second_dict:
-                                data = second_dict['text']
-
-                                if 'http' in data:
-                                    try:
-                                        data_dict['内容'] = re.findall(r"(.*)\s*http", data)[0]
-                                    except Exception:
-                                        data_dict['内容'] = ""
-                                    try:
-                                        data_dict['doi'] = re.findall(r"https://doi.org/(.*)", data)[0]
-                                    except Exception:
-                                        data_dict['doi'] = ""
-                                else:
-                                    try:
-                                        data_dict['内容'] = data
-                                    except Exception:
-                                        data_dict['内容'] = ""
-
-                                    data_dict['doi'] = ""
-
-                                # try:
-                                #     data_dict['作者'] = re.findall(r"(.*?)\s*[\(\（]*\d+", data)[0]
-                                # except Exception:
-                                #     data_dict['作者'] = ""
-                                # try:
-                                #     data_dict['日期'] = re.findall(r"\.\s*[\(\（]*([\d-]+?)[\)\）]*\.", data)[0]
-                                # except Exception:
-                                #     data_dict['日期'] = ""
-                                # try:
-                                #     if not data_dict['作者']:
-                                #         data_dict['标题'] = data
-                                #     else:
-                                #         if 'http' in data:
-                                #             data_dict['标题'] = re.findall(r"\d+[\)\）]*\.\s*(.*?)\.\s*http", data)[0]
-                                #         else:
-                                #             data_dict['标题'] = re.findall(r"\d+[\)\）]*\.\s*(.*)", data)[0]
-                                # except Exception:
-                                #     data_dict['标题'] = ""
-                                # try:
-                                #     data_dict['doi'] = re.findall(r"https://doi.org/(.*)", data)[0]
-                                # except Exception:
-                                #     data_dict['doi'] = ""
-
-                                data_list.append(data_dict)
-
-        except:
-            return data_list
-
-        return data_list
-
-    # 获取关联期刊
-    def getGuanLianQiKan(self, script):
-        text_dict = script
-        # 创建关联对象
-        e = {}
-        try:
-            if text_dict:
-                e['url'] = 'https://www.jstor.org' + str(text_dict['contentData']['publicationUrl']).strip()
-                e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-                e['ss'] = '期刊'
-        except Exception:
-            return e
-
-        return e
-
-    # 获取关联文档
-    def getGuanLianWenDang(self, script):
-        text_dict = script
-        # 创建关联对象
-        e = {}
-        try:
-            if text_dict:
-                e['url'] = 'https://www.jstor.org/stable/pdf/' + str(text_dict['contentData']['shortDOI']).strip() + '.pdf'
-                e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-                e['ss'] = '文档'
-        except Exception:
-            return e
-
-        return e
-
-    # ===============================获取字段值(模板2)
 
     # 获取选择器
     def getSelector(self, resp):
@@ -324,140 +47,414 @@ class QiKanLunWen_LunWenServer(object):
 
         return selector
 
-    # 获取标题
-    def getTitle(self, select):
-        selector = select
+    # 获取会议详情页，学科类别
+    def getHuiYiProfile(self, json):
+        return_list = []
         try:
-            tit = selector.xpath("//h1[contains(@class, 'title')]//text()").extract()
-            title = ''.join(tit).strip()
+            records = json['records']
+            for record in records:
+                try:
+                    for huiyi in record['titleHistory']:
+                        profile = {}
+                        profile['number'] = huiyi['publicationNumber']
+                        profile['url'] = 'https://ieeexplore.ieee.org' + huiyi['publicationLink']
+                        return_list.append(profile)
+
+                except Exception:
+                    profile = {}
+                    profile['number'] = record['publicationNumber']
+                    profile['url'] = 'https://ieeexplore.ieee.org' + record['publicationLink']
+                    return_list.append(profile)
+
+        except Exception:
+            return return_list
+
+        return return_list
+
+    # 获取会议论文列表页接口url，post参数，学科类别
+    def getCatalogUrl(self, json, url):
+        return_dict = {}
+        try:
+            xueke_list = []
+            topics = json['pubTopics']
+            for topic in topics:
+                xueke_list.append(topic['name'])
+            xueKeLeiBie = '|'.join(xueke_list)
+        except Exception:
+            xueKeLeiBie = ''
+
+        try:
+            return_dict['punumber'] = url['number']
+            return_dict['isnumber'] = json['currentIssue']['issueNumber']
+            return_dict['url'] = 'https://ieeexplore.ieee.org/rest/search/pub/' + str(return_dict['punumber']) + '/issue/' + str(return_dict['isnumber']) + '/toc'
+            return_dict['parenUrl'] = url['url']
+            return_dict['xueKeLeiBie'] = xueKeLeiBie
+
+        except Exception:
+            return return_dict
+
+        return return_dict
+
+    # 获取会议论文详情页
+    def getLunWenProfile(self, json, huiyi, xueke):
+        return_list = []
+        try:
+            records = json['records']
+            for record in records:
+                profile_dict = {}
+                profile_dict['lunwenNumber'] = record['articleNumber']
+                profile_dict['huiYiUrl'] = huiyi
+                profile_dict['xueKeLeiBie'] = xueke
+                try:
+                    profile_dict['lunwenUrl'] = 'https://ieeexplore.ieee.org' + record['documentLink']
+                except Exception:
+                    profile_dict['lunwenUrl'] = 'https://ieeexplore.ieee.org/document/' + record['articleNumber']
+                try:
+                    profile_dict['title'] = record['articleTitle']
+                except Exception:
+                    profile_dict['title'] = ''
+                try:
+                    profile_dict['pdfUrl'] = 'https://ieeexplore.ieee.org' + record['pdfLink']
+                except Exception:
+                    profile_dict['pdfUrl'] = ''
+                try:
+                    profile_dict['daXiao'] = record['pdfSize']
+                except Exception:
+                    profile_dict['daXiao'] = ''
+                return_list.append(profile_dict)
+
+        except Exception:
+            return return_list
+
+        return return_list
+
+    # 是否有下一页
+    def totalPages(self, json):
+        try:
+            totalPage = json['totalPages']
+            if totalPage > 1:
+                totalPages = totalPage
+            else:
+                totalPages = None
+        except:
+            totalPages = None
+
+        return totalPages
+
+    # ================================= 获取会议论文实体字段值
+
+    # 获取字段
+    def getField(self, script, para):
+        text_dict = script
+        try:
+            if text_dict:
+                fieldValue = str(text_dict[para]).strip()
+            else:
+                fieldValue = ""
+        except Exception:
+            fieldValue = ""
+
+        return fieldValue
+
+    # 获取ISBN、ISSN
+    def getGuoJiField(self, script, para):
+        text_dict = script
+        try:
+            return_dict = {}
+            fields = text_dict[para]
+            for field in fields:
+                return_dict[field['format']] = field['value']
+
+        except Exception:
+            return_dict = ""
+
+        return return_dict
+
+    # 获取作者
+    def getZuoZhe(self, script):
+        try:
+            author_list = []
+            authors = script['authors']
+            for author in authors:
+                author_list.append(author['name'])
+            zuozhe = '|'.join(author_list)
+
+        except Exception:
+            zuozhe = ''
+
+        return zuozhe
+
+    # 获取关键词
+    def getGuanJianCi(self, script):
+        try:
+            keyword_list = []
+            keywords = script['keywords']
+            for keyword in keywords:
+                keyword_list.extend(keyword['kwd'])
+            guanjianci = '|'.join(keyword_list)
+
+        except Exception:
+            guanjianci = ''
+
+        return guanjianci
+
+    # 获取时间
+    def getShiJian(self, script):
+        try:
+            return_dict = {}
+            return_dict['Y'] = script['publicationYear']
+        except Exception:
+            return_dict = ""
+
+        return return_dict
+
+    # 获取页数
+    def getYeShu(self, script):
+        try:
+            yeShu = script['startPage'] + ' - ' + script['endPage']
+
+        except Exception:
+            yeShu = ""
+
+        return yeShu
+
+    # 是否有参考\引证文献
+    def hasWenXian(self, script, para):
+        try:
+            cankaowenxian = script['sections']['references']
+
+        except Exception:
+            cankaowenxian = ""
+
+        return cankaowenxian
+
+    # 参考文献
+    def canKaoWenXian(self, content):
+        return_list = []
+        try:
+            for reference in content['references']:
+                return_dict = {}
+                try:
+                    return_dict['序号'] = reference['order']
+                except Exception:
+                    return_dict['序号'] = ""
+                try:
+                    return_dict['内容'] = reference['text']
+                except Exception:
+                    return_dict['内容'] = ""
+                try:
+                    return_dict['链接'] = 'https://ieeexplore.ieee.org' + reference['links']['documentLink']
+                except Exception:
+                    return_dict['链接'] = ""
+
+                return_list.append(return_dict)
+
+        except Exception:
+            return return_list
+
+        return return_list
+
+    # 引证文献
+    def yinZhengWenXian(self, content):
+        return_list = []
+        try:
+            for citations in content['paperCitations'].values():
+                for citation in citations:
+                    return_dict = {}
+                    try:
+                        return_dict['序号'] = citation['order']
+                    except Exception:
+                        return_dict['序号'] = ""
+                    try:
+                        return_dict['内容'] = citation['displayText']
+                    except Exception:
+                        return_dict['内容'] = ""
+                    try:
+                        return_dict['链接'] = 'https://ieeexplore.ieee.org' + citation['links']['documentLink']
+                    except Exception:
+                        return_dict['链接'] = ""
+
+                    return_list.append(return_dict)
+
+        except Exception:
+            return return_list
+
+        return return_list
+
+    # 关联作者
+    def guanLianZuoZhe(self, script, url):
+        result = []
+        try:
+            for author in script['authors']:
+                e = {}
+                id = author['id']
+                e['name'] = author['name']
+                e['url'] = url
+                e['sha'] = hashlib.sha1(id.encode('utf-8')).hexdigest()
+                e['ss'] = '人物'
+                result.append(e)
+        except Exception:
+            return result
+
+        return result
+
+    # 关联会议
+    def guanLianHuiYi(self, url):
+        e = {}
+        try:
+            e['url'] = url
+            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
+            e['ss'] = '活动'
+        except Exception:
+            return e
+
+        return e
+
+    # 关联文档
+    def guanLianWenDang(self, url):
+        e = {}
+        try:
+            e['url'] = url
+            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
+            e['ss'] = '文档'
+        except Exception:
+            return e
+
+        return e
+
+    #===============================获取作者实体字段值
+    # 获取标题
+    def getAuthorTitle(self, content):
+        try:
+            title = content['name']
 
         except Exception:
             title = ""
 
         return title
 
-    # 获取作者
-    def getZuoZhe(self, select):
-        selector = select
+    # 获取所在单位
+    def getDanWei(self, content):
         try:
-            zuozhe_data = selector.xpath("//div[@class='contrib']/text()").extract_first().strip()
-            zuozhe = re.sub(r"\s*[,，]\s*", "|", re.sub(r"\s*and\s*", "|", re.sub(r".*[:：]", "", zuozhe_data).strip()))
+            title = content['affiliation']
 
         except Exception:
-            zuozhe = ""
+            title = ""
 
-        return zuozhe
+        return title
 
-    # 获取期刊名称
-    def getQiKanMingCheng(self, select):
-        selector = select
+    # 获取正文
+    def getZhengWen(self, content):
         try:
-            qikan = selector.xpath("//div[@class='journal']/cite/text()").extract_first().strip()
+            zhengwen = '\n'.join(content['bio']['p'])
 
         except Exception:
-            qikan = ""
+            zhengwen = ""
 
-        return qikan
+        return zhengwen
 
-    # 获取ISSN
-    def getIssn(self, select):
-        selector = select
+    # 获取标识
+    def getBiaoShi(self, content):
         try:
-            issn = selector.xpath("//div[contains(@class, 'issn')]/text()").extract_first().strip()
+            pic = 'https://ieeexplore.ieee.org' + content['bio']['graphic']
 
         except Exception:
-            issn = ""
+            pic = ""
 
-        return issn
+        return pic
 
-    # 获取巻期
-    def getJuanQis(self, select):
-        selector = select
+    # 获取ORCID
+    def getORCID(self, content):
         try:
-            juan = selector.xpath("//div[contains(@class, 'break-word')]/text()").extract_first().strip()
-            juanqi = re.findall(r"(Vol.*No\.\s*\d+)", juan)[0]
+            orcid = content['orcid']
 
         except Exception:
-            juanqi = ""
+            orcid = ""
 
-        return juanqi
+        return orcid
 
-    # 获取所在页码
-    def getSuoZaiYeMa(self, select):
-        selector = select
+    # 获取ID
+    def getID(self, content):
         try:
-            juan = selector.xpath("//div[contains(@class, 'break-word')]/text()").extract_first().strip()
-            suozaiyema = re.findall(r"[,，]\s*(pp\.\s*[\d-]*)", juan)[0]
+            id = content['id']
 
         except Exception:
-            suozaiyema = ""
+            id = ""
 
-        return suozaiyema
+        return id
 
-    # 获取页数
-    def getYeShu(self, select):
-        selector = select
-        try:
-            count = selector.xpath("//div[@class='count']/text()").extract_first().strip()
-            yeshu = re.findall(r"[:：]\s*(.*)", count)[0]
-
-        except Exception:
-            yeshu = ""
-
-        return yeshu
-
-    # 获取出版商
-    def getChuBanShangs(self, select):
-        selector = select
-        try:
-            chu = selector.xpath("//div[@class='publisher']//text()").extract()
-            chuban = ''.join(chu).strip()
-            chubanshang = re.findall(r"[:：]\s*(.*)", chuban)[0]
-
-        except Exception:
-            chubanshang = ""
-
-        return chubanshang
-
-    # 获取摘要
-    def getZhaiYaos(self, html):
-        tree = etree.HTML(html)
-        try:
-            result = tree.xpath("//div[contains(@class, 'journal_description')]")[0]
-            zhaiyao = re.sub(r"\n", "", re.sub(r"<strong>.*</strong>", "", tostring(result).decode('utf-8'))).strip()
-
-        except Exception:
-            zhaiyao = ""
-
-        return zhaiyao
-
-    # 获取关键词
-    def getGuanJianCi(self, select):
-        selector = select
-        try:
-            guanjian = selector.xpath("//div[contains(@class, 'topics-list')]/a/text()").extract()
-            guanjianci = '|'.join(guanjian).strip()
-
-        except Exception:
-            guanjianci = ""
-
-        return guanjianci
-
-    # 获取关联期刊
-    def getGuanLianQiKans(self, select):
-        selector = select
-        # 创建关联对象
+    # 图片关联人物
+    def guanLianRenWu(self, url, sha):
         e = {}
         try:
-            e['url'] = 'https://www.jstor.org'+ selector.xpath("//li[contains(@class, 'breadcrumb-journal')]/a/@href").extract_first()
-            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-            e['ss'] = '期刊'
+            e['url'] = url
+            e['sha'] = sha
+            e['ss'] = '人物'
         except Exception:
             return e
 
         return e
 
-class QiKanLunWen_QiKanServer(object):
+
+    # ===============================获取会议实体字段值
+
+    # 获取标题
+    def getTitle(self, content):
+        try:
+            title = content['displayTitle']
+
+        except Exception:
+            title = ""
+
+        return title
+
+    # 获取举办时间
+    def getJuBanShiJian(self, content):
+        return_dict = {}
+        try:
+            return_dict['Y'] = content['currentIssue']['year']
+        except Exception:
+            return return_dict
+
+        try:
+            return_dict['M'] = content['currentIssue']['month']
+        except Exception:
+            return return_dict
+
+        return return_dict
+
+    # 获取学科类别
+    def getXueKeLeiBie(self, content):
+        try:
+            xueke_list = []
+            topics = content['pubTopics']
+            for topic in topics:
+                xueke_list.append(topic['name'])
+            xueKeLeiBie = '|'.join(xueke_list)
+        except Exception:
+            xueKeLeiBie = ""
+
+        return xueKeLeiBie
+
+    # 获取所在地内容
+    def getSuoZaiDi(self, content):
+        try:
+            for topic in content['facets']:
+                if topic['id'] in 'ConferenceLocation':
+                    facet_list = []
+                    for facet in topic['children']:
+                        facet_list.append(facet['name'])
+                    suozaidi = '|'.join(facet_list)
+                    return suozaidi
+                else:
+                    continue
+            else:
+                return ""
+
+        except Exception:
+            return ""
+
+class QiKanLunWen_LunWenServer(object):
     def __init__(self, logging):
         self.logging = logging
 

@@ -98,9 +98,9 @@ class ProxyUtils(object):
                 if data['status'] == 0:
                     ip = data['ip']
                     port = data['port']
-                    # proxy_ip = 'https://' + ip + ':' + port
+                    proxy_ip = 'https://' + ip + ':' + port
 
-                    # # 判断是否为高匿代理
+                    # 判断是否为高匿代理
                     # allow = self.__jianChaNiMingDu(https=proxy_ip)
                     # if allow:
 
@@ -116,10 +116,10 @@ class ProxyUtils(object):
                                 'https': 'socks5://{}'.format(ip)}
 
                     elif self.type == 'adsl':
-                        # return {'http': 'http://{}:{}'.format(ip, port)}
+                        return {'http': 'http://{}:{}'.format(ip, port)}
 
-                        return {'http': 'http://{}:{}'.format(ip, port),
-                                'https': 'https://{}:{}'.format(ip, port)}
+                        # return {'http': 'http://{}:{}'.format(ip, port),
+                        #         'https': 'https://{}:{}'.format(ip, port)}
 
                     else:
                         self.logging.error('status: False | err: type error!!! | from: getProxy')

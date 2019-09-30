@@ -11,14 +11,14 @@ from multiprocessing import Pool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.Jstor.middleware import download_middleware
-from Project.Jstor.service import service
-from Project.Jstor.dao import dao
-from Project.Jstor import config
+from Project.Ieee.middleware import download_middleware
+from Project.Ieee.service import service
+from Project.Ieee.dao import dao
+from Project.Ieee import config
 
-log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = 'Jstor_文档_queue'  # LOG名
-NAME = 'Jstor_文档_queue'  # 爬虫名
+log_file_dir = 'Ieee'  # LOG日志存放路径
+LOGNAME = 'Ieee_文档_queue'  # LOG名
+NAME = 'Ieee_文档_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -32,7 +32,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.HuiYiLunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -54,7 +54,7 @@ class SpiderMain(BastSpiderMain):
                 LOGGING.info('redis已无任务，准备开始队列任务。')
 
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_DOCUMENT, ws='jstor', es='qikan', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_DOCUMENT, ws='电气和电子工程师协会', es='会议论文', count=2000)
                 # print(new_task_list)
                 LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 

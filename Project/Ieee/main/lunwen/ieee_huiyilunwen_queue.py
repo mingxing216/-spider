@@ -17,8 +17,8 @@ from Project.Ieee.dao import dao
 from Project.Ieee import config
 
 log_file_dir = 'Ieee'  # LOG日志存放路径
-LOGNAME = 'Ieee_期刊论文_queue'  # LOG名
-NAME = 'Ieee_期刊论文_queue'  # 爬虫名
+LOGNAME = 'Ieee_会议论文_queue'  # LOG名
+NAME = 'Ieee_会议论文_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -32,7 +32,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.HuiYiLunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -54,7 +54,7 @@ class SpiderMain(BastSpiderMain):
                 LOGGING.info('redis已无任务，准备开始队列任务。')
 
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PAPER, ws='Ieee', es='会议论文', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PAPER, ws='电气和电子工程师协会', es='会议论文', count=2000)
                 # print(new_task_list)
                 LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 
