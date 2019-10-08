@@ -18,14 +18,14 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.Jstor.middleware import download_middleware
-from Project.Jstor.service import service
-from Project.Jstor.dao import dao
-from Project.Jstor import config
+from Project.Ieee.middleware import download_middleware
+from Project.Ieee.service import service
+from Project.Ieee.dao import dao
+from Project.Ieee import config
 
-log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = 'Jstor_期刊_data'  # LOG名
-NAME = 'Jstor_期刊_data'  # 爬虫名
+log_file_dir = 'Ieee'  # LOG日志存放路径
+LOGNAME = 'Ieee_期刊_data'  # LOG名
+NAME = 'Ieee_期刊_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -39,7 +39,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_QiKanServer(logging=LOGGING)
+        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)

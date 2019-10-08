@@ -334,8 +334,10 @@ class SpiderMain(BastSpiderMain):
 
                 time.sleep(1)
             else:
-                LOGGING.info('队列中已无任务，结束程序')
-                return
+                time.sleep(2)
+                continue
+                # LOGGING.info('队列中已无任务，结束程序')
+                # return
 
 def process_start():
     main = SpiderMain()
