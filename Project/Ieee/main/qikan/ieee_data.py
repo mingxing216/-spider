@@ -77,19 +77,19 @@ class SpiderMain(BastSpiderMain):
     # 模板
     def template(self, save_data, select, html):
         # 获取标题
-        save_data['title'] = self.server.getTitle(select)
+        save_data['title'] = ""
         # 获取摘要
-        save_data['zhaiYao'] = self.server.getZhaiYao(html)
-        # 获取覆盖范围
-        save_data['fuGaiFanWei'] = self.server.getFuGaiFanWei(select)
-        # 获取国际标准刊号
-        save_data['ISSN'] = self.server.getIssn(select)
-        # 获取EISSN
-        save_data['EISSN'] = self.server.getEissn(select)
-        # 获取学科类别
-        save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(select)
-        # 获取出版社
-        save_data['chuBanShe'] = self.server.getChuBanShe(select)
+        save_data['zhaiYao'] = ""
+        # # 获取覆盖范围
+        # save_data['fuGaiFanWei'] = self.server.getFuGaiFanWei(select)
+        # # 获取国际标准刊号
+        # save_data['ISSN'] = self.server.getIssn(select)
+        # # 获取EISSN
+        # save_data['EISSN'] = self.server.getEissn(select)
+        # # 获取学科类别
+        # save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(select)
+        # # 获取出版社
+        # save_data['chuBanShe'] = self.server.getChuBanShe(select)
 
 
     def handle(self, task, save_data):
@@ -97,21 +97,12 @@ class SpiderMain(BastSpiderMain):
         task_data = self.server.getEvalResponse(task)
 
         url = task_data['url']
-        sha = task_data['sha']
-
-        # 获取cookie
-        self.cookie_dict = self.download_middleware.create_cookie()
-
-        if not self.cookie_dict:
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-            return
+        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
-                              mode='GET',
-                              cookies=self.cookie_dict)
+                              mode='GET')
         if not resp:
             LOGGING.error('页面响应获取失败, url: {}'.format(url))
             # 逻辑删除任务
@@ -136,12 +127,12 @@ class SpiderMain(BastSpiderMain):
         save_data['sha'] = sha
         # 生成ss ——实体
         save_data['ss'] = '期刊'
+        # 生成es ——栏目名称
+        save_data['es'] = '期刊'
         # 生成ws ——目标网站
-        save_data['ws'] = 'JSTOR'
+        save_data['ws'] = '电气和电子工程师协会'
         # 生成clazz ——层级关系
         save_data['clazz'] = '期刊'
-        # 生成es ——栏目名称
-        save_data['es'] = 'Journals'
         # 生成biz ——项目
         save_data['biz'] = '文献大数据'
         # 生成ref
@@ -205,8 +196,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{"url": "https://www.jstor.org/journal/oceanography", "sha": "70de09416305f41f2ae5c0195edc9602856a9e4d", "ss": "期刊"}')
+        # main.start()
+        main.run(task='{"number": "10", "url": "https://ieeexplore.ieee.org/xpl/aboutJournal.jsp?punumber=10", "qiZhiShiJian": "1964 - Present"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

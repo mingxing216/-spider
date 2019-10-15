@@ -3,9 +3,9 @@
 '''
 
 '''
-import gevent
-from gevent import monkey
-monkey.patch_all()
+# import gevent
+# from gevent import monkey
+# monkey.patch_all()
 import sys
 import os
 import time
@@ -26,8 +26,8 @@ from Project.Ieee.dao import dao
 from Project.Ieee import config
 
 log_file_dir = 'Ieee'  # LOG日志存放路径
-LOGNAME = 'Ieee_会议论文_data'  # LOG名
-NAME = 'Ieee_会议论文_data'  # 爬虫名
+LOGNAME = 'Ieee_期刊论文_data'  # LOG名
+NAME = 'Ieee_期刊论文_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -41,7 +41,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.HuiYiLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -132,11 +132,11 @@ class SpiderMain(BastSpiderMain):
                 # 生成ss ——实体
                 author_dict['ss'] = '人物'
                 # 生成es ——栏目名称
-                author_dict['es'] = '会议论文'
+                author_dict['es'] = '期刊论文'
                 # 生成ws ——目标网站
                 author_dict['ws'] = '电气和电子工程师协会'
                 # 生成clazz ——层级关系
-                author_dict['clazz'] = '论文_会议论文'
+                author_dict['clazz'] = '论文_期刊论文'
                 # 生成biz ——项目
                 author_dict['biz'] = '文献大数据'
                 # 生成ref
@@ -151,33 +151,57 @@ class SpiderMain(BastSpiderMain):
     def lunWen(self, save_data, script, number, url, sha):
         # 获取标题
         save_data['title'] = self.server.getField(script, 'title')
+        print(save_data['title'])
         # 获取摘要
         save_data['zhaiYao'] = self.server.getField(script, 'abstract')
-        # 获取会议名称
-        save_data['huiYiMingCheng'] = self.server.getField(script, 'publicationTitle')
+        print(save_data['zhaiYao'])
+        # 获取期刊名称
+        save_data['qiKanMingCheng'] = self.server.getField(script, 'publicationTitle')
+        print(save_data['qiKanMingCheng'])
+        # 获取期号
+        save_data['qiHao'] = self.server.getQiHao(script)
+        print(save_data['qiHao'])
+        # 获取所在页码
+        save_data['suoZaiYeMa'] = self.server.getYeShu(script)
+        print(save_data['suoZaiYeMa'])
         # 获取在线出版日期
-        zaiXianChuBanRiQi = self.server.getField(script, 'dateOfInsertion')
-        if zaiXianChuBanRiQi:
+        riqi = self.server.getField(script, 'onlineDate')
+        if riqi:
             try:
-                save_data['zaiXianChuBanRiQi'] = str(datetime.strptime(zaiXianChuBanRiQi, "%d %B %Y"))
+                save_data['zaiXianChuBanRiQi'] = str(datetime.strptime(riqi, "%d %B %Y"))
             except:
-                save_data['zaiXianChuBanRiQi'] = zaiXianChuBanRiQi
+                save_data['zaiXianChuBanRiQi'] = riqi
+        print(save_data['zaiXianChuBanRiQi'])
         # 获取DOI
         save_data['DOI'] = self.server.getField(script, 'doi')
+        print(save_data['DOI'])
         # 获取ISBN Information
         save_data['ISBNInformation'] = self.server.getGuoJiField(script, 'isbn')
+        print(save_data['ISBNInformation'])
         # 获取ISSN Information
         save_data['ISSNInformation'] = self.server.getGuoJiField(script, 'issn')
+        print(save_data['ISSNInformation'])
         # 获取出版社
         save_data['chuBanShe'] = self.server.getField(script, 'publisher')
+        print(save_data['chuBanShe'])
+        # 获取赞助商
+        save_data['zanZhuShang'] = self.server.getPeople(script, 'sponsors')
+        print(save_data['zanZhuShang'])
+        # 获取基金
+        save_data['jiJin'] = self.server.getJiJin(script)
+        print(save_data['jiJin'])
         # 获取作者
-        save_data['zuoZhe'] = self.server.getZuoZhe(script)
+        save_data['zuoZhe'] = self.server.getPeople(script, 'authors')
+        print(save_data['zuoZhe'])
         # 获取关键词
         save_data['guanJianCi'] = self.server.getGuanJianCi(script)
+        print(save_data['guanJianCi'])
+        # 获取学科类别
+        save_data['xueKeLeiBie'] = self.server.getPeople(script, 'pubTopics')
+        print(save_data['xueKeLeiBie'])
         # 获取时间
         save_data['shiJian'] = self.server.getShiJian(script)
-        # 获取页数
-        save_data['yeShu'] = self.server.getYeShu(script)
+        print(save_data['shiJian'])
         # 判断是否有参考文献
         references = self.server.hasWenXian(script, 'references')
         if references == 'true':
@@ -198,6 +222,7 @@ class SpiderMain(BastSpiderMain):
             save_data['canKaoWenXian'] = self.server.canKaoWenXian(content=cankao_json)
         else:
             save_data['canKaoWenXian'] = ""
+        print(save_data['canKaoWenXian'])
         # 判断是否有引证文献
         citations = self.server.hasWenXian(script, 'citedby')
         if citations == 'true':
@@ -218,8 +243,10 @@ class SpiderMain(BastSpiderMain):
             save_data['yinZhengWenXian'] = self.server.yinZhengWenXian(content=yinzheng_json)
         else:
             save_data['yinZhengWenXian'] = ""
+        print(save_data['yinZhengWenXian'])
         # 关联作者
         save_data['guanLianZuoZhe'] = self.server.guanLianZuoZhe(script, url=url)
+        print(save_data['guanLianZuoZhe'])
         # 获取作者实体字段值
         if save_data['guanLianZuoZhe']:
             return self.zuoZhe(script, url)
@@ -230,8 +257,7 @@ class SpiderMain(BastSpiderMain):
 
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        xueKeLeiBie = task_data['xueKeLeiBie']
-        huiYiUrl = task_data['huiYiUrl']
+        qiKanUrl = task_data['qiKanUrl']
         pdfUrl = task_data['pdfUrl']
         number = task_data['lunwenNumber']
 
@@ -259,12 +285,10 @@ class SpiderMain(BastSpiderMain):
             return
 
         # ===================公共字段
-        # 关联会议
-        save_data['guanLianHuiYi'] = self.server.guanLianHuiYi(url=huiYiUrl)
+        # 关联期刊
+        save_data['guanLianQiKan'] = self.server.guanLianQiKan(url=qiKanUrl)
         # 关联文档
         save_data['guanLianWenDang'] = self.server.guanLianWenDang(url=pdfUrl)
-        # 获取学科类别
-        save_data['xueKeLeiBie'] = xueKeLeiBie
         # url
         save_data['url'] = url
         # 生成key
@@ -274,11 +298,11 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '论文'
         # 生成es ——栏目名称
-        save_data['es'] = '会议论文'
+        save_data['es'] = '期刊论文'
         # 生成ws ——目标网站
         save_data['ws'] = '电气和电子工程师协会'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '论文_会议论文'
+        save_data['clazz'] = '论文_期刊论文'
         # 生成biz ——项目
         save_data['biz'] = '文献大数据'
         # 生成ref
@@ -310,19 +334,19 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=10, lockname=config.REDIS_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_QIKAN_PAPER, count=1, lockname=config.REDIS_QIKAN_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
-            # print(task_list)
+            print(task_list)
 
             if task_list:
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-                # 创建gevent协程
-                g_list = []
-                for task in task_list:
-                    s = gevent.spawn(self.run, task)
-                    g_list.append(s)
-                gevent.joinall(g_list)
+                # # 创建gevent协程
+                # g_list = []
+                # for task in task_list:
+                #     s = gevent.spawn(self.run, task)
+                #     g_list.append(s)
+                # gevent.joinall(g_list)
 
                 # # 创建线程池
                 # threadpool = ThreadPool()
@@ -342,8 +366,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{"lunwenNumber": "6365452", "url": "https://ieeexplore.ieee.org/document/6365452/", "huiYiUrl": "https://ieeexplore.ieee.org/xpl/conhome/6360093/proceeding", "pdfUrl": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6365452", "xueKeLeiBie": "Components, Circuits, Devices and Systems|Communication, Networking and Broadcast Technologies|Computing and Processing|Signal Processing and Analysis"}')
+        # main.start()
+        main.run(task='{"lunwenNumber": "8468221", "url": "https://ieeexplore.ieee.org/document/8468221/", "qiKanUrl": "https://ieeexplore.ieee.org/xpl/aboutJournal.jsp?punumber=7", "pdfUrl": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8468221"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

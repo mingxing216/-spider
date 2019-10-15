@@ -68,13 +68,13 @@ class ProxyUtils(object):
         local_resp = requests.get('https://httpbin.org/ip')
         if local_resp.status_code == 200:
             local_ip = json.loads(local_resp.content.decode('utf-8'))['origin']
-            # self.logging.info('检测到本地IP: %s' % local_ip)
+            self.logging.info('检测到本地IP: %s' % local_ip)
 
         # 获取使用代理返回IP
         proxy_resp = requests.get(url='https://httpbin.org/ip', proxies=proxies)
         if proxy_resp.status_code == 200:
             proxy_ip = json.loads(proxy_resp.content.decode('utf-8'))['origin']
-            # self.logging.info('检测到代理IP: %s' % proxy_ip)
+            self.logging.info('检测到代理IP: %s' % proxy_ip)
 
         # 判断代理是否高匿
         if local_ip not in proxy_ip:
@@ -100,8 +100,9 @@ class ProxyUtils(object):
                     port = data['port']
                     proxy_ip = 'https://' + ip + ':' + port
 
-                    # 判断是否为高匿代理
+                    # # 判断是否为高匿代理
                     # allow = self.__jianChaNiMingDu(https=proxy_ip)
+                    # print(allow)
                     # if allow:
 
                     # 判断协议种类
@@ -116,10 +117,10 @@ class ProxyUtils(object):
                                 'https': 'socks5://{}'.format(ip)}
 
                     elif self.type == 'adsl':
-                        # return {'http': 'http://{}:{}'.format(ip, port)}
+                        return {'http': 'http://{}:{}'.format(ip, port)}
 
-                        return {'http': 'http://{}:{}'.format(ip, port),
-                                'https': 'https://{}:{}'.format(ip, port)}
+                        # return {'http': 'http://{}:{}'.format(ip, port),
+                        #         'https': 'https://{}:{}'.format(ip, port)}
 
                     else:
                         self.logging.error('status: False | err: type error!!! | from: getProxy')

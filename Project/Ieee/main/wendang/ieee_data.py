@@ -173,8 +173,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run(task='{"url": "https://www.jstor.org/stable/pdf/26422068.pdf", "sha": "182e1fad01e075ac25f5587c6396440ad72b63e5", "ss": "文档", "lunWenUrl": "https://www.jstor.org/stable/26422068?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bsd%3D%26amp%3Bfacet_journal%3Dam91cm5hbA%253D%253D%26amp%3Bpage%3D1%26amp%3Bed%3D&seq=1#metadata_info_tab_contents", "title": "THE COLOUR-FORMING COMPONENTS OF PARK LANDSCAPE AND THE FACTORS THAT INFLUENCE THE HUMAN PERCEPTION OF THE LANDSCAPE COLOURING"}')
+        # main.start()
+        main.run(task='{"url": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6657797", "parentUrl": "https://ieeexplore.ieee.org/document/6657797/", "title": "Assessment of Laparoscopic Skills Based on Force and Motion Parameters", "daXiao": "771", "es": "期刊论文"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

@@ -98,7 +98,7 @@ class Downloader(object):
         s = requests.session()
         s.keep_alive = False  # 关闭多余连接
         # start_time = float(time.time())
-        r =s.get(url=url, headers=headers, proxies=proxies, timeout=timeout, cookies=cookies)
+        r = s.get(url=url, headers=headers, proxies=proxies, timeout=timeout, cookies=cookies)
         # end_time = float(time.time())
         # print(round(end_time - start_time, 4))
         # print(r.elapsed.total_seconds())
