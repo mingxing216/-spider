@@ -173,8 +173,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{"url": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6657797", "parentUrl": "https://ieeexplore.ieee.org/document/6657797/", "title": "Assessment of Laparoscopic Skills Based on Force and Motion Parameters", "daXiao": "771", "es": "期刊论文"}')
+        main.start()
+        # main.run(task='{"url": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6657797", "parentUrl": "https://ieeexplore.ieee.org/document/6657797/", "title": "Assessment of Laparoscopic Skills Based on Force and Motion Parameters", "daXiao": "771", "es": "期刊论文"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

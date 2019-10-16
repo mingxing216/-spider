@@ -583,7 +583,7 @@ class QiKanLunWen_LunWenServer(object):
 
         return totalPages
 
-    # ================================= 获取会议论文实体字段值
+    # ================================= 获取期刊论文实体字段值
 
     # 获取字段
     def getField(self, script, para):
@@ -602,18 +602,21 @@ class QiKanLunWen_LunWenServer(object):
     def getQiHao(self, script):
         text_dict = script
         try:
-            volume = str(text_dict['volume']).strip()
+            volume = "Volume:" + str(text_dict['volume']).strip()
         except Exception:
             volume = ""
         try:
-            issue = str(text_dict['issue']).strip()
+            issue = "Issue:" + str(text_dict['issue']).strip()
         except Exception:
             issue = ""
         try:
             date = str(text_dict['publicationDate']).strip()
         except Exception:
             date = ""
-        return_str = "Volume:" + volume + " , Issue:" + issue + " , " + date
+
+        qihao_list = [volume, issue, date]
+        return_list = [i for i in qihao_list if i != '']
+        return_str = '，'.join(return_list)
 
         return return_str
 
@@ -775,7 +778,7 @@ class QiKanLunWen_LunWenServer(object):
 
         return result
 
-    # 关联会议
+    # 关联期刊
     def guanLianQiKan(self, url):
         e = {}
         try:
@@ -871,3 +874,93 @@ class QiKanLunWen_LunWenServer(object):
             return e
 
         return e
+
+# =======================================获取期刊实体字段
+    # 获取标题/影响因子/特征因子/论文影响分值/频率
+    def getValue(self, content, para):
+        try:
+            title = content[para]
+
+        except Exception:
+            title = ""
+
+        return title
+
+    # 获取摘要
+    def getZhaiYao(self, content):
+        try:
+            zhai = str(content['aimsAndScope']).replace('src="../', 'src="https://ieeexplore.ieee.org/')
+            zhaiyao = re.sub(r"[\n\r\t]", "", zhai)
+
+        except Exception:
+            zhaiyao = ""
+
+        return zhaiyao
+
+    # 获取ISSN
+    def getIssn(self, selector):
+        try:
+            iss = selector.xpath("//strong[contains(text(), 'ISSN')]/..//text()").extract()
+            issn = ''.join(iss).replace('ISSN:', '').strip()
+
+        except Exception:
+            issn = ""
+
+        return issn
+
+    # 获取详情
+    def getDetails(self, content):
+        try:
+            details = content['publicationDetailsLink']
+
+        except Exception:
+            details = ""
+
+        return details
+
+    # 获取出版社/出版信息
+    def getXuLie(self, selector, para):
+        return_list = []
+        try:
+            value_list = selector.xpath("//strong[contains(text(), '" + para + "')]/../following-sibling::ul[1]//a")
+            for zanzhu in value_list:
+                zan_dict = {}
+                zan_dict['标题'] = zanzhu.xpath("./text()").extract_first().strip()
+                zan_dict['链接'] = zanzhu.xpath("./@href").extract_first().strip()
+                return_list.append(zan_dict)
+
+
+        except Exception:
+            return return_list
+
+        return return_list
+
+    # 获取联系方式
+    def getLianXiFangShi(self, content):
+        try:
+            lianxi = content['publicationDetailsLink']
+            value_list = lianxi.split("\n\n")
+            for i in value_list:
+                if 'Editor-in-Chief' in i:
+                    lianxifangshi = i.replace('\n', '')
+                    break
+            else:
+                lianxifangshi = ""
+
+        except Exception:
+            lianxifangshi = ""
+
+        return lianxifangshi
+
+    # 获取学科类别
+    def getXueKeLeiBie(self, content):
+        try:
+            xueke_list = []
+            topics = content['pubTopics']
+            for topic in topics:
+                xueke_list.append(topic['name'])
+            xueKeLeiBie = '|'.join(xueke_list)
+        except Exception:
+            xueKeLeiBie = ""
+
+        return xueKeLeiBie

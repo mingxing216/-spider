@@ -75,22 +75,33 @@ class SpiderMain(BastSpiderMain):
             return None
 
     # 模板
-    def template(self, save_data, select, html):
+    def template(self, save_data, content):
         # 获取标题
-        save_data['title'] = ""
+        save_data['title'] = self.server.getValue(content, 'displayTitle')
+        # 获取影响因子
+        save_data['yingXiangYinZi'] = self.server.getValue(content, 'impactFactor')
+        # 获取特征因子
+        save_data['teZhengYinZi'] = self.server.getValue(content, 'eigenFactorScore')
+        # 获取论文影响分值
+        save_data['lunWenYingXiangFenZhi'] = self.server.getValue(content, 'articleInfluenceMetricScore')
         # 获取摘要
-        save_data['zhaiYao'] = ""
-        # # 获取覆盖范围
-        # save_data['fuGaiFanWei'] = self.server.getFuGaiFanWei(select)
-        # # 获取国际标准刊号
-        # save_data['ISSN'] = self.server.getIssn(select)
-        # # 获取EISSN
-        # save_data['EISSN'] = self.server.getEissn(select)
-        # # 获取学科类别
-        # save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(select)
-        # # 获取出版社
-        # save_data['chuBanShe'] = self.server.getChuBanShe(select)
-
+        save_data['zhaiYao'] = self.server.getZhaiYao(content)
+        # 获取频率
+        save_data['pinLv'] = self.server.getValue(content, 'frequency')
+        # 获取详情
+        details = self.server.getDetails(content)
+        # 将详情转为选择器
+        selector = self.server.getSelector(resp=details)
+        # 获取国际标准刊号
+        save_data['ISSN'] = self.server.getIssn(selector)
+        # 获取出版社
+        save_data['chuBanShe'] = self.server.getXuLie(selector, 'Published')
+        # 获取出版信息
+        save_data['chuBanXinXi'] = self.server.getXuLie(selector, 'Information')
+        # 获取联系方式
+        save_data['lianXiFangShi'] = self.server.getLianXiFangShi(content)
+        # 获取学科类别
+        save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(content)
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -98,27 +109,31 @@ class SpiderMain(BastSpiderMain):
 
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
+        qiZhiShiJian = task_data['qiZhiShiJian']
+        number = task_data['number']
+
+        # 期刊详情页接口url
+        journal_url = 'https://ieeexplore.ieee.org/rest/publication/home/metadata?pubid=' + str(number)
 
         # 获取页面响应
-        resp = self.__getResp(func=self.download_middleware.getResp,
-                              url=url,
+        journal_resp = self.__getResp(func=self.download_middleware.getResp,
+                              url=journal_url,
                               mode='GET')
-        if not resp:
-            LOGGING.error('页面响应获取失败, url: {}'.format(url))
+        if not journal_resp:
+            LOGGING.error('页面响应失败, url: {}'.format(journal_url))
             # 逻辑删除任务
             self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
             return
 
-        response = resp.text
+        journal_json = journal_resp.json()
         # print(response)
 
-        # 转为selector选择器
-        selector = self.server.getSelector(response)
-
         # 获取字段值
-        self.template(save_data=save_data, select=selector, html=response)
+        self.template(save_data=save_data, content=journal_json)
 
         # =========================公共字段
+        # 获取起止时间
+        save_data['qiZhiShiJian'] = qiZhiShiJian
         # url
         save_data['url'] = url
         # 生成key
@@ -163,8 +178,8 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=3, lockname=config.REDIS_MAGAZINE_LOCK)
-            print(task_list)
+            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=10, lockname=config.REDIS_MAGAZINE_LOCK)
+            # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
@@ -196,8 +211,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{"number": "10", "url": "https://ieeexplore.ieee.org/xpl/aboutJournal.jsp?punumber=10", "qiZhiShiJian": "1964 - Present"}')
+        main.start()
+        # main.run(task='{"number": "10", "url": "https://ieeexplore.ieee.org/xpl/aboutJournal.jsp?punumber=10", "qiZhiShiJian": "1990 - Present"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
