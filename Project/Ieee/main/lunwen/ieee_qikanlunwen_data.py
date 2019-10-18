@@ -77,7 +77,7 @@ class SpiderMain(BastSpiderMain):
             return None
 
     # 作者实体
-    def zuoZhe(self, script, url):
+    def zuoZhe(self, script, url, sha):
         try:
             authors = script['authors']
             for author in authors:
@@ -85,8 +85,6 @@ class SpiderMain(BastSpiderMain):
                 img_list = []
 
                 author_dict = {}
-                id = self.server.getID(content=author)
-                sha1 = hashlib.sha1(id.encode('utf-8')).hexdigest()
                 # 标题
                 author_dict['title'] = self.server.getAuthorTitle(content=author)
                 # 所在单位
@@ -99,6 +97,9 @@ class SpiderMain(BastSpiderMain):
                     img_list.append(author_dict['biaoShi'])
                 # 缩写_ORCID
                 author_dict['ORCID'] = self.server.getORCID(content=author)
+                # 获取sha
+                id = url + '#' + author_dict['title'] + '#' + author_dict['suoZaiDanWei']
+                sha1 = hashlib.sha1(id.encode('utf-8')).hexdigest()
 
                 # 存储图片
                 if img_list:
@@ -120,7 +121,12 @@ class SpiderMain(BastSpiderMain):
 
                         img_content = media_resp.content
                         # 存储图片
-                        self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
+                        storage = self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
+                        if not storage:
+                            # 逻辑删除任务
+                            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+                            LOGGING.error('图片数据存储失败, url: {}'.format(img_url))
+                            continue
 
                 # ======================== 公共字段
                 # url
@@ -143,7 +149,11 @@ class SpiderMain(BastSpiderMain):
                 author_dict['ref'] = ''
 
                 # 存储数据
-                self.dao.saveDataToHbase(data=author_dict)
+                sto = self.dao.saveDataToHbase(data=author_dict)
+                if not sto:
+                    # 逻辑删除任务
+                    self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+                    LOGGING.error('作者数据存储失败, url: {}'.format(url))
         except Exception:
             pass
 
@@ -230,7 +240,7 @@ class SpiderMain(BastSpiderMain):
         save_data['guanLianZuoZhe'] = self.server.guanLianZuoZhe(script, url=url)
         # 获取作者实体字段值
         if save_data['guanLianZuoZhe']:
-            return self.zuoZhe(script, url)
+            return self.zuoZhe(script, url=url, sha=sha)
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -306,11 +316,11 @@ class SpiderMain(BastSpiderMain):
         if 'sha' not in save_data:
             LOGGING.info('数据获取不完整, 存储失败')
             return
-
-        self.dao.saveDataToHbase(data=save_data)
-
-        # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
+        # 存储数据
+        success = self.dao.saveDataToHbase(data=save_data)
+        if success:
+            # 删除任务
+            self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
 
     def start(self):
         while 1:
@@ -348,7 +358,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"lunwenNumber": "8106676", "url": "https://ieeexplore.ieee.org/document/8106676/", "qiKanUrl": "https://ieeexplore.ieee.org/xpl/aboutJournal.jsp?punumber=7", "pdfUrl": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8106676"}')
+        # main.run(task='{"lunwenNumber": "6792108", "url": "https://ieeexplore.ieee.org/document/6792108/", "qiKanUrl": "https://ieeexplore.ieee.org/xpl/aboutJournal.jsp?punumber=7", "pdfUrl": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8106676"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

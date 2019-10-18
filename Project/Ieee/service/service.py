@@ -287,10 +287,14 @@ class HuiYiLunWen_LunWenServer(object):
         try:
             for author in script['authors']:
                 e = {}
-                id = author['id']
+                try:
+                    danwei = author['affiliation']
+                except Exception:
+                    danwei = ""
                 e['name'] = author['name']
                 e['url'] = url
-                e['sha'] = hashlib.sha1(id.encode('utf-8')).hexdigest()
+                sha = e['url'] + '#' + e['name'] + '#' + danwei
+                e['sha'] = hashlib.sha1(sha.encode('utf-8')).hexdigest()
                 e['ss'] = '人物'
                 result.append(e)
         except Exception:
@@ -767,10 +771,14 @@ class QiKanLunWen_LunWenServer(object):
         try:
             for author in script['authors']:
                 e = {}
-                id = author['id']
+                try:
+                    danwei = author['affiliation']
+                except Exception:
+                    danwei = ""
                 e['name'] = author['name']
                 e['url'] = url
-                e['sha'] = hashlib.sha1(id.encode('utf-8')).hexdigest()
+                sha = e['url'] + '#' + e['name'] + '#' + danwei
+                e['sha'] = hashlib.sha1(sha.encode('utf-8')).hexdigest()
                 e['ss'] = '人物'
                 result.append(e)
         except Exception:

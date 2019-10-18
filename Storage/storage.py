@@ -13,6 +13,7 @@ import hashlib
 import requests
 import re
 import time
+import ast
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
@@ -133,12 +134,20 @@ class Dao(object):
         start_time = time.time()
         try:
             resp = requests.post(url=url, headers=headers, data=save_data).content.decode('utf-8')
-            end_time = int(time.time() - start_time)
-            self.logging.info('title: Save data to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+            respon = ast.literal_eval(resp)
+            if respon['resultCode'] == 0:
+                end_time = int(time.time() - start_time)
+                self.logging.info('title: Save data to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                return True
+            else:
+                end_time = int(time.time() - start_time)
+                self.logging.info('title: Save data to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                return False
         except Exception as e:
             resp = e
             end_time = int(time.time() - start_time)
             self.logging.info('title: Save data to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+            return False
 
         # try:
         #     resultCode = json.loads(resp)['resultCode']
@@ -206,12 +215,20 @@ class Dao(object):
         start_time = time.time()
         try:
             resp = requests.post(url=url, headers=headers, data=data).content.decode('utf-8')
-            end_time = int(time.time() - start_time)
-            self.logging.info('title: Save media to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+            respon = ast.literal_eval(resp)
+            if respon['resultCode'] == 0:
+                end_time = int(time.time() - start_time)
+                self.logging.info('title: Save media to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                return True
+            else:
+                end_time = int(time.time() - start_time)
+                self.logging.info('title: Save media to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                return False
         except Exception as e:
             resp = e
             end_time = int(time.time() - start_time)
             self.logging.info('title: Save media to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+            return False
 
         # try:
         #     resultCode = json.loads(resp)['resultCode']

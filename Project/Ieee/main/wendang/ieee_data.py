@@ -130,15 +130,13 @@ class SpiderMain(BastSpiderMain):
     def run(self, task):
         # 创建数据存储字典
         save_data = {}
-
         # 获取字段值存入字典并返回sha
         sha = self.handle(task=task, save_data=save_data)
-
         # 保存数据到Hbase
-        self.dao.saveDataToHbase(data=save_data)
-
-        # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_DOCUMENT, sha=sha)
+        success = self.dao.saveDataToHbase(data=save_data)
+        if success:
+            # 删除任务
+            self.dao.deleteTask(table=config.MYSQL_DOCUMENT, sha=sha)
 
     def start(self):
         while 1:
