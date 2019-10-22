@@ -63,7 +63,6 @@ class ProxyUtils(object):
     def __jianChaNiMingDu(self, **proxies):
         local_ip = ''
         proxy_ip = ''
-        # proxies = proxies
         # 获取本地外网IP
         local_resp = requests.get('https://httpbin.org/ip')
         if local_resp.status_code == 200:
@@ -117,10 +116,10 @@ class ProxyUtils(object):
                                 'https': 'socks5://{}'.format(ip)}
 
                     elif self.type == 'adsl':
-                        return {'http': 'http://{}:{}'.format(ip, port)}
+                        # return {'http': 'http://{}:{}'.format(ip, port)}
 
-                        # return {'http': 'http://{}:{}'.format(ip, port),
-                        #         'https': 'https://{}:{}'.format(ip, port)}
+                        return {'http': 'http://{}:{}'.format(ip, port),
+                                'https': 'https://{}:{}'.format(ip, port)}
 
                     else:
                         self.logging.error('status: False | err: type error!!! | from: getProxy')

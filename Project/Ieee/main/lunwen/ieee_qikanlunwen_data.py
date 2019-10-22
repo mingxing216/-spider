@@ -321,6 +321,9 @@ class SpiderMain(BastSpiderMain):
         if success:
             # 删除任务
             self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
+        else:
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
 
     def start(self):
         while 1:
