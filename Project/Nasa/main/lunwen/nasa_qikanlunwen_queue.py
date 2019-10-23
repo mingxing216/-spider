@@ -32,7 +32,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.LunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -54,7 +54,7 @@ class SpiderMain(BastSpiderMain):
                 LOGGING.info('redis已无任务，准备开始队列任务。')
 
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PAPER, ws='电气和电子工程师协会', es='期刊论文', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PAPER, ws='美国宇航局', es='期刊论文', count=2000)
                 # print(new_task_list)
                 LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 

@@ -39,7 +39,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.HuiYiLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.LunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -172,7 +172,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "http://hdl.handle.net/2060/20180002954", "parentUrl": "https://ntrs.nasa.gov/search.jsp?R=20180002954&qs=N%3D4294943477", "title": "Enabling Analytics in the Cloud for Earth Science Data", "daXiao": "314KB", "es": "会议论文"}')
+        # main.run(task='{"url": "http://hdl.handle.net/2060/20150000723", "parentUrl": "https://ntrs.nasa.gov/search.jsp?R=20150000723&qs=N%3D4294958283%26No%3D3430", "title": "Volcanic Contribution to Decadal Changes in Tropospheric Temperature", "daXiao": "450KB", "es": "期刊论文"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

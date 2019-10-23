@@ -142,7 +142,7 @@ class SpiderMain(BastSpiderMain):
                 # 生成ws ——目标网站
                 author_dict['ws'] = '电气和电子工程师协会'
                 # 生成clazz ——层级关系
-                author_dict['clazz'] = '论文_期刊论文'
+                author_dict['clazz'] = '人物_论文作者'
                 # 生成biz ——项目
                 author_dict['biz'] = '文献大数据'
                 # 生成ref

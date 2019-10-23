@@ -17,8 +17,8 @@ from Project.Nasa.dao import dao
 from Project.Nasa import config
 
 log_file_dir = 'Nasa'  # LOG日志存放路径
-LOGNAME = 'Nasa_会议_queue'  # LOG名
-NAME = 'Nasa_会议_queue'  # 爬虫名
+LOGNAME = 'Nasa_学位论文_queue'  # LOG名
+NAME = 'Nasa_学位论文_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -32,7 +32,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.HuiYiLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.LunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -49,17 +49,17 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_ACTIVITY)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_XUEWEI_PAPER)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
 
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_ACTIVITY, ws='电气和电子工程师协会', es='会议', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PAPER, ws='美国宇航局', es='硕士论文', count=2000)
                 # print(new_task_list)
                 LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_ACTIVITY, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_XUEWEI_PAPER, data=new_task_list)
                 LOGGING.info('已成功向redis队列{}个任务'.format(len(new_task_list)))
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
@@ -78,6 +78,11 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
     process_start()
+    # po = Pool(1)
+    # for i in range(1):
+    #     po.apply_async(func=process_start)
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

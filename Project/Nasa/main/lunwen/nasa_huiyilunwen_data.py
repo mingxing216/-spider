@@ -41,7 +41,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.HuiYiLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.LunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)

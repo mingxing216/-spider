@@ -41,7 +41,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.LunWen_LunWenServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -77,56 +77,20 @@ class SpiderMain(BastSpiderMain):
             return None
 
     # 作者实体
-    def zuoZhe(self, script, url, sha):
+    def zuoZhe(self, selector, url, sha, es):
         try:
-            authors = script['authors']
+            authors = selector.xpath("//td[@id='colTitle' and contains(text(), 'Author')]/following-sibling::td[1]//table/tr")
             for author in authors:
-                # 图片url存储列表
-                img_list = []
-
                 author_dict = {}
                 # 标题
                 author_dict['title'] = self.server.getAuthorTitle(content=author)
                 # 所在单位
                 author_dict['suoZaiDanWei'] = self.server.getDanWei(content=author)
-                # 正文
-                author_dict['zhengWen'] = self.server.getZhengWen(content=author)
-                # 标识
-                author_dict['biaoShi'] = self.server.getBiaoShi(content=author)
-                if author_dict['biaoShi']:
-                    img_list.append(author_dict['biaoShi'])
                 # 缩写_ORCID
                 author_dict['ORCID'] = self.server.getORCID(content=author)
                 # 获取sha
                 id = url + '#' + author_dict['title'] + '#' + author_dict['suoZaiDanWei']
                 sha1 = hashlib.sha1(id.encode('utf-8')).hexdigest()
-
-                # 存储图片
-                if img_list:
-                    for img in img_list:
-                        img_dict = {}
-                        img_dict['bizTitle'] = author_dict['title']
-                        img_dict['relEsse'] = self.server.guanLianRenWu(url=url, sha=sha1)
-                        img_dict['relPics'] = {}
-                        img_url = img
-                        # # 存储图片种子
-                        # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
-                        # 获取图片响应
-                        media_resp = self.__getResp(func=self.download_middleware.getResp,
-                                                    url=img_url,
-                                                    mode='GET')
-                        if not media_resp:
-                            LOGGING.error('图片响应失败, url: {}'.format(img_url))
-                            return '中断'
-
-                        img_content = media_resp.content
-                        # 存储图片
-                        storage = self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
-                        if not storage:
-                            # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                            LOGGING.error('图片数据存储失败, url: {}'.format(img_url))
-                            continue
 
                 # ======================== 公共字段
                 # url
@@ -138,11 +102,11 @@ class SpiderMain(BastSpiderMain):
                 # 生成ss ——实体
                 author_dict['ss'] = '人物'
                 # 生成es ——栏目名称
-                author_dict['es'] = '期刊论文'
+                author_dict['es'] = es
                 # 生成ws ——目标网站
-                author_dict['ws'] = '电气和电子工程师协会'
+                author_dict['ws'] = '美国宇航局'
                 # 生成clazz ——层级关系
-                author_dict['clazz'] = '论文_期刊论文'
+                author_dict['clazz'] = '人物_论文作者'
                 # 生成biz ——项目
                 author_dict['biz'] = '文献大数据'
                 # 生成ref
@@ -158,89 +122,43 @@ class SpiderMain(BastSpiderMain):
             pass
 
     # 论文实体
-    def lunWen(self, save_data, script, number, url, sha):
+    def lunWen(self, save_data, selector, resp, url, sha, es):
         # 获取标题
-        save_data['title'] = self.server.getField(script, 'title')
-        # 获取摘要
-        save_data['zhaiYao'] = self.server.getField(script, 'abstract')
-        # 获取期刊名称
-        save_data['qiKanMingCheng'] = self.server.getField(script, 'publicationTitle')
-        # 获取期号
-        save_data['qiHao'] = self.server.getQiHao(script)
-        # 获取所在页码
-        save_data['suoZaiYeMa'] = self.server.getYeShu(script)
-        # 获取在线出版日期
-        riqi = self.server.getField(script, 'onlineDate')
-        if riqi:
-            try:
-                save_data['zaiXianChuBanRiQi'] = str(datetime.strptime(riqi, "%d %B %Y"))
-            except:
-                save_data['zaiXianChuBanRiQi'] = riqi
-        # 获取DOI
-        save_data['DOI'] = self.server.getField(script, 'doi')
-        # 获取ISBN Information
-        save_data['ISBNInformation'] = self.server.getGuoJiField(script, 'isbn')
-        # 获取ISSN Information
-        save_data['ISSNInformation'] = self.server.getGuoJiField(script, 'issn')
-        # 获取出版社
-        save_data['chuBanShe'] = self.server.getField(script, 'publisher')
-        # 获取赞助商
-        save_data['zanZhuShang'] = self.server.getPeople(script, 'sponsors')
-        # 获取基金
-        save_data['jiJin'] = self.server.getJiJin(script)
+        save_data['title'] = self.server.getTitle(selector)
+        # 获取数字对象标识符
+        save_data['DOI'] = self.server.getDoi(selector)
         # 获取作者
-        save_data['zuoZhe'] = self.server.getPeople(script, 'authors')
-        # 获取关键词
-        save_data['guanJianCi'] = self.server.getGuanJianCi(script)
-        # 获取学科类别
-        save_data['xueKeLeiBie'] = self.server.getPeople(script, 'pubTopics')
+        save_data['zuoZhe'] = self.server.getZuoZhe(selector)
+        # 获取摘要
+        save_data['zhaiYao'] = self.server.getZhaiYao(resp)
         # 获取时间
-        save_data['shiJian'] = self.server.getShiJian(script)
-        # 判断是否有参考文献
-        references = self.server.hasWenXian(script, 'references')
-        if references == 'true':
-            # 获取参考文献url
-            cankaoUrl = 'https://ieeexplore.ieee.org/rest/document/' + str(number) +'/references'
-            # 获取页面响应
-            cankao_resp = self.__getResp(func=self.download_middleware.getResp,
-                                  url=cankaoUrl,
-                                  mode='GET')
-            if not cankao_resp:
-                LOGGING.error('参考文献接口响应失败, url: {}'.format(cankaoUrl))
-                # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                return '中断'
-
-            cankao_json = cankao_resp.json()
-            # 获取参考文献
-            save_data['canKaoWenXian'] = self.server.canKaoWenXian(content=cankao_json)
-        else:
-            save_data['canKaoWenXian'] = ""
-        # 判断是否有引证文献
-        citations = self.server.hasWenXian(script, 'citedby')
-        if citations == 'true':
-            # 获取参考文献url
-            yinzhengUrl = 'https://ieeexplore.ieee.org/rest/document/' + str(number) +'/citations'
-            # 获取页面响应
-            yinzheng_resp = self.__getResp(func=self.download_middleware.getResp,
-                                  url=yinzhengUrl,
-                                  mode='GET')
-            if not yinzheng_resp:
-                LOGGING.error('引证文献接口响应失败, url: {}'.format(yinzhengUrl))
-                # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                return '中断'
-
-            yinzheng_json = yinzheng_resp.json()
-            # 获取引证文献
-            save_data['yinZhengWenXian'] = self.server.yinZhengWenXian(content=yinzheng_json)
-        else:
-            save_data['yinZhengWenXian'] = ""
+        shijian = self.server.getField(selector, 'Publication Date')
+        if shijian:
+            try:
+                save_data['shiJian'] = str(datetime.strptime(shijian, "%B %d, %Y"))
+            except:
+                save_data['shiJian'] = shijian
+        # 获取学科类别
+        save_data['xueKeLeiBie'] = self.server.getMoreField(selector, 'Subject Category')
+        # 获取报告_专利号
+        save_data['baoGaoZhuanLiHao'] = self.server.getField(selector, 'Report/Patent Number')
+        # 获取出版信息
+        save_data['chuBanXinXi'] = self.server.getField(selector, 'Publication Information')
+        # 获取出版社信息
+        save_data['chuBanSheXinXi'] = self.server.getField(selector, 'Publisher Information')
+        # 获取赞助商
+        save_data['zanZhuShang'] = self.server.getMoreField(selector, 'Financial Sponsor')
+        # 获取组织来源
+        save_data['zuZhiLaiYuan'] = self.server.getMoreField(selector, 'Organization Source')
+        # 获取描述
+        save_data['miaoShu'] = self.server.getField(selector, 'Description')
+        # 获取关键词
+        save_data['guanJianCi'] = self.server.getGuanJianCi(selector)
         # 关联作者
-        save_data['guanLianZuoZhe'] = self.server.guanLianZuoZhe(script, url=url)
+        save_data['guanLianZuoZhe'] = self.server.guanLianZuoZhe(selector, url=url)
         # 获取作者实体字段值
         if save_data['guanLianZuoZhe']:
-            return self.zuoZhe(script, url=url, sha=sha)
+            return self.zuoZhe(selector, url=url, sha=sha, es=es)
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -248,9 +166,8 @@ class SpiderMain(BastSpiderMain):
 
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        qiKanUrl = task_data['qiKanUrl']
         pdfUrl = task_data['pdfUrl']
-        number = task_data['lunwenNumber']
+        es = task_data['es']
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
@@ -265,21 +182,26 @@ class SpiderMain(BastSpiderMain):
         response = resp.text
         # with open('profile.html', 'w') as f:
         #     f.write(response)
-        # return
         # print(response)
-        # 获取script标签内容
-        script = self.server.getScript(response)
-        # print(script)
 
-        result = self.lunWen(save_data=save_data, script=script, number=number, url=url, sha=sha)
+        # 获取selector选择器
+        selector = self.server.getSelector(response)
+
+        result = self.lunWen(save_data=save_data, selector=selector, resp=response, url=url, sha=sha, es=es)
         if result:
             return
 
         # ===================公共字段
-        # 关联期刊
-        save_data['guanLianQiKan'] = self.server.guanLianQiKan(url=qiKanUrl)
-        # 关联文档
-        save_data['guanLianWenDang'] = self.server.guanLianWenDang(url=pdfUrl)
+        if pdfUrl:
+            # 获取下载链接
+            save_data['xiaZaiLianJie'] = pdfUrl
+            # 关联文档
+            save_data['guanLianWenDang'] = self.server.guanLianWenDang(url=pdfUrl)
+        else:
+            # 获取下载链接
+            save_data['xiaZaiLianJie'] = ""
+            # 关联文档
+            save_data['guanLianWenDang'] = {}
         # url
         save_data['url'] = url
         # 生成key
@@ -289,9 +211,9 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '论文'
         # 生成es ——栏目名称
-        save_data['es'] = '期刊论文'
+        save_data['es'] = es
         # 生成ws ——目标网站
-        save_data['ws'] = '电气和电子工程师协会'
+        save_data['ws'] = '美国宇航局'
         # 生成clazz ——层级关系
         save_data['clazz'] = '论文_期刊论文'
         # 生成biz ——项目
@@ -305,10 +227,8 @@ class SpiderMain(BastSpiderMain):
     def run(self, task):
         # 创建数据存储字典
         save_data = {}
-
         # 获取字段值存入字典并返回sha
         sha = self.handle(task=task, save_data=save_data)
-
         # 保存数据到Hbase
         if not save_data:
             LOGGING.info('没有获取数据, 存储失败')
@@ -361,7 +281,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"lunwenNumber": "6792108", "url": "https://ieeexplore.ieee.org/document/6792108/", "qiKanUrl": "https://ieeexplore.ieee.org/xpl/aboutJournal.jsp?punumber=7", "pdfUrl": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8106676"}')
+        # main.run(task='{"url": "https://ntrs.nasa.gov/search.jsp?R=20190002542&qs=N%3D4294946866%26No%3D1190", "pdfUrl": "http://hdl.handle.net/2060/20190002542", "es": "会议论文"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
