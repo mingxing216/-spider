@@ -153,7 +153,7 @@ class SpiderMain(BastSpiderMain):
                     # 队列一条任务
                     catalog_dict['url'] = next_url
                     self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=catalog_dict)
-                    continue
+                    return
                 # 响应成功，添加log日志
                 LOGGING.info('已翻到第{}页'.format(num))
 
@@ -198,7 +198,7 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_CATALOG,
-                                         count=2,
+                                         count=6,
                                          lockname=config.REDIS_CATALOG_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
             print(task_list)
