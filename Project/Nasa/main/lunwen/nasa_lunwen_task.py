@@ -201,7 +201,7 @@ class SpiderMain(BastSpiderMain):
                                          count=6,
                                          lockname=config.REDIS_CATALOG_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
-            print(task_list)
+            # print(task_list)
 
             if task_list:
                 # 创建gevent协程

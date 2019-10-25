@@ -208,7 +208,8 @@ class LunWen_LunWenServer(object):
                 except Exception:
                     name = ""
                 try:
-                    danwei = author.xpath("./td[2]/span/text()").extract_first().strip()
+                    dan = author.xpath("./td[2]/span/text()").extract_first().strip()
+                    danwei = re.findall(r"^\((.*)\)$", dan)[0].strip()
                 except Exception:
                     danwei = ""
                 e['name'] = name
@@ -249,11 +250,12 @@ class LunWen_LunWenServer(object):
     def getDanWei(self, content):
         try:
             title = content.xpath("./td[2]/span/text()").extract_first().strip()
+            danwei = re.findall(r"^\((.*)\)$", title)[0].strip()
 
         except Exception:
-            title = ""
+            danwei = ""
 
-        return title
+        return danwei
 
     # 获取ORCID
     def getORCID(self, content):

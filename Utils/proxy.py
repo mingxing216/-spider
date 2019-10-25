@@ -116,10 +116,10 @@ class ProxyUtils(object):
                                 'https': 'socks5://{}'.format(ip)}
 
                     elif self.type == 'adsl':
-                        # return {'http': 'http://{}:{}'.format(ip, port)}
+                        return {'http': 'http://{}:{}'.format(ip, port)}
 
-                        return {'http': 'http://{}:{}'.format(ip, port),
-                                'https': 'https://{}:{}'.format(ip, port)}
+                        # return {'http': 'http://{}:{}'.format(ip, port),
+                        #         'https': 'https://{}:{}'.format(ip, port)}
 
                     else:
                         self.logging.error('status: False | err: type error!!! | from: getProxy')

@@ -143,6 +143,7 @@ class SpiderMain(BastSpiderMain):
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=50, lockname=config.REDIS_DOCUMENT_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
+            print(task_list)
 
             if task_list:
                 # 创建gevent协程
@@ -172,7 +173,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "http://hdl.handle.net/2060/20150000723", "parentUrl": "https://ntrs.nasa.gov/search.jsp?R=20150000723&qs=N%3D4294958283%26No%3D3430", "title": "Volcanic Contribution to Decadal Changes in Tropospheric Temperature", "daXiao": "450KB", "es": "期刊论文"}')
+        # main.run(task='{"url": "http://hdl.handle.net/2060/20170007280", "parentUrl": "https://ntrs.nasa.gov/search.jsp?R=20170007280&qs=N%3D4294926397", "title": "A Study of Heat Transfer and Flow Characteristics of Rising Taylor Bubbles", "daXiao": "9.5MB", "es": "博士论文"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

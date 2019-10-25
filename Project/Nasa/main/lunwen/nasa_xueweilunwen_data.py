@@ -244,7 +244,7 @@ class SpiderMain(BastSpiderMain):
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_XUEWEI_PAPER, count=10, lockname=config.REDIS_XUEWEI_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
-            print(task_list)
+            # print(task_list)
 
             if task_list:
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
@@ -275,7 +275,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://ntrs.nasa.gov/search.jsp?R=20190002542&qs=N%3D4294946866%26No%3D1190", "pdfUrl": "http://hdl.handle.net/2060/20190002542", "es": "会议论文"}')
+        # main.run(task='{"url": "https://ntrs.nasa.gov/search.jsp?R=20170007280&qs=N%3D4294926397", "pdfUrl": "http://hdl.handle.net/2060/20170007280", "es": "博士论文"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

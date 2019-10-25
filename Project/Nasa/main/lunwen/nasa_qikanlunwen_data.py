@@ -281,7 +281,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://ntrs.nasa.gov/search.jsp?R=20190002542&qs=N%3D4294946866%26No%3D1190", "pdfUrl": "http://hdl.handle.net/2060/20190002542", "es": "会议论文"}')
+        # main.run(task='{"url": "https://ntrs.nasa.gov/search.jsp?R=20160005184&qs=N%3D4294958283%26No%3D2770", "pdfUrl": "", "es": "期刊论文"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
