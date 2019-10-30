@@ -18,14 +18,14 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.Nasa.middleware import download_middleware
-from Project.Nasa.service import service
-from Project.Nasa.dao import dao
-from Project.Nasa import config
+from Project.Techstreet.middleware import download_middleware
+from Project.Techstreet.service import service
+from Project.Techstreet.dao import dao
+from Project.Techstreet import config
 
-log_file_dir = 'Nasa'  # LOG日志存放路径
-LOGNAME = 'Nasa_文档_data'  # LOG名
-NAME = 'Nasa_文档_data'  # 爬虫名
+log_file_dir = 'Techstreet'  # LOG日志存放路径
+LOGNAME = 'Techstreet_文档_data'  # LOG名
+NAME = 'Techstreet_文档_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -39,7 +39,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.LunWen_LunWenServer(logging=LOGGING)
+        self.server = service.BiaoZhunServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -77,14 +77,10 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
-
         url = task_data['url']
-        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        lunwenurl = task_data['parentUrl']
+        sha = task_data['sha']
+        parentUrl = task_data['parentUrl']
         title = task_data['title']
-        daxiao = task_data['daXiao']
-        es = task_data['es']
-
         # 获取标题
         save_data['title'] = title
         # 获取URL
@@ -92,18 +88,17 @@ class SpiderMain(BastSpiderMain):
         # 获取格式
         save_data['geShi'] = ""
         # 获取大小
-        save_data['daXiao'] = daxiao
+        save_data['daXiao'] = ""
         # 获取标签
         save_data['biaoQian'] = ""
         # 获取来源网站
         save_data['laiYuanWangZhan'] = ""
-        # 获取关联论文
+        # 获取关联标准
         e = {}
-        e['url'] = lunwenurl
+        e['url'] = parentUrl
         e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-        e['ss'] = '论文'
-        save_data['guanLianLunWen'] = e
-
+        e['ss'] = '标准'
+        save_data['guanLianBiaoZhun'] = e
         # =========================公共字段
         # url
         save_data['url'] = url
@@ -113,12 +108,12 @@ class SpiderMain(BastSpiderMain):
         save_data['sha'] = sha
         # 生成ss ——实体
         save_data['ss'] = '文档'
-        # 生成ws ——目标网站
-        save_data['ws'] = '美国宇航局'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '文档_论文文档'
+        save_data['clazz'] = '文档_标准文档'
         # 生成es ——栏目名称
-        save_data['es'] = es
+        save_data['es'] = '标准'
+        # 生成ws ——目标网站
+        save_data['ws'] = 'mystandards'
         # 生成biz ——项目
         save_data['biz'] = '文献大数据'
         # 生成ref
@@ -133,17 +128,22 @@ class SpiderMain(BastSpiderMain):
         # 获取字段值存入字典并返回sha
         sha = self.handle(task=task, save_data=save_data)
         # 保存数据到Hbase
-        success = self.dao.saveDataToHbase(data=save_data)
-        if success:
-            # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_DOCUMENT, sha=sha)
+        if not save_data:
+            LOGGING.info('没有获取数据, 存储失败')
+            return
+        if 'sha' not in save_data:
+            LOGGING.info('数据获取不完整, 存储失败')
+            return
+        self.dao.saveDataToHbase(data=save_data)
+        # 删除任务
+        self.dao.deleteTask(table=config.MYSQL_DOCUMENT, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=50, lockname=config.REDIS_DOCUMENT_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
-            # print(task_list)
+            print(task_list)
 
             if task_list:
                 # 创建gevent协程
@@ -173,14 +173,13 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "http://hdl.handle.net/2060/20170007280", "parentUrl": "https://ntrs.nasa.gov/search.jsp?R=20170007280&qs=N%3D4294926397", "title": "A Study of Heat Transfer and Flow Characteristics of Rising Taylor Bubbles", "daXiao": "9.5MB", "es": "博士论文"}')
+        # main.run(task='{"url": "https://www.mystandards.biz/nahledy/view/csn/31/97323/97323_nahled.pdf", "sha": "f051b9aa90317258d8c3296ca434a0b9b1e8f910", "ss": "文档", "parentUrl": "https://www.mystandards.biz/standard/csnen-16602-70-20-1.7.2015.html", "title": "Space product assurance - Determination of the susceptibility of silver-plated copper wire and cable to \"red-plague\" corrosion"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
     begin_time = time.time()
-
     process_start()
 
     # po = Pool(config.DATA_SCRIPT_PROCESS)

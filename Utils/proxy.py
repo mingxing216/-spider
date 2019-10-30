@@ -106,20 +106,20 @@ class ProxyUtils(object):
 
                     # 判断协议种类
                     if self.type == 'http':
-                        return {'http': 'http://{}'.format(ip)}
-
-                    elif self.type == 'https':
-                        return {'https': 'https://{}'.format(ip)}
-
-                    elif self.type == 'socks5':
-                        return {'http': 'socks5://{}'.format(ip),
-                                'https': 'socks5://{}'.format(ip)}
-
-                    elif self.type == 'adsl':
                         return {'http': 'http://{}:{}'.format(ip, port)}
 
-                        # return {'http': 'http://{}:{}'.format(ip, port),
-                        #         'https': 'https://{}:{}'.format(ip, port)}
+                    elif self.type == 'https':
+                        return {'https': 'https://{}:{}'.format(ip, port)}
+
+                    elif self.type == 'socks5':
+                        return {'http': 'socks5://{}:{}'.format(ip, port),
+                                'https': 'socks5://{}:{}'.format(ip, port)}
+
+                    elif self.type == 'adsl':
+                        # return {'http': 'http://{}:{}'.format(ip, port)}
+
+                        return {'http': 'http://{}:{}'.format(ip, port),
+                                'https': 'https://{}:{}'.format(ip, port)}
 
                     else:
                         self.logging.error('status: False | err: type error!!! | from: getProxy')
