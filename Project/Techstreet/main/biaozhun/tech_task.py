@@ -102,11 +102,13 @@ class SpiderMain(BastSpiderMain):
             publish_text = publish_resp.text
 
             catalog_url = self.server.getCatalogUrl(resp=publish_text)
+            # 进入队列
+            self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=catalog_url)
             # print(catalog_url)
             self.catalog_url_list.append(catalog_url)
 
         print(len(self.catalog_url_list))
-        self.dao.QueueJobTask(key=config.REDIS_CATALOG, data=self.catalog_url_list)
+        # self.dao.QueueJobTask(key=config.REDIS_CATALOG, data=self.catalog_url_list)
 
     def run(self, catalog_url):
         # 请求列表页，获取首页响应
@@ -149,6 +151,8 @@ class SpiderMain(BastSpiderMain):
                 # 如果响应获取失败，重新访问，并记录这一页种子
                 if not next_resp:
                     LOGGING.error('第{}页响应获取失败, url: {}'.format(num, next_url))
+                    # 队列一条任务
+                    self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=next_url)
                     return
                 # 响应成功，添加log日志
                 LOGGING.info('已翻到第{}页'.format(num))
@@ -178,7 +182,7 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_CATALOG,
-                                         count=1,
+                                         count=10,
                                          lockname=config.REDIS_CATALOG_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -207,7 +211,7 @@ def process_start():
     main = SpiderMain()
     try:
         # 获取列表页并使之进入队列
-        # main.getCatalog()
+        main.getCatalog()
         # 获取详情页
         main.start()
         # main.run("https://www.mystandards.biz/publisher/astm-standards-adjuncts-reference-radiographs/")

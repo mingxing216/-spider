@@ -77,7 +77,7 @@ class SpiderMain(BastSpiderMain):
     def run(self, task):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
-        print(task_data)
+        # print(task_data)
         # 创建数据存储字典
         save_data = {}
         save_data['bizTitle'] = task_data['bizTitle']

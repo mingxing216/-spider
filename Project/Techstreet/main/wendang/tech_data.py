@@ -173,7 +173,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://www.mystandards.biz/nahledy/view/csn/31/97323/97323_nahled.pdf", "sha": "f051b9aa90317258d8c3296ca434a0b9b1e8f910", "ss": "文档", "parentUrl": "https://www.mystandards.biz/standard/csnen-16602-70-20-1.7.2015.html", "title": "Space product assurance - Determination of the susceptibility of silver-plated copper wire and cable to \"red-plague\" corrosion"}')
+        # main.run(task='{"url": "https://www.techstreet.com/products/preview/2082206", "sha": "4ebe5f0f8caf05289bd6a5b6f1b7c130a5931714", "ss": "文档", "parentUrl": "https://www.techstreet.com/standards/aami-iso-81060-2-2019?product_id=2082206", "title": "Non-invasive sphygmomanometers - Part 2: Clinical investigation of intermittent automated measurement type"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

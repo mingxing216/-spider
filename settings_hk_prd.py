@@ -39,9 +39,9 @@ Orange_Pid=46808
 
 # ======================================================
 # hbase存储爬虫输出数据
-SpiderDataSaveUrl='http://60.195.249.117:8090/hbaseserver/dat/saveStructuredData?'
+SpiderDataSaveUrl='http://hbase.onecooo.com:8090/hbaseserver/dat/saveStructuredData?'
 # hbase存储爬虫输出多媒体文件
-SpiderMediaSaveUrl='http://60.195.249.117:8090/hbaseserver/dat/saveMediaData?'
+SpiderMediaSaveUrl='http://hbase.onecooo.com:8090/hbaseserver/dat/saveMediaData?'
 
 # ==================《adsl代理池》==================
 # 获取代理接口

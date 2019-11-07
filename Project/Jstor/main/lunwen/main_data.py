@@ -372,7 +372,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://www.jstor.org/stable/44744545?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9OA%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D1873%26amp%3Bed%3D1874%26amp%3Bacc%3Ddfr%26amp%3Bdisc_literature-discipline_facet%3DbGl0ZXJhdHVyZS1kaXNjaXBsaW5l&ab_segments=0%2Fdefault-2%2Fcontrol&seq=1#metadata_info_tab_contents", "xueKeLeiBie": "Anthropology"}')
+        # main.run(task='{"url": "https://www.jstor.org/stable/10.1086/660818?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9OA%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D2011%26amp%3Bed%3D2012%26amp%3Bacc%3Ddfr%26amp%3Bdisc_astronomy-discipline_facet%3DYXN0cm9ub215LWRpc2NpcGxpbmU%253D&ab_segments=0%2Fdefault-2%2Fcontrol", "xueKeLeiBie": "Anthropology"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

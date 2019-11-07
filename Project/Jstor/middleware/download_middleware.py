@@ -117,16 +117,17 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['mode'] = mode
             # 设置请求头
             param['headers'] = {
-                'Authority': 'www.jstor.org',
-                # 'Scheme': 'https',
-                'Cache-Control': 'max-age=0',
-                'Upgrade-Insecure-Requests': '1',
-                # 'Accept-Language': 'zh-CN,zh;q=0.9',
-                # 'Accept-Encoding': 'gzip, deflate, br',
-                # 'Sec-Fetch-Mode': 'navigate',
-                # 'Referer': referer,
-                'Connection': 'close',
-                'User-Agent': user_agent_u.get_ua()
+                # 'authority': 'www.jstor.org',
+                'method': 'GET',
+                # 'scheme': 'https',
+                # 'cache-control': 'max-age=0',
+                # 'upgrade-insecure-requests': '1',
+                # 'accept-language': 'zh-CN,zh;q=0.9',
+                # 'accept-encoding': 'gzip, deflate, br',
+                # 'sec-fetch-mode': 'navigate',
+                # 'referer': referer,
+                'connection': 'close',
+                'user-agent': user_agent_u.get_ua()
             }
             # 设置post参数
             param['data'] = data

@@ -95,23 +95,15 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
+        # print(task_data)
 
         url = task_data['url']
         sha = task_data['sha']
 
-        # 获取cookie
-        self.cookie_dict = self.download_middleware.create_cookie()
-
-        if not self.cookie_dict:
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-            return
-
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
-                              mode='GET',
-                              cookies=self.cookie_dict)
+                              mode='GET')
         if not resp:
             LOGGING.error('页面响应获取失败, url: {}'.format(url))
             # 逻辑删除任务
@@ -172,11 +164,16 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=2, lockname=config.REDIS_MAGAZINE_LOCK)
-            print(task_list)
+            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=5, lockname=config.REDIS_MAGAZINE_LOCK)
+            # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
+                # 获取cookie
+                self.cookie_dict = self.download_middleware.create_cookie()
+                # cookie创建失败，重新创建
+                if not self.cookie_dict:
+                    continue
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
                 # 创建gevent协程
