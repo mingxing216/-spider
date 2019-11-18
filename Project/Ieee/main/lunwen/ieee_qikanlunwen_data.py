@@ -211,11 +211,18 @@ class SpiderMain(BastSpiderMain):
                 self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                 return '中断'
 
-            cankao_json = cankao_resp.json()
-            # 获取参考文献
-            save_data['canKaoWenXian'] = self.server.canKaoWenXian(content=cankao_json)
+            try:
+                cankao_json = cankao_resp.json()
+            except Exception:
+                cankao_json = ''
+
+            if cankao_json:
+                # 获取参考文献
+                save_data['canKaoWenXian'] = self.server.canKaoWenXian(content=cankao_json)
+            else:
+                save_data['canKaoWenXian'] = []
         else:
-            save_data['canKaoWenXian'] = ""
+            save_data['canKaoWenXian'] = []
         # 判断是否有引证文献
         citations = self.server.hasWenXian(script, 'citedby')
         if citations == 'true':
@@ -231,11 +238,18 @@ class SpiderMain(BastSpiderMain):
                 self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                 return '中断'
 
-            yinzheng_json = yinzheng_resp.json()
-            # 获取引证文献
-            save_data['yinZhengWenXian'] = self.server.yinZhengWenXian(content=yinzheng_json)
+            try:
+                yinzheng_json = yinzheng_resp.json()
+            except Exception:
+                yinzheng_json = ''
+
+            if yinzheng_json:
+                # 获取引证文献
+                save_data['yinZhengWenXian'] = self.server.yinZhengWenXian(content=yinzheng_json)
+            else:
+                save_data['yinZhengWenXian'] = []
         else:
-            save_data['yinZhengWenXian'] = ""
+            save_data['yinZhengWenXian'] = []
         # 关联作者
         save_data['guanLianZuoZhe'] = self.server.guanLianZuoZhe(script, url=url)
         # 获取作者实体字段值

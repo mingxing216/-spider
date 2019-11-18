@@ -55,6 +55,7 @@ class Dao(object):
         # 查询数据库是否含有此数据
         data_status_sql = "select * from {} where `sha` = '{}'".format(table, sha)
         data_status = self.mysql_client.get_result(sql=data_status_sql)
+        # 如果没有，直接存入数据库
         if not data_status:
             data = {
                 'sha': sha,
@@ -71,7 +72,58 @@ class Dao(object):
                 self.logging.warning('数据存储警告: {}'.format(e))
 
         else:
-            self.logging.warning('种子已存在: {}'.format(sha))
+            # self.logging.warning('种子已存在: {}'.format(sha))
+            # 从mysql数据库中取出该种子
+            result = self.getOneTask(table, sha)
+            oldCtx = ast.literal_eval(result[0]['ctx'])
+            # 遍历新ctx中的key,value值
+            for k,v in memo.items():
+                # 遍历取出来的数据中的旧的key,value值
+                for m,n in oldCtx.items():
+                    # 判断新的key值是否以's_'开头，并且value是字符串
+                    if k.startswith('s_') and isinstance(v, str):
+                        if k == m:
+                            oldCtx[k] = n + '|' + v
+                            break
+                        else:
+                            continue
+                    else:
+                        if k == m:
+                            oldCtx[k] = v
+                            break
+                        else:
+                            continue
+                else:
+                    oldCtx[k] = v
+            # print(oldCtx)
+
+            # 删除原数据库种子
+            self.deleteTask(table, sha=sha)
+            # 存储新种子
+            rCtx = json.dumps(oldCtx, ensure_ascii=False)
+            newdata = {
+                'sha': sha,
+                'ctx': rCtx,
+                'url': url,
+                'es': es,
+                'ws': ws,
+                'date_created': timeutils.getNowDatetime()
+            }
+            try:
+                self.mysql_client.insert_one(table=table, data=newdata)
+                self.logging.info('已存储种子: {}'.format(url))
+            except Exception as e:
+                self.logging.warning('数据存储警告: {}'.format(e))
+
+    # 从Mysql获取指定一条任务
+    def getOneTask(self, table, sha):
+        sql = "select * from {} where `del` = '0' and `sha` = '{}'".format(table, sha)
+
+        data_list = self.mysql_client.get_results(sql=sql)
+
+        self.logging.info('种子已存在, 需取出做附加信息合并，再存储该种子 {}'.format(sha))
+
+        return data_list
 
     # 从Mysql获取任务
     def getNewTaskList(self, table, ws, es, count):

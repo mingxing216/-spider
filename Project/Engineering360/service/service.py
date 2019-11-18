@@ -349,6 +349,8 @@ class JiGouServer(object):
         tree = etree.HTML(html)
         try:
             tags = tree.xpath("//div[@id='sp-profile-body']/div[not(@class='view-more')]")
+            if not tags:
+                tags = tree.xpath("//div[@id='sp-profile-body']/table")
             for tag in tags:
                 content = re.sub(r"src=\"", "src=\"https://www.globalspec.com", tostring(tag).decode('utf-8'))
                 result = re.sub(r"[\n\r\t]", "", content).strip()

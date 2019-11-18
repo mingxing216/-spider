@@ -197,17 +197,25 @@ class SpiderMain(BastSpiderMain):
             cankao_resp = self.__getResp(func=self.download_middleware.getResp,
                                   url=cankaoUrl,
                                   mode='GET')
+
             if not cankao_resp:
                 LOGGING.error('参考文献接口响应失败, url: {}'.format(cankaoUrl))
                 # 逻辑删除任务
                 self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                 return '中断'
 
-            cankao_json = cankao_resp.json()
-            # 获取参考文献
-            save_data['canKaoWenXian'] = self.server.canKaoWenXian(content=cankao_json)
+            try:
+                cankao_json = cankao_resp.json()
+            except Exception:
+                cankao_json = ''
+
+            if cankao_json:
+                # 获取参考文献
+                save_data['canKaoWenXian'] = self.server.canKaoWenXian(content=cankao_json)
+            else:
+                save_data['canKaoWenXian'] = []
         else:
-            save_data['canKaoWenXian'] = ""
+            save_data['canKaoWenXian'] = []
         # 判断是否有引证文献
         citations = self.server.hasWenXian(script, 'citedby')
         if citations == 'true':
@@ -223,11 +231,18 @@ class SpiderMain(BastSpiderMain):
                 self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                 return '中断'
 
-            yinzheng_json = yinzheng_resp.json()
-            # 获取引证文献
-            save_data['yinZhengWenXian'] = self.server.yinZhengWenXian(content=yinzheng_json)
+            try:
+                yinzheng_json = yinzheng_resp.json()
+            except Exception:
+                yinzheng_json = ''
+
+            if yinzheng_json:
+                # 获取引证文献
+                save_data['yinZhengWenXian'] = self.server.yinZhengWenXian(content=yinzheng_json)
+            else:
+                save_data['yinZhengWenXian'] = []
         else:
-            save_data['yinZhengWenXian'] = ""
+            save_data['yinZhengWenXian'] = []
         # 关联作者
         save_data['guanLianZuoZhe'] = self.server.guanLianZuoZhe(script, url=url)
         # 获取作者实体字段值
@@ -354,7 +369,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"lunwenNumber": "6365452", "url": "https://ieeexplore.ieee.org/document/6365452/", "huiYiUrl": "https://ieeexplore.ieee.org/xpl/conhome/6360093/proceeding", "pdfUrl": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6365452", "xueKeLeiBie": "Components, Circuits, Devices and Systems|Communication, Networking and Broadcast Technologies|Computing and Processing|Signal Processing and Analysis"}')
+        # main.run(task='{"lunwenNumber": "7585648", "url": "https://ieeexplore.ieee.org/document/7585648/", "huiYiUrl": "https://ieeexplore.ieee.org/xpl/conhome/7580916/proceeding", "pdfUrl": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7585648", "xueKeLeiBie": "Aerospace|Bioengineering|Communication, Networking and Broadcast Technologies|Components, Circuits, Devices and Systems|Computing and Processing|Engineered Materials, Dielectrics and Plasmas|Fields, Waves and Electromagnetics|Photonics and Electrooptics|Power, Energy and Industry Applications|Robotics and Control Systems|Signal Processing and Analysis"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
