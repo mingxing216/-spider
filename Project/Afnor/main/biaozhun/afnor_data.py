@@ -116,53 +116,47 @@ class SpiderMain(BastSpiderMain):
     def standard(self, save_data, select, html, url, sha):
         # 获取标准编号
         save_data['biaoZhunBianHao'] = self.server.getBiaoZhunBianHao(select)
-        print(save_data['biaoZhunBianHao'])
         # 获取标题
-        save_data['title'] = self.server.getTitle(select)
-        print(save_data['title'])
+        save_data['biaoTi'] = self.server.getTitle(select)
         # 获取标准状态
         save_data['biaoZhunZhuangTai'] = self.server.getBiaoZhunZhuangTai(select)
-        print(save_data['biaoZhunZhuangTai'])
         # 获取代替标准
         save_data['daiTiBiaoZhun'] = self.server.getDaiTiBiaoZhun(select, 'has been replaced by')
-        print(save_data['daiTiBiaoZhun'])
         # 获取目录
         save_data['muLu'] = self.server.getMuLu(html)
-        print(save_data['muLu'])
         # 获取引用标准
         save_data['yinYongBiaoZhun'] = self.server.getYinYongBiaoZhun(select, 'cited')
-        print(save_data['yinYongBiaoZhun'])
         # 获取国际标准分类号
         save_data['guoJiBiaoZhunFenLeiHao'] = self.server.getIsbn(select)
-        print(save_data['guoJiBiaoZhunFenLeiHao'])
         # 获取被代替标准
         save_data['beiDaiTiBiaoZhun'] = self.server.getDaiTiBiaoZhun(select, 'This standard replaces')
-        print(save_data['beiDaiTiBiaoZhun'])
-        # # 获取描述
-        # save_data['miaoShu'] = self.server.getField(select, 'Number of Pages')
-        # # 获取关键词
-        # save_data['guanJianCi'] = self.server.getBeiDaiTiBiaoZhun(select)
-        # # 获取相关法律
-        # save_data['xiangGuanFaLv'] = self.server.getDaiTiBiaoZhun(select)
+        # 获取相关法律
+        save_data['xiangGuanFaLv'] = self.server.getLaw(html)
         # 获取被修订标准
-        save_data['beiXiuDingBiaoZhun'] = self.server.getBiaoZhun(select, 'amends')
-        print(save_data['beiXiuDingBiaoZhun'])
+        save_data['beiXiuDingBiaoZhun'] = self.server.getXiuDingBiaoZhun(select, 'amends')
         # 获取修订标准
-        save_data['xiuDingBiaoZhun'] = self.server.getBiaoZhun(select, 'has been amended by')
-        print(save_data['xiuDingBiaoZhun'])
-        # 关联文档
-        save_data['guanLianWenDang'] = self.server.guanLianWenDang(select)
-        if save_data['guanLianWenDang']:
-            # 深拷贝关联文档字典，目的为了修改拷贝的内容后，原文档字典不变
-            document = copy.deepcopy(save_data['guanLianWenDang'])
-            document['parentUrl'] = url
-            document['title'] = save_data['title'].replace('"', '\\"').replace("'", "''")
-            # 存储文档种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=document, ws='techstreet', es='标准')
+        save_data['xiuDingBiaoZhun'] = self.server.getXiuDingBiaoZhun(select, 'has been amended by')
+        # 获取view an extract链接
+        view_link = self.server.getViewLink(select)
+        print(view_link)
+        if view_link:
+            # 获取页面响应
+            view_resp = self.__getResp(func=self.download_middleware.getResp,
+                                  url=view_link,
+                                  mode='GET')
+
+            view_text = view_resp.text
+            # with open ('view.html', 'w') as f:
+            #     f.write(view_text)
+            # return
+        # 获取描述
+        save_data['miaoShu'] = self.server.getField(select, 'Number of Pages')
+        # 获取关键词
+        save_data['guanJianCi'] = self.server.getBeiDaiTiBiaoZhun(select)
 
         # ============价格实体
         # 先判断是否有价格
-        price = self.server.getTag(select)
+        price = self.server.getPriceTag(select)
         if price:
             self.price(select=select, title=save_data['title'], url=url, sha=sha)
 
@@ -181,7 +175,7 @@ class SpiderMain(BastSpiderMain):
         except Exception:
             hangye = ""
 
-            # 获取页面响应
+        # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
                               url=url,
                               mode='GET')
@@ -215,12 +209,12 @@ class SpiderMain(BastSpiderMain):
         save_data['sha'] = sha
         # 生成ss ——实体
         save_data['ss'] = '标准'
-        # 生成clazz ——层级关系
-        save_data['clazz'] = '标准_国际标准'
         # 生成es ——栏目名称
         save_data['es'] = '标准'
         # 生成ws ——网站名称
-        save_data['ws'] = 'techstreet'
+        save_data['ws'] = 'AFNOR'
+        # 生成clazz ——层级关系
+        save_data['clazz'] = '标准_国际标准'
         # 生成biz ——项目名称
         save_data['biz'] = '文献大数据'
         # 生成ref
@@ -283,7 +277,7 @@ def process_start():
     main = SpiderMain()
     try:
         # main.start()
-        main.run(task='{"url": "https://www.boutique.afnor.org/standard/nf-p33-303/asbestos-cement-roofing-asbestos-cement-corrugated-sheets-with-improved-resistance-resistance-to-passing-through-of-a-large-dime/article/884259/fa001297", "s_行业": "Construction trades"}')
+        main.run(task='{"url": "https://www.boutique.afnor.org/standard/nf-en-62035/discharge-lamps-excluding-fluorescent-lamps-safety-specifications/article/688713/fa048855", "s_行业": "Construction trades"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

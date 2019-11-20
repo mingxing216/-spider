@@ -78,13 +78,16 @@ class Dao(object):
             oldCtx = ast.literal_eval(result[0]['ctx'])
             # 遍历新ctx中的key,value值
             for k,v in memo.items():
-                # 遍历取出来的数据中的旧的key,value值
+                # 遍历旧的key,value值
                 for m,n in oldCtx.items():
                     # 判断新的key值是否以's_'开头，并且value是字符串
                     if k.startswith('s_') and isinstance(v, str):
                         if k == m:
-                            oldCtx[k] = n + '|' + v
-                            break
+                            if v not in n:
+                                oldCtx[k] = n + '|' + v
+                                break
+                            else:
+                                break
                         else:
                             continue
                     else:
@@ -121,7 +124,7 @@ class Dao(object):
 
         data_list = self.mysql_client.get_results(sql=sql)
 
-        self.logging.info('种子已存在, 需取出做附加信息合并，再存储该种子 {}'.format(sha))
+        self.logging.info('种子已存在, 需取出做附加信息合并，再存储该种子: {}'.format(sha))
 
         return data_list
 
@@ -193,7 +196,7 @@ class Dao(object):
                 return True
             else:
                 end_time = int(time.time() - start_time)
-                self.logging.info('title: Save data to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.info('title: Save data to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
                 return False
         except Exception as e:
             resp = e
@@ -274,7 +277,7 @@ class Dao(object):
                 return True
             else:
                 end_time = int(time.time() - start_time)
-                self.logging.info('title: Save media to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.info('title: Save media to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
                 return False
         except Exception as e:
             resp = e

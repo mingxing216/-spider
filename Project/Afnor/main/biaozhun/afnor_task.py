@@ -3,9 +3,9 @@
 '''
 
 '''
-# import gevent
-# from gevent import monkey
-# monkey.patch_all()
+import gevent
+from gevent import monkey
+monkey.patch_all()
 import sys
 import os
 import time
@@ -89,8 +89,6 @@ class SpiderMain(BastSpiderMain):
         if not type_url:
             return
 
-        print(type_url)
-
         # 访问标准类型url，获取列表页url及分类字段
         type_resp = self.__getResp(func=self.download_middleware.getResp,
                                        url=type_url,
@@ -111,8 +109,6 @@ class SpiderMain(BastSpiderMain):
         sector_url = self.server.getClassifyUrl(resp=index_text, para='SECTOR')
         if not sector_url:
             return
-
-        print(sector_url)
 
         # 访问行业url，获取列表页url及分类字段
         sector_resp = self.__getResp(func=self.download_middleware.getResp,
@@ -210,25 +206,25 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_CATALOG,
-                                         count=1,
+                                         count=10,
                                          lockname=config.REDIS_CATALOG_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
-                # # 创建gevent协程
-                # g_list = []
-                # for task in task_list:
-                #     s = gevent.spawn(self.run, task)
-                #     g_list.append(s)
-                # gevent.joinall(g_list)
+                # 创建gevent协程
+                g_list = []
+                for task in task_list:
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
 
-                # 创建线程池
-                threadpool = ThreadPool()
-                for url in task_list:
-                    threadpool.apply_async(func=self.run, args=(url,))
-
-                threadpool.close()
-                threadpool.join()
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for url in task_list:
+                #     threadpool.apply_async(func=self.run, args=(url,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
                 time.sleep(1)
             else:
@@ -239,7 +235,7 @@ def process_start():
     main = SpiderMain()
     try:
         # 获取列表页并使之进入队列
-        # main.getCatalog()
+        main.getCatalog()
         # 获取详情页
         main.start()
         # main.run("https://www.mystandards.biz/publisher/astm-standards-adjuncts-reference-radiographs/")

@@ -169,29 +169,6 @@ class BiaoZhunServer(object):
 
         return isbn
 
-    # 获取文本类型值（版本、ISBN、页数）
-    def getField(self, select, para):
-        selector = select
-        try:
-            fieldValue = selector.xpath("//section[@class='metadata']/dl/dt[contains(text(), '" + para + "')]//following-sibling::dd[1]/text()").extract_first().strip()
-
-        except Exception:
-            fieldValue = ""
-
-        return fieldValue
-
-    # 获取出版日期
-    def getRiqi(self, select):
-        selector = select
-        try:
-            fieldValue = selector.xpath("//section[@class='metadata']/dl/dt[contains(text(), 'Published')]//following-sibling::dd[1]/text()").extract_first().strip()
-            riqi = str(datetime.strptime(fieldValue, "%m/%d/%Y"))
-
-        except Exception:
-            riqi = ""
-
-        return riqi
-
     # 获取代替标准、被代替标准
     def getDaiTiBiaoZhun(self, select, para):
         result_list = []
@@ -223,7 +200,7 @@ class BiaoZhunServer(object):
 
         return result_list
 
-    # 获取引用标准、被引用标准
+    # 获取引用标准
     def getYinYongBiaoZhun(self, select, para):
         result_list = []
         selector = select
@@ -254,34 +231,65 @@ class BiaoZhunServer(object):
 
         return result_list
 
-    # 关联文档
-    def guanLianWenDang(self, select):
+    # 获取修订标准、被修订标准
+    def getXiuDingBiaoZhun(self, select, para):
+        result_list = []
         selector = select
-        e = {}
         try:
-            e['url'] = 'https://www.boutique.afnor.org/' + selector.xpath("//a[@class='preview']/@href").extract_first().strip()
-            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-            e['ss'] = '文档'
+            biaozhun = selector.xpath("//h3[contains(text(), '" + para + "')]/following-sibling::div/div")
+            for i in biaozhun:
+                result_dict = {}
+                try:
+                    result_dict['标准号'] = i.xpath(".//div[@class='conteneur-livre']//h3/a/text()").extract_first().strip()
+                except Exception:
+                    result_dict['标准号'] = ""
+                try:
+                    result_dict['链接'] = i.xpath(".//div[@class='conteneur-livre']//h3/a/@href").extract_first().strip()
+                except Exception:
+                    result_dict['链接'] = ""
+                try:
+                    result_dict['标题'] = i.xpath(".//div[@class='conteneur-livre']//p/a[@class='sous-titre']/text()").extract_first().strip()
+                except Exception:
+                    result_dict['标题'] = ""
+                try:
+                    result_dict['状态'] = i.xpath(".//div[@class='conteneur-livre']//p/span[@class='mention-annule-small']/text()").extract_first().strip()
+                except Exception:
+                    result_dict['状态'] = ""
+                result_list.append(result_dict)
+
         except Exception:
-            return e
+            return result_list
 
-        return e
+        return result_list
 
-    # 关联机构
-    def guanLianJiGou(self, select):
+    # 获取相关法律
+    def getLaw(self, html):
+        tree = etree.HTML(html)
+        try:
+            tag = tree.xpath("//b[contains(text(), 'Directive')]/../..")[0]
+            law = re.sub(r"[\n\r\t]", "", tostring(tag).decode('utf-8')).strip()
+
+        except Exception:
+            law = ""
+
+        return law
+
+    # 获取view an extract链接
+    def getViewLink(self, select):
         selector = select
-        e = {}
         try:
-            e['url'] = 'https://www.boutique.afnor.org/' + selector.xpath("//h2[contains(text(), 'The information about the standard:')]/following-sibling::p[1]/strong[contains(text(), 'Country')]/following-sibling::a[1]/@href").extract_first().strip()
-            e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-            e['ss'] = '机构'
-        except Exception:
-            return e
+            view = selector.xpath("//div[contains(@class, 'preview_flag')]/@onclick").extract_first().strip()
+            link = 'https://www.boutique.afnor.org/xml-en/' + re.findall(r".*redirect/(.*?)'\).*", view)[0].strip() + '/false'
+            'https://www.boutique.afnor.org/xml-en/824484/false'
+            'https://viewer.afnor.org/Html/Display/?token=8OKZ7Zb8jbU1'
 
-        return e
+        except Exception:
+            link = ""
+
+        return link
 
     # 获取价格所在标签
-    def getTag(self, select):
+    def getPriceTag(self, select):
         selector = select
         try:
             tag = selector.xpath("//ol[@id='available_editions']")[0]
@@ -317,68 +325,6 @@ class BiaoZhunServer(object):
             e['url'] = url
             e['sha'] = sha
             e['ss'] = '标准'
-        except Exception:
-            return e
-
-        return e
-
-class JiGouServer(object):
-    def __init__(self, logging):
-        self.logging = logging
-
-    # 数据类型转换
-    def getEvalResponse(self, task_data):
-        return ast.literal_eval(task_data)
-
-    # 获取选择器
-    def getSelector(self, resp):
-        selector = Selector(text=resp)
-
-        return selector
-
-    # 获取标题
-    def getTitle(self, select):
-        selector = select
-        try:
-            tit = selector.xpath("//h1/text()").extract_first()
-            title = re.sub(r"[\n\r\t]", "", tit).strip()
-
-        except Exception:
-            title = ""
-
-        return title
-
-    # 获取标识
-    def getBiaoShi(self, select):
-        selector = select
-        try:
-            img = selector.xpath("//h1/preceding-sibling::img[1]/@src").extract_first().strip()
-            img_src = 'https://www.mystandards.biz' + img
-
-        except Exception:
-            img_src = ""
-
-        return img_src
-
-    # 获取简介
-    def getJianJie(self, html):
-        tree = etree.HTML(html)
-        try:
-            result = tree.xpath("//h1/following-sibling::p[1]")[0]
-            htmlValue = re.sub(r"[\n\r\t]", "", tostring(result).decode('utf-8')).strip()
-
-        except Exception:
-            htmlValue = ""
-
-        return htmlValue
-
-    # 图片关联机构url
-    def guanLianJiGou(self, url, sha):
-        e = {}
-        try:
-            e['url'] = url
-            e['sha'] = sha
-            e['ss'] = '机构'
         except Exception:
             return e
 
