@@ -10,6 +10,7 @@ import sys
 import os
 import time
 import traceback
+import re
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -172,34 +173,73 @@ class SpiderMain(BastSpiderMain):
 
         # 如果有，请求下一页，获得响应
         if int(total_page) > 1:
-            for i in range(2, int(total_page) + 1):
-                next_url = catalog_url + '?page=' + str(i)
+            if '?page=' not in catalog_url:
+                for i in range(2, int(total_page) + 1):
+                    next_url = catalog_url + '?page=' + str(i)
 
-                next_resp = self.__getResp(func=self.download_middleware.getResp,
-                                           url=next_url,
-                                           mode='GET')
 
-                # 如果响应获取失败，重新访问，并记录这一页种子
-                if not next_resp:
-                    LOGGING.error('第{}页响应获取失败, url: {}'.format(i, next_url))
-                    # 队列一条任务
-                    task_data['url'] = next_url
-                    self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=task_data)
-                    return
-                # 响应成功，添加log日志
-                LOGGING.info('已翻到第{}页'.format(i))
+                    next_resp = self.__getResp(func=self.download_middleware.getResp,
+                                               url=next_url,
+                                               mode='GET')
 
-                # 获得响应成功，提取详情页种子
-                next_text = next_resp.text
-                next_urls = self.server.getDetailUrl(resp=next_text, k=classify, v=classifu_value)
-                # print(next_urls)
-                # print(len(next_urls))
-                for url in next_urls:
-                    # 保存url
-                    self.num += 1
-                    LOGGING.info('当前已抓种子数量: {}'.format(self.num))
-                    # 存入数据库
-                    self.dao.saveTaskToMysql(table=config.MYSQL_STANDARD, memo=url, ws='AFNOR', es='标准')
+                    # 如果响应获取失败，重新访问，并记录这一页种子
+                    if not next_resp:
+                        LOGGING.error('第{}页响应获取失败, url: {}'.format(i, next_url))
+                        # 队列一条任务
+                        task_data['url'] = next_url
+                        self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=task_data)
+                        return
+                    # 响应成功，添加log日志
+                    LOGGING.info('已翻到第{}页'.format(i))
+
+                    # 获得响应成功，提取详情页种子
+                    next_text = next_resp.text
+                    next_urls = self.server.getDetailUrl(resp=next_text, k=classify, v=classifu_value)
+                    # print(next_urls)
+                    # print(len(next_urls))
+                    for url in next_urls:
+                        # 保存url
+                        self.num += 1
+                        LOGGING.info('当前已抓种子数量: {}'.format(self.num))
+                        # 存入数据库
+                        self.dao.saveTaskToMysql(table=config.MYSQL_STANDARD, memo=url, ws='AFNOR', es='标准')
+
+                else:
+                    LOGGING.info('已翻到最后一页')
+
+            else:
+                start_page = re.findall(r".*\?page=(\d+)",  catalog_url)[0]
+                for i in range(int(start_page) + 1, int(total_page) + 1):
+                    next_url = re.findall(r"(.*\?page=)\d+",  catalog_url)[0] + str(i)
+
+                    next_resp = self.__getResp(func=self.download_middleware.getResp,
+                                               url=next_url,
+                                               mode='GET')
+
+                    # 如果响应获取失败，重新访问，并记录这一页种子
+                    if not next_resp:
+                        LOGGING.error('第{}页响应获取失败, url: {}'.format(i, next_url))
+                        # 队列一条任务
+                        task_data['url'] = next_url
+                        self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=task_data)
+                        return
+                    # 响应成功，添加log日志
+                    LOGGING.info('已翻到第{}页'.format(i))
+
+                    # 获得响应成功，提取详情页种子
+                    next_text = next_resp.text
+                    next_urls = self.server.getDetailUrl(resp=next_text, k=classify, v=classifu_value)
+                    # print(next_urls)
+                    # print(len(next_urls))
+                    for url in next_urls:
+                        # 保存url
+                        self.num += 1
+                        LOGGING.info('当前已抓种子数量: {}'.format(self.num))
+                        # 存入数据库
+                        self.dao.saveTaskToMysql(table=config.MYSQL_STANDARD, memo=url, ws='AFNOR', es='标准')
+
+                else:
+                    LOGGING.info('已翻到最后一页')
 
         else:
             LOGGING.info('已翻到最后一页')
