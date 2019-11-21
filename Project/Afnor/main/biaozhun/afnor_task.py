@@ -88,6 +88,7 @@ class SpiderMain(BastSpiderMain):
         type_url = self.server.getClassifyUrl(resp=index_text, para='Type of document')
         if not type_url:
             return
+        # print(type_url)
 
         # 访问标准类型url，获取列表页url及分类字段
         type_resp = self.__getResp(func=self.download_middleware.getResp,
@@ -101,7 +102,7 @@ class SpiderMain(BastSpiderMain):
 
         type_list = self.server.getCatalogUrl(resp=type_text, key='s_标准类型')
         # print(type_list)
-        print(len(type_list))
+        # print(len(type_list))
         # 进入队列
         self.dao.QueueJobTask(key=config.REDIS_CATALOG, data=type_list)
 
@@ -109,6 +110,7 @@ class SpiderMain(BastSpiderMain):
         sector_url = self.server.getClassifyUrl(resp=index_text, para='SECTOR')
         if not sector_url:
             return
+        # print(sector_url)
 
         # 访问行业url，获取列表页url及分类字段
         sector_resp = self.__getResp(func=self.download_middleware.getResp,
@@ -122,7 +124,7 @@ class SpiderMain(BastSpiderMain):
 
         sector_list = self.server.getCatalogUrl(resp=sector_text, key='s_行业')
         # print(sector_list)
-        print(len(sector_list))
+        # print(len(sector_list))
         # 进入队列
         self.dao.QueueJobTask(key=config.REDIS_CATALOG, data=sector_list)
 
@@ -146,7 +148,7 @@ class SpiderMain(BastSpiderMain):
         if not first_resp:
             LOGGING.error('列表首页响应获取失败, url: {}'.format(catalog_url))
             # 队列一条任务
-            self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=catalog_url)
+            self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=task_data)
             return
         # 响应成功，添加log日志
         LOGGING.info('已进入列表第1页')
@@ -157,7 +159,7 @@ class SpiderMain(BastSpiderMain):
         # 获取首页详情url
         first_urls = self.server.getDetailUrl(resp=first_resp.text, k=classify, v=classifu_value)
         # print(first_urls)
-        print(len(first_urls))
+        # print(len(first_urls))
         for url in first_urls:
             # 保存url
             self.num += 1
@@ -181,8 +183,9 @@ class SpiderMain(BastSpiderMain):
                 if not next_resp:
                     LOGGING.error('第{}页响应获取失败, url: {}'.format(i, next_url))
                     # 队列一条任务
-                    self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=next_url)
-                    continue
+                    task_data['url'] = next_url
+                    self.dao.QueueOneTask(key=config.REDIS_CATALOG, data=task_data)
+                    return
                 # 响应成功，添加log日志
                 LOGGING.info('已翻到第{}页'.format(i))
 
@@ -190,7 +193,7 @@ class SpiderMain(BastSpiderMain):
                 next_text = next_resp.text
                 next_urls = self.server.getDetailUrl(resp=next_text, k=classify, v=classifu_value)
                 # print(next_urls)
-                print(len(next_urls))
+                # print(len(next_urls))
                 for url in next_urls:
                     # 保存url
                     self.num += 1

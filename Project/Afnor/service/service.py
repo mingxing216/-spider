@@ -292,7 +292,7 @@ class BiaoZhunServer(object):
     def getPriceTag(self, select):
         selector = select
         try:
-            tag = selector.xpath("//ol[@id='available_editions']")[0]
+            tag = selector.xpath("//strong[@id='prix-multi']")[0]
         except Exception:
             tag = None
 
@@ -301,22 +301,16 @@ class BiaoZhunServer(object):
     # 获取价格
     def getPrice(self, select):
         selector = select
-        price_list = []
+        price_dict = {}
         try:
-            language = selector.xpath("//select[@id='language_selector']/option[@selected]/text()").extract_first().strip()
-            prices = selector.xpath("//li[contains(@class, 'product_row')]/ul")
-            for i in range(len(prices)):
-                price_dict = {}
-                price_dict['Language'] = language
-                price_dict['Available formats'] = prices[i].xpath("./li[@class='edition']/text()").extract_first().strip()
-                price_dict['Availability'] = prices[i].xpath("./li[@class='availability']/text()").extract_first().strip()
-                price_dict['Priced Form（in USD）'] = prices[i].xpath("./li[@class='price']/span/text()").extract_first().strip()
-                price_list.append(price_dict)
+            price = selector.xpath("//div[@data-prix][2]/@data-prix").extract_first().strip()
+            price_dict['v'] = price
+            price_dict['u'] = "欧元"
 
         except Exception:
-            return price_list
+            return price_dict
 
-        return price_list
+        return price_dict
 
    # 关联标准
     def guanLianBiaoZhun(self, url, sha):

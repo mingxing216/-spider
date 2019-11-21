@@ -80,7 +80,7 @@ class SpiderMain(BastSpiderMain):
         # 价格数据存储字典
         price_data = {}
         # 标题
-        price_data['title'] = title
+        price_data['biaoTi'] = title
         # 商品价格
         price_data['shangPinJiaGe'] = self.server.getPrice(select=select)
         # 关联标准
@@ -94,12 +94,12 @@ class SpiderMain(BastSpiderMain):
         price_data['sha'] = sha
         # 生成ss ——实体
         price_data['ss'] = '价格'
-        # 生成clazz ——层级关系
-        price_data['clazz'] = '价格'
         # 生成es ——栏目名称
         price_data['es'] = '标准'
         # 生成ws ——目标网站
-        price_data['ws'] = 'techstreet'
+        price_data['ws'] = 'AFNOR'
+        # 生成clazz ——层级关系
+        price_data['clazz'] = '价格'
         # 生成biz ——项目
         price_data['biz'] = '文献大数据'
         # 生成ref
@@ -139,26 +139,31 @@ class SpiderMain(BastSpiderMain):
         # 获取view an extract链接
         view_link = self.server.getViewLink(select)
         print(view_link)
-        if view_link:
-            # 获取页面响应
-            view_resp = self.__getResp(func=self.download_middleware.getResp,
-                                  url=view_link,
-                                  mode='GET')
-
-            view_text = view_resp.text
-            # with open ('view.html', 'w') as f:
-            #     f.write(view_text)
-            # return
-        # 获取描述
-        save_data['miaoShu'] = self.server.getField(select, 'Number of Pages')
-        # 获取关键词
-        save_data['guanJianCi'] = self.server.getBeiDaiTiBiaoZhun(select)
+        # if view_link:
+        #     # 获取页面响应
+        #     view_resp = self.__getResp(func=self.download_middleware.getResp,
+        #                           url=view_link,
+        #                           mode='GET')
+        #
+        #     view_text = view_resp.text
+        #     # with open ('view.html', 'w') as f:
+        #     #     f.write(view_text)
+        #     # return
+        #     # 获取描述
+        #     save_data['miaoShu'] = self.server.getField(select, 'Number of Pages')
+        #     # 获取关键词
+        #     save_data['guanJianCi'] = self.server.getBeiDaiTiBiaoZhun(select)
+        # else:
+        #     # 获取描述
+        #     save_data['miaoShu'] = ""
+        #     # 获取关键词
+        #     save_data['guanJianCi'] = ""
 
         # ============价格实体
         # 先判断是否有价格
         price = self.server.getPriceTag(select)
         if price:
-            self.price(select=select, title=save_data['title'], url=url, sha=sha)
+            self.price(select=select, title=save_data['biaoTi'], url=url, sha=sha)
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -277,7 +282,7 @@ def process_start():
     main = SpiderMain()
     try:
         # main.start()
-        main.run(task='{"url": "https://www.boutique.afnor.org/standard/nf-en-62035/discharge-lamps-excluding-fluorescent-lamps-safety-specifications/article/688713/fa048855", "s_行业": "Construction trades"}')
+        main.run(task='{"url": "https://www.boutique.afnor.org/standard/nf-p33-303/asbestos-cement-roofing-asbestos-cement-corrugated-sheets-with-improved-resistance-resistance-to-passing-through-of-a-large-dime/article/884259/fa001297", "s_行业": "Construction trades"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
