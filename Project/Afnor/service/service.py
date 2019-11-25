@@ -275,18 +275,62 @@ class BiaoZhunServer(object):
         return law
 
     # 获取view an extract链接
-    def getViewLink(self, select):
+    def getTempLink(self, select):
         selector = select
         try:
-            view = selector.xpath("//div[contains(@class, 'preview_flag')]/@onclick").extract_first().strip()
-            link = 'https://www.boutique.afnor.org/xml-en/' + re.findall(r".*redirect/(.*?)'\).*", view)[0].strip() + '/false'
-            'https://www.boutique.afnor.org/xml-en/824484/false'
-            'https://viewer.afnor.org/Html/Display/?token=8OKZ7Zb8jbU1'
+            temp = selector.xpath("//div[contains(@class, 'preview_flag')]/@onclick").extract_first().strip()
+            link = 'https://www.boutique.afnor.org' + re.findall(r".*\('(.*)'\).*", temp)[0].strip()
 
         except Exception:
             link = ""
 
         return link
+
+    # 获取跳转后链接
+    def getViewLink(self, select):
+        selector = select
+        try:
+            view = selector.xpath("//div[contains(@class, 'preview_flag')]/@onclick").extract_first().strip()
+            link = 'https://www.boutique.afnor.org/xml-en/' + re.findall(r".*redirect/(.*)'\).*", view)[0].strip() + '/false'
+
+        except Exception:
+            link = ""
+
+        return link
+
+    # 获取token链接
+    def getTokenLink(self, resp):
+        selector = Selector(text=resp)
+        try:
+            tokenLink = selector.xpath("//iframe[@id='iFrameXml']/@src").extract_first().strip()
+
+        except Exception:
+            tokenLink = ""
+
+        return tokenLink
+
+    # 获取描述
+    def getMiaoShu(self, html):
+        tree = etree.HTML(html)
+        try:
+            tag = tree.xpath("//dt[contains(text(), 'Summary')]/following-sibling::dd[1]")[0]
+            miaoshu = re.sub(r"[\n\r\t]", "", tostring(tag).decode('utf-8')).strip()
+
+        except Exception:
+            miaoshu = ""
+
+        return miaoshu
+
+    # 获取关键词
+    def getGuanJianCi(self, select):
+        selector = select
+        try:
+            guanjian_list = selector.xpath("//dt[contains(text(), 'Descriptors')]/following-sibling::dd[1]/ul/li/text()").extract()
+            guanjianci = '|'.join(guanjian_list).replace('| ', '|')
+        except Exception:
+            guanjianci = ""
+
+        return guanjianci
 
     # 获取价格所在标签
     def getPriceTag(self, select):

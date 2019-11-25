@@ -24,7 +24,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         self.proxy_type = proxy_type
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
-    def getResp(self, url, mode, data=None, cookies=None, referer=None):
+    def getResp(self, url, mode, s=None, data=None, cookies=None, referer=None):
         # 请求异常时间戳
         err_time = 0
         # 响应状态码错误时间戳
@@ -38,15 +38,20 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             # 设置请求方式：GET或POST
             param['mode'] = mode
             # 设置请求头
+            if 'token' in url:
+                host = 'viewer.afnor.org'
+            else:
+                host = 'www.boutique.afnor.org'
             param['headers'] = {
-                # 'Cache-Control': 'max-age=0',
-                # 'Upgrade-Insecure-Requests': '1',
-                # 'Accept-Language': 'zh-CN,zh;q=0.9',
-                # 'Accept-Encoding': 'gzip, deflate, br',
-                # 'Referer': referer,
+                'Cache-Control': 'max-age=0',
+                'Upgrade-Insecure-Requests': '1',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+                'Referer': referer,
                 # 'Content-Type':'application/json; charset=UTF-8', # post RequestPayload请求需要
                 'Connection': 'close',
-                'Host': 'www.boutique.afnor.org',
+                'Host': host,
                 'User-Agent': user_agent_u.get_ua()
             }
             # 设置post参数
@@ -56,7 +61,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             # 设置proxy
             param['proxies'] = self.proxy_obj.getProxy()
 
-            down_data = self._startDownload(param=param)
+            down_data = self._startDownload(param=param, s=s)
 
             if down_data['code'] == 0:
                 return {'code': 0, 'data': down_data['data'], 'proxies': param['proxies']}

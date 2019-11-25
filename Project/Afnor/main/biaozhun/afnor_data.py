@@ -3,11 +3,13 @@
 '''
 
 '''
-# import gevent
-# from gevent import monkey
-# monkey.patch_all()
+import gevent
+from gevent import monkey
+monkey.patch_all()
 import sys
 import os
+import requests
+import selenium
 import time
 import copy
 import traceback
@@ -55,11 +57,11 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
 
-    def __getResp(self, func, url, mode, data=None, cookies=None):
+    def __getResp(self, func, url, mode, s=None, data=None, cookies=None, referer=None):
         # while 1:
         # 发现验证码，最多访问页面10次
         for i in range(10):
-            resp = func(url=url, mode=mode, data=data, cookies=cookies)
+            resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies, referer=referer)
             if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
@@ -113,7 +115,7 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('价格数据存储失败, url: {}'.format(url))
 
     # 获取标准实体字段
-    def standard(self, save_data, select, html, url, sha):
+    def standard(self, save_data, select, html, s, url, sha):
         # 获取标准编号
         save_data['biaoZhunBianHao'] = self.server.getBiaoZhunBianHao(select)
         # 获取标题
@@ -137,27 +139,68 @@ class SpiderMain(BastSpiderMain):
         # 获取修订标准
         save_data['xiuDingBiaoZhun'] = self.server.getXiuDingBiaoZhun(select, 'has been amended by')
         # 获取view an extract链接
-        view_link = self.server.getViewLink(select)
-        print(view_link)
-        # if view_link:
-        #     # 获取页面响应
-        #     view_resp = self.__getResp(func=self.download_middleware.getResp,
-        #                           url=view_link,
-        #                           mode='GET')
-        #
-        #     view_text = view_resp.text
-        #     # with open ('view.html', 'w') as f:
-        #     #     f.write(view_text)
-        #     # return
-        #     # 获取描述
-        #     save_data['miaoShu'] = self.server.getField(select, 'Number of Pages')
-        #     # 获取关键词
-        #     save_data['guanJianCi'] = self.server.getBeiDaiTiBiaoZhun(select)
-        # else:
-        #     # 获取描述
-        #     save_data['miaoShu'] = ""
-        #     # 获取关键词
-        #     save_data['guanJianCi'] = ""
+        temp_link = self.server.getTempLink(select)
+        if temp_link:
+            # 获取页面响应
+            temp_resp = self.__getResp(func=self.download_middleware.getResp,
+                                       s=s,
+                                       url=temp_link,
+                                       mode='GET',
+                                       referer=url)
+            if not temp_resp:
+                LOGGING.error('页面响应失败, url: {}'.format(url))
+                # 逻辑删除任务
+                self.dao.deleteLogicTask(table=config.MYSQL_STANDARD, sha=sha)
+                return '中断'
+
+            # 获取跳转后链接
+            view_link = self.server.getViewLink(select)
+
+            # 获取跳转后页面响应
+            view_resp = self.__getResp(func=self.download_middleware.getResp,
+                                       s=s,
+                                       url=view_link,
+                                       mode='GET',
+                                       referer=url)
+            if not view_resp:
+                LOGGING.error('页面响应失败, url: {}'.format(url))
+                # 逻辑删除任务
+                self.dao.deleteLogicTask(table=config.MYSQL_STANDARD, sha=sha)
+                return '中断'
+
+            # with open ('view.html', 'w') as f:
+            #     f.write(view_resp.text)
+
+            # 获取token页链接
+            token_link = self.server.getTokenLink(view_resp.text)
+
+            # 获取去token页面响应
+            token_resp = self.__getResp(func=self.download_middleware.getResp,
+                                        url=token_link,
+                                        mode='GET')
+            if not token_resp:
+                LOGGING.error('页面响应失败, url: {}'.format(url))
+                # 逻辑删除任务
+                self.dao.deleteLogicTask(table=config.MYSQL_STANDARD, sha=sha)
+                return '中断'
+
+            # with open ('token.html', 'w') as f:
+            #     f.write(token_resp.text)
+
+            # select选择器
+            selector = self.server.getSelector(resp=token_resp.text)
+            # 获取文本内容
+            token_text = token_resp.text
+
+            # 获取描述
+            save_data['miaoShu'] = self.server.getMiaoShu(html=token_text)
+            # 获取关键词
+            save_data['guanJianCi'] = self.server.getGuanJianCi(select=selector)
+        else:
+            # 获取描述
+            save_data['miaoShu'] = ""
+            # 获取关键词
+            save_data['guanJianCi'] = ""
 
         # ============价格实体
         # 先判断是否有价格
@@ -180,8 +223,10 @@ class SpiderMain(BastSpiderMain):
         except Exception:
             hangye = ""
 
+        s = requests.session()
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
+                              s=s,
                               url=url,
                               mode='GET')
         if not resp:
@@ -198,7 +243,7 @@ class SpiderMain(BastSpiderMain):
         selector = self.server.getSelector(resp=response)
 
         # =======获取标准实体，并返回结果
-        result = self.standard(save_data=save_data, select=selector, html=response, url=url, sha=sha)
+        result = self.standard(save_data=save_data, select=selector, html=response, s=s, url=url, sha=sha)
         if result:
             return
         # ===================公共字段
@@ -252,24 +297,24 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_STANDARD, count=1, lockname=config.REDIS_STANDARD_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_STANDARD, count=10, lockname=config.REDIS_STANDARD_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
-                # # 创建gevent协程
-                # g_list = []
-                # for task in task_list:
-                #     s = gevent.spawn(self.run, task)
-                #     g_list.append(s)
-                # gevent.joinall(g_list)
-
-                # 创建线程池
-                threadpool = ThreadPool()
+                # 创建gevent协程
+                g_list = []
                 for task in task_list:
-                    threadpool.apply_async(func=self.run, args=(task,))
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
 
-                threadpool.close()
-                threadpool.join()
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for task in task_list:
+                #     threadpool.apply_async(func=self.run, args=(task,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
                 time.sleep(1)
             else:
@@ -281,8 +326,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{"url": "https://www.boutique.afnor.org/standard/nf-p33-303/asbestos-cement-roofing-asbestos-cement-corrugated-sheets-with-improved-resistance-resistance-to-passing-through-of-a-large-dime/article/884259/fa001297", "s_行业": "Construction trades"}')
+        main.start()
+        # main.run(task='{"url": "https://www.boutique.afnor.org/standard/nf-p33-303/asbestos-cement-roofing-asbestos-cement-corrugated-sheets-with-improved-resistance-resistance-to-passing-through-of-a-large-dime/article/884259/fa001297", "s_标准类型": "Approved standard", "s_行业": "Construction trades|Industry"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
