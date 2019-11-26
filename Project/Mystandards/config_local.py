@@ -1,4 +1,4 @@
-#-*-coding:utf-8-*-
+# -*-coding:utf-8-*-
 # ----------------------------
 # 公共配置
 # ----------------------------
@@ -11,7 +11,7 @@ MYSQL_POOL_NUMBER = 1 # Mysql连接池数量
 REDIS_POOL_NUMBER = 1 # Redis连接池数量
 
 # ----------------------------
-# mysql表名配置/redis表名配置
+# mysql表名配置/redis表名配置/锁配置
 # ----------------------------
 REDIS_CATALOG = 'my_catalog' # redis列表种子任务表
 REDIS_CATALOG_LOCK = 'my_catalog_lock' # redis列表种子分布式锁名
