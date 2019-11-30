@@ -11,14 +11,14 @@ from multiprocessing import Pool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Log import log
-from Project.ZhiWangHaiWaiZhuanLi.middleware import download_middleware
-from Project.ZhiWangHaiWaiZhuanLi.service import service
-from Project.ZhiWangHaiWaiZhuanLi.dao import dao
-from Project.ZhiWangHaiWaiZhuanLi import config
+from Project.ZhongGuoZhiWang.middleware import download_middleware
+from Project.ZhongGuoZhiWang.service import service
+from Project.ZhongGuoZhiWang.dao import dao
+from Project.ZhongGuoZhiWang import config
 
-log_file_dir = 'ZhiWangHaiWaiZhuanLi'  # LOG日志存放路径
-LOGNAME = '<知网_海外专利_queue>'  # LOG名
-NAME = '知网_海外专利_queue'  # 爬虫名
+log_file_dir = 'ZhiWang'  # LOG日志存放路径
+LOGNAME = '<知网_发明公开_queue>'  # LOG名
+NAME = '知网_发明公开_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -30,7 +30,8 @@ class BastSpiderMain(object):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY)
+                                                                  proxy_country=config.COUNTRY,
+                                                                  proxy_city=config.CITY)
         self.server = service.Server(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,

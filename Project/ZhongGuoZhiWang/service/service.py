@@ -27,22 +27,19 @@ class Server(object):
         return_data = []
         selector = Selector(text=resp)
 
-        label_list = selector.xpath("//div[@class='leftlist_1']")
+        try:
+            label_list = selector.xpath("//div[@class='leftlist_1']/span/img[contains(@id, 'first')]/@onclick").extract()
 
-        for label in label_list:
-            label_id = label.xpath("./@id").extract_first()
-            if not label_id:
-                continue
-            image_id = "{}first".format(label_id)
-            lower_url = "http://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
-            onclick = label.xpath(".//img[@id='{}']/@onclick".format(image_id)).extract_first()
-            if not onclick:
-                continue
-            try:
-                lower_data = ast.literal_eval(re.findall("(\(.*\))", onclick)[0])
-                return_data.append(lower_url.format(lower_data[0], lower_data[2]))
-            except:
-                continue
+            for label in label_list:
+                lower_url = "http://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
+                try:
+                    lower_data = ast.literal_eval(re.findall("(\(.*\))", label)[0])
+                    return_data.append(lower_url.format(lower_data[0], lower_data[2]))
+                except:
+                    continue
+
+        except Exception:
+            return return_data
 
         return return_data
 
@@ -51,32 +48,19 @@ class Server(object):
         return_data = []
         selector = Selector(text=resp)
 
-        dd_list = selector.xpath("//dd")
-        for dd in dd_list:
-            lower_url = "http://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
-            # 获取code参数
-            dd_onclick = dd.xpath("./a/@onclick").extract_first()
-            if not dd_onclick:
-                continue
+        try:
+            dd_list = selector.xpath("//dd/span/img[contains(@id, 'first')]/@onclick").extract()
 
-            try:
-                code = ast.literal_eval(re.findall("(\(.*\))", dd_onclick)[0])[0]
-            except:
-                code = None
-            if not code:
-                continue
+            for dd in dd_list:
+                lower_url = "http://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
+                try:
+                    lower_data = ast.literal_eval(re.findall("(\(.*\))", dd)[0])
+                    return_data.append(lower_url.format(lower_data[0], lower_data[2]))
+                except:
+                    continue
 
-            # 获取tpinavigroup参数
-            image_id = "{}first".format(code)
-            img_onclick = dd.xpath(".//img[@id='{}']/@onclick".format(image_id)).extract_first()
-            if not img_onclick:
-                continue
-
-            try:
-                lower_data = ast.literal_eval(re.findall("(\(.*\))", img_onclick)[0])
-                return_data.append(lower_url.format(lower_data[0], lower_data[2]))
-            except:
-                continue
+        except Exception:
+            return return_data
 
         return return_data
 
@@ -84,12 +68,14 @@ class Server(object):
     def getCategoryNumber(self, resp):
         return_data = []
         selector = Selector(text=resp)
-        dd_list = selector.xpath("//dd")
-        for dd in dd_list:
-            category = dd.xpath(".//input[@id='selectbox']/@value").extract_first()
-            if not category:
-                continue
-            return_data.append(category)
+        try:
+            dd_list = selector.xpath("//dd/span/input[@id='selectbox']/@value").extract()
+
+            for category in dd_list:
+                return_data.append(category)
+
+        except Exception:
+            return return_data
 
         return return_data
 
@@ -101,8 +87,25 @@ class Server(object):
         else:
             return []
 
-    # 获取url列表
-    def getUrlList(self, resp):
+    # # 获取年列表页参数
+    # def getYearParas(self, resp):
+    #     para_list = []
+    #     selector = Selector(text=resp)
+    #     try:
+    #         tags = selector.xpath("//input")
+    #         for tag in tags:
+    #             para_id = tag.xpath("./@id").extract_first()
+    #             para_value = tag.xpath("./@value").extract_first()
+    #             para_list.append([para_id, para_value])
+    #
+    #     except Exception:
+    #         return para_list
+    #
+    #     return para_list
+
+
+    # 获取详情种子
+    def getDetailUrl(self, resp):
         return_data = []
         selector = Selector(text=resp)
         href_list = selector.xpath("//a[@class='fz14']/@href").extract()
@@ -126,21 +129,24 @@ class Server(object):
                        'dbname={}&'
                        'filename={}').format(dbcode, dbname, filename)
 
-                return_data.append(url)
+                return_data.append({'url': url})
             except:
                 continue
 
         return return_data
 
     # 获取下一页url
-    def getNextUrl(self, resp):
+    def hasNextUrl(self, resp):
         selector = Selector(text=resp)
-        href = selector.xpath("//a[text()='下一页']/@href").extract_first()
-        if not href:
+        try:
+            href = selector.xpath("//div[@class='TitleLeftCell']/a[text()='下一页']/@href").extract_first()
+            if not href:
+                return None
+            else:
+                next_page = 'http://kns.cnki.net/kns/brief/brief.aspx' + str(href)
+                return next_page
+        except Exception:
             return None
-        else:
-            next_page = 'http://kns.cnki.net/kns/brief/brief.aspx' + str(href)
-            return next_page
 
     # 替换下一页的页码
     def replace_page_number(self, next_page_url, page):

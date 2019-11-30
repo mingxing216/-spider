@@ -72,51 +72,51 @@ class Dao(object):
                 self.logging.warning('数据存储警告: {}'.format(e))
 
         else:
-            # self.logging.warning('种子已存在: {}'.format(sha))
-            # 从mysql数据库中取出该种子
-            result = self.getOneTask(table, sha)
-            oldCtx = ast.literal_eval(result[0]['ctx'])
-            # 遍历新ctx中的key,value值
-            for k,v in memo.items():
-                # 遍历旧的key,value值
-                for m,n in oldCtx.items():
-                    # 判断新的key值是否以's_'开头，并且value是字符串
-                    if k.startswith('s_') and isinstance(v, str):
-                        if k == m:
-                            if v not in n:
-                                oldCtx[k] = n + '|' + v
-                                break
-                            else:
-                                break
-                        else:
-                            continue
-                    else:
-                        if k == m:
-                            oldCtx[k] = v
-                            break
-                        else:
-                            continue
-                else:
-                    oldCtx[k] = v
+            self.logging.warning('种子已存在: {}'.format(sha))
+            # # 从mysql数据库中取出该种子
+            # result = self.getOneTask(table, sha)
+            # oldCtx = ast.literal_eval(result[0]['ctx'])
+            # # 遍历新ctx中的key,value值
+            # for k,v in memo.items():
+            #     # 遍历旧的key,value值
+            #     for m,n in oldCtx.items():
+            #         # 判断新的key值是否以's_'开头，并且value是字符串
+            #         if k.startswith('s_') and isinstance(v, str):
+            #             if k == m:
+            #                 if v not in n:
+            #                     oldCtx[k] = n + '|' + v
+            #                     break
+            #                 else:
+            #                     break
+            #             else:
+            #                 continue
+            #         else:
+            #             if k == m:
+            #                 oldCtx[k] = v
+            #                 break
+            #             else:
+            #                 continue
+            #     else:
+            #         oldCtx[k] = v
             # print(oldCtx)
-
-            # 删除原数据库种子
-            self.deleteTask(table, sha=sha)
-            # 存储新种子
-            rCtx = json.dumps(oldCtx, ensure_ascii=False)
-            newdata = {
-                'sha': sha,
-                'ctx': rCtx,
-                'url': url,
-                'es': es,
-                'ws': ws,
-                'date_created': timeutils.getNowDatetime()
-            }
-            try:
-                self.mysql_client.insert_one(table=table, data=newdata)
-                self.logging.info('已存储种子: {}'.format(url))
-            except Exception as e:
-                self.logging.warning('数据存储警告: {}'.format(e))
+            #
+            # # 删除原数据库种子
+            # self.deleteTask(table=table, sha=sha)
+            # # 存储新种子
+            # rCtx = json.dumps(oldCtx, ensure_ascii=False)
+            # newdata = {
+            #     'sha': sha,
+            #     'ctx': rCtx,
+            #     'url': url,
+            #     'es': es,
+            #     'ws': ws,
+            #     'date_created': timeutils.getNowDatetime()
+            # }
+            # try:
+            #     self.mysql_client.insert_one(table=table, data=newdata)
+            #     self.logging.info('已存储种子: {}'.format(url))
+            # except Exception as e:
+            #     self.logging.warning('数据存储警告: {}'.format(e))
 
     # 从Mysql获取指定一条任务
     def getOneTask(self, table, sha):
@@ -163,7 +163,7 @@ class Dao(object):
         else:
             return
 
-    # 队列任务
+    # 从mysql队列任务到redis
     def QueueTask(self, key, data):
         if data:
             for url_data in data:

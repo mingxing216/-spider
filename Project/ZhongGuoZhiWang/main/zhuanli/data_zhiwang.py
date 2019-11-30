@@ -14,14 +14,14 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Log import log
-from Project.ZhiWangHaiWaiZhuanLi.middleware import download_middleware
-from Project.ZhiWangHaiWaiZhuanLi.service import service
-from Project.ZhiWangHaiWaiZhuanLi.dao import dao
-from Project.ZhiWangHaiWaiZhuanLi import config
+from Project.ZhongGuoZhiWang.middleware import download_middleware
+from Project.ZhongGuoZhiWang.service import service
+from Project.ZhongGuoZhiWang.dao import dao
+from Project.ZhongGuoZhiWang import config
 
-log_file_dir = 'ZhiWangHaiWaiZhuanLi'  # LOG日志存放路径
-LOGNAME = '<知网_海外专利_data>'  # LOG名
-NAME = '知网_海外专利_data'  # 爬虫名
+log_file_dir = 'ZhiWang'  # LOG日志存放路径
+LOGNAME = '<知网_发明公开_data>'  # LOG名
+NAME = '知网_发明公开_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -33,7 +33,8 @@ class BastSpiderMain(object):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY)
+                                                                  proxy_country=config.COUNTRY,
+                                                                  proxy_city=config.CITY)
         self.server = service.Server(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
@@ -47,13 +48,11 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
-        # 同族专利首页
-        self.index_tzzl_url = 'http://dbpub.cnki.net/grid2008/dbpub/Detail.aspx?action=node&dbname=sopd&block=SOPD_TZZL'
 
-    def __getResp(self, func, url, mode, data=None, cookies=None):
+    def __getResp(self, func, url, mode, s=None, data=None, cookies=None):
         while 1:
-            resp = func(url=url, mode=mode, data=data, cookies=cookies)
-            if resp['status'] == 0:
+            resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies)
+            if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
                     LOGGING.info('出现验证码')
@@ -62,7 +61,7 @@ class SpiderMain(BastSpiderMain):
                 else:
                     return response
 
-            if resp['status'] == 1:
+            if resp['code'] == 1:
                 return None
 
     def handle(self, response, save_data, url):
