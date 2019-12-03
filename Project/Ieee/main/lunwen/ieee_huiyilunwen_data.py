@@ -117,15 +117,17 @@ class SpiderMain(BastSpiderMain):
                                                     mode='GET')
                         if not media_resp:
                             LOGGING.error('图片响应失败, url: {}'.format(img_url))
-                            return '中断'
+                            # 存储图片到mysql
+                            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='电气和电子工程师协会', es='会议论文')
+                            return
 
                         img_content = media_resp.content
                         # 存储图片
                         storage = self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
                         if not storage:
+                            LOGGING.error('图片数据存储失败, url: {}'.format(img_url))
                             # 逻辑删除任务
                             self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                            LOGGING.error('图片数据存储失败, url: {}'.format(img_url))
                             continue
 
                 # ======================== 公共字段
@@ -151,9 +153,11 @@ class SpiderMain(BastSpiderMain):
                 # 存储数据
                 sto = self.dao.saveDataToHbase(data=author_dict)
                 if not sto:
+                    LOGGING.error('作者数据存储失败, url: {}'.format(url))
                     # 逻辑删除任务
                     self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                    LOGGING.error('作者数据存储失败, url: {}'.format(url))
+                else:
+                    LOGGING.error('作者数据存储成功, sha: {}'.format(sha1))
         except Exception:
             pass
 
