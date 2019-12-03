@@ -117,8 +117,8 @@ class SpiderMain(BastSpiderMain):
                                                     mode='GET')
                         if not media_resp:
                             LOGGING.error('图片响应失败, url: {}'.format(img_url))
-                            # 存储图片到mysql
-                            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='电气和电子工程师协会', es='会议论文')
+                            # 逻辑删除任务
+                            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                             return
 
                         img_content = media_resp.content
