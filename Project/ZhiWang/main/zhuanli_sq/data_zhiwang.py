@@ -25,8 +25,8 @@ from Project.ZhiWang.dao import dao
 from Project.ZhiWang import config
 
 log_file_dir = 'ZhiWang'  # LOG日志存放路径
-LOGNAME = '<知网_发明公开_data>'  # LOG名
-NAME = '知网_发明公开_data'  # 爬虫名
+LOGNAME = '<知网_发明授权_data>'  # LOG名
+NAME = '知网_发明授权_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -35,7 +35,7 @@ INSERT_DATA_NUMBER = False  # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
+        self.download_middleware = download_middleware.ShouQuanDownloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -131,7 +131,7 @@ class SpiderMain(BastSpiderMain):
                 # 生成ss ——实体
                 announce_data['ss'] = '公告'
                 # 生成es ——栏目名称
-                announce_data['es'] = '发明公开专利'
+                announce_data['es'] = '发明授权'
                 # 生成ws ——目标网站
                 announce_data['ws'] = '中国知网'
                 # 生成clazz ——层级关系
@@ -225,13 +225,12 @@ class SpiderMain(BastSpiderMain):
         # 获取下载
         save_data['xiaZai'] = self.server.getXiaZai(response)
         # 获取专利类型
-        save_data['zhuanLiLeiXing'] = "发明专利"
+        save_data['zhuanLiLeiXing'] = "发明授权"
         # 获取专利国别
         save_data['zhuanLiGuoBie'] = self.server.getZhuanLiGuoBie(save_data['gongKaiHao'])
 
         # 获取公告url
         gongGao = self.server.getGongGao(response)
-        print(gongGao)
         if gongGao:
             self.announcement(gonggao_url=gongGao, zhuanli_url=url, zhuanli_sha=sha)
 
@@ -245,7 +244,7 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '专利'
         # 生成es ——栏目名称
-        save_data['es'] = '发明公开专利'
+        save_data['es'] = '发明授权'
         # 生成ws ——目标网站
         save_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
@@ -282,7 +281,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PATENT, count=30, lockname=config.REDIS_PATENT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_SQ_PATENT, count=30, lockname=config.REDIS_SQ_PATENT_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -316,7 +315,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url":"http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?dbcode=SCPD&dbname=SCPD2017&filename=CN106170564A"}')
+        # main.run(task='{"url":"http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?dbcode=scpd&dbname=SCPD2019&filename=CN105935145B"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

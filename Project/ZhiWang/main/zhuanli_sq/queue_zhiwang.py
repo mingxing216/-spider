@@ -17,8 +17,8 @@ from Project.ZhiWang.dao import dao
 from Project.ZhiWang import config
 
 log_file_dir = 'ZhiWang'  # LOG日志存放路径
-LOGNAME = '<知网_发明公开_queue>'  # LOG名
-NAME = '知网_发明公开_queue'  # 爬虫名
+LOGNAME = '<知网_发明授权_queue>'  # LOG名
+NAME = '知网_发明授权_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -27,7 +27,7 @@ INSERT_DATA_NUMBER = False # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
+        self.download_middleware = download_middleware.ShouQuanDownloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -49,16 +49,16 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_PATENT)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_SQ_PATENT)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
 
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PATENT, ws='中国知网', es='发明公开专利', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PATENT, ws='中国知网', es='发明授权', count=2000)
                 print(new_task_list)
 
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_PATENT, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_SQ_PATENT, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 
