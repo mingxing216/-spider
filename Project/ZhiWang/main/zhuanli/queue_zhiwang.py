@@ -9,12 +9,12 @@ import time
 import traceback
 from multiprocessing import Pool
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
+sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.ZhongGuoZhiWang.middleware import download_middleware
-from Project.ZhongGuoZhiWang.service import service
-from Project.ZhongGuoZhiWang.dao import dao
-from Project.ZhongGuoZhiWang import config
+from Project.ZhiWang.middleware import download_middleware
+from Project.ZhiWang.service import service
+from Project.ZhiWang.dao import dao
+from Project.ZhiWang import config
 
 log_file_dir = 'ZhiWang'  # LOG日志存放路径
 LOGNAME = '<知网_发明公开_queue>'  # LOG名
@@ -49,17 +49,16 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_TASK)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_PATENT)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
 
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_TASK, count=2000)
-                LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PATENT, ws='中国知网', es='发明公开专利', count=2000)
+                print(new_task_list)
 
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_TASK, data=new_task_list)
-                LOGGING.info('已成功向redis队列{}个任务'.format(len(new_task_list)))
+                self.dao.QueueTask(key=config.REDIS_PATENT, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 
@@ -76,11 +75,12 @@ def process_start():
 
 if __name__ == '__main__':
     begin_time = time.time()
-    po = Pool(1)
-    for i in range(1):
-        po.apply_async(func=process_start)
-    po.close()
-    po.join()
+    process_start()
+    # po = Pool(1)
+    # for i in range(1):
+    #     po.apply_async(func=process_start)
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

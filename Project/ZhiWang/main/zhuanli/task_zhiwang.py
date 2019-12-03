@@ -15,12 +15,12 @@ import re
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
+sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.ZhongGuoZhiWang.middleware import download_middleware
-from Project.ZhongGuoZhiWang.service import service
-from Project.ZhongGuoZhiWang.dao import dao
-from Project.ZhongGuoZhiWang import config
+from Project.ZhiWang.middleware import download_middleware
+from Project.ZhiWang.service import service
+from Project.ZhiWang.dao import dao
+from Project.ZhiWang import config
 
 log_file_dir = 'ZhiWang'  # LOG日志存放路径
 LOGNAME = '<知网_发明公开_task>'  # LOG名
@@ -159,12 +159,12 @@ class SpiderMain(BastSpiderMain):
 
                     # 如果响应获取失败，重新访问，并记录这一页种子
                     if not next_resp:
-                        LOGGING.error('第{}页响应获取失败, url: {}'.format(next_num, next_url))
+                        LOGGING.error('{}分类下{}年第{}页响应获取失败, url: {}'.format(category, year, next_num, next_url))
                         continue
 
                     # 处理验证码
                     if '请输入验证码' in next_resp.text or '对不起，服务器上不存在此用户' in next_resp.text:
-                        LOGGING.error('翻到第{}页时cookie失效, 重新创建cookie, url: {}'.format(next_num, next_url))
+                        LOGGING.error('翻到{}分类下{}年第{}页时cookie失效, 重新创建cookie, url: {}'.format(category, year, next_num, next_url))
                         # 创建cookie
                         self.cookie_dict, self.cookie_str = self.download_middleware.create_cookie()
                         self.download_middleware.getTimeListResp(referer=self.index_url,
@@ -177,22 +177,22 @@ class SpiderMain(BastSpiderMain):
                                                          mode='GET',
                                                          cookies=self.cookie_dict)
                         if not year_first_resp:
-                            LOGGING.error('指定年的列表首页响应获取失败, url: {}'.format(year_url))
+                            LOGGING.error('{}分类下{}年的列表首页响应获取失败, url: {}'.format(category, year, year_url))
                             continue
                         else:
-                            LOGGING.info('指定年的列表首页响应成功')
+                            LOGGING.info('{}分类下{}年的列表首页响应成功'.format(category, year))
                             continue
 
                     else:
                         break
 
                 # 响应成功，添加log日志
-                LOGGING.info('已翻到第{}页'.format(next_num))
+                LOGGING.info('已翻到{}分类下{}年第{}页'.format(category, year, next_num))
 
                 next_num += 1
 
             else:
-                LOGGING.info('已翻到最后一页')
+                LOGGING.info('已翻到{}分类下{}年最后一页'.format(category, year))
                 break
 
 
@@ -225,14 +225,14 @@ class SpiderMain(BastSpiderMain):
                                                      mode='GET',
                                                      cookies=self.cookie_dict)
                     if not year_first_resp:
-                        LOGGING.error('列表首页响应获取失败, url: {}'.format(year_url))
+                        LOGGING.error('{}分类下{}年的列表首页响应获取失败, url: {}'.format(category, year, year_url))
                         # 最小一级分类号存入列表
                         self.category_number.append(category)
                         return
 
                     # 处理验证码
                     if '请输入验证码' in year_first_resp.text or '对不起，服务器上不存在此用户' in year_first_resp.text:
-                        LOGGING.error('访问列表页首页时cookie失效, 重新创建cookie, url: {}'.format(year_url))
+                        LOGGING.error('访问{}分类下{}年的列表页首页时cookie失效, 重新创建cookie, url: {}'.format(category, year, year_url))
                         # 创建cookie
                         self.cookie_dict, self.cookie_str = self.download_middleware.create_cookie()
                         self.download_middleware.getTimeListResp(referer=self.index_url,
@@ -241,6 +241,7 @@ class SpiderMain(BastSpiderMain):
                         continue
 
                     else:
+                        LOGGING.info('{}分类下{}年的列表首页响应成功'.format(category, year))
                         break
 
                 self.getProfile(resp=year_first_resp, category=category, year=year)
@@ -253,55 +254,55 @@ class SpiderMain(BastSpiderMain):
 
 
     def start(self):
-        if self.category_number:
-            # 遍历分类号
-            for category in self.category_number:
-                self.run(category)
-
-            else:
-                LOGGING.info('分类号已全部遍历完毕，结束程序')
-                return
-
-        else:
-            LOGGING.info('category_number is None')
-            return
-
-
-
-        # while 1:
-        #     # 获取任务
-        #     category_list = self.dao.getTask(key=config.REDIS_CATEGORY,
-        #                                  count=1,
-        #                                  lockname=config.REDIS_CATEGORY_LOCK)
-        #     print(category_list)
-        #     LOGGING.info('获取{}个任务'.format(len(category_list)))
+        # if self.category_number:
+        #     # 遍历分类号
+        #     for category in self.category_number:
+        #         self.run(category)
         #
-        #     if category_list:
-        #         # 创建gevent协程
-        #         g_list = []
-        #         for category in category_list:
-        #             s = gevent.spawn(self.run, category)
-        #             g_list.append(s)
-        #         gevent.joinall(g_list)
-        #
-        #         # # 创建线程池
-        #         # threadpool = ThreadPool()
-        #         # for category in category_list:
-        #         #     threadpool.apply_async(func=self.run, args=(category,))
-        #         #
-        #         # threadpool.close()
-        #         # threadpool.join()
-        #
-        #         time.sleep(1)
         #     else:
-        #         LOGGING.info('队列中已无任务，结束程序')
+        #         LOGGING.info('分类号已全部遍历完毕，结束程序')
         #         return
+        #
+        # else:
+        #     LOGGING.info('category_number is None')
+        #     return
+
+
+
+        while 1:
+            # 获取任务
+            category_list = self.dao.getTask(key=config.REDIS_CATEGORY,
+                                         count=1,
+                                         lockname=config.REDIS_CATEGORY_LOCK)
+            print(category_list)
+            LOGGING.info('获取{}个任务'.format(len(category_list)))
+
+            if category_list:
+                # 创建gevent协程
+                g_list = []
+                for category in category_list:
+                    s = gevent.spawn(self.run, category)
+                    g_list.append(s)
+                gevent.joinall(g_list)
+
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for category in category_list:
+                #     threadpool.apply_async(func=self.run, args=(category,))
+                #
+                # threadpool.close()
+                # threadpool.join()
+
+                time.sleep(1)
+            else:
+                LOGGING.info('队列中已无任务，结束程序')
+                return
 
 
 def process_start():
     main = SpiderMain()
     try:
-        main.getCategory()
+        # main.getCategory()
         main.start()
         # main.run("F01B")
     except:

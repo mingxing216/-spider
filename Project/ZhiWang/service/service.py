@@ -8,6 +8,8 @@ import os
 import ast
 import re
 import requests
+from lxml import etree
+from lxml.html import fromstring, tostring
 from scrapy import Selector
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
@@ -21,6 +23,10 @@ class Server(object):
     # ---------------------
     # task script
     # ---------------------
+
+    # 数据类型转换
+    def getEvalResponse(self, task_data):
+        return ast.literal_eval(task_data)
 
     # 获取第一分类列表
     def getIndexClassList(self, resp):
@@ -148,113 +154,123 @@ class Server(object):
         except Exception:
             return None
 
-    # 替换下一页的页码
-    def replace_page_number(self, next_page_url, page):
-
-        return re.sub(r"curpage=\d+", "curpage={}".format(page), next_page_url)
 
     # ---------------------
     # data script
     # ---------------------
 
+    # ====== 专利实体
     def getTitle(self, resp):
         selector = Selector(text=resp)
-        title_data = selector.xpath("//title/text()").extract_first()
-        if title_data:
-            return re.sub(r"--国外专利全文数据库", "", title_data)
-        else:
-            return ''
+        try:
+            title_data = selector.xpath("//title/text()").extract_first()
+            title = re.sub(r"--中国专利全文数据库", "", title_data).strip()
+        except Exception:
+            title = ""
 
-    def getField(self, resp, text):
+        return title
+
+    def getField(self, resp, para):
         selector = Selector(text=resp)
-        field_data = selector.xpath("//td[contains(text(), '{}')]/following-sibling::td[1]/text()".format(text)).extract_first()
-        if field_data:
-            field =  re.sub(r"(;|；)", "|", re.sub(r"(\r|\n|\t|&nbsp)", "", field_data))
-        else:
-            field = ""
+        try:
+            field_data = selector.xpath("//td[contains(text(), '{}')]/following-sibling::td[1]/text()".format(para)).extract_first()
+            field_value =  re.sub(r"(;|；)", "|", re.sub(r"(\r|\n|\t)", "", field_data)).strip()
+        except Exception:
+            field_value = ""
 
-        return field.strip()
+        return field_value
+
+    def getHtml(self, html, para):
+        tree = etree.HTML(html)
+        try:
+            tag = tree.xpath("//td[contains(text(), '{}')]/following-sibling::td[1]".format(para))[0]
+            html_value = re.sub(r"[\n\r\t]", "", tostring(tag).decode('utf-8')).strip()
+
+        except Exception:
+            html_value = ""
+
+        return html_value
+
+    def getXiaZai(self, resp):
+        selector = Selector(text=resp)
+        try:
+            href = selector.xpath("//a[contains(text(), '下载')]/@href").extract_first()
+            link = 'http://dbpub.cnki.net/grid2008/dbpub/' + href
+        except Exception:
+            link = ""
+
+        return link
 
     def getZhuanLiGuoBie(self, gongKaiHao):
         if gongKaiHao:
-            guobie = re.search(r".{2}", gongKaiHao).group()
+            # guobie = re.match(r".{2}", gongKaiHao).group()
+            guobie = gongKaiHao[:2]
             return guobie
 
         else:
             return ""
 
-    def getXiaZai(self, resp):
+    def getGongGao(self, resp):
         selector = Selector(text=resp)
-        href = selector.xpath(r"//a[contains(text(), '全文下载')]/@href").extract_first()
-        if href:
-            return 'http://dbpub.cnki.net/grid2008/dbpub/' + href
-        else:
-            return ""
+        try:
+            href = selector.xpath("//a[contains(text(), '查询法律状态')]/@href").extract_first()
+        except Exception:
+            href = ""
 
-    def getCookie(self, resp):
-        cookies = requests.utils.dict_from_cookiejar(resp.cookies)
+        return href
 
-        return cookies
-
-    def getPostData(self, response):
-        data = ast.literal_eval(re.findall(r"var tzzl_data = ({.*?});", response)[0])
-
-        return data
-
-    def getMorePageUrl(self, resp):
+    # ====== 公告实体
+    # 公告标题
+    def getTitles(self, resp):
         selector = Selector(text=resp)
-        href = selector.xpath("//a[contains(text(), '更多')]/@href").extract_first()
-        if href:
-            return 'http://dbpub.cnki.net/grid2008/dbpub/' + str(href)
-        else:
-            return ''
+        try:
+            nodes = selector.xpath("//table/thead/tr/th/text()").extract()
+        except Exception:
+            nodes = ""
 
-    def getTzzl1(self, resp, save_data):
+        return nodes
+
+    # 公告标签
+    def getGongGaoNodes(self, resp):
         selector = Selector(text=resp)
-        a_list = selector.xpath("//a")
-        for a in a_list:
-            data = {}
-            title = a.xpath("./text()").extract_first()
-            if title == '更多 >>':
-                continue
-            if title:
-                data['title'] = title
-            else:
-                data['title'] = ''
+        try:
+            nodes = selector.xpath("//table/tr[position()<last()]")
+        except Exception:
+            nodes = ""
 
-            href = a.xpath("./@href").extract_first()
-            if href:
-                data['url'] = 'http://dbpub.cnki.net/grid2008/dbpub/' + str(href)
-            else:
-                data['url'] = ''
-            if data not in save_data['guanLianTongZuZhuanLi']:
-                save_data['guanLianTongZuZhuanLi'].append(data)
+        return nodes
 
-    def getTzzl2(self, resp, save_data):
+    # 法律状态公告日
+    def getGongGaoInfo(self, node, i):
+        try:
+            gonggao = node.xpath("./td[{}]/text()".format(i+1)).extract_first()
+            gonggao_value = re.sub(r"[\n\r\t]", " ", gonggao).strip()
+        except Exception:
+            gonggao_value = ""
+
+        return gonggao_value
+
+    # 申请号
+    def getShenQingHao(self, resp):
         selector = Selector(text=resp)
+        try:
+            shenqinghao = re.sub(r"申 请 号[：:]", "", selector.xpath("//h3/text()").extract_first().strip())
+        except Exception:
+            shenqinghao = ""
 
-        tr_list = selector.xpath("//table[@class='s_table']/tr")
-        tr_number = 0
-        if tr_list:
-            for tr in tr_list:
-                data = {}
-                if tr_number == 0:
-                    tr_number += 1
-                    continue
+        return shenqinghao
 
-                title = tr.xpath("./td[2]/a/text()").extract_first()
-                if title:
-                    data['title'] = title
-                else:
-                    data['title'] = ''
+    # 关联专利
+    def guanLianZhuanLi(self, url, sha):
+        e = {}
+        try:
+            e['url'] = url
+            e['sha'] = sha
+            e['ss'] = '专利'
+        except Exception:
+            return e
 
-                href = tr.xpath("./td[2]/a/@href").extract_first()
-                if href:
-                    data['url'] = 'http://dbpub.cnki.net/grid2008/dbpub/' + str(href)
-                else:
-                    data['url'] = ''
-                if data not in save_data['guanLianTongZuZhuanLi']:
-                    save_data['guanLianTongZuZhuanLi'].append(data)
+        return e
 
 
     def getNextPage(self, resp):
