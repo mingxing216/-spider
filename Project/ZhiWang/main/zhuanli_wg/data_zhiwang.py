@@ -25,8 +25,8 @@ from Project.ZhiWang.dao import dao
 from Project.ZhiWang import config
 
 log_file_dir = 'ZhiWang'  # LOG日志存放路径
-LOGNAME = '<知网_发明公开_data>'  # LOG名
-NAME = '知网_发明公开_data'  # 爬虫名
+LOGNAME = '<知网_外观专利_data>'  # LOG名
+NAME = '知网_外观专利_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -35,7 +35,7 @@ INSERT_DATA_NUMBER = False  # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.GongKaiDownloader(logging=LOGGING,
+        self.download_middleware = download_middleware.WaiGuanDownloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -281,7 +281,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_FM_PATENT, count=20, lockname=config.REDIS_FM_PATENT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_WG_PATENT, count=20, lockname=config.REDIS_WG_PATENT_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

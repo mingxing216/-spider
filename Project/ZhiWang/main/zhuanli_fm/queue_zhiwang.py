@@ -52,11 +52,9 @@ class SpiderMain(BastSpiderMain):
             url_number = self.dao.selectTaskNumber(key=config.REDIS_FM_PATENT)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
-
                 # 获取任务
                 new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PATENT, ws='中国知网', es='发明公开专利', count=2000)
-                print(new_task_list)
-
+                # print(new_task_list)
                 # 队列任务
                 self.dao.QueueTask(key=config.REDIS_FM_PATENT, data=new_task_list)
             else:

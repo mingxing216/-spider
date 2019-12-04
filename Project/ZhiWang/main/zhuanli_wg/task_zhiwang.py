@@ -23,8 +23,8 @@ from Project.ZhiWang.dao import dao
 from Project.ZhiWang import config
 
 log_file_dir = 'ZhiWang'  # LOG日志存放路径
-LOGNAME = '<知网_发明公开_task>'  # LOG名
-NAME = '知网_发明公开_task'  # 爬虫名
+LOGNAME = '<知网_外观专利_task>'  # LOG名
+NAME = '知网_外观专利_task'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -33,7 +33,7 @@ INSERT_DATA_NUMBER = False  # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.GongKaiDownloader(logging=LOGGING,
+        self.download_middleware = download_middleware.WaiGuanDownloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -52,9 +52,9 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
         # 入口页url
-        self.index_url = 'http://kns.cnki.net/kns/brief/result.aspx?dbprefix=SCPD_FM'
+        self.index_url = 'http://kns.cnki.net/kns/brief/result.aspx?dbprefix=SCPD_WG'
         # 指定年的主页url
-        self.getYearIndexUrl = 'http://kns.cnki.net/kns/brief/brief.aspx?action=5&dbPrefix=SCPD_FM&PageName=ASP.brief_result_aspx&Param=%e5%b9%b4+%3d+%27{}%27&isinEn=0&RecordsPerPage=50'
+        self.getYearIndexUrl = 'http://kns.cnki.net/kns/brief/brief.aspx?action=5&dbPrefix=SCPD_WG&PageName=ASP.brief_result_aspx&Param=%e5%b9%b4+%3d+%27{}%27&isinEn=0&RecordsPerPage=50'
         # 获取最小级分类号
         self.category_number = []
         self.cookie_dict = ''
@@ -105,26 +105,13 @@ class SpiderMain(BastSpiderMain):
 
                 first_response = first_resp.text
                 # 获取第二层分类列表
-                second_list = self.server.getSecondClassList(resp=first_response)
-                # print(second_list)
-                if second_list:
-                    for second_url in second_list:
-                        second_resp = self.__getResp(func=self.download_middleware.getResp,
-                                                     url=second_url,
-                                                     mode='GET')
-                        if not second_resp:
-                            LOGGING.error('第二分类页获取失败, url: {}'.format(second_url))
-                            second_list.append(second_url)
-                            continue
-                        second_response = second_resp.text
-                        # 获取第三层分类号
-                        category_list = self.server.getCategoryNumber(resp=second_response)
-                        # print(category_list)
-                        # 进入队列
-                        self.dao.QueueJobTask(key=config.REDIS_FM_CATEGORY, data=category_list)
-                        if category_list:
-                            for category in category_list:
-                                self.category_number.append(category)
+                category_list = self.server.getCategoryNumber(resp=first_response)
+                # print(category_list)
+                # 进入队列
+                self.dao.QueueJobTask(key=config.REDIS_WG_CATEGORY, data=category_list)
+                if category_list:
+                    for category in category_list:
+                        self.category_number.append(category)
 
         # print(self.category_number)
         # print(len(self.category_number))
@@ -143,7 +130,7 @@ class SpiderMain(BastSpiderMain):
                 self.num += 1
                 LOGGING.info('当前已抓种子数量: {}'.format(self.num))
                 # 存入数据库
-                self.dao.saveTaskToMysql(table=config.MYSQL_PATENT, memo=url, ws='中国知网', es='发明公开专利')
+                self.dao.saveTaskToMysql(table=config.MYSQL_PATENT, memo=url, ws='中国知网', es='外观专利')
 
             # 判断是否有下一页
             next_url = self.server.hasNextUrl(resp=next_text)
@@ -271,10 +258,10 @@ class SpiderMain(BastSpiderMain):
 
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_FM_CATEGORY,
+            category_list = self.dao.getTask(key=config.REDIS_WG_CATEGORY,
                                          count=1,
-                                         lockname=config.REDIS_FM_CATEGORY_LOCK)
-            print(category_list)
+                                         lockname=config.REDIS_WG_CATEGORY_LOCK)
+            # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 
             if category_list:
@@ -304,7 +291,7 @@ def process_start():
     try:
         # main.getCategory()
         # main.start()
-        main.run("A22C")
+        main.run("02-03")
     except:
         LOGGING.error(str(traceback.format_exc()))
 
