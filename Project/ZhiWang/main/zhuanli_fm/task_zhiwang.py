@@ -126,8 +126,8 @@ class SpiderMain(BastSpiderMain):
                             for category in category_list:
                                 self.category_number.append(category)
 
-        # print(self.category_number)
-        # print(len(self.category_number))
+        print(self.category_number)
+        print(len(self.category_number))
 
     def getProfile(self, resp, category, year):
         next_resp = resp
@@ -213,7 +213,7 @@ class SpiderMain(BastSpiderMain):
             try:
                 # 获取某一年
                 year = year_list[year_index]
-                LOGGING.info('已进入{}分类下第{}年'.format(category, year))
+                LOGGING.info('已进入{}分类下{}年'.format(category, year))
                 # 获取指定年的列表页首页url
                 year_url = self.getYearIndexUrl.format(year)
                 # print(year_url)
@@ -274,7 +274,7 @@ class SpiderMain(BastSpiderMain):
             category_list = self.dao.getTask(key=config.REDIS_FM_CATEGORY,
                                          count=1,
                                          lockname=config.REDIS_FM_CATEGORY_LOCK)
-            print(category_list)
+            # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 
             if category_list:
@@ -303,8 +303,8 @@ def process_start():
     main = SpiderMain()
     try:
         # main.getCategory()
-        # main.start()
-        main.run("A22C")
+        main.start()
+        # main.run("A22C")
     except:
         LOGGING.error(str(traceback.format_exc()))
 

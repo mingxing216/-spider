@@ -200,7 +200,7 @@ class SpiderMain(BastSpiderMain):
             try:
                 # 获取某一年
                 year = year_list[year_index]
-                LOGGING.info('已进入{}分类下第{}年'.format(category, year))
+                LOGGING.info('已进入{}分类下{}年'.format(category, year))
                 # 获取指定年的列表页首页url
                 year_url = self.getYearIndexUrl.format(year)
                 # print(year_url)
@@ -290,8 +290,8 @@ def process_start():
     main = SpiderMain()
     try:
         # main.getCategory()
-        # main.start()
-        main.run("02-03")
+        main.start()
+        # main.run("02-03")
     except:
         LOGGING.error(str(traceback.format_exc()))
 
