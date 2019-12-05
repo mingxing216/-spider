@@ -131,7 +131,7 @@ class SpiderMain(BastSpiderMain):
                 # 生成ss ——实体
                 announce_data['ss'] = '公告'
                 # 生成es ——栏目名称
-                announce_data['es'] = '发明公开'
+                announce_data['es'] = '外观专利'
                 # 生成ws ——目标网站
                 announce_data['ws'] = '中国知网'
                 # 生成clazz ——层级关系
@@ -202,10 +202,6 @@ class SpiderMain(BastSpiderMain):
         save_data['shenQingRenDiZhi'] = self.server.getField(response, '地址')
         # 获取发明人
         save_data['faMingRen'] = self.server.getField(response, '发明人')
-        # 获取国际申请
-        save_data['guoJiShenQing'] = self.server.getField(response, '国际申请')
-        # 获取国际公布
-        save_data['guoJiGongBu'] = self.server.getField(response, '国际公布')
         # 获取代理机构
         save_data['daiLiJiGou'] = self.server.getField(response, '专利代理机构')
         # 获取代理人
@@ -214,18 +210,16 @@ class SpiderMain(BastSpiderMain):
         save_data['guoShengDaiMa'] = self.server.getField(response, '国省代码')
         # 获取摘要
         save_data['zhaiYao'] = self.server.getHtml(response, '摘要')
-        # 获取主权项
-        save_data['zhuQuanXiang'] = self.server.getHtml(response, '主权项')
         # 获取页数
         save_data['yeShu'] = self.server.getField(response, '页数')
-        # 获取IPC主分类号
-        save_data['IPCzhuFenLeiHao'] = self.server.getField(response, '主分类号')
-        # 获取IPC分类号
-        save_data['IPCfenLeiHao'] = self.server.getField(response, '专利分类号')
+        # 获取LOC主分类号
+        save_data['LOCzhuFenLeiHao'] = self.server.getField(response, '主分类号')
+        # 获取LOC分类号
+        save_data['LOCfenLeiHao'] = self.server.getField(response, '专利分类号')
         # 获取下载
         save_data['xiaZai'] = self.server.getXiaZai(response)
         # 获取专利类型
-        save_data['zhuanLiLeiXing'] = "发明公开"
+        save_data['zhuanLiLeiXing'] = "外观设计"
         # 获取专利国别
         save_data['zhuanLiGuoBie'] = self.server.getZhuanLiGuoBie(save_data['gongKaiHao'])
 
@@ -244,7 +238,7 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '专利'
         # 生成es ——栏目名称
-        save_data['es'] = '发明公开'
+        save_data['es'] = '外观专利'
         # 生成ws ——目标网站
         save_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
@@ -315,7 +309,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url":"http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?dbcode=SCPD&dbname=SCPD2017&filename=CN106170564A"}')
+        # main.run(task='{"url":"http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?dbcode=SCPD&dbname=SCPD2019&filename=CN305436697S"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
