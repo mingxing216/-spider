@@ -154,7 +154,8 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
-        url = task_data['url']
+        old_url = task_data['url']
+        url = old_url.replace('http', 'https')
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
         # 获取页面响应
@@ -255,7 +256,8 @@ class SpiderMain(BastSpiderMain):
         save_data['ref'] = ''
 
         # 返回sha为删除任务做准备
-        return sha
+        old_sha = hashlib.sha1(old_url.encode('utf-8')).hexdigest()
+        return old_sha
 
     def run(self, task):
         # 创建数据存储字典
@@ -281,7 +283,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_FM_PATENT, count=20, lockname=config.REDIS_FM_PATENT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_FM_PATENT, count=30, lockname=config.REDIS_FM_PATENT_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

@@ -25,8 +25,8 @@ from Project.ZhiWang.dao import dao
 from Project.ZhiWang import config
 
 log_file_dir = 'ZhiWang'  # LOG日志存放路径
-LOGNAME = '<知网_外观专利_data>'  # LOG名
-NAME = '知网_外观专利_data'  # 爬虫名
+LOGNAME = '<知网_实用新型_data>'  # LOG名
+NAME = '知网_实用新型_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -35,7 +35,7 @@ INSERT_DATA_NUMBER = False  # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.WaiGuanDownloader(logging=LOGGING,
+        self.download_middleware = download_middleware.ShiYongDownloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -131,7 +131,7 @@ class SpiderMain(BastSpiderMain):
                 # 生成ss ——实体
                 announce_data['ss'] = '公告'
                 # 生成es ——栏目名称
-                announce_data['es'] = '外观专利'
+                announce_data['es'] = '发明公开'
                 # 生成ws ——目标网站
                 announce_data['ws'] = '中国知网'
                 # 生成clazz ——层级关系
@@ -154,8 +154,7 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
-        old_url = task_data['url']
-        url = old_url.replace('http', 'https')
+        url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
         # 获取页面响应
@@ -203,6 +202,10 @@ class SpiderMain(BastSpiderMain):
         save_data['shenQingRenDiZhi'] = self.server.getField(response, '地址')
         # 获取发明人
         save_data['faMingRen'] = self.server.getField(response, '发明人')
+        # 获取国际申请
+        save_data['guoJiShenQing'] = self.server.getField(response, '国际申请')
+        # 获取国际公布
+        save_data['guoJiGongBu'] = self.server.getField(response, '国际公布')
         # 获取代理机构
         save_data['daiLiJiGou'] = self.server.getField(response, '专利代理机构')
         # 获取代理人
@@ -211,16 +214,18 @@ class SpiderMain(BastSpiderMain):
         save_data['guoShengDaiMa'] = self.server.getField(response, '国省代码')
         # 获取摘要
         save_data['zhaiYao'] = self.server.getHtml(response, '摘要')
+        # 获取主权项
+        save_data['zhuQuanXiang'] = self.server.getHtml(response, '主权项')
         # 获取页数
         save_data['yeShu'] = self.server.getField(response, '页数')
-        # 获取LOC主分类号
-        save_data['LOCzhuFenLeiHao'] = self.server.getField(response, '主分类号')
-        # 获取LOC分类号
-        save_data['LOCfenLeiHao'] = self.server.getField(response, '专利分类号')
+        # 获取IPC主分类号
+        save_data['IPCzhuFenLeiHao'] = self.server.getField(response, '主分类号')
+        # 获取IPC分类号
+        save_data['IPCfenLeiHao'] = self.server.getField(response, '专利分类号')
         # 获取下载
         save_data['xiaZai'] = self.server.getXiaZai(response)
         # 获取专利类型
-        save_data['zhuanLiLeiXing'] = "外观设计"
+        save_data['zhuanLiLeiXing'] = "发明公开"
         # 获取专利国别
         save_data['zhuanLiGuoBie'] = self.server.getZhuanLiGuoBie(save_data['gongKaiHao'])
 
@@ -239,7 +244,7 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '专利'
         # 生成es ——栏目名称
-        save_data['es'] = '外观专利'
+        save_data['es'] = '发明公开'
         # 生成ws ——目标网站
         save_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
@@ -250,8 +255,7 @@ class SpiderMain(BastSpiderMain):
         save_data['ref'] = ''
 
         # 返回sha为删除任务做准备
-        old_sha = hashlib.sha1(old_url.encode('utf-8')).hexdigest()
-        return old_sha
+        return sha
 
     def run(self, task):
         # 创建数据存储字典
@@ -277,7 +281,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_WG_PATENT, count=30, lockname=config.REDIS_WG_PATENT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_XX_PATENT, count=20, lockname=config.REDIS_XX_PATENT_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -311,7 +315,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url":"http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?dbcode=SCPD&dbname=SCPD2019&filename=CN305436697S"}')
+        # main.run(task='{"url":"http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?dbcode=SCPD&dbname=SCPD2017&filename=CN106170564A"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

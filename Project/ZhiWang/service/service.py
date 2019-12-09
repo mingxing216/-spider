@@ -37,7 +37,7 @@ class Server(object):
             label_list = selector.xpath("//div[@class='leftlist_1']/span/img[contains(@id, 'first')]/@onclick").extract()
 
             for label in label_list:
-                lower_url = "http://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
+                lower_url = "https://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
                 try:
                     lower_data = ast.literal_eval(re.findall("(\(.*\))", label)[0])
                     return_data.append(lower_url.format(lower_data[0], lower_data[2]))
@@ -58,7 +58,7 @@ class Server(object):
             dd_list = selector.xpath("//dd/span/img[contains(@id, 'first')]/@onclick").extract()
 
             for dd in dd_list:
-                lower_url = "http://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
+                lower_url = "https://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
                 try:
                     lower_data = ast.literal_eval(re.findall("(\(.*\))", dd)[0])
                     return_data.append(lower_url.format(lower_data[0], lower_data[2]))
@@ -130,7 +130,7 @@ class Server(object):
                 except:
                     filename = re.findall(r"filename=(.*)", href)[0]
 
-                url = ('http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?'
+                url = ('https://dbpub.cnki.net/grid2008/dbpub/detail.aspx?'
                        'dbcode={}&'
                        'dbname={}&'
                        'filename={}').format(dbcode, dbname, filename)
@@ -149,7 +149,7 @@ class Server(object):
             if not href:
                 return None
             else:
-                next_page = 'http://kns.cnki.net/kns/brief/brief.aspx' + str(href)
+                next_page = 'https://kns.cnki.net/kns/brief/brief.aspx' + str(href)
                 return next_page
         except Exception:
             return None
@@ -195,7 +195,7 @@ class Server(object):
         selector = Selector(text=resp)
         try:
             href = selector.xpath("//a[contains(text(), '下载')]/@href").extract_first()
-            link = 'http://dbpub.cnki.net/grid2008/dbpub/' + href
+            link = 'https://dbpub.cnki.net/grid2008/dbpub/' + href
         except Exception:
             link = ""
 
@@ -213,7 +213,7 @@ class Server(object):
     def getGongGao(self, resp):
         selector = Selector(text=resp)
         try:
-            href = selector.xpath("//a[contains(text(), '查询法律状态')]/@href").extract_first()
+            href = selector.xpath("//a[contains(text(), '查询法律状态')]/@href").extract_first().replace('http', 'https')
         except Exception:
             href = ""
 
@@ -277,7 +277,7 @@ class Server(object):
         selector = Selector(text=resp)
         next_href = selector.xpath("//div[@id='id_grid_turnpage']/a[contains(text(), '下页')]/@href").extract_first()
         if next_href:
-            next_page_url = 'http://dbpub.cnki.net/grid2008/dbpub/brief.aspx' + next_href
+            next_page_url = 'https://dbpub.cnki.net/grid2008/dbpub/brief.aspx' + next_href
         else:
             next_page_url = ''
 

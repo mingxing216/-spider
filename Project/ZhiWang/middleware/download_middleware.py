@@ -6,6 +6,7 @@
 import sys
 import os
 import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import re
 import time
 import requests
@@ -40,11 +41,11 @@ class GongKaiDownloader(downloader.BaseDownloaderMiddleware):
             # 设置请求头
             param['headers'] = {
                 # 'Accept-Language': 'zh-CN,zh;q=0.9',
-                # 'Accept-Encoding': 'gzip, deflate',
+                # 'Accept-Encoding': 'gzip, deflate, br',
                 # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
                 'Referer': referer,
                 'Connection': 'close',
-                'Host': 'kns.cnki.net',
+                'Host': 'dbpub.cnki.net',
                 'User-Agent': user_agent_u.get_ua()
             }
             # 设置post参数
@@ -569,7 +570,7 @@ class WaiGuanDownloader(downloader.BaseDownloaderMiddleware):
                 # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
                 'Referer': referer,
                 'Connection': 'close',
-                'Host': 'kns.cnki.net',
+                'Host': 'dbpub.cnki.net',
                 'User-Agent': user_agent_u.get_ua()
             }
             # 设置post参数
@@ -829,7 +830,7 @@ class ShiYongDownloader(downloader.BaseDownloaderMiddleware):
                 # 'Accept-Encoding': 'gzip, deflate',
                 # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
                 'Referer': referer,
-                # 'Connection': 'close',
+                'Connection': 'close',
                 'Host': 'kns.cnki.net',
                 'User-Agent': user_agent_u.get_ua()
             }
@@ -882,7 +883,7 @@ class ShiYongDownloader(downloader.BaseDownloaderMiddleware):
 
     # 创建COOKIE
     def create_cookie(self):
-        url = 'http://kns.cnki.net/kns/brief/result.aspx?dbprefix=SCPD_XX'
+        url = 'https://kns.cnki.net/kns/brief/result.aspx?dbprefix=SCPD_XX'
         try:
             resp = self.getResp(url=url, mode='GET')
             if resp['code'] == 0:
@@ -899,9 +900,9 @@ class ShiYongDownloader(downloader.BaseDownloaderMiddleware):
         self._one(referer=referer, category=category, cookie=cookie)
         self._two(referer=referer, category=category, cookie=cookie)
         self._third(referer=referer, category=category, cookie=cookie)
-        self._four(referer=referer, cookie=cookie)
+        # self._four(referer=referer, cookie=cookie)
 
-        url = 'http://kns.cnki.net/kns/group/doGroupLeft.aspx?action=1&Param=ASP.brief_result_aspx%23SCPD_XX/%u5E74/%u5E74%2Ccount%28*%29/%u5E74/%28%u5E74%2C%27date%27%29%23%u5E74%24desc/1000000%24/-/40/40000/ButtonView'
+        url = 'https://kns.cnki.net/kns/group/doGroupLeft.aspx?action=1&Param=ASP.brief_result_aspx%23SCPD_XX/%u5E74/%u5E74%2Ccount%28*%29/%u5E74/%28%u5E74%2C%27date%27%29%23%u5E74%24desc/1000000%24/-/40/40000/ButtonView'
         # 设置请求头
         headers = {
             'Cookie': cookie,
@@ -916,8 +917,8 @@ class ShiYongDownloader(downloader.BaseDownloaderMiddleware):
         err_time = 0
         while 1:
             proxies = self.proxy_obj.getProxy()
-            proxies_http = re.findall(r"(\d+\.\d+\.\d+\.\d+:\d+)", proxies['http'])[0]
-            proxy = urllib3.ProxyManager('http://{}'.format(proxies_http), headers=headers)
+            proxies_http = re.findall(r"(\d+\.\d+\.\d+\.\d+:\d+)", proxies['https'])[0]
+            proxy = urllib3.ProxyManager('https://{}'.format(proxies_http), headers=headers)
             try:
                 begin_time = int(time.time())
                 resp = proxy.request(method='get', url=url, timeout=10)
@@ -941,19 +942,19 @@ class ShiYongDownloader(downloader.BaseDownloaderMiddleware):
                         continue
 
     def _one(self, referer, category, cookie):
-        param = {'url': 'http://kns.cnki.net/kns/request/SearchHandler.ashx'}
+        param = {'url': 'https://kns.cnki.net/kns/request/SearchHandler.ashx'}
         # 设置请求方式：GET或POST
         param['mode'] = 'post'
         # 设置请求头
         param['headers'] = {
             'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Connection': 'keep-alive',
             'Content-Type': 'application/x-www-form-urlencoded',
             'Cookie': cookie,
             'Host': 'kns.cnki.net',
-            'Origin': 'http://kns.cnki.net',
+            'Origin': 'https://kns.cnki.net',
             'Referer': referer,
             'User-Agent': user_agent_u.get_ua()
         }
@@ -976,19 +977,19 @@ class ShiYongDownloader(downloader.BaseDownloaderMiddleware):
         return self._startDownload(param=param)
 
     def _two(self, referer, category, cookie):
-        param = {'url': 'http://kns.cnki.net/kns/request/GetWebGroupHandler.ashx'}
+        param = {'url': 'https://kns.cnki.net/kns/request/GetWebGroupHandler.ashx'}
         # 设置请求方式：GET或POST
         param['mode'] = 'post'
         # 设置请求头
         param['headers'] = {
             'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Connection': 'keep-alive',
             'Content-Type': 'application/x-www-form-urlencoded',
             'Cookie': cookie,
             'Host': 'kns.cnki.net',
-            'Origin': 'http://kns.cnki.net',
+            'Origin': 'https://kns.cnki.net',
             'Referer': referer,
             'User-Agent': user_agent_u.get_ua()
         }
@@ -1011,19 +1012,19 @@ class ShiYongDownloader(downloader.BaseDownloaderMiddleware):
         return self._startDownload(param=param)
 
     def _third(self, referer, category, cookie):
-        param = {'url': 'http://kns.cnki.net/kns/group/doGroupLeft.aspx'}
+        param = {'url': 'https://kns.cnki.net/kns/group/doGroupLeft.aspx'}
         # 设置请求方式：GET或POST
         param['mode'] = 'post'
         # 设置请求头
         param['headers'] = {
             'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'zh-CN,zh;q=0.9',
             'Connection': 'keep-alive',
             'Content-Type': 'application/x-www-form-urlencoded',
             'Cookie': cookie,
             'Host': 'kns.cnki.net',
-            'Origin': 'http://kns.cnki.net',
+            'Origin': 'https://kns.cnki.net',
             'Referer': referer,
             'User-Agent': user_agent_u.get_ua()
         }
@@ -1047,7 +1048,7 @@ class ShiYongDownloader(downloader.BaseDownloaderMiddleware):
         return self._startDownload(param=param)
 
     def _four(self, referer, cookie):
-        param = {'url': 'http://kns.cnki.net/kns/brief/brief.aspx?pagename=ASP.brief_result_aspx&isinEn=0&dbPrefix=SCPD_XX&ConfigFile=SCPD_XX.xml'}
+        param = {'url': 'https://kns.cnki.net/kns/brief/brief.aspx?pagename=ASP.brief_result_aspx&isinEn=0&dbPrefix=SCPD_XX&ConfigFile=SCPD_XX.xml'}
         param['mode'] = 'GET'
         param['headers'] = {
             'Accept-Language': 'zh-CN,zh;q=0.9',
