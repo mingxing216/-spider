@@ -55,7 +55,7 @@ class SpiderMain(BastSpiderMain):
         super().__init__()
 
     def __getResp(self, func, url, mode, s=None, data=None, cookies=None, referer=None):
-        while 1:
+        for i in range(10):
             resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies, referer=referer)
             if resp['code'] == 0:
                 response = resp['data']
@@ -68,6 +68,8 @@ class SpiderMain(BastSpiderMain):
 
             if resp['code'] == 1:
                 return None
+        else:
+            return None
 
     # 获取公告实体字段
     def announcement(self, gonggao_url, zhuanli_url, zhuanli_sha):
@@ -131,7 +133,7 @@ class SpiderMain(BastSpiderMain):
                 # 生成ss ——实体
                 announce_data['ss'] = '公告'
                 # 生成es ——栏目名称
-                announce_data['es'] = '发明公开'
+                announce_data['es'] = '实用新型'
                 # 生成ws ——目标网站
                 announce_data['ws'] = '中国知网'
                 # 生成clazz ——层级关系
@@ -202,10 +204,6 @@ class SpiderMain(BastSpiderMain):
         save_data['shenQingRenDiZhi'] = self.server.getField(response, '地址')
         # 获取发明人
         save_data['faMingRen'] = self.server.getField(response, '发明人')
-        # 获取国际申请
-        save_data['guoJiShenQing'] = self.server.getField(response, '国际申请')
-        # 获取国际公布
-        save_data['guoJiGongBu'] = self.server.getField(response, '国际公布')
         # 获取代理机构
         save_data['daiLiJiGou'] = self.server.getField(response, '专利代理机构')
         # 获取代理人
@@ -225,7 +223,7 @@ class SpiderMain(BastSpiderMain):
         # 获取下载
         save_data['xiaZai'] = self.server.getXiaZai(response)
         # 获取专利类型
-        save_data['zhuanLiLeiXing'] = "发明公开"
+        save_data['zhuanLiLeiXing'] = "实用新型"
         # 获取专利国别
         save_data['zhuanLiGuoBie'] = self.server.getZhuanLiGuoBie(save_data['gongKaiHao'])
 
@@ -244,7 +242,7 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '专利'
         # 生成es ——栏目名称
-        save_data['es'] = '发明公开'
+        save_data['es'] = '实用新型'
         # 生成ws ——目标网站
         save_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
@@ -315,7 +313,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url":"http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?dbcode=SCPD&dbname=SCPD2017&filename=CN106170564A"}')
+        # main.run(task='{"url":"http://dbpub.cnki.net/grid2008/dbpub/detail.aspx?dbcode=SCPD&dbname=SCPD2018&filename=CN207054061U"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

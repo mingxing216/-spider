@@ -55,7 +55,7 @@ class SpiderMain(BastSpiderMain):
         super().__init__()
 
     def __getResp(self, func, url, mode, s=None, data=None, cookies=None, referer=None):
-        while 1:
+        for i in range(10):
             resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies, referer=referer)
             if resp['code'] == 0:
                 response = resp['data']
@@ -68,6 +68,8 @@ class SpiderMain(BastSpiderMain):
 
             if resp['code'] == 1:
                 return None
+        else:
+            return None
 
     # 获取公告实体字段
     def announcement(self, gonggao_url, zhuanli_url, zhuanli_sha):

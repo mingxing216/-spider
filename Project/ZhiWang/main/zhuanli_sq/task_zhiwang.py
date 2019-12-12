@@ -62,20 +62,21 @@ class SpiderMain(BastSpiderMain):
         self.num = 0
 
     def __getResp(self, func, url, mode, s=None, data=None, cookies=None, referer=None):
-        while 1:
+        for i in range(10):
             resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies, referer=referer)
             if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
-                    LOGGING.error('出现验证码')
-                    # continue
-                    return response
+                    LOGGING.info('出现验证码')
+                    continue
 
                 else:
                     return response
 
             if resp['code'] == 1:
                 return None
+        else:
+            return None
 
     def getCategory(self):
         # 访问入口页

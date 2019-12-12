@@ -62,20 +62,21 @@ class SpiderMain(BastSpiderMain):
         self.num = 0
 
     def __getResp(self, func, url, mode, s=None, data=None, cookies=None, referer=None):
-        while 1:
+        for i in range(10):
             resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies, referer=referer)
             if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
-                    LOGGING.error('出现验证码')
-                    # continue
-                    return response
+                    LOGGING.info('出现验证码')
+                    continue
 
                 else:
                     return response
 
             if resp['code'] == 1:
                 return None
+        else:
+            return None
 
     def getCategory(self):
         # 访问入口页
@@ -188,11 +189,17 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 创建cookie
             self.cookie_dict, self.cookie_str = self.download_middleware.create_cookie()
+            if not self.cookie_dict:
+                # 队列一条任务
+                self.dao.QueueOneTask(key=config.REDIS_WG_CATEGORY, data=category)
+                return
             # 获取时间列表
             time_response = self.download_middleware.getTimeListResp(referer=self.index_url,
                                                                      category=category,
                                                                      cookie=self.cookie_str)
             if time_response is None:
+                # 队列一条任务
+                self.dao.QueueOneTask(key=config.REDIS_WG_CATEGORY, data=category)
                 return
             # 获年份列表
             year_list = self.server.getYearList(resp=time_response)
@@ -213,8 +220,10 @@ class SpiderMain(BastSpiderMain):
                                                      cookies=self.cookie_dict)
                     if not year_first_resp:
                         LOGGING.error('{}分类下{}年的列表首页响应获取失败, url: {}'.format(category, year, year_url))
-                        # 最小一级分类号存入列表
-                        self.category_number.append(category)
+                        # # 最小一级分类号存入列表
+                        # self.category_number.append(category)
+                        # 队列一条任务
+                        self.dao.QueueOneTask(key=config.REDIS_WG_CATEGORY, data=category)
                         return
 
                     # 处理验证码
@@ -289,7 +298,7 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.getCategory()
+        main.getCategory()
         main.start()
         # main.run("02-03")
     except:
