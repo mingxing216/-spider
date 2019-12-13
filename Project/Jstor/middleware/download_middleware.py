@@ -102,7 +102,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
         headers = random.choice(headers_list)
         return headers
 
-    def getResp(self, url, mode, data=None, cookies=None, referer=None):
+    def getResp(self, url, mode, s=None, data=None, cookies=None, referer=None):
         # 请求异常时间戳
         err_time = 0
         # 响应状态码错误时间戳
@@ -119,13 +119,13 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             param['headers'] = {
                 # 'authority': 'www.jstor.org',
                 'method': 'GET',
-                # 'scheme': 'https',
-                # 'cache-control': 'max-age=0',
-                # 'upgrade-insecure-requests': '1',
+                'scheme': 'https',
+                'cache-control': 'max-age=0',
+                'upgrade-insecure-requests': '1',
                 # 'accept-language': 'zh-CN,zh;q=0.9',
                 # 'accept-encoding': 'gzip, deflate, br',
                 # 'sec-fetch-mode': 'navigate',
-                # 'referer': referer,
+                'referer': referer,
                 'connection': 'close',
                 'user-agent': user_agent_u.get_ua()
             }
@@ -137,7 +137,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
             if self.proxy_type:
                 param['proxies'] = self.proxy_obj.getProxy()
 
-            down_data = self._startDownload(param=param)
+            down_data = self._startDownload(param=param, s=s)
 
             if down_data['code'] == 0:
                 return {'code': 0, 'data': down_data['data']}

@@ -56,12 +56,14 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
         self.cookie_dict = ''
+        self.index_url = 'https://www.jstor.org/'
+        self.s = None
 
-    def __getResp(self, func, url, mode, data=None, cookies=None):
+    def __getResp(self, func, url, mode, s=None, data=None, cookies=None, referer=None):
         # while 1:
         # 发现验证码，最多访问页面10次
         for i in range(10):
-            resp = func(url=url, mode=mode, data=data, cookies=cookies)
+            resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies, referer=referer)
             if resp['code'] == 0:
                 response = resp['data']
                 if '请输入验证码' in response.text:
@@ -260,6 +262,7 @@ class SpiderMain(BastSpiderMain):
 
         # 获取页面响应
         resp = self.__getResp(func=self.download_middleware.getResp,
+                              s=self.s,
                               url=url,
                               mode='GET',
                               cookies=self.cookie_dict)
@@ -325,10 +328,14 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('数据获取不完整, 存储失败')
             return
 
-        self.dao.saveDataToHbase(data=save_data)
-
-        # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
+        # 存储数据
+        success = self.dao.saveDataToHbase(data=save_data)
+        if success:
+            # 删除任务
+            self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
+        else:
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
 
     def start(self):
         while 1:
@@ -338,10 +345,21 @@ class SpiderMain(BastSpiderMain):
             # print(task_list)
 
             if task_list:
-                # 获取cookie
-                self.cookie_dict = self.download_middleware.create_cookie()
-                # cookie创建失败，重新创建
-                if not self.cookie_dict:
+                # # 获取cookie
+                # self.cookie_dict = self.download_middleware.create_cookie()
+                # # cookie创建失败，重新创建
+                # if not self.cookie_dict:
+                #     continue
+
+                # 创建会话
+                self.s = requests.session()
+                # 获取页面响应
+                resp = self.__getResp(func=self.download_middleware.getResp,
+                                      s=self.s,
+                                      url=self.index_url,
+                                      mode='GET')
+                if not resp:
+                    time.sleep(2)
                     continue
 
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
