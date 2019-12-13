@@ -170,7 +170,7 @@ class SpiderMain(BastSpiderMain):
             return
 
         response = resp.text
-        # with open ('profile.html', 'w') as f:
+        # with open ('profile.html', 'w', encoding='utf-8') as f:
         #     f.write(response)
         # return
 
