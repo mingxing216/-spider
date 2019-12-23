@@ -264,8 +264,7 @@ class SpiderMain(BastSpiderMain):
         resp = self.__getResp(func=self.download_middleware.getResp,
                               s=self.s,
                               url=url,
-                              mode='GET',
-                              cookies=self.cookie_dict)
+                              mode='GET')
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
