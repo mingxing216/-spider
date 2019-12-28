@@ -109,7 +109,7 @@ class Downloader(object):
         return r
 
     @_error
-    def post(self, url, s, headers, data, cookies, timeout, proxies):
+    def post(self, s, url, headers, data, cookies, timeout, proxies):
         if s:
             requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
             # s = requests.session()
@@ -139,11 +139,6 @@ class Downloader(object):
         # print(headers)
 
         end_time = int(time.time())
-
-        # try:
-        #     code = down_data['code']
-        # except:
-        #     code = None
 
         self.logging.info("request for url: {} | code: {} | status: {} | message: {} | mode: {} | data: {} | proxy: {} | use time: {}".format(
             url, down_data['code'], down_data['status'], down_data['message'], connect_type, data, proxies, '{}s'.format(end_time - start_time)

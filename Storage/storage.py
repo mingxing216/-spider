@@ -55,6 +55,7 @@ class Dao(object):
         # 查询数据库是否含有此数据
         data_status_sql = "select * from {} where `sha` = '{}'".format(table, sha)
         data_status = self.mysql_client.get_result(sql=data_status_sql)
+        # print(data_status)
         # 如果没有，直接存入数据库
         if not data_status:
             data = {
@@ -72,51 +73,55 @@ class Dao(object):
                 self.logging.warning('数据存储警告: {}'.format(e))
 
         else:
-            self.logging.warning('种子已存在: {}'.format(sha))
-            # # 从mysql数据库中取出该种子
-            # result = self.getOneTask(table, sha)
-            # oldCtx = ast.literal_eval(result[0]['ctx'])
-            # # 遍历新ctx中的key,value值
-            # for k,v in memo.items():
-            #     # 遍历旧的key,value值
-            #     for m,n in oldCtx.items():
-            #         # 判断新的key值是否以's_'开头，并且value是字符串
-            #         if k.startswith('s_') and isinstance(v, str):
-            #             if k == m:
-            #                 if v not in n:
-            #                     oldCtx[k] = n + '|' + v
-            #                     break
-            #                 else:
-            #                     break
-            #             else:
-            #                 continue
-            #         else:
-            #             if k == m:
-            #                 oldCtx[k] = v
-            #                 break
-            #             else:
-            #                 continue
-            #     else:
-            #         oldCtx[k] = v
-            # print(oldCtx)
-            #
-            # # 删除原数据库种子
-            # self.deleteTask(table=table, sha=sha)
-            # # 存储新种子
-            # rCtx = json.dumps(oldCtx, ensure_ascii=False)
-            # newdata = {
-            #     'sha': sha,
-            #     'ctx': rCtx,
-            #     'url': url,
-            #     'es': es,
-            #     'ws': ws,
-            #     'date_created': timeutils.getNowDatetime()
-            # }
-            # try:
-            #     self.mysql_client.insert_one(table=table, data=newdata)
-            #     self.logging.info('已存储种子: {}'.format(url))
-            # except Exception as e:
-            #     self.logging.warning('数据存储警告: {}'.format(e))
+            # self.logging.warning('种子已存在: {}'.format(sha))
+            # 从mysql数据库中取出该种子
+            if ctx == data_status['ctx']:
+                self.logging.warning('种子已存在: {}'.format(sha))
+
+            else:
+                oldCtx = json.loads(data_status['ctx'])
+                # 遍历新ctx中的key,value值
+                for k,v in memo.items():
+                    # 遍历旧的key,value值
+                    for m,n in oldCtx.items():
+                        # 判断新的key值是否以's_'开头，并且value是字符串
+                        if k.startswith('s_') and isinstance(v, str):
+                            if k == m:
+                                if v not in n:
+                                    if n == '':
+                                        oldCtx[k] = v
+                                    else:
+                                        oldCtx[k] = n + '|' + v
+                                    break
+                                else:
+                                    break
+                            else:
+                                continue
+                        else:
+                            if k == m:
+                                oldCtx[k] = v
+                                break
+                            else:
+                                continue
+                    else:
+                        oldCtx[k] = v
+                # print(oldCtx)
+
+                # 存储新种子
+                rCtx = json.dumps(oldCtx, ensure_ascii=False)
+                newdata = {
+                    'sha': sha,
+                    'ctx': rCtx,
+                    'url': url,
+                    'es': es,
+                    'ws': ws,
+                    'date_created': timeutils.getNowDatetime()
+                }
+                try:
+                    self.mysql_client.update(table=table, data=newdata, where="`sha` = '{}'".format(sha))
+                    self.logging.info('已更新种子: {}'.format(url))
+                except Exception as e:
+                    self.logging.warning('数据更新警告: {}'.format(e))
 
     # 从Mysql获取指定一条任务
     def getOneTask(self, table, sha):
@@ -198,6 +203,7 @@ class Dao(object):
                 end_time = int(time.time() - start_time)
                 self.logging.info('title: Save data to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
                 return False
+
         except Exception as e:
             resp = e
             end_time = int(time.time() - start_time)
@@ -273,12 +279,13 @@ class Dao(object):
             respon = ast.literal_eval(resp)
             if respon['resultCode'] == 0:
                 end_time = int(time.time() - start_time)
-                self.logging.info('title: Save media to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.info('title: Save media to Hbase | status: OK | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
                 return True
             else:
                 end_time = int(time.time() - start_time)
                 self.logging.info('title: Save media to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
                 return False
+
         except Exception as e:
             resp = e
             end_time = int(time.time() - start_time)
@@ -358,10 +365,9 @@ class Dao(object):
         sql = "select * from {} where `sha` = '{}'".format(settings.DATA_VOLUME_TOTAL_TABLE, sha)
         status = self.mysql_client.get_results(sql=sql)
         if status:
-
             return True
-        else:
 
+        else:
             return False
 
     # 保存任务
