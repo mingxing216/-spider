@@ -254,7 +254,7 @@ class SpiderMain(BastSpiderMain):
             # 保存人物种子
             if save_data['guanLianRenWu']:
                 for people in save_data['guanLianRenWu']:
-                    people['shijian'] = save_data['shiJian']
+                    # people['shijian'] = save_data['shiJian']
                     self.dao.saveTaskToMysql(table=config.MYSQL_PEOPLE, memo=people, ws='中国知网', es='论文')
             # 保存机构种子
             if save_data['guanLianQiYeJiGou']:
@@ -263,7 +263,7 @@ class SpiderMain(BastSpiderMain):
 
             # # 记录已抓取任务
             # self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
-            # return sha
+            return sha
 
         else:
             LOGGING.warning('{}: 已被抓取过'.format(sha))

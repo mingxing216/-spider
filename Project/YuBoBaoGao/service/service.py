@@ -28,117 +28,70 @@ class Server(object):
     def getEvalResponse(self, task_data):
         return ast.literal_eval(task_data)
 
-    # 获取第一分类列表
-    def getIndexClassList(self, resp):
+    # 获取行业名称及种子分类列表
+    def getIndustryList(self, resp):
         return_data = []
         selector = Selector(text=resp)
-
         try:
-            label_list = selector.xpath(
-                "//div[@class='leftlist_1']/span/img[contains(@id, 'first')]/@onclick").extract()
-
-            for label in label_list:
-                lower_url = "https://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
-                try:
-                    lower_data = ast.literal_eval(re.findall("(\(.*\))", label)[0])
-                    return_data.append(lower_url.format(lower_data[0], lower_data[2]))
-                except:
-                    continue
+            dl_list = selector.xpath("//div[contains(@class, 'subcatleft')]/dl")
+            for dl in dl_list:
+                dt_name = dl.xpath("./dt//text()").extract_first().strip()
+                dd_list = dl.xpath("./dd/em")
+                for dd in dd_list:
+                    dict = {}
+                    dd_name = dd.xpath("./a/text()").extract_first().strip()
+                    dd_href = dd.xpath("./a/@href").extract_first()
+                    dict['url'] = dd_href.strip()
+                    dict['s_hangYe'] = dt_name + '_' + dd_name
+                    return_data.append(dict)
 
         except Exception:
             return return_data
 
         return return_data
 
-    # 获取第二分类列表
-    def getSecondClassList(self, resp):
+    # 获取研究领域类列表
+    def getFieldList(self, resp, hangye):
         return_data = []
         selector = Selector(text=resp)
-
         try:
-            dd_list = selector.xpath("//dd/span/img[contains(@id, 'first')]/@onclick").extract()
-
+            dd_list = selector.xpath("//dt[contains(text(), '研究领域')]/following-sibling::dd[1]/em")
             for dd in dd_list:
-                lower_url = "https://kns.cnki.net/kns/request/NaviGroup.aspx?code={}&tpinavigroup={}"
-                try:
-                    lower_data = ast.literal_eval(re.findall("(\(.*\))", dd)[0])
-                    return_data.append(lower_url.format(lower_data[0], lower_data[2]))
-                except:
-                    continue
+                dict = {}
+                dd_name = dd.xpath("./a/text()").extract_first().strip()
+                dd_href = dd.xpath("./a/@href").extract_first()
+                if 'http' not in dd_href:
+                    dd_href = 'http://www.chinabgao.com' + dd_href.strip()
+
+                dict['url'] = dd_href.strip()
+                dict['s_hangYe'] = hangye
+                dict['s_leiXing'] = dd_name
+                return_data.append(dict)
 
         except Exception:
             return return_data
 
         return return_data
-
-    # 获取第三分类号
-    def getCategoryNumber(self, resp):
-        return_data = []
-        selector = Selector(text=resp)
-        try:
-            dd_list = selector.xpath("//dd/span/input[@id='selectbox']/@value").extract()
-
-            for category in dd_list:
-                return_data.append(category)
-
-        except Exception:
-            return return_data
-
-        return return_data
-
-    # 获取年列表
-    def getYearList(self, resp):
-        if re.findall(r"<a>(\d+)</a>", resp):
-            return re.findall(r"<a>(\d+)</a>", resp)
-
-        else:
-            return []
-
-    # # 获取年列表页参数
-    # def getYearParas(self, resp):
-    #     para_list = []
-    #     selector = Selector(text=resp)
-    #     try:
-    #         tags = selector.xpath("//input")
-    #         for tag in tags:
-    #             para_id = tag.xpath("./@id").extract_first()
-    #             para_value = tag.xpath("./@value").extract_first()
-    #             para_list.append([para_id, para_value])
-    #
-    #     except Exception:
-    #         return para_list
-    #
-    #     return para_list
 
 
     # 获取详情种子
-    def getDetailUrl(self, resp):
+    def getDetailUrl(self, resp, hangye, leixing):
         return_data = []
         selector = Selector(text=resp)
-        href_list = selector.xpath("//a[@class='fz14']/@href").extract()
+        try:
+            href_list = selector.xpath("//div[@class='listcon']/dl/dt/a/@href").extract()
+        except Exception:
+            href_list = selector.xpath("//div[@class='col_l']/div[contains(@class, 'k_') and not(contains(@class, 'title'))]/h3/a/@href").extract()
+
         for href in href_list:
-            try:
-                try:
-                    dbcode = re.findall(r"dbcode=(.*?)&", href)[0]
-                except:
-                    dbcode = re.findall(r"dbcode=(.*)", href)[0]
-                try:
-                    dbname = re.findall(r"dbname=(.*?)&", href)[0]
-                except:
-                    dbname = re.findall(r"dbname=(.*)", href)[0]
-                try:
-                    filename = re.findall(r"filename=(.*?)&", href)[0]
-                except:
-                    filename = re.findall(r"filename=(.*)", href)[0]
+            if 'http' not in href:
+                href = 'http://www.chinabgao.com' + href.strip()
 
-                url = ('https://dbpub.cnki.net/grid2008/dbpub/detail.aspx?'
-                       'dbcode={}&'
-                       'dbname={}&'
-                       'filename={}').format(dbcode, dbname, filename)
-
-                return_data.append({'url': url})
-            except:
-                continue
+            dict = {}
+            dict['url'] = href.strip()
+            dict['s_hangYe'] = hangye
+            dict['s_leiXing'] = leixing
+            return_data.append(dict)
 
         return return_data
 
@@ -146,14 +99,14 @@ class Server(object):
     def hasNextUrl(self, resp):
         selector = Selector(text=resp)
         try:
-            href = selector.xpath("//div[@class='TitleLeftCell']/a[text()='下一页']/@href").extract_first()
-            if not href:
-                return None
-            else:
-                next_page = 'https://kns.cnki.net/kns/brief/brief.aspx' + str(href)
-                return next_page
+            next_page = selector.xpath("//span[@class='pagebox_next']/a[contains(text(), '下一页')]/@href").extract_first().strip()
+            if 'http' not in next_page:
+                next_page = 'http://www.chinabgao.com' + next_page
+
         except Exception:
-            return None
+            next_page = ''
+
+        return next_page
 
 
     # ---------------------

@@ -3,9 +3,9 @@
 '''
 
 '''
-# import gevent
-# from gevent import monkey
-# monkey.patch_all()
+import gevent
+from gevent import monkey
+monkey.patch_all()
 import sys
 import os
 import time
@@ -160,20 +160,20 @@ class SpiderMain(BastSpiderMain):
             if task_list:
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-                # # 创建gevent协程
-                # g_list = []
-                # for task in task_list:
-                #     s = gevent.spawn(self.run, task)
-                #     g_list.append(s)
-                # gevent.joinall(g_list)
+                # 创建gevent协程
+                g_list = []
+                for task in task_list:
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
 
-                # 创建线程池
-                threadpool = ThreadPool()
-                for url in task_list:
-                    threadpool.apply_async(func=self.run, args=(url,))
-
-                threadpool.close()
-                threadpool.join()
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for url in task_list:
+                #     threadpool.apply_async(func=self.run, args=(url,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
                 time.sleep(1)
 
@@ -187,7 +187,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=JZCK", "title": "计算机测量与控制", "s_xueKeLeiBie": "信息科技_自动化技术", "s_zhongWenHeXinQiKanMuLu": ""}')
+        # main.run(task='{"sha": "a831deaaa98f4f08e53d65d3d1b680b1f58b9a05", "url": "http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=au&skey=%E7%8E%8B%E5%B1%B1%E6%B5%B7&code=37025552", "name": "王山海", "ss": "人物", "shijian": {"Y": "2018"}}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

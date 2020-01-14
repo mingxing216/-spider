@@ -3,6 +3,9 @@
 '''
 
 '''
+import gevent
+from gevent import monkey
+monkey.patch_all()
 import sys
 import os
 import time
@@ -139,6 +142,7 @@ class SpiderMain(BastSpiderMain):
 
             # # 记录已抓取任务
             # self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
+            return sha
 
         else:
             LOGGING.warning('{}: 已被抓取过'.format(sha))
@@ -169,27 +173,27 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=1, lockname=config.REDIS_INSTITUTE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=10, lockname=config.REDIS_INSTITUTE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-                # # 创建gevent协程
-                # g_list = []
-                # for task in task_list:
-                #     s = gevent.spawn(self.run, task)
-                #     g_list.append(s)
-                # gevent.joinall(g_list)
+                # 创建gevent协程
+                g_list = []
+                for task in task_list:
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
 
-                # 创建线程池
-                threadpool = ThreadPool()
-                for url in task_list:
-                    threadpool.apply_async(func=self.run, args=(url,))
-
-                threadpool.close()
-                threadpool.join()
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for url in task_list:
+                #     threadpool.apply_async(func=self.run, args=(url,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
                 time.sleep(1)
 
@@ -202,8 +206,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{"url": "http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=in&skey=%E5%AE%89%E5%BE%BD%E7%90%86%E5%B7%A5%E5%A4%A7%E5%AD%A6&code=0167619", "sha": "e4cdf4a7b733e8bca76b56c0048a0deea7c0dbb3"}')
+        main.start()
+        # main.run(task='{"sha": "dd06db73593fec370c69225f8d4454147bdf9665", "url": "http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=in&skey=%E6%B2%B3%E5%8D%97%E7%9C%81%E6%B0%94%E8%B1%A1%E5%B1%80&code=0005380", "ss": "机构"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
