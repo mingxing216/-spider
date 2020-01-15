@@ -113,129 +113,121 @@ class Server(object):
     # data script
     # ---------------------
 
-    # ====== 专利实体
+    # ====== 报告实体
     def getTitle(self, resp):
         selector = Selector(text=resp)
         try:
-            title_data = selector.xpath("//title/text()").extract_first()
-            title = re.sub(r"--中国专利全文数据库", "", title_data).strip()
-        except Exception:
-            title = ""
+            img = selector.xpath("//div[@class='arctitle']/h1/text()").extract_first().strip()
 
-        return title
+        except Exception:
+            img = ""
+
+        return img
+
+    def getLaiYuanWangZhan(self, resp):
+        selector = Selector(text=resp)
+        try:
+            wangzhan = selector.xpath("//span[@class='where'][1]/a[contains(text(), '报告')]/@href").extract_first().strip()
+        except Exception:
+            wangzhan = ""
+
+        return wangzhan
+
+    def getZuTu(self, resp):
+        selector = Selector(text=resp)
+        try:
+            wangzhan = selector.xpath("//div[@class='repfm']/a/img/@src").extract_first().strip()
+        except Exception:
+            wangzhan = ""
+
+        return wangzhan
+
+    # 关联报告
+    def guanLianBaoGao(self, url, sha):
+        e = {}
+        try:
+            e['url'] = url
+            e['sha'] = sha
+            e['ss'] = '报告'
+        except Exception:
+            return e
+
+        return e
 
     def getField(self, resp, para):
         selector = Selector(text=resp)
         try:
-            field_data = selector.xpath("//td[contains(text(), '{}')]/following-sibling::td[1]/text()".format(para)).extract_first()
-            field_value =  re.sub(r"(;|；)", "|", re.sub(r"(\r|\n|\t)", "", field_data)).strip()
+            field_value = selector.xpath("//li[span[contains(text(), '{}')]]/text()".format(para)).extract_first().strip()
         except Exception:
             field_value = ""
 
         return field_value
 
-    def getHtml(self, html, para):
+    def getGuanJianZi(self, resp):
+        selector = Selector(text=resp)
+        try:
+            field_value = selector.xpath("//li[span[contains(text(), '关 键 字')]]//text()").extract()[1].strip()
+        except Exception:
+            field_value = ""
+
+        return field_value
+
+    def getDaoDu(self, html):
         tree = etree.HTML(html)
         try:
-            tag = tree.xpath("//td[contains(text(), '{}')]/following-sibling::td[1]".format(para))[0]
-            html_value = re.sub(r"[\n\r\t]", "", tostring(tag).decode('utf-8')).strip()
+            tag = tree.xpath("//div[contains(@class, 'daodu')]/div")[0]
+            html_value = re.sub(r"[\n\r\t]", "", tostring(tag, encoding='utf-8').decode('utf-8')).strip()
 
         except Exception:
             html_value = ""
 
         return html_value
 
-    def getXiaZai(self, resp):
-        selector = Selector(text=resp)
+    def getMuLu(self, html):
+        tree = etree.HTML(html)
         try:
-            href = selector.xpath("//a[contains(text(), '下载')]/@href").extract_first()
-            link = 'https://dbpub.cnki.net/grid2008/dbpub/' + href
+            tag = tree.xpath("//div[contains(@class, 'repcon-rep')]/div[contains(@class, 'bgcon')]")[0]
+            html_value = re.sub(r"[\n\r\t]", "", tostring(tag, encoding='utf-8').decode('utf-8')).strip()
+
         except Exception:
-            link = ""
+            html_value = ""
 
-        return link
+        return html_value
 
-    def getZhuanLiGuoBie(self, gongKaiHao):
-        if gongKaiHao:
-            # guobie = re.match(r".{2}", gongKaiHao).group()
-            guobie = gongKaiHao[:2]
-            return guobie
-
-        else:
-            return ""
-
-    def getGongGao(self, resp):
+    def getJiaGe(self, resp):
         selector = Selector(text=resp)
         try:
-            href = selector.xpath("//a[contains(text(), '查询法律状态')]/@href").extract_first().replace('http', 'https')
+            href = selector.xpath("//li[span[contains(text(), '价格')]]/text()").extract_first()
         except Exception:
             href = ""
 
         return href
 
-    # ====== 公告实体
-    # 公告标题
-    def getTitles(self, resp):
+    # ====== 价格实体
+    # 商品价格
+    def getShangPinJiaGe(self, resp):
         selector = Selector(text=resp)
+        price_dict = {}
         try:
-            nodes = selector.xpath("//table/thead/tr/th/text()").extract()
+            nodes = selector.xpath("//li[span[contains(text(), '价格')]]/span[@class='rjiage']/text()").extract_first().strip()
+            prices = re.sub(r"\s", ",", re.sub(r"[:：]\s", "：", nodes))
+            price_list = prices.split(',')
+            for price in price_list:
+                name = price.split('：')[0]
+                value = price.split('：')[1]
+                price_dict[name] = value
+
+                # if '纸介版' in price:
+                #     price_dict['纸介版'] = price.replace('纸介版：', '')
+                # elif '电子版' in price:
+                #     price_dict['电子版'] = price.replace('电子版：', '')
+                # elif '两个版本' in price:
+                #     price_dict['两个版本'] = price.replace('两个版本：', '')
+
         except Exception:
-            nodes = ""
+            return price_dict
 
-        return nodes
-
-    # 公告标签
-    def getGongGaoNodes(self, resp):
-        selector = Selector(text=resp)
-        try:
-            nodes = selector.xpath("//table/tr[position()<last()]")
-        except Exception:
-            nodes = ""
-
-        return nodes
-
-    # 法律状态公告日
-    def getGongGaoInfo(self, node, i):
-        try:
-            gonggao = node.xpath("./td[{}]/text()".format(i+1)).extract_first()
-            gonggao_value = re.sub(r"[\n\r\t]", " ", gonggao).strip()
-        except Exception:
-            gonggao_value = ""
-
-        return gonggao_value
-
-    # 申请号
-    def getShenQingHao(self, resp):
-        selector = Selector(text=resp)
-        try:
-            shenqinghao = re.sub(r"申 请 号[：:]", "", selector.xpath("//h3/text()").extract_first().strip())
-        except Exception:
-            shenqinghao = ""
-
-        return shenqinghao
-
-    # 关联专利
-    def guanLianZhuanLi(self, url, sha):
-        e = {}
-        try:
-            e['url'] = url
-            e['sha'] = sha
-            e['ss'] = '专利'
-        except Exception:
-            return e
-
-        return e
-
-
-    def getNextPage(self, resp):
-        selector = Selector(text=resp)
-        next_href = selector.xpath("//div[@id='id_grid_turnpage']/a[contains(text(), '下页')]/@href").extract_first()
-        if next_href:
-            next_page_url = 'https://dbpub.cnki.net/grid2008/dbpub/brief.aspx' + next_href
-        else:
-            next_page_url = ''
-
-        return next_page_url
+        return price_dict
 
 
 

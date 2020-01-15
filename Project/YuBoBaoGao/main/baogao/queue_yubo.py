@@ -27,7 +27,7 @@ INSERT_DATA_NUMBER = False # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.ShiYongDownloader(logging=LOGGING,
+        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -49,14 +49,14 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_XX_PATENT)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_YUBO_REPORT)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PATENT, ws='中国知网', es='实用新型', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_REPORT, ws='宇博报告大厅', es='行业研究报告', count=2000)
                 # print(new_task_list)
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_XX_PATENT, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_YUBO_REPORT, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 

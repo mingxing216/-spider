@@ -96,7 +96,6 @@ class SpiderMain(BastSpiderMain):
 
         # 获取行业名称及种子分类列表
         industry_list = self.server.getIndustryList(resp=index_text)
-        print(industry_list)
         if industry_list:
             for industry in industry_list:
                 industry_url = industry['url']
@@ -200,7 +199,7 @@ class SpiderMain(BastSpiderMain):
             category_list = self.dao.getTask(key=config.REDIS_YUBO_CATEGORY,
                                              count=10,
                                              lockname=config.REDIS_YUBO_CATEGORY_LOCK)
-            print(category_list)
+            # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 
             if category_list:
