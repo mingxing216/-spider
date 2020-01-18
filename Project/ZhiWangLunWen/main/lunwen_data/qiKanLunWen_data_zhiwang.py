@@ -244,7 +244,7 @@ class SpiderMain(BastSpiderMain):
             # 生成clazz ——层级关系
             save_data['clazz'] = '论文_期刊论文'
             # 生成biz ——项目
-            save_data['biz'] = '文献大数据'
+            save_data['biz'] = '文献大数据_论文'
             # 生成ref
             save_data['ref'] = ''
 

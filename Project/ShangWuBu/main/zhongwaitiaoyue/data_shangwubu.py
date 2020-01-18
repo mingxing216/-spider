@@ -19,14 +19,14 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.YuBoBaoGao.middleware import download_middleware
-from Project.YuBoBaoGao.service import service
-from Project.YuBoBaoGao.dao import dao
-from Project.YuBoBaoGao import config
+from Project.ShangWuBu.middleware import download_middleware
+from Project.ShangWuBu.service import service
+from Project.ShangWuBu.dao import dao
+from Project.ShangWuBu import config
 
-log_file_dir = 'YuBo'  # LOG日志存放路径
-LOGNAME = '<宇博_报告_data>'  # LOG名
-NAME = '宇博_报告_data'  # 爬虫名
+log_file_dir = 'ShangWuBu'  # LOG日志存放路径
+LOGNAME = '<商务部_中外条约_data>'  # LOG名
+NAME = '商务部_中外条约_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -104,7 +104,7 @@ class SpiderMain(BastSpiderMain):
         # 生成clazz ——层级关系
         price_data['clazz'] = '价格'
         # 生成biz ——项目
-        price_data['biz'] = '文献大数据_报告'
+        price_data['biz'] = '文献大数据'
         # 生成ref
         price_data['ref'] = ''
 
@@ -117,22 +117,23 @@ class SpiderMain(BastSpiderMain):
         else:
             LOGGING.error('价格数据存储失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_REPORT, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
 
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        hangYe = task_data['s_hangYe']
-        leiXing = task_data['s_leiXing']
+        faBuNianFen = task_data['nianfen']
+        es = task_data['es']
+        clazz = task_data['clazz']
 
         # 获取页面响应
         resp = self.__getResp(url=url, mode='GET')
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_REPORT, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
             return
 
         resp.encoding = resp.apparent_encoding
@@ -162,7 +163,7 @@ class SpiderMain(BastSpiderMain):
             if not media_resp:
                 LOGGING.error('图片响应失败, url: {}'.format(img_url))
                 # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_REPORT, sha=sha)
+                self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
                 return
 
             img_content = media_resp.content
@@ -173,7 +174,7 @@ class SpiderMain(BastSpiderMain):
             else:
                 LOGGING.error('图片存储失败, url: {}'.format(url))
                 # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_REPORT, sha=sha)
+                self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
                 return
 
         # 获取编号
@@ -216,15 +217,15 @@ class SpiderMain(BastSpiderMain):
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
-        save_data['ss'] = '报告'
+        save_data['ss'] = '法律'
         # 生成es ——栏目名称
-        save_data['es'] = '行业研究报告'
+        save_data['es'] = es
         # 生成ws ——目标网站
-        save_data['ws'] = '宇博报告大厅'
+        save_data['ws'] = '中华人民共和国商务部'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '报告_调研报告'
+        save_data['clazz'] = clazz
         # 生成biz ——项目
-        save_data['biz'] = '文献大数据_报告'
+        save_data['biz'] = '文献大数据_法律'
         # 生成ref
         save_data['ref'] = ''
 
@@ -247,15 +248,15 @@ class SpiderMain(BastSpiderMain):
         success = self.dao.saveDataToHbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_REPORT, sha=sha)
+            self.dao.deleteTask(table=config.MYSQL_LAW, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_REPORT, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_YUBO_REPORT, count=20, lockname=config.REDIS_YUBO_REPORT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_TIAOYUE_LAW, count=20, lockname=config.REDIS_TIAOYUE_LAW_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

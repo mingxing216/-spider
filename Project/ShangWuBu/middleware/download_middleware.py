@@ -45,7 +45,7 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
                 'Referer': referer,
                 'Connection': 'close',
-                # 'Host': 'http://www.chinabgao.com/',
+                'Host': 'policy.mofcom.gov.cn',
                 'User-Agent': user_agent_u.get_ua()
             }
             # 设置post参数

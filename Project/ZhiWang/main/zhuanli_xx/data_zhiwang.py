@@ -139,7 +139,7 @@ class SpiderMain(BastSpiderMain):
                 # 生成clazz ——层级关系
                 announce_data['clazz'] = '公告_专利'
                 # 生成biz ——项目
-                announce_data['biz'] = '文献大数据'
+                announce_data['biz'] = '文献大数据_专利'
                 # 生成ref
                 announce_data['ref'] = ''
 
@@ -248,7 +248,7 @@ class SpiderMain(BastSpiderMain):
         # 生成clazz ——层级关系
         save_data['clazz'] = '专利'
         # 生成biz ——项目
-        save_data['biz'] = '文献大数据'
+        save_data['biz'] = '文献大数据_专利'
         # 生成ref
         save_data['ref'] = ''
 
