@@ -76,49 +76,6 @@ class SpiderMain(BastSpiderMain):
         else:
             return None
 
-    # 获取价格实体字段
-    def price(self, resp, title, url, sha):
-        # 公告数据存储字典
-        price_data = {}
-
-        # 获取标题
-        price_data['title'] = title
-        # 获取商品价格
-        price_data['shangPinJiaGe'] = self.server.getShangPinJiaGe(resp)
-        # 关联报告
-        price_data['guanLianBaoGao'] = self.server.guanLianBaoGao(url=url, sha=sha)
-
-        # ===================公共字段
-        # url
-        price_data['url'] = url
-        # 生成key
-        price_data['key'] = url
-        # 生成sha
-        price_data['sha'] = sha
-        # 生成ss ——实体
-        price_data['ss'] = '价格'
-        # 生成es ——栏目名称
-        price_data['es'] = '行业研究报告'
-        # 生成ws ——目标网站
-        price_data['ws'] = '宇博报告大厅'
-        # 生成clazz ——层级关系
-        price_data['clazz'] = '价格'
-        # 生成biz ——项目
-        price_data['biz'] = '文献大数据'
-        # 生成ref
-        price_data['ref'] = ''
-
-        # 保存数据到Hbase
-        sto = self.dao.saveDataToHbase(data=price_data)
-
-        if sto:
-            LOGGING.info('价格数据存储成功, sha: {}'.format(sha))
-
-        else:
-            LOGGING.error('价格数据存储失败, url: {}'.format(url))
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
-
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
@@ -131,56 +88,43 @@ class SpiderMain(BastSpiderMain):
         # 获取页面响应
         resp = self.__getResp(url=url, mode='GET')
         if not resp:
-            LOGGING.error('页面响应失败, url: {}'.format(url))
+            LOGGING.error('正文页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
             self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
             return
 
         resp.encoding = resp.apparent_encoding
-        response = resp.text
+        content = resp.text
         # with open ('profile.html', 'w', encoding='utf-8') as f:
-        #     f.write(response)
+        #     f.write(content)
         # return
 
         # 获取标题
-        save_data['title'] = self.server.getTitle(response)
-        # 获取来源网站
-        save_data['laiYuanWangZhan'] = self.server.getLaiYuanWangZhan(response)
-        # 获取组图
-        save_data['zuTu'] = self.server.getZuTu(response)
-        # 保存图片
-        if save_data['zuTu']:
-            img_dict = {}
-            img_dict['bizTitle'] = save_data['title']
-            img_dict['relEsse'] = self.server.guanLianBaoGao(url=url, sha=sha)
-            img_dict['relPics'] = {}
-            img_url = save_data['zuTu']
-            sha1 = hashlib.sha1(img_url.encode('utf-8')).hexdigest()
-            # # 存储图片种子
-            # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
-            # 获取图片响应
-            media_resp = self.__getResp(url=img_url, mode='GET')
-            if not media_resp:
-                LOGGING.error('图片响应失败, url: {}'.format(img_url))
+        save_data['title'] = self.server.getTitle(content)
+        # 获取正文
+        save_data['zhengWen'] = self.server.getContent(content)
+        # 获取基本信息url
+        info_url = self.server.getInfoUrl(content)
+
+        info_text = ''
+        if info_url:
+            # 获取页面响应
+            info_resp = self.__getResp(url=info_url, mode='GET')
+            if not info_resp:
+                LOGGING.error('基本信息页面响应失败, url: {}'.format(info_url))
                 # 逻辑删除任务
                 self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
                 return
 
-            img_content = media_resp.content
-            # 存储图片
-            sto = self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
-            if sto:
-                LOGGING.info('图片存储成功, sha: {}'.format(sha1))
-            else:
-                LOGGING.error('图片存储失败, url: {}'.format(url))
-                # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
-                return
+            info_resp.encoding = info_resp.apparent_encoding
+            info_text = info_resp.text
 
-        # 获取编号
-        save_data['bianHao'] = self.server.getField(response, '报告编号')
+        # 获取发布单位
+        save_data['faBuDanWei'] = self.server.getField(info_text, '发布部门')
+        # 获取效力级别
+        save_data['xiaoLiJiBie'] = self.server.getField(info_text, '效力级别')
         # 获取发布时间
-        faBuShiJian = self.server.getField(response, '最新修订')
+        faBuShiJian = self.server.getField(info_text, '发布日期')
         if faBuShiJian:
             try:
                 if '-' in faBuShiJian:
@@ -191,23 +135,28 @@ class SpiderMain(BastSpiderMain):
                 save_data['faBuShiJian'] = faBuShiJian
         else:
             save_data['faBuShiJian'] = ""
-        # 获取标签
-        save_data['biaoQian'] = self.server.getGuanJianZi(response)
-        # 获取文件格式
-        save_data['wenJianGeShi'] = self.server.getField(response, '报告格式')
-        # 获取导读
-        save_data['daoDu'] = self.server.getDaoDu(response)
-        # 获取目录
-        save_data['muLu'] = self.server.getMuLu(response)
-        # 获取行业
-        save_data['hangYe'] = hangYe
-        # 获取类型
-        save_data['leiXing'] = leiXing
-
-        # 获取价格实体
-        jiaGe = self.server.getJiaGe(response)
-        if jiaGe:
-            self.price(resp=response, title=save_data['title'], url=url, sha=sha)
+        # 获取类别
+        save_data['leiBie'] = self.server.getMoreField(info_text, '法律话题')
+        # 获取发布文号
+        save_data['faBuWenHao'] = self.server.getField(info_text, '发布文号')
+        # 获取时效状态
+        save_data['shiXiaoZhuangTai'] = self.server.getField(info_text, '时效状态')
+        # 获取生效日期
+        shengXiaoRiQi = self.server.getField(info_text, '实施日期')
+        if shengXiaoRiQi:
+            try:
+                if '-' in shengXiaoRiQi:
+                    save_data['shengXiaoRiQi'] = str(datetime.strptime(shengXiaoRiQi, '%Y-%m-%d'))
+                else:
+                    save_data['shengXiaoRiQi'] = str(datetime.strptime(shengXiaoRiQi, '%Y年%m月%d日'))
+            except:
+                save_data['shengXiaoRiQi'] = shengXiaoRiQi
+        else:
+            save_data['shengXiaoRiQi'] = ""
+        # 获取产业领域
+        save_data['chanYeLingYu'] = self.server.getMoreField(info_text, '产业领域')
+        # 获取发布年份
+        save_data['faBuNianFen'] = faBuNianFen
 
         # ======================公共字段
         # url
@@ -256,7 +205,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_FAGUI_LAW, count=20, lockname=config.REDIS_FAGUI_LAW_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_FAGUI_LAW, count=10, lockname=config.REDIS_FAGUI_LAW_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -290,7 +239,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "http://www.chinabgao.com/report/4261297.html", "s_hangYe": "石油_成品油", "s_leiXing": "市场分析"}')
+        # main.run(task='{"url": "http://policy.mofcom.gov.cn/claw/clawContent.shtml?id=63351", "nianfen": {"Y": "2017"}, "es": "法律", "clazz": "法律法规_中国内地法律法规_中央法律法规_宪法法律"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

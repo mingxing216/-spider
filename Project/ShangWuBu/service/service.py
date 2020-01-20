@@ -94,69 +94,21 @@ class Server(object):
     # data script
     # ---------------------
 
-    # ====== 报告实体
+    # ====== 法律实体
     def getTitle(self, resp):
         selector = Selector(text=resp)
         try:
-            img = selector.xpath("//div[@class='arctitle']/h1/text()").extract_first().strip()
+            title = selector.xpath("//h2/text()").extract_first().strip()
 
         except Exception:
-            img = ""
+            title = ""
 
-        return img
+        return title
 
-    def getLaiYuanWangZhan(self, resp):
-        selector = Selector(text=resp)
-        try:
-            wangzhan = selector.xpath("//span[@class='where'][1]/a[contains(text(), '报告')]/@href").extract_first().strip()
-        except Exception:
-            wangzhan = ""
-
-        return wangzhan
-
-    def getZuTu(self, resp):
-        selector = Selector(text=resp)
-        try:
-            wangzhan = selector.xpath("//div[@class='repfm']/a/img/@src").extract_first().strip()
-        except Exception:
-            wangzhan = ""
-
-        return wangzhan
-
-    # 关联报告
-    def guanLianBaoGao(self, url, sha):
-        e = {}
-        try:
-            e['url'] = url
-            e['sha'] = sha
-            e['ss'] = '报告'
-        except Exception:
-            return e
-
-        return e
-
-    def getField(self, resp, para):
-        selector = Selector(text=resp)
-        try:
-            field_value = selector.xpath("//li[span[contains(text(), '{}')]]/text()".format(para)).extract_first().strip()
-        except Exception:
-            field_value = ""
-
-        return field_value
-
-    def getGuanJianZi(self, resp):
-        selector = Selector(text=resp)
-        try:
-            field_value = selector.xpath("//li[span[contains(text(), '关 键 字')]]//text()").extract()[1].strip()
-        except Exception:
-            field_value = ""
-
-        return field_value
-
-    def getDaoDu(self, html):
+    def getContent(self, html):
         tree = etree.HTML(html)
         try:
-            tag = tree.xpath("//div[contains(@class, 'daodu')]/div")[0]
+            tag = tree.xpath("//div[@class='article']")[0]
             html_value = re.sub(r"[\n\r\t]", "", tostring(tag, encoding='utf-8').decode('utf-8')).strip()
 
         except Exception:
@@ -164,51 +116,39 @@ class Server(object):
 
         return html_value
 
-    def getMuLu(self, html):
-        tree = etree.HTML(html)
-        try:
-            tag = tree.xpath("//div[contains(@class, 'repcon-rep')]/div[contains(@class, 'bgcon')]")[0]
-            html_value = re.sub(r"[\n\r\t]", "", tostring(tag, encoding='utf-8').decode('utf-8')).strip()
-
-        except Exception:
-            html_value = ""
-
-        return html_value
-
-    def getJiaGe(self, resp):
+    def getInfoUrl(self, resp):
         selector = Selector(text=resp)
         try:
-            href = selector.xpath("//li[span[contains(text(), '价格')]]/text()").extract_first()
+            href = selector.xpath("//ul[@class='toolbarList']/li/a[contains(text(), '基')]/@href").extract_first().strip()
+            if 'http' not in href:
+                href = 'http://policy.mofcom.gov.cn' + href
+
         except Exception:
             href = ""
 
         return href
 
-    # ====== 价格实体
-    # 商品价格
-    def getShangPinJiaGe(self, resp):
+    def getField(self, resp, para):
         selector = Selector(text=resp)
-        price_dict = {}
         try:
-            nodes = selector.xpath("//li[span[contains(text(), '价格')]]/span[@class='rjiage']/text()").extract_first().strip()
-            prices = re.sub(r"\s", ",", re.sub(r"[:：]\s", "：", nodes))
-            price_list = prices.split(',')
-            for price in price_list:
-                name = price.split('：')[0]
-                value = price.split('：')[1]
-                price_dict[name] = value
+            field_value = selector.xpath("//td[span[contains(text(), '{}')]]/text()".format(para)).extract_first().strip()
+        except Exception:
+            field_value = ""
 
-                # if '纸介版' in price:
-                #     price_dict['纸介版'] = price.replace('纸介版：', '')
-                # elif '电子版' in price:
-                #     price_dict['电子版'] = price.replace('电子版：', '')
-                # elif '两个版本' in price:
-                #     price_dict['两个版本'] = price.replace('两个版本：', '')
+        return field_value
+
+    def getMoreField(self, resp, para):
+        selector = Selector(text=resp)
+        try:
+            field_name = selector.xpath("//td[span[contains(text(), '{}')]]/text()".format(para)).extract_first().strip()
+            field_value = re.sub(r"[\n\r\t]", "", field_name).replace(';', '|').replace('；', '|')
 
         except Exception:
-            return price_dict
+            field_value = ""
 
-        return price_dict
+        return field_value
+
+
 
 
 
