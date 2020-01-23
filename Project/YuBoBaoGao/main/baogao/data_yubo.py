@@ -76,6 +76,31 @@ class SpiderMain(BastSpiderMain):
         else:
             return None
 
+    # 获取图片
+    def img(self, img_dict, sha):
+        # 获取图片响应
+        media_resp = self.__getResp(url=img_dict['url'], mode='GET')
+        if not media_resp:
+            LOGGING.error('图片响应失败, url: {}'.format(img_dict['url']))
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_REPORT, sha=sha)
+            # 存储图片种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='宇博报告大厅', es='行业研究报告')
+            return
+
+        img_content = media_resp.content
+        # 存储图片
+        sto = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
+        if sto:
+            LOGGING.info('图片存储成功, sha: {}'.format(sha))
+        else:
+            LOGGING.error('图片存储失败, url: {}'.format(img_dict['url']))
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_REPORT, sha=sha)
+            # 存储图片种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='宇博报告大厅', es='行业研究报告')
+            return
+
     # 获取价格实体字段
     def price(self, resp, title, url, sha):
         # 公告数据存储字典
@@ -153,28 +178,11 @@ class SpiderMain(BastSpiderMain):
             img_dict['bizTitle'] = save_data['title']
             img_dict['relEsse'] = self.server.guanLianBaoGao(url=url, sha=sha)
             img_dict['relPics'] = {}
-            img_url = save_data['zuTu']
-            sha1 = hashlib.sha1(img_url.encode('utf-8')).hexdigest()
-            # # 存储图片种子
-            # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
-            # 获取图片响应
-            media_resp = self.__getResp(url=img_url, mode='GET')
-            if not media_resp:
-                LOGGING.error('图片响应失败, url: {}'.format(img_url))
-                # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_REPORT, sha=sha)
-                return
+            img_dict['url'] = save_data['zuTu']
+            sha1 = hashlib.sha1(img_dict['url'].encode('utf-8')).hexdigest()
 
-            img_content = media_resp.content
-            # 存储图片
-            sto = self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
-            if sto:
-                LOGGING.info('图片存储成功, sha: {}'.format(sha1))
-            else:
-                LOGGING.error('图片存储失败, url: {}'.format(url))
-                # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_REPORT, sha=sha)
-                return
+            # 获取图片
+            self.img(img_dict=img_dict, sha=sha1)
 
         # 获取编号
         save_data['bianHao'] = self.server.getField(response, '报告编号')

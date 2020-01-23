@@ -3,7 +3,7 @@
 # 公共配置
 # ----------------------------
 
-PROXY_TYPE ='http' # 代理IP协议种类
+PROXY_TYPE = None # 代理IP协议种类
 TIMEOUT = 10 # 请求超时
 COUNTRY = 1 # 代理IP所属国家
 CITY = 0 # 代理IP所属城市
@@ -25,6 +25,10 @@ REDIS_YUBO_REPORT_LOCK = 'yubo_report_lock' # Redis报告分布式锁名
 MYSQL_PRICE = 'job_price' # Mysql价格任务表
 REDIS_YUBO_PRICE = 'yubo_price' # Redis价格任务表
 REDIS_YUBO_PRICE_LOCK = 'yubo_price_lock' # Redis价格分布式锁名
+
+MYSQL_IMG = 'job_img' # Mysql价格任务表
+REDIS_YUBO_IMG = 'yubo_img' # Redis价格任务表
+REDIS_YUBO_IMG_LOCK = 'yubo_img_lock' # Redis价格分布式锁名
 
 
 # ----------------------------
