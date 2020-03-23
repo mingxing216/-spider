@@ -5,7 +5,6 @@
 '''
 import gevent
 from gevent import monkey
-# 猴子补丁一定要先打，不然就会报错
 monkey.patch_all()
 import sys
 import os
@@ -25,8 +24,8 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = 'Jstor_文档_data'  # LOG名
-NAME = 'Jstor_文档_data'  # 爬虫名
+LOGNAME = 'Jstor_期刊_data'  # LOG名
+NAME = 'Jstor_期刊_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -35,12 +34,12 @@ INSERT_DATA_NUMBER = False  # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.DownloaderMiddleware(logging=LOGGING,
+        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.QiKanLunWen_LunWenServer(logging=LOGGING)
+        self.server = service.QiKanLunWen_QiKanServer(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -75,33 +74,50 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('页面出现验证码: {}'.format(url))
             return None
 
+    # 模板
+    def template(self, save_data, select, html):
+        # 获取标题
+        save_data['title'] = self.server.getTitle(select)
+        # 获取摘要
+        save_data['zhaiYao'] = self.server.getZhaiYao(html)
+        # 获取覆盖范围
+        save_data['fuGaiFanWei'] = self.server.getFuGaiFanWei(select)
+        # 获取国际标准刊号
+        save_data['ISSN'] = self.server.getIssn(select)
+        # 获取EISSN
+        save_data['EISSN'] = self.server.getEissn(select)
+        # 获取学科类别
+        save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(select)
+        # 获取出版社
+        save_data['chuBanShe'] = self.server.getChuBanShe(select)
+
+
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
+        # print(task_data)
 
         url = task_data['url']
         sha = task_data['sha']
-        lunwenurl = task_data['lunWenUrl']
-        title = task_data['title']
 
-        # 获取标题
-        save_data['title'] = title
-        # 获取URL
-        save_data['xiaZaiLianJie'] = url
-        # 获取格式
-        save_data['geShi'] = ""
-        # 获取大小
-        save_data['daXiao'] = ""
-        # 获取标签
-        save_data['biaoQian'] = ""
-        # 获取来源网站
-        save_data['laiYuanWangZhan'] = ""
-        # 获取关联论文
-        e = {}
-        e['url'] = lunwenurl
-        e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
-        e['ss'] = '论文'
-        save_data['guanLianLunWen'] = e
+        # 获取页面响应
+        resp = self.__getResp(func=self.download_middleware.getResp,
+                              url=url,
+                              mode='GET')
+        if not resp:
+            LOGGING.error('页面响应获取失败, url: {}'.format(url))
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
+            return
+
+        response = resp.text
+        # print(response)
+
+        # 转为selector选择器
+        selector = self.server.getSelector(response)
+
+        # 获取字段值
+        self.template(save_data=save_data, select=selector, html=response)
 
         # =========================公共字段
         # url
@@ -111,11 +127,11 @@ class SpiderMain(BastSpiderMain):
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
-        save_data['ss'] = '文档'
+        save_data['ss'] = '期刊'
         # 生成ws ——目标网站
         save_data['ws'] = 'JSTOR'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '文档_论文文档'
+        save_data['clazz'] = '期刊'
         # 生成es ——栏目名称
         save_data['es'] = 'Journals'
         # 生成biz ——项目
@@ -134,18 +150,32 @@ class SpiderMain(BastSpiderMain):
         sha = self.handle(task=task, save_data=save_data)
 
         # 保存数据到Hbase
+        if not save_data:
+            LOGGING.info('没有获取数据, 存储失败')
+            return
+        if 'sha' not in save_data:
+            LOGGING.info('数据获取不完整, 存储失败')
+            return
         self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_DOCUMENT, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_MAGAZINE, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=50, lockname=config.REDIS_DOCUMENT_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_MAGAZINE, count=5, lockname=config.REDIS_MAGAZINE_LOCK)
+            # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
+                # 获取cookie
+                self.cookie_dict = self.download_middleware.create_cookie()
+                # cookie创建失败，重新创建
+                if not self.cookie_dict:
+                    continue
+                # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
+
                 # 创建gevent协程
                 g_list = []
                 for task in task_list:
@@ -173,17 +203,22 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://www.jstor.org/stable/pdf/26422068.pdf", "sha": "182e1fad01e075ac25f5587c6396440ad72b63e5", "ss": "文档", "lunWenUrl": "https://www.jstor.org/stable/26422068?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bsd%3D%26amp%3Bfacet_journal%3Dam91cm5hbA%253D%253D%26amp%3Bpage%3D1%26amp%3Bed%3D&seq=1#metadata_info_tab_contents", "title": "THE COLOUR-FORMING COMPONENTS OF PARK LANDSCAPE AND THE FACTORS THAT INFLUENCE THE HUMAN PERCEPTION OF THE LANDSCAPE COLOURING"}')
+        # main.run(task='{"url": "https://www.jstor.org/journal/oceanography", "sha": "70de09416305f41f2ae5c0195edc9602856a9e4d", "ss": "期刊"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
-    LOGGING.info('======The Start!======')
     begin_time = time.time()
 
     process_start()
 
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
+    #
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

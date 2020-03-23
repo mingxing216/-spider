@@ -27,7 +27,7 @@ class Dao(storage.Dao):
                                   mysqlpool_number=mysqlpool_number,
                                   redispool_number=redispool_number)
 
-    # 种子字典存入mysql数据库
+    # 种子字典存入数据库
     def saveProjectUrlToMysql(self, table, memo):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
@@ -46,14 +46,14 @@ class Dao(storage.Dao):
             }
             try:
                 self.mysql_client.insert_one(table=table, data=data)
-                self.logging.info('已存储种子: {}'.format(sha))
+                self.logging.info('已存储种子: {}'.format(url))
             except Exception as e:
                 self.logging.warning('数据存储警告: {}'.format(e))
 
         else:
             self.logging.warning('种子已存在: {}'.format(sha))
 
-    # 保存流媒体到hbase数据库
+    # 保存流媒体到hbase
     def saveMediaToHbase(self, media_url, content, item, type):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
         # # 二进制图片文件转成base64文件
@@ -102,8 +102,8 @@ class Dao(storage.Dao):
         try:
             resp = requests.post(url=url, headers=headers, data=data).content.decode('utf-8')
             end_time = int(time.time() - start_time)
-            self.logging.info('title: Save media to Hbase | status: OK | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
+            self.logging.info('title: Save media to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
         except Exception as e:
             resp = e
             end_time = int(time.time() - start_time)
-            self.logging.info('title: Save media to Hbase | status: NO | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
+            self.logging.info('title: Save media to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))

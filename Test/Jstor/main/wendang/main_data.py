@@ -3,10 +3,6 @@
 '''
 
 '''
-import gevent
-from gevent import monkey
-# 猴子补丁一定要先打，不然就会报错
-monkey.patch_all()
 import sys
 import os
 import time
@@ -16,6 +12,10 @@ import hashlib
 import datetime
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
+import gevent
+from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
+monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
@@ -35,7 +35,7 @@ INSERT_DATA_NUMBER = False  # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.DownloaderMiddleware(logging=LOGGING,
+        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -179,11 +179,16 @@ def process_start():
 
 
 if __name__ == '__main__':
-    LOGGING.info('======The Start!======')
     begin_time = time.time()
 
     process_start()
 
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
+    #
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

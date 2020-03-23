@@ -3,12 +3,10 @@
 '''
 
 '''
-import asyncio
-import aiohttp
-# import gevent
-# from gevent import monkey
-# # 猴子补丁一定要先打，不然就会报错
-# monkey.patch_all()
+import gevent
+from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
+monkey.patch_all()
 import sys
 import os
 import time
@@ -39,7 +37,7 @@ INSERT_DATA_NUMBER = False  # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.DownloaderMiddleware(logging=LOGGING,
+        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -59,28 +57,33 @@ class SpiderMain(BastSpiderMain):
         super().__init__()
         self.cookie_dict = ''
         self.index_url = 'https://www.jstor.org/'
-        self.session = None
+        self.s = None
 
-    async def __getResp(self, url, method, session=None, data=None, cookies=None, referer=''):
+    def __getResp(self, func, url, mode, s=None, data=None, cookies=None, referer=None):
+        # while 1:
         # 发现验证码，最多访问页面10次
         for i in range(10):
-            resp = await self.download_middleware.getResp(url=url, method=method, session=session, data=data, cookies=cookies, referer=referer)
-            if resp:
-                if '请输入验证码' in resp.get('text'):
-                    LOGGING.error('出现验证码')
+            resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies, referer=referer)
+            if resp['code'] == 0:
+                response = resp['data']
+                if '请输入验证码' in response.text:
+                    LOGGING.info('出现验证码')
                     continue
 
-            return resp
+                else:
+                    return response
 
+            if resp['code'] == 1:
+                return None
         else:
             LOGGING.error('页面出现验证码: {}'.format(url))
-            return
+            return None
 
-    async def imgDownload(self, img_task):
+    def imgDownload(self, img_task):
         # 获取图片响应
-        media_resp = await self.__getResp(session=self.session,
-                                          url=img_task['url'],
-                                          method='GET')
+        media_resp = self.__getResp(func=self.download_middleware.getResp,
+                                    url=img_task['url'],
+                                    mode='GET')
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_task['url']))
             # 存储图片种子
@@ -90,12 +93,12 @@ class SpiderMain(BastSpiderMain):
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=img_task['sha'])
 
-        img_content = media_resp.get('text')
+        img_content = media_resp.text
         # 存储图片
         self.dao.saveMediaToHbase(media_url=img_task['url'], content=img_content, item=img_task['img_dict'], type='image')
 
     # 模板1
-    async def templateOne(self, save_data, script, url, sha):
+    def templateOne(self, save_data, script, url, sha):
         # 获取标题
         save_data['title'] = self.server.getField(script, 'displayTitle')
         # 获取作者
@@ -172,20 +175,12 @@ class SpiderMain(BastSpiderMain):
                 dict['img_dict']['relPics'] = self.server.guanLianPics(url)
                 img_tasks.append(dict)
 
-            # 创建aiohttp协程
+            # 创建gevent协程
             img_list = []
             for img_task in img_tasks:
-                s = asyncio.ensure_future(self.imgDownload(img_task))
+                s = gevent.spawn(self.imgDownload, img_task)
                 img_list.append(s)
-
-            await asyncio.gather(*img_list)
-
-            # # 创建gevent协程
-            # img_list = []
-            # for img_task in img_tasks:
-            #     s = gevent.spawn(self.imgDownload, img_task)
-            #     img_list.append(s)
-            # gevent.joinall(img_list)
+            gevent.joinall(img_list)
 
             # # 创建线程池
             # threadpool = ThreadPool()
@@ -218,7 +213,7 @@ class SpiderMain(BastSpiderMain):
             self.dao.saveProjectUrlToMysql(table=config.MYSQL_DOCUMENT, memo=document)
 
     # 模板2
-    async def templateTwo(self, save_data, select, html):
+    def templateTwo(self, save_data, select, html):
         # 获取标题
         save_data['title'] = self.server.getTitle(select)
         # 获取作者
@@ -257,7 +252,7 @@ class SpiderMain(BastSpiderMain):
 
 
 
-    async def handle(self, task, save_data):
+    def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
 
@@ -266,16 +261,17 @@ class SpiderMain(BastSpiderMain):
         xueKeLeiBie = task_data['xueKeLeiBie']
 
         # 获取页面响应
-        resp = await self.__getResp(session=self.session,
-                                    url=url,
-                                    method='GET')
+        resp = self.__getResp(func=self.download_middleware.getResp,
+                              s=self.s,
+                              url=url,
+                              mode='GET')
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
             self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             return
 
-        response = resp.get('text')
+        response = resp.text
         # print(response)
         # 获取script标签内容
         script = self.server.getScript(response)
@@ -286,10 +282,10 @@ class SpiderMain(BastSpiderMain):
 
         # 如果script标签中有内容，执行第一套模板
         if script:
-            await self.templateOne(save_data=save_data, script=script, url=url, sha=sha)
+            self.templateOne(save_data=save_data, script=script, url=url, sha=sha)
         # 如果能从页面直接获取标题，执行第二套模板
         else:
-            await self.templateTwo(save_data=save_data, select=selector, html=response)
+            self.templateTwo(save_data=save_data, select=selector, html=response)
 
         # ===================公共字段
         # 获取学科类别
@@ -316,12 +312,12 @@ class SpiderMain(BastSpiderMain):
         # 返回sha为删除任务做准备
         return sha
 
-    async def run(self, task):
+    def run(self, task):
         # 创建数据存储字典
         save_data = {}
 
         # 获取字段值存入字典并返回sha
-        sha = await self.handle(task=task, save_data=save_data)
+        sha = self.handle(task=task, save_data=save_data)
 
         # 保存数据到Hbase
         if not save_data:
@@ -340,40 +336,47 @@ class SpiderMain(BastSpiderMain):
             # 逻辑删除任务
             self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
 
-    async def start(self):
+    def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=50, lockname=config.REDIS_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=10, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
             # print(task_list)
 
             if task_list:
+                # # 获取cookie
+                # self.cookie_dict = self.download_middleware.create_cookie()
+                # # cookie创建失败，重新创建
+                # if not self.cookie_dict:
+                #     continue
+
                 # 创建会话
-                # conn = aiohttp.TCPConnector()
-                self.session = aiohttp.ClientSession()
-                # 请求首页，保持会话（cookies一致）
-                await self.__getResp(session=self.session,
-                                     url=self.index_url,
-                                     method='GET')
-
-                # 创建一个任务盒子tasks
-                tasks = []
-                for task in task_list:
-                    s = asyncio.ensure_future(self.run(task))
-                    tasks.append(s)
-
-                await asyncio.gather(*tasks)
-
-                await self.session.close()
+                self.s = requests.session()
+                # 获取页面响应
+                resp = self.__getResp(func=self.download_middleware.getResp,
+                                      s=self.s,
+                                      url=self.index_url,
+                                      mode='GET')
+                if not resp:
+                    time.sleep(2)
+                    continue
 
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-                # # 创建gevent协程
-                # g_list = []
+                # 创建gevent协程
+                g_list = []
+                for task in task_list:
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
+
+                # # 创建线程池
+                # threadpool = ThreadPool()
                 # for task in task_list:
-                #     s = gevent.spawn(self.run, task)
-                #     g_list.append(s)
-                # gevent.joinall(g_list)
+                #     threadpool.apply_async(func=self.run, args=(task,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
                 time.sleep(1)
             else:
@@ -382,22 +385,25 @@ class SpiderMain(BastSpiderMain):
                 # LOGGING.info('队列中已无任务，结束程序')
                 # return
 
-async def process_start():
+def process_start():
     main = SpiderMain()
     try:
-        await main.start()
+        main.start()
         # main.run(task='{"url": "https://www.jstor.org/stable/10.1086/660818?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9OA%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D2011%26amp%3Bed%3D2012%26amp%3Bacc%3Ddfr%26amp%3Bdisc_astronomy-discipline_facet%3DYXN0cm9ub215LWRpc2NpcGxpbmU%253D&ab_segments=0%2Fdefault-2%2Fcontrol", "xueKeLeiBie": "Anthropology"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
 if __name__ == '__main__':
-    LOGGING.info('====== The Start ======')
     begin_time = time.time()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(process_start())
-    loop.close()
+    process_start()
 
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
+    #
+    # po.close()
+    # po.join()
     end_time = time.time()
-    LOGGING.info('====== The End! ======')
-    LOGGING.info('====== Time consuming is {}s ======'.format(int(end_time - begin_time)))
+    LOGGING.info('======The End!======')
+    LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))
