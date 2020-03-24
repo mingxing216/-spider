@@ -26,8 +26,8 @@ class DownloaderMiddleware(downloader.Downloader):
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
     async def getResp(self, url, method, session=None, data=None, cookies=None, referer=''):
-        # 设置请求开始时间戳
-        start_time = int(time.time())
+        # 重试次数
+        count = 0
         while True:
             # 下载延时
             await asyncio.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
@@ -51,6 +51,9 @@ class DownloaderMiddleware(downloader.Downloader):
             if self.proxy_type:
                 proxies = self.proxy_obj.getProxy()
 
+            # 设置请求开始时间戳
+            start_time = int(time.time())
+
             # self.logging.info('发送请求: {}'.format(url))
             # 获取响应数据
             try:
@@ -58,20 +61,18 @@ class DownloaderMiddleware(downloader.Downloader):
                 # print(resp)
                 if resp.get('status') != 200:
                     self.logging.warning('响应码: {}'.format(resp.get('status')))
-                    # 获取当前时间戳
-                    now_time = int(time.time())
-                    if now_time - start_time >= 90:
+                    if count > 10:
                         return
                     else:
+                        count += 1
                         continue
 
             except:
                 self.logging.error('请求失败: {} | message: {}'.format(url, str(traceback.format_exc())))
-                # 获取当前时间戳
-                now_time = int(time.time())
-                if now_time - start_time >= 60:
+                if count > 5:
                     return
                 else:
+                    count += 1
                     continue
 
             self.logging.info('请求成功: {} | 耗时: {}s'.format(url, int(time.time()) - start_time))

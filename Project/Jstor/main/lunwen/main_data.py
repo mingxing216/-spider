@@ -62,8 +62,8 @@ class SpiderMain(BastSpiderMain):
         self.session = None
 
     async def __getResp(self, url, method, session=None, data=None, cookies=None, referer=''):
-        # 发现验证码，最多访问页面10次
-        for i in range(10):
+        # 发现验证码，最多访问页面3次
+        for i in range(3):
             resp = await self.download_middleware.getResp(url=url, method=method, session=session, data=data, cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.get('text'):
@@ -396,7 +396,7 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(process_start())
-    # loop.close()
+    loop.close()
 
     end_time = time.time()
     LOGGING.info('====== The End! ======')
