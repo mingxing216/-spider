@@ -30,7 +30,7 @@ class DownloaderMiddleware(downloader.Downloader):
         start_time = int(time.time())
         while True:
             # 下载延时
-            asyncio.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
+            await asyncio.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
 
             # 设置请求头
             headers = {
@@ -68,8 +68,8 @@ class DownloaderMiddleware(downloader.Downloader):
             except:
                 self.logging.error('请求失败: {} | message: {}'.format(url, str(traceback.format_exc())))
                 # 获取当前时间戳
-                now = int(time.time())
-                if now - start_time >= 60:
+                now_time = int(time.time())
+                if now_time - start_time >= 60:
                     return
                 else:
                     continue
