@@ -35,15 +35,15 @@ class DownloaderMiddleware(downloader.Downloader):
             # 设置请求头
             headers = {
                 # 'authority': 'www.jstor.org',
-                'method': 'GET',
-                'scheme': 'https',
+                # 'method': 'GET',
+                # 'scheme': 'https',
                 'cache-control': 'max-age=0',
                 'upgrade-insecure-requests': '1',
                 # 'accept-language': 'zh-CN,zh;q=0.9',
                 # 'accept-encoding': 'gzip, deflate, br',
                 # 'sec-fetch-mode': 'navigate',
                 'referer': referer,
-                'connection': 'close',
+                # 'connection': 'close',
                 'user-agent': user_agent_u.get_ua()
             }
             # 设置proxy
@@ -60,21 +60,22 @@ class DownloaderMiddleware(downloader.Downloader):
                 resp = await self.fetch(session=session, url=url, method=method, headers=headers, proxies=proxies, cookies=cookies, data=data)
                 # print(resp)
                 if resp.get('status') != 200:
-                    self.logging.warning('响应码: {}'.format(resp.get('status')))
+                    self.logging.warning('响应码: {} | 耗时: {}秒'.format(resp.get('status'), int(time.time()) - start_time))
                     if count > 10:
                         return
                     else:
                         count += 1
                         continue
 
-            except:
-                self.logging.error('请求失败: {} | message: {}'.format(url, str(traceback.format_exc())))
+            except Exception as e:
+                self.logging.error('请求失败: {} | 耗时: {}秒'.format(url, int(time.time()) - start_time))
+                self.logging.error(e)
                 if count > 5:
                     return
                 else:
                     count += 1
                     continue
 
-            self.logging.info('请求成功: {} | 耗时: {}s'.format(url, int(time.time()) - start_time))
+            self.logging.info('请求成功: {} | 耗时: {}秒'.format(url, int(time.time()) - start_time))
 
             return resp

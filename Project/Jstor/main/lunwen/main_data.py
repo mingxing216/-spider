@@ -309,7 +309,7 @@ class SpiderMain(BastSpiderMain):
         # 生成es ——栏目名称
         save_data['es'] = 'Journals'
         # 生成biz ——项目
-        save_data['biz'] = '文献大数据'
+        save_data['biz'] = '文献大数据_论文'
         # 生成ref
         save_data['ref'] = ''
 
@@ -343,14 +343,15 @@ class SpiderMain(BastSpiderMain):
     async def start(self):
         while True:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=20, lockname=config.REDIS_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_PAPER, count=10, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
             # print(task_list)
 
             if task_list:
                 # 创建会话
                 # conn = aiohttp.TCPConnector()
-                self.session = aiohttp.ClientSession()
+                jar = aiohttp.CookieJar(unsafe=True)
+                self.session = aiohttp.ClientSession(cookie_jar=jar)
                 # 请求首页，保持会话（cookies一致）
                 await self.__getResp(session=self.session,
                                      url=self.index_url,
@@ -375,9 +376,9 @@ class SpiderMain(BastSpiderMain):
                 #     g_list.append(s)
                 # gevent.joinall(g_list)
 
-                time.sleep(1)
+                await asyncio.sleep(1)
             else:
-                time.sleep(2)
+                await asyncio.sleep(2)
                 continue
                 # LOGGING.info('队列中已无任务，结束程序')
                 # return
@@ -396,6 +397,7 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(process_start())
+    loop.run_until_complete(asyncio.sleep(0.5))
     loop.close()
 
     end_time = time.time()

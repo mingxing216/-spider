@@ -39,35 +39,36 @@ class Downloader(object):
             async with session.get(url=url, headers=headers, data=data, proxy=proxies, timeout=timeout,
                                    cookies=cookies, verify_ssl=False) as resp:
 
-                self.logging.info("request for url: {} | status: {} | method: {} | data: {} | proxy: {}".format(
-                    url, resp.status, method, data, proxies))
-
-                return {
+                resp_data =  {
                         'url': str(resp.url),  # url
                         'status': resp.status,  # 响应状态码
                         'headers': resp.headers,  # 响应头
                         'text': await resp.text(),  # 文本格式响应内容
                         # 'json': await resp.json(),  # json格式响应内容
-                        'read': await resp.read(),  # 文本格式二进制响应内容
+                        # 'read': await resp.read(),  # 文本格式二进制响应内容
                         'content_length': resp.content_length  # 响应长度
                         }
+                self.logging.info("request for url: {} | status: {} | method: {} | data: {} | proxy: {}".format(
+                    url, resp.status, method, data, proxies))
+
+                return resp_data
 
         if method.upper() == 'POST':
             async with session.post(url=url, headers=headers, proxy=proxies, timeout=timeout, data=data,
                                     cookies=cookies, verify_ssl=False) as resp:
-
+                resp_data = {
+                    'url': str(resp.url),  # url
+                    'status': resp.status,  # 响应状态码
+                    'headers': resp.headers,  # 响应头
+                    'text': await resp.text(),  # 文本格式响应内容
+                    # 'json': await resp.json(),  # json格式响应内容
+                    # 'read': await resp.read(),  # 文本格式二进制响应内容
+                    'content_length': resp.content_length  # 响应长度
+                }
                 self.logging.info("request for url: {} | status: {} | method: {} | data: {} | proxy: {}".format(
-                        url, resp.status, method, data, proxies))
+                    url, resp.status, method, data, proxies))
 
-                return {
-                        'url': str(resp.url),  # url
-                        'status': resp.status,  # 响应状态码
-                        'headers': resp.headers,  # 响应头
-                        'text': await resp.text(),  # 文本格式响应内容
-                        # 'json': await resp.json(),  # json格式响应内容
-                        'read': await resp.read(),  # 文本格式响应内容
-                        'content_length': resp.content_length  # 响应长度
-                        }
+                return resp_data
 
 
 
