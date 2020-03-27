@@ -5,6 +5,7 @@
 '''
 import gevent
 from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
 monkey.patch_all()
 import sys
 import os
@@ -24,8 +25,8 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = 'Jstor_图片_data'  # LOG名
-NAME = 'Jstor_图片_data'  # 爬虫名
+LOGNAME = 'Jstor_文档_data'  # LOG名
+NAME = 'Jstor_文档_data'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -34,7 +35,7 @@ INSERT_DATA_NUMBER = False  # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
+        self.download_middleware = download_middleware.DownloaderMiddleware(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -74,51 +75,77 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('页面出现验证码: {}'.format(url))
             return None
 
-    def run(self, task):
+    def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
-        # print(task_data)
+
+        url = task_data['url']
+        sha = task_data['sha']
+        lunwenurl = task_data['lunWenUrl']
+        title = task_data['title']
+
+        # 获取标题
+        save_data['title'] = title
+        # 获取URL
+        save_data['xiaZaiLianJie'] = url
+        # 获取格式
+        save_data['geShi'] = ""
+        # 获取大小
+        save_data['daXiao'] = ""
+        # 获取标签
+        save_data['biaoQian'] = ""
+        # 获取来源网站
+        save_data['laiYuanWangZhan'] = ""
+        # 获取关联论文
+        e = {}
+        e['url'] = lunwenurl
+        e['sha'] = hashlib.sha1(e['url'].encode('utf-8')).hexdigest()
+        e['ss'] = '论文'
+        save_data['guanLianLunWen'] = e
+
+        # =========================公共字段
+        # url
+        save_data['url'] = url
+        # 生成key
+        save_data['key'] = url
+        # 生成sha
+        save_data['sha'] = sha
+        # 生成ss ——实体
+        save_data['ss'] = '文档'
+        # 生成ws ——目标网站
+        save_data['ws'] = 'JSTOR'
+        # 生成clazz ——层级关系
+        save_data['clazz'] = '文档_论文文档'
+        # 生成es ——栏目名称
+        save_data['es'] = 'Journals'
+        # 生成biz ——项目
+        save_data['biz'] = '文献大数据'
+        # 生成ref
+        save_data['ref'] = ''
+
+        # 返回sha为删除任务做准备
+        return sha
+
+    def run(self, task):
         # 创建数据存储字典
         save_data = {}
-        save_data['bizTitle'] = task_data['bizTitle']
-        save_data['relEsse'] = task_data['relEsse']
-        save_data['relPics'] = task_data['relPics']
 
-        img_url = task_data['url']
-        sha = hashlib.sha1(img_url.encode('utf-8')).hexdigest()
+        # 获取字段值存入字典并返回sha
+        sha = self.handle(task=task, save_data=save_data)
 
-        # # 获取cookie
-        # self.cookie_dict = self.download_middleware.create_cookie()
-        # if not self.cookie_dict:
-        #     # 逻辑删除任务
-        #     self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
-        #     return
-        # 访问图片url，获取响应
-        media_resp = self.__getResp(func=self.download_middleware.getResp,
-                                    url=img_url,
-                                    mode='GET')
-        if not media_resp:
-            LOGGING.error('图片响应失败, url: {}'.format(img_url))
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
-            return
-        img_content = media_resp.text
-
-        # 存储图片
-        self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=save_data, type='image')
+        # 保存数据到Hbase
+        self.dao.saveDataToHbase(data=save_data)
 
         # 删除任务
-        self.dao.deleteTask(table=config.MYSQL_IMG, sha=sha)
+        self.dao.deleteTask(table=config.MYSQL_DOCUMENT, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_IMG, count=10, lockname=config.REDIS_IMG_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_DOCUMENT, count=50, lockname=config.REDIS_DOCUMENT_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
-                # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
-
                 # 创建gevent协程
                 g_list = []
                 for task in task_list:
@@ -141,26 +168,22 @@ class SpiderMain(BastSpiderMain):
                 # LOGGING.info('队列中已无任务，结束程序')
                 # return
 
+
 def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task="{\"bizTitle\": \"Back Matter\", \"relEsse\": {\"url\": \"https://www.jstor.org/stable/40693082?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3Fpagemark%3DcGFnZU1hcms9Mg%253D%253D%26amp%3BsearchType%3DfacetSearch%26amp%3Bcty_journal_facet%3Dam91cm5hbA%253D%253D%26amp%3Bsd%3D1912%26amp%3Bed%3D1913%26amp%3Bacc%3Ddfr%26amp%3Bdisc_astronomy-discipline_facet%3DYXN0cm9ub215LWRpc2NpcGxpbmU%253D&ab_segments=0%2Fdefault-2%2Fcontrol\", \"sha\": \"00a3cf208165a551473f065c2e43f8b6f90a42b4\", \"ss\": \"\xe8\xae\xba\xe6\x96\x87\"}, \"url\": \"https://www.jstor.org/stable/get_image/40693082?path=czM6Ly9zZXF1b2lhLWNlZGFyL2NpZC1wcm9kLTEvOTUwNzcxYzEvODQwMC8zYjc4LzkwMjEvMTE0NDM5YjFjYjNlL2k0MDAzMDQzMy80MDY5MzA4Mi9ncmFwaGljL3BhZ2VzL2R0Yy42Ny50aWYuZ2lm\"}")
+        # main.run(task='{"url": "https://www.jstor.org/stable/pdf/26422068.pdf", "sha": "182e1fad01e075ac25f5587c6396440ad72b63e5", "ss": "文档", "lunWenUrl": "https://www.jstor.org/stable/26422068?Search=yes&resultItemClick=true&&searchUri=%2Fdfr%2Fresults%3FsearchType%3DfacetSearch%26amp%3Bsd%3D%26amp%3Bfacet_journal%3Dam91cm5hbA%253D%253D%26amp%3Bpage%3D1%26amp%3Bed%3D&seq=1#metadata_info_tab_contents", "title": "THE COLOUR-FORMING COMPONENTS OF PARK LANDSCAPE AND THE FACTORS THAT INFLUENCE THE HUMAN PERCEPTION OF THE LANDSCAPE COLOURING"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
+    LOGGING.info('======The Start!======')
     begin_time = time.time()
 
     process_start()
 
-    # po = Pool(config.DATA_SCRIPT_PROCESS)
-    # for i in range(config.DATA_SCRIPT_PROCESS):
-    #     po.apply_async(func=process_start)
-
-    # po.close()
-    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

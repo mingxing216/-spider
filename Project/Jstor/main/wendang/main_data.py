@@ -3,10 +3,6 @@
 '''
 
 '''
-import gevent
-from gevent import monkey
-# 猴子补丁一定要先打，不然就会报错
-monkey.patch_all()
 import sys
 import os
 import time
@@ -16,6 +12,10 @@ import hashlib
 import datetime
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
+import gevent
+from gevent import monkey
+# 猴子补丁一定要先打，不然就会报错
+monkey.patch_all()
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
@@ -55,25 +55,21 @@ class SpiderMain(BastSpiderMain):
         super().__init__()
         # self.cookie_dict = ''
 
-    def __getResp(self, func, url, mode, data=None, cookies=None):
-        # while 1:
-        # 最多访问页面10次
-        for i in range(10):
-            resp = func(url=url, mode=mode, data=data, cookies=cookies)
-            if resp['code'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text:
-                    LOGGING.info('出现验证码')
+    def __getResp(self, url, method, session=None, data=None, cookies=None, referer=''):
+        # 发现验证码，请求页面3次
+        for i in range(3):
+            resp = self.download_middleware.getResp(session=session, url=url, method=method, data=data,
+                                                    cookies=cookies, referer=referer)
+            if resp:
+                if '请输入验证码' in resp.text:
+                    LOGGING.error('出现验证码')
                     continue
 
-                else:
-                    return response
+            return resp
 
-            if resp['code'] == 1:
-                return None
         else:
             LOGGING.error('页面出现验证码: {}'.format(url))
-            return None
+            return
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -119,7 +115,7 @@ class SpiderMain(BastSpiderMain):
         # 生成es ——栏目名称
         save_data['es'] = 'Journals'
         # 生成biz ——项目
-        save_data['biz'] = '文献大数据'
+        save_data['biz'] = '文献大数据_论文'
         # 生成ref
         save_data['ref'] = ''
 
@@ -179,11 +175,16 @@ def process_start():
 
 
 if __name__ == '__main__':
-    LOGGING.info('======The Start!======')
     begin_time = time.time()
 
     process_start()
 
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
+    #
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

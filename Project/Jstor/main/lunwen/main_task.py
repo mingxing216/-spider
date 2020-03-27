@@ -8,8 +8,6 @@ import os
 import time
 import traceback
 import datetime
-import asyncio
-import aiohttp
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -52,20 +50,20 @@ class SpiderMain(BastSpiderMain):
         self.cookie_dict = ''
         self.num = 0
 
-    async def __getResp(self, url, method, session=None, data=None, cookies=None, referer=''):
-        # 发现验证码，最多访问页面10次
-        for i in range(10):
-            resp = await self.download_middleware.getResp(url=url, method=method, session=session, data=data, cookies=cookies, referer=referer)
-            if resp:
-                if '请输入验证码' in resp.get('text'):
-                    LOGGING.error('出现验证码')
+    def __getResp(self, func, url, mode, data=None, cookies=None, referer=None):
+        while 1:
+            resp = func(url=url, mode=mode, data=data, cookies=cookies, referer=referer)
+            if resp['code'] == 0:
+                response = resp['data']
+                if '请输入验证码' in response.text:
+                    LOGGING.info('出现验证码')
                     continue
 
-            return resp
+                else:
+                    return response
 
-        else:
-            LOGGING.error('页面出现验证码: {}'.format(url))
-            return
+            if resp['code'] == 1:
+                return None
 
     def get_yearTask(self):
         # 存放带年份的期刊种子
@@ -83,17 +81,18 @@ class SpiderMain(BastSpiderMain):
         # 队列任务
         self.dao.QueueJobTask(key=config.REDIS_YEAR, data=catalog_urls)
 
-    async def run(self, catalog_url):
-        # # 获取cookie
-        # self.cookie_dict = self.download_middleware.create_cookie()
-        # # cookie创建失败，停止程序
-        # if not self.cookie_dict:
-        #     return
+    def run(self, catalog_url):
+        # 获取cookie
+        self.cookie_dict = self.download_middleware.create_cookie()
+        # cookie创建失败，停止程序
+        if not self.cookie_dict:
+            return
 
         # 访问带年份的期刊种子，获取响应
-        index_resp = await self.__getResp(session=self.session,
+        index_resp = self.__getResp(func=self.download_middleware.getResp,
                                     url=catalog_url,
-                                    method='GET',
+                                    mode='GET',
+                                    cookies=self.cookie_dict,
                                     referer=self.index_url)
         if not index_resp:
             LOGGING.error('年份页面响应获取失败, url: {}'.format(catalog_url))
@@ -101,7 +100,7 @@ class SpiderMain(BastSpiderMain):
             self.dao.QueueOneTask(key=config.REDIS_YEAR, data=catalog_url)
             return
 
-        index_text = index_resp.get('text')
+        index_text = index_resp.text
 
         # 遍历所有学科，获取到学科名称及种子
         subject_url_list = self.server.getSubjectUrlList(resp=index_text, index_url=catalog_url)
@@ -115,15 +114,16 @@ class SpiderMain(BastSpiderMain):
             xueke = subject['xueKeLeiBie']
             # first_url = 'https://www.jstor.org/dfr/results?searchType=facetSearch&cty_journal_facet=am91cm5hbA%3D%3D&sd=&ed=&disc_developmentalcellbiology-discipline_facet=ZGV2ZWxvcG1lbnRhbGNlbGxiaW9sb2d5LWRpc2NpcGxpbmU%3D'
 
-            # # 获取cookie
-            # self.cookie_dict = self.download_middleware.create_cookie()
-            # if not self.cookie_dict:
-            #     return
+            # 获取cookie
+            self.cookie_dict = self.download_middleware.create_cookie()
 
+            if not self.cookie_dict:
+                return
             # 请求页面，获取响应
-            first_resp = await self.__getResp(session=self.session,
+            first_resp = self.__getResp(func=self.download_middleware.getResp,
                                         url=first_url,
-                                        method='GET',
+                                        mode='GET',
+                                        cookies=self.cookie_dict,
                                         referer=catalog_url)
             if not first_resp:
                 LOGGING.error('列表首页响应获取失败, url: {}'.format(first_url))
@@ -134,7 +134,7 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('已进入列表第1页')
             # 获取首页详情url及传递学科名称
             if first_resp:
-                first_urls = self.server.getDetailUrl(resp=first_resp.get('text'), xueke=xueke)
+                first_urls = self.server.getDetailUrl(resp=first_resp.text, xueke=xueke)
                 for url in first_urls:
                     # 保存url
                     self.num += 1
@@ -143,7 +143,7 @@ class SpiderMain(BastSpiderMain):
                     # detail_urls.append(url)
 
             # 判断是否有下一页
-            next_page = self.server.hasNextPage(resp=first_resp.get('text'))
+            next_page = self.server.hasNextPage(resp=first_resp.text)
             # 翻页
             num = 2
 
@@ -155,9 +155,10 @@ class SpiderMain(BastSpiderMain):
                     # self.cookie_dict = self.download_middleware.create_cookie()
                     # if not self.cookie_dict:
                     #     return
-                    next_resp = await self.__getResp(session=self.session,
+                    next_resp = self.__getResp(func=self.download_middleware.getResp,
                                                url=next_url,
-                                               method='GET',
+                                               mode='GET',
+                                               cookies=self.cookie_dict,
                                                referer=first_url)
 
                     # 如果响应获取失败，重新访问，并记录这一页种子
@@ -170,7 +171,7 @@ class SpiderMain(BastSpiderMain):
                     num += 1
 
                     # 获得响应成功，提取详情页种子
-                    next_text = next_resp.get('text')
+                    next_text = next_resp.text
                     next_urls = self.server.getDetailUrl(resp=next_text, xueke=xueke)
                     # print(next_urls)
                     for url in next_urls:
@@ -192,50 +193,32 @@ class SpiderMain(BastSpiderMain):
 
             # break
 
-    async def start(self):
+    def start(self):
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_YEAR,
-                                         count=10,
+                                         count=2,
                                          lockname=config.REDIS_YEAR_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
-                # # 创建线程池
-                # threadpool = ThreadPool()
-                # for url in task_list:
-                #     threadpool.apply_async(func=self.run, args=(url,))
-                #
-                # threadpool.close()
-                # threadpool.join()
+                # 创建线程池
+                threadpool = ThreadPool()
+                for url in task_list:
+                    threadpool.apply_async(func=self.run, args=(url,))
 
-                # 创建会话
-                # conn = aiohttp.TCPConnector()
-                self.session = aiohttp.ClientSession()
-                # 请求首页，保持会话（cookies一致）
-                await self.__getResp(session=self.session,
-                                     url='https://www.jstor.org/',
-                                     method='GET')
-
-                # 创建一个任务盒子tasks
-                tasks = []
-                for task in task_list:
-                    s = asyncio.ensure_future(self.run(task))
-                    tasks.append(s)
-
-                await asyncio.gather(*tasks)
-
-                await self.session.close()
+                threadpool.close()
+                threadpool.join()
 
                 time.sleep(1)
             else:
                 LOGGING.info('队列中已无任务，结束程序')
                 return
 
-async def process_start():
+def process_start():
     main = SpiderMain()
     try:
-        await main.start()
+        main.start()
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -247,16 +230,11 @@ if __name__ == '__main__':
         main.get_yearTask()
     except:
         LOGGING.error(str(traceback.format_exc()))
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(process_start())
-    loop.close()
-
-    # po = Pool(4)
-    # for i in range(4):
-    #     po.apply_async(func=process_start)
-    # po.close()
-    # po.join()
+    po = Pool(4)
+    for i in range(4):
+        po.apply_async(func=process_start)
+    po.close()
+    po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))

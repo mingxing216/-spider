@@ -12,15 +12,15 @@ import requests
 import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from Downloader import downloader_mod
+from Downloader import downloader
 from Utils import user_agent_u
 from Utils import proxy
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
-class Downloader(downloader_mod.BaseDownloaderMiddleware):
+class DownloaderMiddleware(downloader.Downloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
-        super(Downloader, self).__init__(logging=logging, timeout=timeout)
+        super(DownloaderMiddleware, self).__init__(logging=logging, timeout=timeout)
         self.proxy_type = proxy_type
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
@@ -33,16 +33,12 @@ class Downloader(downloader_mod.BaseDownloaderMiddleware):
             # 每次请求的等待时间
             time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
 
-            # 设置参数
-            param = {'url': url}
-            # 设置请求方式：GET或POST
-            param['mode'] = mode
             # 设置请求头
             if 'token' in url:
                 host = 'viewer.afnor.org'
             else:
                 host = 'www.boutique.afnor.org'
-            param['headers'] = {
+            headers = {
                 'Cache-Control': 'max-age=0',
                 'Upgrade-Insecure-Requests': '1',
                 'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -54,17 +50,15 @@ class Downloader(downloader_mod.BaseDownloaderMiddleware):
                 'Host': host,
                 'User-Agent': user_agent_u.get_ua()
             }
-            # 设置post参数
-            param['data'] = data
-            # 设置cookies
-            param['cookies'] = cookies
             # 设置proxy
-            param['proxies'] = self.proxy_obj.getProxy()
+            proxies = None
+            if self.proxy_type:
+                proxies = self.proxy_obj.getProxy()
 
-            down_data = self._startDownload(param=param, s=s)
+            down_data = self.fetch(session=s, url=url, method=mode, data=data, headers=headers, proxies=proxies, cookies=cookies)
 
             if down_data['code'] == 0:
-                return {'code': 0, 'data': down_data['data'], 'proxies': param['proxies']}
+                return {'code': 0, 'data': down_data['data']}
 
             if down_data['code'] == 1:
                 status_code = str(down_data['status'])

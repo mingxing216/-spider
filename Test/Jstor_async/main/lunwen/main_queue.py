@@ -17,8 +17,8 @@ from Project.Jstor.dao import dao
 from Project.Jstor import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
-LOGNAME = 'Jstor_文档_queue'  # LOG名
-NAME = 'Jstor_文档_queue'  # 爬虫名
+LOGNAME = 'Jstor_期刊论文_queue'  # LOG名
+NAME = 'Jstor_期刊论文_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -27,7 +27,7 @@ INSERT_DATA_NUMBER = False # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
+        self.download_middleware = download_middleware.DownloaderMiddleware(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
@@ -49,17 +49,17 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_DOCUMENT)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_PAPER)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
 
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_DOCUMENT, ws='jstor', es='qikan', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PAPER, ws='jstor', es='qikan', count=2000)
                 # print(new_task_list)
                 LOGGING.info('已从Mysql获取到{}个任务'.format(len(new_task_list)))
 
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_DOCUMENT, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_PAPER, data=new_task_list)
                 LOGGING.info('已成功向redis队列{}个任务'.format(len(new_task_list)))
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))

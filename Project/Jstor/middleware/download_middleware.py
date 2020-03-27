@@ -8,9 +8,9 @@ import os
 import time
 import requests
 import random
-import asyncio
-import aiohttp
-import traceback
+from requests.exceptions import ConnectTimeout
+from requests.exceptions import ConnectionError
+from requests.exceptions import ReadTimeout
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
@@ -25,12 +25,92 @@ class DownloaderMiddleware(downloader.Downloader):
         self.proxy_type = proxy_type
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
-    async def getResp(self, url, method, session=None, data=None, cookies=None, referer=''):
+    def get_headers(self):
+        headers_list = [
+            {
+                'Upgrade-Insecure-Requests': '1',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Sec-Fetch-Mode': 'navigate',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Scheme': 'https',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Scheme': 'https',
+                'Cache-Control': 'max-age=0',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Scheme': 'https',
+                'Upgrade-Insecure-Requests': '1',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Scheme': 'https',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Cache-Control': 'max-age=0',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Upgrade-Insecure-Requests': '1',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Upgrade-Insecure-Requests': '1',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Sec-Fetch-Mode': 'navigate',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            },
+            {
+                'Authority': 'www.jstor.org',
+                'Cache-Control': 'max-age=0',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Sec-Fetch-Mode': 'navigate',
+                'Connection': 'close',
+                'User-Agent': user_agent_u.get_ua()
+            }
+        ]
+
+        headers = random.choice(headers_list)
+        return headers
+
+    def getResp(self, url, method, session=None, data=None, cookies=None, referer=None):
         # 重试次数
         count = 0
-        while True:
+        while 1:
             # 下载延时
-            await asyncio.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
+            time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
 
             # 设置请求头
             headers = {
@@ -43,7 +123,7 @@ class DownloaderMiddleware(downloader.Downloader):
                 # 'accept-encoding': 'gzip, deflate, br',
                 # 'sec-fetch-mode': 'navigate',
                 'referer': referer,
-                # 'connection': 'close',
+                'connection': 'close',
                 'user-agent': user_agent_u.get_ua()
             }
             # 设置proxy
@@ -51,31 +131,48 @@ class DownloaderMiddleware(downloader.Downloader):
             if self.proxy_type:
                 proxies = self.proxy_obj.getProxy()
 
-            # 设置请求开始时间戳
-            start_time = int(time.time())
+            # 设置请求开始时间
+            start_time = time.time()
 
-            # self.logging.info('发送请求: {}'.format(url))
-            # 获取响应数据
-            try:
-                resp = await self.fetch(session=session, url=url, method=method, headers=headers, proxies=proxies, cookies=cookies, data=data)
-                # print(resp)
-                if resp.get('status') != 200:
-                    self.logging.warning('响应码: {} | 耗时: {}秒'.format(resp.get('status'), int(time.time()) - start_time))
-                    if count > 10:
-                        return
-                    else:
-                        count += 1
-                        continue
+            # 获取响应
+            down_data = self.fetch(session=session, url=url, method=method, data=data, headers=headers, proxies=proxies, cookies=cookies)
 
-            except Exception as e:
-                self.logging.error('请求失败: {} | 耗时: {}秒'.format(url, int(time.time()) - start_time))
-                self.logging.error(e)
+            self.logging.info(
+                "request for url: {} | code: {} | status: {} | method: {} | data: {} | proxy: {}".format(
+                    url, down_data['code'], down_data['status'], method,  data, proxies
+                ))
+
+            if down_data['code'] == 0:
+                self.logging.info('请求成功: {} | 用时: {}'.format(url, '%.2f' %(time.time() - start_time)))
+                return down_data['data']
+
+            if down_data['code'] == 1:
+                self.logging.warning('请求内容错误: {} | 响应码: {} | 用时: {}'.format(url, down_data['status'], '%.2f' %(time.time() - start_time)))
                 if count > 5:
                     return
                 else:
                     count += 1
                     continue
 
-            self.logging.info('请求成功: {} | 耗时: {}秒'.format(url, int(time.time()) - start_time))
+            if down_data['code'] == 2:
+                self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
+                if count > 3:
+                    return
+                else:
+                    count += 1
+                    continue
 
-            return resp
+    # 创建COOKIE
+    def create_cookie(self):
+        url = 'https://www.jstor.org/'
+        try:
+            resp = self.getResp(url=url, method='GET')
+            if resp:
+                # print(resp.cookies)
+                self.logging.info('cookie创建成功')
+                return requests.utils.dict_from_cookiejar(resp.cookies)
+
+        except:
+            self.logging.error('cookie创建异常')
+            return None
+

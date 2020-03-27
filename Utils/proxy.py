@@ -106,10 +106,10 @@ class ProxyUtils(object):
 
                     # 判断协议种类
                     if self.type == 'http':
-                        return 'http://{}:{}'.format(ip, port)
+                        return {'http': 'http://{}:{}'.format(ip, port)}
 
                     elif self.type == 'https':
-                        return 'https://{}:{}'.format(ip, port)
+                        return {'https': 'https://{}:{}'.format(ip, port)}
 
                     elif self.type == 'socks5':
                         return {'http': 'socks5://{}:{}'.format(ip, port),

@@ -13,6 +13,7 @@ import hashlib
 import requests
 import re
 import time
+import ast
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 
@@ -27,7 +28,7 @@ class Dao(storage.Dao):
                                   mysqlpool_number=mysqlpool_number,
                                   redispool_number=redispool_number)
 
-    # 种子字典存入mysql数据库
+    # 种子字典存入数据库
     def saveProjectUrlToMysql(self, table, memo):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
@@ -46,14 +47,14 @@ class Dao(storage.Dao):
             }
             try:
                 self.mysql_client.insert_one(table=table, data=data)
-                self.logging.info('已存储种子: {}'.format(sha))
+                self.logging.info('已存储种子: {}'.format(url))
             except Exception as e:
                 self.logging.warning('数据存储警告: {}'.format(e))
 
         else:
             self.logging.warning('种子已存在: {}'.format(sha))
 
-    # 保存流媒体到hbase数据库
+    # 保存流媒体到hbase
     def saveMediaToHbase(self, media_url, content, item, type):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
         # # 二进制图片文件转成base64文件
@@ -101,9 +102,13 @@ class Dao(storage.Dao):
         start_time = time.time()
         try:
             resp = requests.post(url=url, headers=headers, data=data).content.decode('utf-8')
-            end_time = int(time.time() - start_time)
-            self.logging.info('title: Save media to Hbase | status: OK | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
+            respon = ast.literal_eval(resp)
+            if respon['resultCode'] == 0:
+                self.logging.info('Save media to Hbase | status: OK | sha: {} | memo: {} | use time: {}'.format(sha, resp, '%.2f' %(time.time() - start_time)))
+                return True
+            else:
+                self.logging.warning('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}'.format(sha, resp, '%.2f' %(time.time() - start_time)))
+                return False
         except Exception as e:
-            resp = e
-            end_time = int(time.time() - start_time)
-            self.logging.info('title: Save media to Hbase | status: NO | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
+            self.logging.error('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}'.format(sha, e, '%.2f' %(time.time() - start_time)))
+            return False

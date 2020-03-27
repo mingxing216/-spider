@@ -12,13 +12,13 @@ import requests
 import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from Downloader import downloader_mod
+from Downloader import downloader
 from Utils import user_agent_u
 from Utils import proxy
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
-class Downloader(downloader_mod.BaseDownloaderMiddleware):
+class Downloader(downloader.Downloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         super(Downloader, self).__init__(logging=logging, timeout=timeout)
         self.proxy_type = proxy_type
@@ -55,7 +55,7 @@ class Downloader(downloader_mod.BaseDownloaderMiddleware):
             # 设置proxy
             param['proxies'] = self.proxy_obj.getProxy()
 
-            down_data = self._startDownload(param=param)
+            down_data = self.fetch(param=param)
 
             if down_data['code'] == 0:
                 return {'code': 0, 'data': down_data['data'], 'proxies': param['proxies']}

@@ -191,17 +191,13 @@ class Dao(object):
             resp = requests.post(url=url, headers=headers, data=save_data).content.decode('utf-8')
             respon = ast.literal_eval(resp)
             if respon['resultCode'] == 0:
-                end_time = int(time.time() - start_time)
-                self.logging.info('title: Save data to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.info('Save data to Hbase | status: OK | memo: {} | use time: {}'.format(resp, '%.2f' %(time.time() - start_time)))
                 return True
             else:
-                end_time = int(time.time() - start_time)
-                self.logging.info('title: Save data to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.warning('Save data to Hbase | status: NO | memo: {} | use time: {}'.format(resp, '%.2f' %(time.time() - start_time)))
                 return False
         except Exception as e:
-            resp = e
-            end_time = int(time.time() - start_time)
-            self.logging.info('title: Save data to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+            self.logging.error('Save data to Hbase | status: NO | memo: {} | use time: {}'.format(e, '%.2f' %(time.time() - start_time)))
             return False
 
         # try:
@@ -272,17 +268,13 @@ class Dao(object):
             resp = requests.post(url=url, headers=headers, data=data).content.decode('utf-8')
             respon = ast.literal_eval(resp)
             if respon['resultCode'] == 0:
-                end_time = int(time.time() - start_time)
-                self.logging.info('title: Save media to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.info('Save media to Hbase | status: OK | sha: {} | memo: {} | use time: {}'.format(sha, resp, '%.2f' %(time.time() - start_time)))
                 return True
             else:
-                end_time = int(time.time() - start_time)
-                self.logging.info('title: Save media to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.warning('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}'.format(sha, resp, '%.2f' %(time.time() - start_time)))
                 return False
         except Exception as e:
-            resp = e
-            end_time = int(time.time() - start_time)
-            self.logging.info('title: Save media to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+            self.logging.error('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}'.format(sha, e, '%.2f' %(time.time() - start_time)))
             return False
 
         # try:
