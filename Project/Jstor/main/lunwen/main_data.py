@@ -59,7 +59,7 @@ class SpiderMain(BastSpiderMain):
         self.index_url = 'https://www.jstor.org/'
         self.session = None
 
-    def __getResp(self, url, method, session=None, data=None, cookies=None, referer=''):
+    def __getResp(self, url, method, session=None, data=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
         for i in range(3):
             resp = self.download_middleware.getResp(session=session, url=url, method=method, data=data,
@@ -345,13 +345,13 @@ class SpiderMain(BastSpiderMain):
                 #     continue
 
                 # 创建会话
-                self.s = requests.session()
+                self.session = requests.session()
                 # 获取页面响应
                 resp = self.__getResp(session=self.session,
                                       url=self.index_url,
                                       method='GET')
                 if not resp:
-                    time.sleep(2)
+                    time.sleep(1)
                     continue
 
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])

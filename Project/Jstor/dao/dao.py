@@ -104,11 +104,11 @@ class Dao(storage.Dao):
             resp = requests.post(url=url, headers=headers, data=data).content.decode('utf-8')
             respon = ast.literal_eval(resp)
             if respon['resultCode'] == 0:
-                self.logging.info('Save media to Hbase | status: OK | sha: {} | memo: {} | use time: {}'.format(sha, resp, '%.2f' %(time.time() - start_time)))
+                self.logging.info('Save media to Hbase | status: OK | sha: {} | memo: {} | use time: {}s'.format(sha, resp, '%.2f' %(time.time() - start_time)))
                 return True
             else:
-                self.logging.warning('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}'.format(sha, resp, '%.2f' %(time.time() - start_time)))
+                self.logging.warning('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}s'.format(sha, resp, '%.2f' %(time.time() - start_time)))
                 return False
         except Exception as e:
-            self.logging.error('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}'.format(sha, e, '%.2f' %(time.time() - start_time)))
+            self.logging.error('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}s'.format(sha, e, '%.2f' %(time.time() - start_time)))
             return False

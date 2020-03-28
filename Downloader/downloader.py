@@ -75,3 +75,20 @@ class Downloader(object):
                 r = requests.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies, timeout=timeout)
 
             return r
+
+    def begin(self, url, session=None, headers=None, data=None, proxies=None, cookies=None, method='GET'):
+        start_time = time.time()
+        down_data = self.fetch(url=url, session=session, headers=headers, data=data,
+                               cookies=cookies, proxies=proxies,
+                               method=method.upper(), timeout=self.timeout)
+        # print(headers)
+
+        end_time = time.time()
+
+        self.logging.info(
+            "request for url: {} | code: {} | status: {} | mode: {} | message: {} | data: {} | proxy: {} | use time: {}".format(
+                url, down_data['code'], down_data['status'], method, down_data['message'], data, proxies,
+                '%.2fs' % (end_time - start_time)
+            ))
+
+        return down_data
