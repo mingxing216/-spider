@@ -19,27 +19,23 @@ from Utils import proxy
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
-class Downloader(downloader.BaseDownloaderMiddleware):
+class Downloader(downloader.Downloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         super(Downloader, self).__init__(logging=logging, timeout=timeout)
         self.proxy_type = proxy_type
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
-    def getResp(self, url, mode, s=None, data=None, cookies=None, referer=None):
-        # 请求异常时间戳
-        err_time = 0
-        # 响应状态码错误时间戳
-        stat_time = 0
+    def getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        # 响应状态码错误重试次数
+        stat_count = 0
+        # 请求异常重试次数
+        err_count = 0
         while 1:
             # 每次请求的等待时间
             time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
 
-            # 设置参数
-            param = {'url': url}
-            # 设置请求方式：GET或POST
-            param['mode'] = mode
             # 设置请求头
-            param['headers'] = {
+            headers = {
                 # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'Accept-Encoding': 'gzip, deflate, br',
                 # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
@@ -48,70 +44,38 @@ class Downloader(downloader.BaseDownloaderMiddleware):
                 'Host': 'policy.mofcom.gov.cn',
                 'User-Agent': user_agent_u.get_ua()
             }
-            # 设置post参数
-            param['data'] = data
-            # 设置cookies
-            param['cookies'] = cookies
             # 设置proxy
+            proxies = None
             if self.proxy_type:
-                param['proxies'] = self.proxy_obj.getProxy()
-            else:
-                param['proxies'] = None
+                proxies = self.proxy_obj.getProxy()
 
-            down_data = self._startDownload(param=param, s=s)
+            # # 设置请求开始时间
+            # start_time = time.time()
+
+            # 获取响应
+            down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
+                                   cookies=cookies)
 
             if down_data['code'] == 0:
-                return {'code': 0, 'data': down_data['data'], 'proxies': param['proxies']}
+                # self.logging.info('请求成功: {} | 用时: {}秒'.format(url, '%.2f' %(time.time() - start_time)))
+                return down_data['data']
 
             if down_data['code'] == 1:
-                status_code = str(down_data['status'])
-                if status_code != '404':
-                    if stat_time == 0:
-                        # 获取错误状态吗时间戳
-                        stat_time = int(time.time())
-                        continue
-                    else:
-                        # 获取当前时间戳
-                        now_time = int(time.time())
-                        if now_time - stat_time >= 120:
-                            return {'code': 1, 'data': url}
-                        else:
-                            continue
+                # self.logging.warning('请求内容错误: {} | 响应码: {} | 用时: {}秒'.format(url, down_data['status'], '%.2f' %(time.time() - start_time)))
+                if stat_count > 20:
+                    return
                 else:
-                    return {'code': 1, 'data': url}
-
-            if down_data['code'] == 2:
-                '''
-                如果未设置请求异常的时间戳，则现在设置；
-                如果已经设置了异常的时间戳，则获取当前时间戳，然后对比之前设置的时间戳，如果时间超过了3分钟，说明url有问题，直接返回
-                {'status': 1}
-                '''
-                if err_time == 0:
-                    err_time = int(time.time())
+                    stat_count += 1
                     continue
 
+            if down_data['code'] == 2:
+                # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
+                if err_count > 10:
+                    return
                 else:
-                    # 获取当前时间戳
-                    now = int(time.time())
-                    if now - err_time >= 120:
-                        return {'code': 1, 'data': url}
-                    else:
-                        continue
+                    err_count += 1
+                    continue
 
-    # 创建COOKIE
-    def create_cookie(self):
-        # url = 'http://kns.cnki.net/kns/request/NaviGroup.aspx?code=A&tpinavigroup=SCPD_FMtpiresult&catalogName=SCPD_IPCCLS&__=Wed%20Nov%2027%202019%2015%3A00%3A02%20GMT%2B0800%20(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)'
-        url = 'http://kns.cnki.net/kns/brief/result.aspx?dbprefix=SCPD_FM'
-        try:
-            resp = self.getResp(url=url, mode='GET')
-            if resp['code'] == 0:
-                # print(resp.cookies)
-                self.logging.info('cookie创建成功')
-                return requests.utils.dict_from_cookiejar(resp['data'].cookies), resp['data'].headers['Set-Cookie']
-
-        except:
-            self.logging.error('cookie创建异常')
-            return None
 
 
 

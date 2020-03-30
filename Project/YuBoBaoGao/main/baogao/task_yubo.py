@@ -59,32 +59,26 @@ class SpiderMain(BastSpiderMain):
         self.cookie_str = ''
         self.num = 0
 
-    def __getResp(self, url, mode, s=None, data=None, cookies=None, referer=None):
-        for i in range(10):
-            resp = self.download_middleware.getResp(url=url,
-                                                    mode=mode,
-                                                    s=s,
-                                                    data=data,
-                                                    cookies=cookies,
-                                                    referer=referer)
-            if resp['code'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text or len(response.text) < 200:
-                    LOGGING.info('出现验证码')
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        # 发现验证码，请求页面3次
+        for i in range(3):
+            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+                                                    cookies=cookies, referer=referer)
+            if resp:
+                if '请输入验证码' in resp.text:
+                    LOGGING.error('出现验证码')
                     continue
 
-                else:
-                    return response
+            return resp
 
-            if resp['code'] == 1:
-                return None
         else:
-            return None
+            LOGGING.error('页面出现验证码: {}'.format(url))
+            return
 
     def getCategory(self):
         # 访问入口页
         index_resp = self.__getResp(url=self.index_url,
-                                    mode='GET')
+                                    method='GET')
         if not index_resp:
             LOGGING.error('入口页面响应获取失败, url: {}'.format(self.index_url))
             return
@@ -101,7 +95,7 @@ class SpiderMain(BastSpiderMain):
                 industry_url = industry['url']
                 hangYe = industry['s_hangYe']
                 industry_resp = self.__getResp(url=industry_url,
-                                            mode='GET')
+                                               method='GET')
                 if not industry_resp:
                     LOGGING.error('行业分类页响应失败, url: {}'.format(industry_url))
                     # industry_list.append(industry)
@@ -146,7 +140,7 @@ class SpiderMain(BastSpiderMain):
             # 如果有，请求下一页，获得响应
             if next_url:
                 # 获取下一页响应
-                next_resp = self.__getResp(url=next_url, mode='GET')
+                next_resp = self.__getResp(url=next_url, method='GET')
 
                 # 如果响应获取失败，队列这一页种子到redis
                 if not next_resp:
@@ -182,7 +176,7 @@ class SpiderMain(BastSpiderMain):
         #     return
 
         # 获取列表首页响应
-        first_resp = self.__getResp(url=url, mode='GET')
+        first_resp = self.__getResp(url=url, method='GET')
         if not first_resp:
             LOGGING.error('列表首页响应失败, url: {}'.format(url))
             # 队列一条任务

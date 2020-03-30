@@ -54,22 +54,21 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
 
-    def __getResp(self, func, url, mode, s=None, data=None, cookies=None, referer=None):
-        for i in range(10):
-            resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies, referer=referer)
-            if resp['code'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text:
-                    LOGGING.info('出现验证码')
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        # 发现验证码，请求页面3次
+        for i in range(3):
+            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+                                                    cookies=cookies, referer=referer)
+            if resp:
+                if '请输入验证码' in resp.text:
+                    LOGGING.error('出现验证码')
                     continue
 
-                else:
-                    return response
+            return resp
 
-            if resp['code'] == 1:
-                return None
         else:
-            return None
+            LOGGING.error('页面出现验证码: {}'.format(url))
+            return
 
     # 获取公告实体字段
     def announcement(self, gonggao_url, zhuanli_url, zhuanli_sha):
@@ -78,9 +77,8 @@ class SpiderMain(BastSpiderMain):
         url = gonggao_url
 
         # 访问公告页面，获取响应
-        resp = self.__getResp(func=self.download_middleware.getResp,
-                              url=url,
-                              mode='GET')
+        resp = self.__getResp(url=url,
+                              method='GET')
         if not resp:
             LOGGING.error('公告页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
@@ -161,9 +159,8 @@ class SpiderMain(BastSpiderMain):
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
         # 获取页面响应
-        resp = self.__getResp(func=self.download_middleware.getResp,
-                              url=url,
-                              mode='GET')
+        resp = self.__getResp(url=url,
+                              method='GET')
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务

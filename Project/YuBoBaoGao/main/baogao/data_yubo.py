@@ -54,32 +54,26 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
 
-    def __getResp(self, url, mode, s=None, data=None, cookies=None, referer=None):
-        for i in range(10):
-            resp = self.download_middleware.getResp(url=url,
-                                                    mode=mode,
-                                                    s=s,
-                                                    data=data,
-                                                    cookies=cookies,
-                                                    referer=referer)
-            if resp['code'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text or len(response.text) < 200:
-                    LOGGING.info('出现验证码')
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        # 发现验证码，请求页面3次
+        for i in range(3):
+            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+                                                    cookies=cookies, referer=referer)
+            if resp:
+                if '请输入验证码' in resp.text:
+                    LOGGING.error('出现验证码')
                     continue
 
-                else:
-                    return response
+            return resp
 
-            if resp['code'] == 1:
-                return None
         else:
-            return None
+            LOGGING.error('页面出现验证码: {}'.format(url))
+            return
 
     # 获取图片
     def img(self, img_dict, sha):
         # 获取图片响应
-        media_resp = self.__getResp(url=img_dict['url'], mode='GET')
+        media_resp = self.__getResp(url=img_dict['url'], method='GET')
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_dict['url']))
             # # 逻辑删除任务
@@ -153,7 +147,7 @@ class SpiderMain(BastSpiderMain):
         leiXing = task_data['s_leiXing']
 
         # 获取页面响应
-        resp = self.__getResp(url=url, mode='GET')
+        resp = self.__getResp(url=url, method='GET')
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务

@@ -23,7 +23,7 @@ def _error(func):
                 return {'code': 0, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
             else:
-                return {'code': 1, 'data': None, 'status': data.status_code, 'message': 'OK'}
+                return {'code': 1, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
         except ConnectTimeout or ReadTimeout as e:
             # self.logging.error("Downloader" + " | " + "request timeout: {}s".format(kwargs['timeout']) + " | "
@@ -41,108 +41,58 @@ def _error(func):
     return wrapper
 
 
-class BaseDownloaderMiddleware(object):
-    def __init__(self, logging, timeout):
-        self.logging = logging
-        self.downloader = Downloader(logging=logging, timeout=timeout)
-
-    def _startDownload(self, param, s=None):
-        try:
-            url = param['url']
-        except:
-            url = None
-        try:
-            mode = param['mode'].upper()
-        except:
-            mode = None
-        try:
-            headers = param['headers']
-        except:
-            headers = None
-        try:
-            data = param['data']
-        except:
-            data = None
-        try:
-            cookies = param['cookies']
-        except:
-            cookies = None
-        try:
-            proxies = param['proxies']
-        except:
-            proxies = None
-
-        if not url:
-            raise Exception("Please specify URL")
-
-        if not mode:
-            raise Exception('Please specify request for GET or POST')
-
-        if mode == 'GET':
-            resp = self.downloader.begin(s=s, url=url, connect_type='GET', headers=headers, proxies=proxies, cookies=cookies)
-            return resp
-
-        if mode == 'POST':
-            resp = self.downloader.begin(s=s, url=url, connect_type='POST', headers=headers, proxies=proxies, data=data, cookies=cookies)
-            return resp
-
-
 class Downloader(object):
     def __init__(self, logging, timeout):
         self.logging = logging
         self.timeout = timeout
 
     @_error
-    def get(self, s, url, headers, cookies, timeout, proxies):
-        if s:
-            requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
-            # s = requests.session()
-            s.keep_alive = False  # 关闭多余连接
-            # start_time = float(time.time())
-            r = s.get(url=url, headers=headers, proxies=proxies, timeout=timeout, cookies=cookies)
-            # end_time = float(time.time())
-            # print(round(end_time - start_time, 4))
-            # print(r.elapsed.total_seconds())
-        else:
-            r = requests.get(url=url, headers=headers, proxies=proxies, timeout=timeout, cookies=cookies)
+    def fetch(self, url, method, session=None, headers=None, data=None, proxies=None, cookies=None):
+        assert method.upper() == 'GET' or method.upper() == 'POST'
 
-        return r
+        if method.upper() == 'GET':
+            if session:
+                requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
+                # s = requests.session()
+                session.keep_alive = False  # 关闭多余连接
+                # start_time = float(time.time())
+                r = session.get(url=url, headers=headers, params=data, cookies=cookies, proxies=proxies,
+                                timeout=self.timeout)
+                # end_time = float(time.time())
+                # print(round(end_time - start_time, 4))
+                # print(r.elapsed.total_seconds())
+            else:
+                r = requests.get(url=url, headers=headers, params=data, cookies=cookies, proxies=proxies,
+                                 timeout=self.timeout)
 
-    @_error
-    def post(self, s, url, headers, data, cookies, timeout, proxies):
-        if s:
-            requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
-            # s = requests.session()
-            s.keep_alive = False  # 关闭多余连接
-            r = s.post(url=url, headers=headers, data=data, proxies=proxies, timeout=timeout, cookies=cookies)
-        else:
-            r = requests.post(url=url, headers=headers, data=data, proxies=proxies, timeout=timeout, cookies=cookies)
+            return r
 
-        return r
+        if method.upper() == 'POST':
+            if session:
+                requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
+                # s = requests.session()
+                session.keep_alive = False  # 关闭多余连接
+                r = session.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies, timeout=self.timeout)
+            else:
+                r = requests.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies,
+                                  timeout=self.timeout)
 
-    def start(self, url, s, headers, data, cookies, timeout, proxies, connect_type):
-        # time.sleep(int(DOWNLOAD_DELAY))
+            return r
 
-        if connect_type == 'GET':
-            return self.get(url=url, s=s, headers=headers, cookies=cookies,
-                                 timeout=timeout, proxies=proxies)
-
-        if connect_type == 'POST':
-            return self.post(url=url, s=s, headers=headers, data=data,
-                                  cookies=cookies, timeout=timeout, proxies=proxies)
-
-    def begin(self, url, s=None, headers=None, data=None, proxies=None, cookies=None, connect_type='GET'):
-        start_time = int(time.time())
-        down_data = self.start(url=url, s=s, headers=headers, data=data,
-                               cookies=cookies, timeout=self.timeout, proxies=proxies,
-                               connect_type=connect_type.upper())
+    def begin(self, url, session=None, headers=None, data=None, proxies=None, cookies=None, method='GET'):
+        start_time = time.time()
+        down_data = self.fetch(url=url, session=session, headers=headers, data=data,
+                               cookies=cookies, proxies=proxies,
+                               method=method.upper())
         # print(headers)
 
-        end_time = int(time.time())
+        end_time = time.time()
 
-        self.logging.info("request for url: {} | code: {} | status: {} | message: {} | mode: {} | data: {} | proxy: {} | use time: {}".format(
-            url, down_data['code'], down_data['status'], down_data['message'], connect_type, data, proxies, '{}s'.format(end_time - start_time)
-        ))
+        self.logging.info(
+            "request for url: {} | code: {} | status: {} | mode: {} | message: {} | data: {} | proxy: {} | use time: {}".format(
+                url, down_data['code'], down_data['status'], method, down_data['message'], data, proxies,
+                '%.2fs' % (end_time - start_time)
+            ))
 
         return down_data
 

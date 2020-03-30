@@ -108,27 +108,21 @@ class SpiderMain(BastSpiderMain):
         self.cookie_str = ''
         self.num = 0
 
-    def __getResp(self, url, mode, s=None, data=None, cookies=None, referer=None):
-        for i in range(10):
-            resp = self.download_middleware.getResp(url=url,
-                                                    mode=mode,
-                                                    s=s,
-                                                    data=data,
-                                                    cookies=cookies,
-                                                    referer=referer)
-            if resp['code'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text or len(response.text) < 200:
-                    LOGGING.info('出现验证码')
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        # 发现验证码，请求页面3次
+        for i in range(3):
+            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+                                                    cookies=cookies, referer=referer)
+            if resp:
+                if '请输入验证码' in resp.text:
+                    LOGGING.error('出现验证码')
                     continue
 
-                else:
-                    return response
+            return resp
 
-            if resp['code'] == 1:
-                return None
         else:
-            return None
+            LOGGING.error('页面出现验证码: {}'.format(url))
+            return
 
     def getCategory(self):
         # 遍历入口页列表
@@ -137,7 +131,7 @@ class SpiderMain(BastSpiderMain):
             es = index['es']
             clazz = index['clazz']
             id = self.server.getId(index_url)
-            index_resp = self.__getResp(url=index_url, mode='GET')
+            index_resp = self.__getResp(url=index_url, method='GET')
             if not index_resp:
                 LOGGING.error('入口页面响应失败, url: {}'.format(index_url))
                 return
@@ -163,7 +157,7 @@ class SpiderMain(BastSpiderMain):
             for i in range(2, int(total_num) + 1):
                 next_url = task['url'] + '&pageNum=' + str(i)
                 # 获取下一页响应
-                next_resp = self.__getResp(url=next_url, mode='GET')
+                next_resp = self.__getResp(url=next_url, method='GET')
 
                 # 如果响应获取失败，队列这一页种子到redis
                 if not next_resp:
@@ -202,7 +196,7 @@ class SpiderMain(BastSpiderMain):
         clazz = task['clazz']
 
         # 获取列表首页响应
-        first_resp = self.__getResp(url=url, mode='GET')
+        first_resp = self.__getResp(url=url, method='GET')
         if not first_resp:
             LOGGING.error('列表首页响应失败, url: {}'.format(url))
             # 队列一条任务
@@ -268,6 +262,12 @@ def process_start():
 if __name__ == '__main__':
     begin_time = time.time()
     process_start()
+
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))
+    LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))

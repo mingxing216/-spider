@@ -54,27 +54,21 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
 
-    def __getResp(self, url, mode, s=None, data=None, cookies=None, referer=None):
-        for i in range(10):
-            resp = self.download_middleware.getResp(url=url,
-                                                    mode=mode,
-                                                    s=s,
-                                                    data=data,
-                                                    cookies=cookies,
-                                                    referer=referer)
-            if resp['code'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text or len(response.text) < 200:
-                    LOGGING.info('出现验证码')
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        # 发现验证码，请求页面3次
+        for i in range(3):
+            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+                                                    cookies=cookies, referer=referer)
+            if resp:
+                if '请输入验证码' in resp.text:
+                    LOGGING.error('出现验证码')
                     continue
 
-                else:
-                    return response
+            return resp
 
-            if resp['code'] == 1:
-                return None
         else:
-            return None
+            LOGGING.error('页面出现验证码: {}'.format(url))
+            return
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -86,7 +80,7 @@ class SpiderMain(BastSpiderMain):
         clazz = task_data['clazz']
 
         # 获取页面响应
-        resp = self.__getResp(url=url, mode='GET')
+        resp = self.__getResp(url=url, method='GET')
         if not resp:
             LOGGING.error('正文页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
@@ -109,7 +103,7 @@ class SpiderMain(BastSpiderMain):
         info_text = ''
         if info_url:
             # 获取页面响应
-            info_resp = self.__getResp(url=info_url, mode='GET')
+            info_resp = self.__getResp(url=info_url, method='GET')
             if not info_resp:
                 LOGGING.error('基本信息页面响应失败, url: {}'.format(info_url))
                 # 逻辑删除任务
@@ -255,4 +249,4 @@ if __name__ == '__main__':
     # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))
+    LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))

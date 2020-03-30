@@ -61,28 +61,26 @@ class SpiderMain(BastSpiderMain):
         self.cookie_str = ''
         self.num = 0
 
-    def __getResp(self, func, url, mode, s=None, data=None, cookies=None, referer=None):
-        for i in range(10):
-            resp = func(url=url, mode=mode, s=s, data=data, cookies=cookies, referer=referer)
-            if resp['code'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text:
-                    LOGGING.info('出现验证码')
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        # 发现验证码，请求页面3次
+        for i in range(3):
+            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+                                                    cookies=cookies, referer=referer)
+            if resp:
+                if '请输入验证码' in resp.text:
+                    LOGGING.error('出现验证码')
                     continue
 
-                else:
-                    return response
+            return resp
 
-            if resp['code'] == 1:
-                return None
         else:
-            return None
+            LOGGING.error('页面出现验证码: {}'.format(url))
+            return
 
     def getCategory(self):
         # 访问入口页
-        index_resp = self.__getResp(func=self.download_middleware.getResp,
-                                    url=self.index_url,
-                                    mode='GET')
+        index_resp = self.__getResp(url=self.index_url,
+                                    method='GET')
         if not index_resp:
             LOGGING.error('入口页面响应获取失败, url: {}'.format(self.index_url))
             return
@@ -93,12 +91,11 @@ class SpiderMain(BastSpiderMain):
 
         # 获取第一层分类列表
         first_list = self.server.getIndexClassList(resp=index_text)
-        print(first_list)
+        # print(first_list)
         if first_list:
             for first_url in first_list:
-                first_resp = self.__getResp(func=self.download_middleware.getResp,
-                                            url=first_url,
-                                            mode='GET')
+                first_resp = self.__getResp(url=first_url,
+                                            method='GET')
                 if not first_resp:
                     LOGGING.error('第一分类页获取失败, url: {}'.format(first_url))
                     first_list.append(first_url)
@@ -107,12 +104,11 @@ class SpiderMain(BastSpiderMain):
                 first_response = first_resp.text
                 # 获取第二层分类列表
                 second_list = self.server.getSecondClassList(resp=first_response)
-                print(second_list)
+                # print(second_list)
                 if second_list:
                     for second_url in second_list:
-                        second_resp = self.__getResp(func=self.download_middleware.getResp,
-                                                     url=second_url,
-                                                     mode='GET')
+                        second_resp = self.__getResp(url=second_url,
+                                                     method='GET')
                         if not second_resp:
                             LOGGING.error('第二分类页获取失败, url: {}'.format(second_url))
                             second_list.append(second_url)
@@ -120,14 +116,14 @@ class SpiderMain(BastSpiderMain):
                         second_response = second_resp.text
                         # 获取第三层分类号
                         category_list = self.server.getCategoryNumber(resp=second_response)
-                        print(category_list)
+                        # print(category_list)
                         # # 进入队列
                         # self.dao.QueueJobTask(key=config.REDIS_CATEGORY, data=category_list)
                         if category_list:
                             for category in category_list:
                                 self.category_number.append(category)
 
-        print(self.category_number)
+        # print(self.category_number)
         print(len(self.category_number))
 
     def getProfile(self, resp, category, year):
@@ -148,14 +144,13 @@ class SpiderMain(BastSpiderMain):
 
             # 判断是否有下一页
             next_url = self.server.hasNextUrl(resp=next_text)
-            print(next_url)
+            # print(next_url)
             # 如果有，请求下一页，获得响应
             if next_url:
                 while True:
                     # 获取下一页响应
-                    next_resp = self.__getResp(func=self.download_middleware.getResp,
-                                               url=next_url,
-                                               mode='GET',
+                    next_resp = self.__getResp(url=next_url,
+                                               method='GET',
                                                cookies=self.cookie_dict)
 
                     # 如果响应获取失败，重新访问，并记录这一页种子
@@ -173,9 +168,8 @@ class SpiderMain(BastSpiderMain):
                                                                  cookie=self.cookie_str)
                         # 获取指定年的专利列表首页响应
                         year_url = self.getYearIndexUrl.format(year)
-                        year_first_resp = self.__getResp(func=self.download_middleware.getResp,
-                                                         url=year_url,
-                                                         mode='GET',
+                        year_first_resp = self.__getResp(url=year_url,
+                                                         method='GET',
                                                          cookies=self.cookie_dict)
                         if not year_first_resp:
                             LOGGING.error('{}分类下{}年的列表首页响应获取失败, url: {}'.format(category, year, year_url))
@@ -221,9 +215,8 @@ class SpiderMain(BastSpiderMain):
 
                 while True:
                     # 获取列表首页响应
-                    year_first_resp = self.__getResp(func=self.download_middleware.getResp,
-                                                     url=year_url,
-                                                     mode='GET',
+                    year_first_resp = self.__getResp(url=year_url,
+                                                     method='GET',
                                                      cookies=self.cookie_dict)
                     if not year_first_resp:
                         LOGGING.error('{}分类下{}年的列表首页响应获取失败, url: {}'.format(category, year, year_url))
