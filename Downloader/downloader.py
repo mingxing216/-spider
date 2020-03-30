@@ -23,7 +23,7 @@ def _error(func):
                 return {'code': 0, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
             else:
-                return {'code': 1, 'data': None, 'status': data.status_code, 'message': 'OK'}
+                return {'code': 1, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
         except ConnectTimeout or ReadTimeout as e:
             # self.logging.error("Downloader" + " | " + "request timeout: {}s".format(kwargs['timeout']) + " | "

@@ -48,8 +48,6 @@ class Downloader(object):
                         # 'read': await resp.read(),  # 文本格式二进制响应内容
                         'content_length': resp.content_length  # 响应长度
                         }
-                self.logging.info("request for url: {} | status: {} | method: {} | data: {} | proxy: {}".format(
-                    url, resp.status, method, data, proxies))
 
                 return resp_data
 
@@ -65,10 +63,31 @@ class Downloader(object):
                     # 'read': await resp.read(),  # 文本格式二进制响应内容
                     'content_length': resp.content_length  # 响应长度
                 }
-                self.logging.info("request for url: {} | status: {} | method: {} | data: {} | proxy: {}".format(
-                    url, resp.status, method, data, proxies))
 
                 return resp_data
+
+
+    async def begin(self, url, session=None, headers=None, data=None, proxies=None, cookies=None, method='GET'):
+        start_time = time.time()
+        try:
+            resp = await self.fetch(url=url, session=session, headers=headers, data=data,
+                                   cookies=cookies, proxies=proxies,
+                                   method=method.upper(), timeout=self.timeout)
+
+            self.logging.info(
+                "request for url: {} | status: {} | method: {} | message: OK | data: {} | proxy: {} | use time: {}".format(
+                    url, resp['status'], method, data, proxies, '%.2fs' % (time.time() - start_time)))
+
+            return resp
+
+        except Exception as e:
+            self.logging.info(
+                "request for url: {} | status: {} | method: {} | message: {} | data: {} | proxy: {} | use time: {}".format(
+                    url, None, method, e, data, proxies, '%.2fs' % (time.time() - start_time)))
+
+            return
+
+
 
 
 

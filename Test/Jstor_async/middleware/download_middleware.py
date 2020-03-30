@@ -51,37 +51,37 @@ class DownloaderMiddleware(downloader_aiohttp.Downloader):
             if self.proxy_type:
                 proxies = self.proxy_obj.getProxy()
 
-            # 设置请求开始时间戳
-            start_time = int(time.time())
-
+            # # 设置请求开始时间戳
+            # start_time = int(time.time())
             # self.logging.info('发送请求: {}'.format(url))
+
             # 获取响应数据
-            try:
-                resp = await self.fetch(session=session, url=url, method=method, headers=headers, proxies=proxies, cookies=cookies, data=data)
-                # print(resp)
-                try:
-                    resp.get('text')
-                except:
-                    await asyncio.sleep(1)
-                    continue
-
-                if resp.get('status') != 200:
-                    self.logging.warning('响应码: {} | 耗时: {}秒'.format(resp.get('status'), int(time.time()) - start_time))
-                    if count > 10:
-                        return
-                    else:
-                        count += 1
-                        continue
-
-            except Exception as e:
-                self.logging.error('请求失败: {} | 耗时: {}秒'.format(url, int(time.time()) - start_time))
-                self.logging.error(e)
-                if count > 5:
+            resp = await self.begin(session=session, url=url, method=method, headers=headers, proxies=proxies, cookies=cookies, data=data)
+            # print(resp)
+            # 请求失败
+            if not resp:
+                # self.logging.error('请求失败: {} | 耗时: {}秒'.format(url, '%.2f' %(time.time() - start_time)))
+                if count > 10:
                     return
                 else:
                     count += 1
                     continue
 
-            self.logging.info('请求成功: {} | 耗时: {}秒'.format(url, int(time.time()) - start_time))
+            # 请求内容失败
+            try:
+                resp.get('text')
+            except:
+                continue
+
+            # 响应码失败
+            if resp.get('status') != 200:
+                # self.logging.warning('响应码: {} | 耗时: {}秒'.format(resp.get('status'), '%.2f' %(time.time() - start_time)))
+                if count > 20:
+                    return
+                else:
+                    count += 1
+                    continue
+
+            # self.logging.info('请求成功: {} | 耗时: {}秒'.format(url, '%.2f' %(time.time() - start_time)))
 
             return resp

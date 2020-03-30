@@ -24,10 +24,10 @@ from multiprocessing.dummy import Pool as ThreadPool
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from Log import log
-from Project.Jstor.middleware import download_middleware
-from Project.Jstor.service import service
-from Project.Jstor.dao import dao
-from Project.Jstor import config
+from Test.Jstor_async.middleware import download_middleware
+from Test.Jstor_async.service import service
+from Test.Jstor_async.dao import dao
+from Test.Jstor_async import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
 LOGNAME = 'Jstor_期刊论文_data'  # LOG名
@@ -152,7 +152,7 @@ class SpiderMain(BastSpiderMain):
             # 生成es ——栏目名称
             pics['es'] = 'Journals'
             # 生成biz ——项目
-            pics['biz'] = '文献大数据'
+            pics['biz'] = '文献大数据_论文'
             # 生成ref
             pics['ref'] = ''
             # 保存组图实体到Hbase
@@ -354,9 +354,13 @@ class SpiderMain(BastSpiderMain):
                 jar = aiohttp.CookieJar(unsafe=True)
                 self.session = aiohttp.ClientSession(cookie_jar=jar)
                 # 请求首页，保持会话（cookies一致）
-                await self.__getResp(session=self.session,
+                resp = await self.__getResp(session=self.session,
                                      url=self.index_url,
                                      method='GET')
+
+                if not resp:
+                    await asyncio.sleep(1)
+                    continue
 
                 # 创建一个任务盒子tasks
                 tasks = []
@@ -403,4 +407,4 @@ if __name__ == '__main__':
 
     end_time = time.time()
     LOGGING.info('====== The End! ======')
-    LOGGING.info('====== Time consuming is {}s ======'.format(int(end_time - begin_time)))
+    LOGGING.info('====== Time consuming is %.2fs ======' %(int(end_time - begin_time)))
