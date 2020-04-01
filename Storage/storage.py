@@ -182,7 +182,8 @@ class Dao(object):
 
     # 存储数据到Hbase数据库 resultCode
     def saveDataToHbase(self, data):
-        save_data = json.dumps(data)
+        sha = data['sha']
+        save_data = json.dumps(data, ensure_ascii=False)
         url = '{}'.format(settings.SpiderDataSaveUrl)
         save_data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
                      "wid": "python",
@@ -197,17 +198,17 @@ class Dao(object):
             respon = ast.literal_eval(resp)
             if respon['resultCode'] == 0:
                 end_time = int(time.time() - start_time)
-                self.logging.info('title: Save data to Hbase | status: OK | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.info('title: Save data to Hbase | status: OK | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
                 return True
             else:
                 end_time = int(time.time() - start_time)
-                self.logging.info('title: Save data to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.info('title: Save data to Hbase | status: NO | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
                 return False
 
         except Exception as e:
             resp = e
             end_time = int(time.time() - start_time)
-            self.logging.info('title: Save data to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+            self.logging.info('title: Save data to Hbase | status: NO | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
             return False
 
         # try:
@@ -266,7 +267,7 @@ class Dao(object):
                 "content": "{}".format(content_bs64.decode('utf-8')),
                 # "content": "{}".format(content_bs64),
                 "ref": "",
-                "item": json.dumps(item)
+                "item": json.dumps(item, ensure_ascii=False)
         }
 
         headers = {
@@ -283,13 +284,13 @@ class Dao(object):
                 return True
             else:
                 end_time = int(time.time() - start_time)
-                self.logging.info('title: Save media to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+                self.logging.info('title: Save media to Hbase | status: NO | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
                 return False
 
         except Exception as e:
             resp = e
             end_time = int(time.time() - start_time)
-            self.logging.info('title: Save media to Hbase | status: NO | memo: {} | use time: {}'.format(resp, end_time))
+            self.logging.info('title: Save media to Hbase | status: NO | memo: {} | sha: {} | use time: {}'.format(resp, sha, end_time))
             return False
 
         # try:

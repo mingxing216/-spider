@@ -205,7 +205,7 @@ def getDateTime(str_date):
     '''
     # dateList = re.findall(r'(?:([\d]{4})[-/年])?([\d]{1,2})[-/月]([\d]{1,2})[日]?([\s]+([\d]{1,2})([:时]([\d]{1,2})([:分]([\d]{1,2})[秒]?)?)?)?', str_date)
     dateList = re.findall(r"([\d]{4})([-/年]([\d]{1,2}))?([-/月]([\d]{1,2})[日]?)?([\s]+([\d]{1,2})([:：时]([\d]{1,2})([:：分]([\d]{1,2})[秒]?)?)?)?", str_date)
-    if len(dateList) ==0 or len(dateList[0][0]) < 4:
+    if len(dateList) == 0 or len(dateList[0][0]) < 4:
         return ""
     # date = (int(dateList[0][0]) if dateList[0][0] else datetime.datetime.now().year, int(dateList[0][1]), int(dateList[0][2]), int(dateList[0][4]) if dateList[0][4] else 0, int(dateList[0][6]) if dateList[0][6] else 0, int(dateList[0][8]) if dateList[0][8] else 0, 0, 0, 0)
     date = (int(dateList[0][0]) if dateList[0][0] else datetime.datetime.now().year, int(dateList[0][2]) if dateList[0][2] else 0, int(dateList[0][4]) if dateList[0][4] else 0, int(dateList[0][6]) if dateList[0][6] else 0, int(dateList[0][8]) if dateList[0][8] else 0, int(dateList[0][10]) if dateList[0][10] else 0, 0, 0, 0)
