@@ -36,6 +36,8 @@ class Server(object):
             for data in datas:
                 dict = {}
                 dict['code'] = data['code']
+                # 请求第一页
+                dict['num'] = 0
                 dict['xueKeLeiBie'] = data['depC']
                 dict['totalCount'] = data['num']
                 return_data.append(dict)

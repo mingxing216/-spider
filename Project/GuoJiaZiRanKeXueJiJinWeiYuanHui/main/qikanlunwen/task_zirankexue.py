@@ -109,12 +109,13 @@ class SpiderMain(BastSpiderMain):
         task = self.server.getEvalResponse(category)
         # print(task)
         code = task['code']
+        num = task['num']
         xueKeLeiBie = task['xueKeLeiBie']
         totalCount = task['totalCount']
         totalPages = int(int(totalCount)/10)
 
         # 遍历列表页，获取详情页url
-        for i in range(totalPages):
+        for i in range(num, totalPages):
             data = {
                 'query': '',
                 'fieldCode': code,
@@ -134,7 +135,8 @@ class SpiderMain(BastSpiderMain):
             if not catalog_resp:
                 LOGGING.error('列表页响应失败, url: {}'.format(self.base_url))
                 # 队列一条任务
-                self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=category)
+                task['num'] = i
+                self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)
                 return
 
             catalog_resp.encoding = catalog_resp.apparent_encoding
@@ -158,7 +160,7 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 获取任务
             category_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_CATALOG,
-                                             count=10,
+                                             count=4,
                                              lockname=config.REDIS_ZIRANKEXUE_CATALOG_LOCK)
             # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))

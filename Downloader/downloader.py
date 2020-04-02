@@ -16,9 +16,9 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 
 
 def _error(func):
-    def wrapper(self, *args, **kwargs):
+    def wrapper(*args, **kwargs):
         try:
-            data = func(self, *args, **kwargs)
+            data = func(*args, **kwargs)
             if data.status_code == 200:
                 return {'code': 0, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
