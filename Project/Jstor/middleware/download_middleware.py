@@ -106,8 +106,10 @@ class DownloaderMiddleware(downloader.Downloader):
         return headers
 
     def getResp(self, url, method, session=None, data=None, cookies=None, referer=None):
-        # 重试次数
-        count = 0
+        # 响应状态码错误重试次数
+        stat_count = 0
+        # 请求异常重试次数
+        err_count = 0
         while 1:
             # 下载延时
             time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
@@ -148,18 +150,18 @@ class DownloaderMiddleware(downloader.Downloader):
 
             if down_data['code'] == 1:
                 # self.logging.warning('请求内容错误: {} | 响应码: {} | 用时: {}秒'.format(url, down_data['status'], '%.2f' %(time.time() - start_time)))
-                if count > 10:
+                if stat_count > 20:
                     return
                 else:
-                    count += 1
+                    stat_count += 1
                     continue
 
             if down_data['code'] == 2:
                 # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
-                if count > 3:
+                if err_count > 10:
                     return
                 else:
-                    count += 1
+                    err_count += 1
                     continue
 
     # 创建COOKIE
