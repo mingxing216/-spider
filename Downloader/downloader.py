@@ -16,9 +16,9 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 
 
 def _error(func):
-    def wrapper(self, *args, **kwargs):
+    def wrapper(*args, **kwargs):
         try:
-            data = func(self, *args, **kwargs)
+            data = func(*args, **kwargs)
             if data.status_code == 200:
                 return {'code': 0, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
@@ -78,7 +78,7 @@ class Downloader(object):
 
     def begin(self, url, session=None, headers=None, data=None, proxies=None, cookies=None, method='GET'):
         start_time = time.time()
-        down_data = self.fetch(url=url, session=session, headers=headers, data=data,
+        down_data = self.fetch(url, session=session, headers=headers, data=data,
                                cookies=cookies, proxies=proxies,
                                method=method.upper(), timeout=self.timeout)
         # print(headers)
@@ -86,7 +86,7 @@ class Downloader(object):
         end_time = time.time()
 
         self.logging.info(
-            "request for url: {} | code: {} | status: {} | mode: {} | message: {} | data: {} | proxy: {} | use time: {}".format(
+            "request for url: {} | code: {} | status: {} | method: {} | message: {} | data: {} | proxy: {} | use time: {}".format(
                 url, down_data['code'], down_data['status'], method, down_data['message'], data, proxies,
                 '%.2fs' % (end_time - start_time)
             ))

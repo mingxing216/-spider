@@ -271,14 +271,13 @@ class SpiderMain(BastSpiderMain):
         script = self.server.getScript(response)
         # print(script)
 
-        # 转为selector选择器
-        selector = self.server.getSelector(response)
-
         # 如果script标签中有内容，执行第一套模板
         if script:
             self.templateOne(save_data=save_data, script=script, url=url, sha=sha)
         # 如果能从页面直接获取标题，执行第二套模板
         else:
+            # 转为selector选择器
+            selector = self.server.getSelector(response)
             self.templateTwo(save_data=save_data, select=selector, html=response)
 
         # ===================公共字段
