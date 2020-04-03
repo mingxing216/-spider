@@ -26,6 +26,20 @@ class Downloader(downloader.Downloader):
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
 
+    def get_proxy(self):
+        while True:
+            try:
+                r = requests.get('http://60.195.249.95:5000/random')
+                proxy = r.text
+                # print(proxy)
+                return {
+                    'http': 'http://' + proxy,
+                    'https': 'https://' + proxy
+                }
+            except Exception:
+                time.sleep(1)
+                continue
+
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 响应状态码错误重试次数
         stat_count = 0
@@ -49,7 +63,8 @@ class Downloader(downloader.Downloader):
             # 设置proxy
             proxies = None
             if self.proxy_type:
-                proxies = self.proxy_obj.getProxy()
+                # proxies = self.proxy_obj.getProxy()
+                proxies = self.get_proxy()
 
             # # 设置请求开始时间
             # start_time = time.time()
