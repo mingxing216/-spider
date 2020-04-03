@@ -60,7 +60,7 @@ class ProxyUtils(object):
             pass
 
     # 检测代理IP是否是高匿代理， 高匿返回True， 否则返回Fales
-    def __jianChaNiMingDu(self, **proxies):
+    def __CheckNiMingDu(self, **proxies):
         local_ip = ''
         proxy_ip = ''
         # 获取本地外网IP

@@ -81,8 +81,9 @@ class SpiderMain(BastSpiderMain):
                                     method='GET')
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_task['url']))
-            # 存储图片种子
+            # 标题内容调整格式
             img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
+            # 存储图片种子
             self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'])
             return
             # # 逻辑删除任务
@@ -90,7 +91,12 @@ class SpiderMain(BastSpiderMain):
 
         img_content = media_resp.text
         # 存储图片
-        self.dao.saveMediaToHbase(media_url=img_task['url'], content=img_content, item=img_task['img_dict'], type='image')
+        succ =self.dao.saveMediaToHbase(media_url=img_task['url'], content=img_content, item=img_task['img_dict'], type='image')
+        if not succ:
+            # 标题内容调整格式
+            img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
+            # 存储图片种子
+            self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'])
 
     # 模板1
     def templateOne(self, save_data, script, url, sha):
@@ -330,7 +336,7 @@ class SpiderMain(BastSpiderMain):
             self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
 
     def start(self):
-        while 1:
+        while True:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_PAPER, count=10, lockname=config.REDIS_PAPER_LOCK)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
@@ -342,6 +348,9 @@ class SpiderMain(BastSpiderMain):
                 # # cookie创建失败，重新创建
                 # if not self.cookie_dict:
                 #     continue
+                resp = self.__getResp(url='https://httpbin.org/get',
+                                      method='GET')
+                print(resp.text)
 
                 # 创建会话
                 self.session = requests.session()

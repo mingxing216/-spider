@@ -188,7 +188,7 @@ class Dao(object):
         }
         start_time = time.time()
         try:
-            resp = requests.post(url=url, headers=headers, data=save_data).content.decode('utf-8')
+            resp = requests.post(url=url, headers=headers, data=save_data, timeout=10).content.decode('utf-8')
             respon = ast.literal_eval(resp)
             if respon['resultCode'] == 0:
                 self.logging.info('Save data to Hbase | status: OK | memo: {} | use time: {}s'.format(resp, '%.2f' %(time.time() - start_time)))
@@ -265,7 +265,7 @@ class Dao(object):
 
         start_time = time.time()
         try:
-            resp = requests.post(url=url, headers=headers, data=data).content.decode('utf-8')
+            resp = requests.post(url=url, headers=headers, data=data, timeout=10).content.decode('utf-8')
             respon = ast.literal_eval(resp)
             if respon['resultCode'] == 0:
                 self.logging.info('Save media to Hbase | status: OK | sha: {} | memo: {} | use time: {}s'.format(sha, resp, '%.2f' %(time.time() - start_time)))
