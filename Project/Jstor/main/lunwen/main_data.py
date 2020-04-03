@@ -81,22 +81,22 @@ class SpiderMain(BastSpiderMain):
                                     method='GET')
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_task['url']))
-            # 标题内容调整格式
-            img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
-            # 存储图片种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'], ws='jstor', es='qikan')
+            # # 标题内容调整格式
+            # img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
+            # # 存储图片种子
+            # self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'], ws='jstor', es='qikan')
+
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=img_task['sha'])
             return
-            # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=img_task['sha'])
 
         img_content = media_resp.text
         # 存储图片
         succ =self.dao.saveMediaToHbase(media_url=img_task['url'], content=img_content, item=img_task['img_dict'], type='image')
         if not succ:
-            # 标题内容调整格式
-            img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
-            # 存储图片种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'], ws='jstor', es='qikan')
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=img_task['sha'])
+            return
 
     # 模板1
     def templateOne(self, save_data, script, url, sha):
