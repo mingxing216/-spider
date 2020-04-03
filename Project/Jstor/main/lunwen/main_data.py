@@ -84,7 +84,7 @@ class SpiderMain(BastSpiderMain):
             # 标题内容调整格式
             img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
             # 存储图片种子
-            self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'])
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'], ws='jstor', es='qikan')
             return
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=img_task['sha'])
@@ -96,7 +96,7 @@ class SpiderMain(BastSpiderMain):
             # 标题内容调整格式
             img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
             # 存储图片种子
-            self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'])
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'], ws='jstor', es='qikan')
 
     # 模板1
     def templateOne(self, save_data, script, url, sha):
@@ -348,9 +348,6 @@ class SpiderMain(BastSpiderMain):
                 # # cookie创建失败，重新创建
                 # if not self.cookie_dict:
                 #     continue
-                resp = self.__getResp(url='https://httpbin.org/get',
-                                      method='GET')
-                print(resp.text)
 
                 # 创建会话
                 self.session = requests.session()
