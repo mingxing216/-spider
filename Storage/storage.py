@@ -208,6 +208,7 @@ class Dao(object):
                         return False
                     else:
                         count += 1
+                        time.sleep(1)
                         continue
 
             except Exception as e:
@@ -216,6 +217,7 @@ class Dao(object):
                     return False
                 else:
                     count += 1
+                    time.sleep(1)
                     continue
 
         # try:
@@ -300,6 +302,7 @@ class Dao(object):
                         return False
                     else:
                         count += 1
+                        time.sleep(1)
                         continue
 
             except Exception as e:
@@ -309,6 +312,7 @@ class Dao(object):
                     return False
                 else:
                     count += 1
+                    time.sleep(1)
                     continue
 
         # try:
