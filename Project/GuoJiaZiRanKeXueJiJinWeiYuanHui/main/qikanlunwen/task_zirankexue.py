@@ -115,7 +115,7 @@ class SpiderMain(BastSpiderMain):
         totalPages = int(int(totalCount)/10)
 
         # 遍历列表页，获取详情页url
-        for i in range(num, totalPages):
+        for i in range(num, totalPages+1):
             data = {
                 'query': '',
                 'fieldCode': code,
