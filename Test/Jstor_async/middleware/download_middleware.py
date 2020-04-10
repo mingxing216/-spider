@@ -25,6 +25,17 @@ class DownloaderMiddleware(downloader_aiohttp.Downloader):
         self.proxy_type = proxy_type
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
+    async def get_proxy(self):
+        while True:
+            try:
+                r = requests.get('http://60.195.249.95:5000/random')
+                proxy = r.text
+                # print(proxy)
+                return 'http://' + proxy
+            except Exception:
+                time.sleep(1)
+                continue
+
     async def getResp(self, url, method, session=None, data=None, cookies=None, referer=''):
         # 重试次数
         count = 0
@@ -49,7 +60,8 @@ class DownloaderMiddleware(downloader_aiohttp.Downloader):
             # 设置proxy
             proxies = None
             if self.proxy_type:
-                proxies = self.proxy_obj.getProxy()
+                # proxies = self.proxy_obj.getProxy()
+                proxies = await self.get_proxy()
 
             # # 设置请求开始时间戳
             # start_time = int(time.time())

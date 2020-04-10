@@ -15,10 +15,10 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Project.Jstor.middleware import download_middleware
-from Project.Jstor.service import service
-from Project.Jstor.dao import dao
-from Project.Jstor import config
+from Test.Jstor_async.middleware import download_middleware
+from Test.Jstor_async.service import service
+from Test.Jstor_async.dao import dao
+from Test.Jstor_async import config
 
 log_file_dir = 'Jstor'  # LOG日志存放路径
 LOGNAME = 'JSTOR_期刊论文_task'  # LOG名
@@ -225,7 +225,7 @@ class SpiderMain(BastSpiderMain):
 
                 await asyncio.gather(*tasks)
 
-                await self.session.close()
+                self.session.close()
 
                 time.sleep(1)
             else:
