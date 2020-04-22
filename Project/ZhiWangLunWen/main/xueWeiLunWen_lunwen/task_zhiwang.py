@@ -3,9 +3,9 @@
 '''
 
 '''
-import gevent
-from gevent import monkey
-monkey.patch_all()
+# import gevent
+# from gevent import monkey
+# monkey.patch_all()
 import sys
 import os
 import time
@@ -205,20 +205,20 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 
             if category_list:
-                # 创建gevent协程
-                g_list = []
-                for category in category_list:
-                    s = gevent.spawn(self.run, category)
-                    g_list.append(s)
-                gevent.joinall(g_list)
-
-                # # 创建线程池
-                # threadpool = ThreadPool()
+                # # 创建gevent协程
+                # g_list = []
                 # for category in category_list:
-                #     threadpool.apply_async(func=self.run, args=(category,))
-                #
-                # threadpool.close()
-                # threadpool.join()
+                #     s = gevent.spawn(self.run, category)
+                #     g_list.append(s)
+                # gevent.joinall(g_list)
+
+                # 创建线程池
+                threadpool = ThreadPool()
+                for category in category_list:
+                    threadpool.apply_async(func=self.run, args=(category,))
+
+                threadpool.close()
+                threadpool.join()
 
                 time.sleep(1)
             else:
