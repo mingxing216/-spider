@@ -49,7 +49,7 @@ class SpiderMain(BastSpiderMain):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer)
             if resp:
-                if '请输入验证码' in resp.text or len(resp.text) < 200:
+                if '请输入验证码' in resp.text or len(resp.text) < 10:
                     continue
 
             return resp
@@ -311,8 +311,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.start()
-        # main.run('{"url": "https://kns.cnki.net/kcms/detail/detail.aspx?filename=BMJS200602001&dbcode=CJFQ&dbname=cjfd2006&v=", "shiJian": {"v": "2018", "u": "年"}, "xueWeiLeiXing": "硕士", "xiaZaiCiShu": "82", "s_zhuanYe": "医学_基础医学(可授医学、理学学位)_人体解剖与组织胚胎学", "parentUrl": "https://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GHYKU"}')
+        # main.start()
+        main.run('{"url": "https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CMFD&filename=1018293294.nh&dbname=CMFD201901", "shiJian": {"v": "2018", "u": "年"}, "xueWeiLeiXing": "硕士", "xiaZaiCiShu": "128", "s_zhuanYe": "哲学_哲学_伦理学", "parentUrl": "https://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GNJSU"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

@@ -60,7 +60,7 @@ class SpiderMain(BastSpiderMain):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer)
             if resp:
-                if '请输入验证码' in resp.text or len(resp.text) < 200:
+                if '请输入验证码' in resp.text or len(resp.text) < 10:
                     continue
 
             return resp
@@ -82,7 +82,7 @@ class SpiderMain(BastSpiderMain):
                 self.dao.QueueOneTask(key=config.REDIS_XUEWEI_CATALOG, data=task)
                 return
             # 处理验证码
-            if '请输入验证码' in lunwen_list_resp.text or len(lunwen_list_resp.text) < 200:
+            if '请输入验证码' in lunwen_list_resp.text or len(lunwen_list_resp.text) < 10:
                 LOGGING.error('出现验证码,重新建立会话')
                 # 创建cookies
                 cookies = self.download_middleware.create_cookie(url=url)
@@ -122,7 +122,7 @@ class SpiderMain(BastSpiderMain):
                 self.dao.QueueOneTask(key=config.REDIS_XUEWEI_CATALOG, data=task)
                 return
             # 处理验证码
-            if '请输入验证码' in catalog_resp.text or len(catalog_resp.text) < 200:
+            if '请输入验证码' in catalog_resp.text or len(catalog_resp.text) < 10:
                 LOGGING.error('出现验证码,重新建立会话')
                 # 创建cookies
                 cookies = self.download_middleware.create_cookie(url=url)

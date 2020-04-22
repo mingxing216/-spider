@@ -42,19 +42,18 @@ class SpiderMain(BastSpiderMain):
 
     def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
-        resp = None
         for i in range(3):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer)
             if resp:
-                if '请输入验证码' in resp.text or len(resp.text) < 200:
+                if '请输入验证码' in resp.text or len(resp.text) < 10:
                     continue
 
             return resp
 
         else:
             LOGGING.error('页面出现验证码: {}'.format(url))
-            return resp
+            return
 
     def handle(self, task, save_data):
         # 数据类型转换

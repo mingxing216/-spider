@@ -52,7 +52,7 @@ class SpiderMain(BastSpiderMain):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer)
             if resp:
-                if '请输入验证码' in resp.text or 'window.location.href' in resp.text or len(resp.text) < 200:
+                if '请输入验证码' in resp.text or len(resp.text) < 10:
                     LOGGING.error('出现验证码')
                     continue
 
