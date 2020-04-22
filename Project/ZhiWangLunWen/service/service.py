@@ -325,7 +325,7 @@ class XueWeiLunWen_LunWen(Service):
             td_list = tr.xpath("./td")
 
             # 获取论文种子
-            if td_list[1].xpath('./a/@href'):
+            try:
                 href = td_list[1].xpath('./a/@href').extract_first().strip()
                 if re.findall(r"dbCode=(.*?)&", href):
                     dbcode = re.findall(r"dbCode=(.*?)&", href, re.I)[0]
@@ -349,26 +349,26 @@ class XueWeiLunWen_LunWen(Service):
                     continue
 
                 save_data['url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
-            else:
+            except:
                 save_data['url'] = ''
 
             # 获取时间
-            if td_list[5].xpath('./text()'):
+            try:
                 shijian = td_list[5].xpath('./text()').extract_first().strip()
                 save_data['shiJian'] = {"v": shijian, "u": "年"}
-            else:
-                save_data['shiJian'] = {"v": "", "u": "年"}
+            except:
+                save_data['shiJian'] = ''
 
             # 获取学位类型
-            if td_list[6].xpath('./text()'):
+            try:
                 save_data['xueWeiLeiXing'] = td_list[6].xpath('./text()').extract_first().strip()
-            else:
+            except:
                 save_data['xueWeiLeiXing'] = ''
 
             # 获取下载次数
-            if td_list[8].xpath('./text()'):
+            try:
                 save_data['xiaZaiCiShu'] = td_list[8].xpath('./text()').extract_first().strip()
-            else:
+            except:
                 save_data['xiaZaiCiShu'] = ''
 
             save_data['s_zhuanYe'] = zhuanye
