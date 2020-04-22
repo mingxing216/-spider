@@ -9,6 +9,7 @@ monkey.patch_all()
 import sys
 import os
 import time
+import hashlib
 import traceback
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
@@ -21,7 +22,7 @@ from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<知网_作者_data>'  # LOG名
+LOGNAME = '<知网论文_机构_data>'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
@@ -30,7 +31,7 @@ class BastSpiderMain(object):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT)
-        self.server = service.ZhiWangLunWen_ZuoZhe(logging=LOGGING)
+        self.server = service.XueWeiLunWen_xueWeiShouYuDanWei(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_MAX_NUMBER,
                            redispool_number=config.REDIS_POOL_MAX_NUMBER)
@@ -42,86 +43,100 @@ class SpiderMain(BastSpiderMain):
 
     def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
-        resp = None
         for i in range(3):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 200:
+                    LOGGING.error('出现验证码')
                     continue
 
             return resp
 
         else:
             LOGGING.error('页面出现验证码: {}'.format(url))
-            return resp
+            return
+
+    def img(self, img_dict, sha):
+        # 获取图片响应
+        media_resp = self.__getResp(url=img_dict['url'], method='GET')
+        if not media_resp:
+            LOGGING.error('图片响应失败, url: {}'.format(img_dict['url']))
+            # 存储图片种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            return
+
+        img_content = media_resp.content
+        # 存储图片
+        succ = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
+        if not succ:
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
 
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
         # print(task_data)
         url = task_data['url']
-        sha = task_data['sha']
-        name = task_data['name']
-        shijian = task_data.get('shiJian')
+        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
         # 获取会议主页html源码
         resp = self.__getResp(url=url, method='GET')
-
-        # with open('article.html', 'w', encoding='utf-8') as f:
-        #     f.write(resp.text)
-
         if not resp:
-            LOGGING.error('页面响应失败, url: {}'.format(url))
+            LOGGING.error('学位授予单位页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PEOPLE, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
             return
 
+        resp.encoding = resp.apparent_encoding
         article_html = resp.text
-        # 判断是否是有效页面
-        html_status = self.server.ifEffective(article_html)
-        if html_status:
-            # ========================获取数据==========================
-            # 获取标题
-            save_data['title'] = name
-            # 获取所在单位
-            save_data['suoZaiDanWei'] = self.server.getSuoZaiDanWei(article_html, shijian)
-            # 获取关联企业机构
-            save_data['guanLianQiYeJiGou'] = self.server.getGuanLianQiYeJiGou(article_html)
+        # ========================获取数据==========================
+        # 获取标题
+        save_data['title'] = self.server.geTitle(article_html)
+        # 获取曾用名
+        save_data['cengYongMing'] = self.server.getField(article_html, '曾用名')
+        # 获取所在地_内容
+        save_data['suoZaiDiNeiRong'] = self.server.getField(article_html, '地域')
+        # 获取主页(官网地址)
+        save_data['zhuYe'] = self.server.getZhuYe(article_html)
+        # 获取标识(图片)
+        save_data['biaoShi'] = self.server.getTuPian(article_html)
+        # 获取标签
+        save_data['biaoQian'] = self.server.getBiaoQian(article_html)
 
-            # url
-            save_data['url'] = url
-            # 生成key
-            save_data['key'] = url
-            # 生成sha
-            save_data['sha'] = sha
-            # 生成ss ——实体名称
-            save_data['ss'] = '人物'
-            # 生成es ——栏目名称
-            save_data['es'] = '论文'
-            # 生成ws ——网站名称
-            save_data['ws'] = '中国知网'
-            # 生成clazz ——层级关系
-            save_data['clazz'] = '人物_论文作者'
-            # 生成biz ——项目名称
-            save_data['biz'] = '文献大数据_论文'
-            # 生成ref
-            save_data['ref'] = ''
+        # 保存图片
+        if save_data['biaoShi']:
+            img_dict = {}
+            img_dict['bizTitle'] = save_data['title']
+            img_dict['relEsse'] = self.server.guanLianDanWei(url=url, sha=sha)
+            img_dict['relPics'] = {}
+            img_dict['url'] = save_data['biaoShi']
 
-            # --------------------------
-            # 存储部分
-            # --------------------------
-            # 保存机构队列
-            if save_data['guanLianQiYeJiGou']:
-                for jigou in save_data['guanLianQiYeJiGou']:
-                    self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
+            self.img(img_dict=img_dict, sha=sha)
 
-            return sha
+        # ======================= 公共字段
+        # url
+        save_data['url'] = url
+        # 生成key
+        save_data['key'] = url
+        # 生成sha
+        save_data['sha'] = sha
+        # 生成ss ——实体
+        save_data['ss'] = '机构'
+        # 生成es ——栏目名称
+        save_data['es'] = '学位论文'
+        # 生成ws ——目标网站
+        save_data['ws'] = '中国知网'
+        # 生成clazz ——层级关系
+        save_data['clazz'] = '机构_学位授予单位'
+        # 生成biz ——项目
+        save_data['biz'] = '文献大数据_论文'
+        # 生成ref
+        save_data['ref'] = ''
 
-        else:
-            LOGGING.error('对不起，未找到相关数据，url: {}'.format(url))
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PEOPLE, sha=sha)
+        return sha
 
     def run(self, task):
         # 创建数据存储字典
@@ -139,15 +154,15 @@ class SpiderMain(BastSpiderMain):
         success = self.dao.saveDataToHbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
+            self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZHIWANG_PEOPLE, count=20, lockname=config.REDIS_ZHIWANG_PEOPLE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_XUEWEI_INSTITUTE, count=30, lockname=config.REDIS_XUEWEI_INSTITUTE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -181,13 +196,19 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"name": "张敏", "url": "https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=au&skey=张敏&code=06608417", "sha": "3865db420546261be91cd91fd1a3337961d708d1", "ss": "人物", "shiJian": {"v": "2018", "u": "年"}}')
+        # main.run(task='{"url": "https://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GLMWY", "value": "0030"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
 if __name__ == '__main__':
+    LOGGING.info('======The Start!======')
     begin_time = time.time()
     process_start()
+    # po = Pool(1)
+    # for i in range(1):
+    #     po.apply_async(func=process_start)
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))
+    LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))

@@ -17,8 +17,8 @@ from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<知网_机构_queue>'  # LOG名
-NAME = '知网_机构_queue'  # 爬虫名
+LOGNAME = '<学位论文_学位授予单位_queue>'  # LOG名
+NAME = '学位论文_学位授予单位_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -30,7 +30,7 @@ class BastSpiderMain(object):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT)
-        self.server = service.ZhiWangLunWen_JiGou(logging=LOGGING)
+        self.server = service.XueWeiLunWen_xueWeiShouYuDanWei(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING)
 
         # 数据库录入爬虫名
@@ -45,14 +45,14 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_ZHIWANG_INSTITUTE)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_XUEWEI_INSTITUTE)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_INSTITUTE, ws='中国知网', es='论文', count=1000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_INSTITUTE, ws='中国知网', es='学位论文', count=2000)
                 # print(new_task_list)
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_ZHIWANG_INSTITUTE, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_XUEWEI_INSTITUTE, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 
@@ -78,4 +78,4 @@ if __name__ == '__main__':
     # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))
+    LOGGING.info('======Time consuming is %.2fs======' %(end_time - begin_time))

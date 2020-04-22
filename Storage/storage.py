@@ -208,6 +208,7 @@ class Dao(object):
                         return False
                     else:
                         count += 1
+                        self.logging.warning('Save data to Hbase again ...')
                         time.sleep(1)
                         continue
 
@@ -217,6 +218,7 @@ class Dao(object):
                     return False
                 else:
                     count += 1
+                    self.logging.warning('Save data to Hbase again ...')
                     time.sleep(1)
                     continue
 
@@ -302,6 +304,7 @@ class Dao(object):
                         return False
                     else:
                         count += 1
+                        self.logging.warning('Save media to Hbase again ...')
                         time.sleep(1)
                         continue
 
@@ -312,6 +315,7 @@ class Dao(object):
                     return False
                 else:
                     count += 1
+                    self.logging.warning('Save media to Hbase again ...')
                     time.sleep(1)
                     continue
 
@@ -428,11 +432,11 @@ class Dao(object):
             except Exception as e:
                 self.logging.error('uodate data error: {}'.format(e))
 
-    # 获取任务
+    # 从redis队列中获取任务
     def getTask(self, key, count, lockname):
         return self.redis_client.queue_spops(key=key, count=count, lockname=lockname)
 
-    # 物理删除任务
+    # 物理删除mysql中任务
     def deleteTask(self, table, sha):
         sql = "delete from {} where `sha` = '{}' and `del` = '0'".format(table, sha)
         try:
@@ -441,7 +445,7 @@ class Dao(object):
         except:
             self.logging.warning('任务删除异常: {}'.format(sha))
 
-    # 逻辑删除任务
+    # 逻辑删除mysql中任务
     def deleteLogicTask(self, table, sha):
         data = {
             'del': '1'

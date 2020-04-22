@@ -201,12 +201,12 @@ class XueWeiLunWen_LunWenTaskDao(storage.Dao):
                                                          mysqlpool_number=mysqlpool_number,
                                                          redispool_number=redispool_number)
 
-    def getTask(self):
-        sql = "select * from {} where `type` = '{}' and `del` = '{}'".format(config.MYSQL_QIKAN,
-                                                                             config.XUEWEILUNWEN_QIKAN_MAIN, 0)
-        data_list = self.mysql_client.get_results(sql=sql)
-
-        return data_list
+    # def getTask(self):
+    #     sql = "select * from {} where `type` = '{}' and `del` = '{}'".format(config.MYSQL_QIKAN,
+    #                                                                          config.XUEWEILUNWEN_QIKAN_MAIN, 0)
+    #     data_list = self.mysql_client.get_results(sql=sql)
+    #
+    #     return data_list
 
     def saveLunWenUrlData(self, memo):
         url = memo['url']

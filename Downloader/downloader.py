@@ -41,7 +41,7 @@ def _error(func):
     return wrapper
 
 
-class Downloader(object):
+class BaseDownloader(object):
     def __init__(self, logging, timeout):
         self.logging = logging
         self.timeout = timeout

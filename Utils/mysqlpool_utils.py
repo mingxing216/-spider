@@ -31,8 +31,8 @@ class MysqlPool(object):
         #                 )
         self.pool = PooledDB(
             pymysql,
-            mincached=number,  # 最小空闲连接数
-            maxcached=number,  # 最大空闲连接数
+            mincached=2,  # 最小空闲连接数
+            maxcached=5,  # 最大空闲连接数
             maxconnections=number,  # 最大连接数
             blocking=True,
             host=settings.DB_HOST,

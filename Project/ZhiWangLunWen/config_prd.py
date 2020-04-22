@@ -73,14 +73,14 @@ REDIS_ZUOZHE_LOCK = 'ss_zhiwang_zuozhe_lock'
 QIKANLUNWEN_QIKAN_MAIN = 'qikan'
 # huiYiLunWen_qiKan_main.py --> 数据输出种类
 HUIYILUNWEN_QIKAN_MAIN = 'huiyi'
-# xueWeiLunWen_qiKan_main.py --> 数据输出种类
+# task_zhiwang.py --> 数据输出种类
 XUEWEILUNWEN_QIKAN_MAIN = 'xuewei'
 
 # qiKanLunWen_lunWen_main.py --> 数据输出种类
 QIKANLUNWEN_LUNWEN_MAIN = 'qikan'
 # huiYiLunWen_lunWenData_main.py --> 数据输出种类
 HUIYILUNWEN_LUNWEN_MAIN = 'huiyi'
-# xueWeiLunWen_lunWen_main.py --> 数据输出种类
+# task_zhiwang.py --> 数据输出种类
 XUEWEILUNWEN_LUNWEN_MAIN = 'xuewei'
 
 

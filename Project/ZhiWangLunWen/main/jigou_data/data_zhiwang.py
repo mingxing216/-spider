@@ -9,6 +9,7 @@ monkey.patch_all()
 import sys
 import os
 import time
+import hashlib
 import traceback
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
@@ -29,125 +30,115 @@ class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
-                                                                  timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY,
-                                                                  proxy_city=config.CITY)
-        self.server = service.ZhiWangLunWen_JiGouDataServer(logging=LOGGING)
+                                                                  timeout=config.TIMEOUT)
+        self.server = service.ZhiWangLunWen_JiGou(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
-                           mysqlpool_number=config.MYSQL_POOL_NUMBER,
-                           redispool_number=config.REDIS_POOL_NUMBER)
+                           mysqlpool_number=config.MYSQL_POOL_MAX_NUMBER,
+                           redispool_number=config.REDIS_POOL_MAX_NUMBER)
 
 
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
 
-    def __getResp(self, url, mode, s=None, data=None, cookies=None, referer=None):
-        for i in range(10):
-            resp = self.download_middleware.getResp(url=url,
-                                                    mode=mode,
-                                                    s=s,
-                                                    data=data,
-                                                    cookies=cookies,
-                                                    referer=referer)
-            if resp['code'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text or len(response.text) < 200:
-                    LOGGING.info('出现验证码')
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        # 发现验证码，请求页面3次
+        resp = None
+        for i in range(3):
+            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+                                                    cookies=cookies, referer=referer)
+            if resp:
+                if '请输入验证码' in resp.text or len(resp.text) < 200:
                     continue
 
-                else:
-                    return response
+            return resp
 
-            if resp['code'] == 1:
-                return None
         else:
-            return None
+            LOGGING.error('页面出现验证码: {}'.format(url))
+            return resp
 
     def handle(self, task, save_data):
-        # 获取task数据
-        task_data = self.server.evalTask(task)
+        # 数据类型转换
+        task_data = self.server.getEvalResponse(task)
         # print(task_data)
-
-        sha = task_data['sha']
         url = task_data['url']
-        # # 查询当前文章是否被抓取过
-        status = self.dao.getTaskStatus(sha=sha)
+        print(url)
+        # sha = task_data['sha']
+        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
-        if status is False:
-            # 获取会议主页html源码
-            resp = self.__getResp(url=url, mode='get')
-            # article_html = self.download_middleware.getResp(url='http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=in&skey=%E4%B8%AD%E5%8C%97%E5%A4%A7%E5%AD%A6&code=0036109', mode='get')
-            # print(article_html)
+        # # # 查询当前文章是否被抓取过
+        # status = self.dao.getTaskStatus(sha=sha)
 
-            if not resp:
-                LOGGING.error('机构页面响应失败, url: {}'.format(url))
+        # 获取会议主页html源码
+        resp = self.__getResp(url=url, method='GET')
+        # article_html = self.download_middleware.getResp(url='http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=in&skey=%E4%B8%AD%E5%8C%97%E5%A4%A7%E5%AD%A6&code=0036109', mode='get')
+        # print(article_html)
+
+        if not resp:
+            LOGGING.error('机构页面响应失败, url: {}'.format(url))
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            return
+
+        article_html = resp.text
+        # ======================== 获取数据 ==========================
+        # 获取标题
+        save_data['title'] = self.server.getJiGouName(article_html)
+        # 获取曾用名
+        save_data['cengYongMing'] = self.server.getField(article_html, '曾用名')
+        # 获取所在地_内容
+        save_data['suoZaiDiNeiRong'] = self.server.getField(article_html, '地域')
+        # 获取主页(官网地址)
+        save_data['zhuYe'] = self.server.getGuanWangDiZhi(article_html)
+        # 获取标识(图片)
+        save_data['biaoShi'] = self.server.getTuPian(article_html)
+
+        # url
+        save_data['url'] = url
+        # 生成key
+        save_data['key'] = url
+        # 生成sha
+        save_data['sha'] = sha
+        # 生成ss ——实体
+        save_data['ss'] = '机构'
+        # 生成es ——栏目名称
+        save_data['es'] = '论文'
+        # 生成ws ——目标网站
+        save_data['ws'] = '中国知网'
+        # 生成clazz ——层级关系
+        save_data['clazz'] = '机构_论文作者机构'
+        # 生成biz ——项目
+        save_data['biz'] = '文献大数据_论文'
+        # 生成ref
+        save_data['ref'] = ''
+
+        # 保存图片
+        if save_data['biaoShi']:
+            img_dict = {}
+            img_dict['bizTitle'] = save_data['title']
+            img_dict['relEsse'] = self.server.guanLianJiGou(url=url, sha=sha)
+            img_dict['relPics'] = {}
+            img_url = save_data['biaoShi']
+            # # 存储图片种子
+            # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
+            # 获取图片响应
+            media_resp = self.__getResp(url=img_url, method='GET')
+            if not media_resp:
+                LOGGING.error('图片响应失败, url: {}'.format(img_url))
                 # 逻辑删除任务
                 self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
                 return
 
-            article_html = resp.text
-            # ========================获取数据==========================
-            # 获取标题
-            save_data['title'] = self.server.getJiGouName(article_html)
-            # 获取曾用名
-            save_data['cengYongMing'] = self.server.getCengYongMing(article_html)
-            # 获取所在地_内容
-            save_data['suoZaiDiNeiRong'] = self.server.getDiyu(article_html)
-            # 获取主页(官网地址)
-            save_data['zhuYe'] = self.server.getGuanWangDiZhi(article_html)
-            # 获取标识(图片)
-            save_data['biaoShi'] = self.server.getTuPian(article_html)
+            img_content = media_resp.content
+            # 存储图片
+            suc = self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
+            if not suc:
+                # 逻辑删除任务
+                self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
 
-            # url
-            save_data['url'] = url
-            # 生成key
-            save_data['key'] = url
-            # 生成sha
-            save_data['sha'] = sha
-            # 生成ss ——实体
-            save_data['ss'] = '机构'
-            # 生成es ——栏目名称
-            save_data['es'] = '论文'
-            # 生成ws ——目标网站
-            save_data['ws'] = '中国知网'
-            # 生成clazz ——层级关系
-            save_data['clazz'] = '机构_论文作者机构'
-            # 生成biz ——项目
-            save_data['biz'] = '文献大数据_论文'
-            # 生成ref
-            save_data['ref'] = ''
-
-            # 保存图片
-            if save_data['biaoShi']:
-                img_dict = {}
-                img_dict['bizTitle'] = save_data['title']
-                img_dict['relEsse'] = self.server.guanLianJiGou(url=url, sha=sha)
-                img_dict['relPics'] = {}
-                img_url = save_data['biaoShi']
-                # # 存储图片种子
-                # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
-                # 获取图片响应
-                media_resp = self.__getResp(url=img_url,
-                                            mode='GET')
-                if not media_resp:
-                    LOGGING.error('图片响应失败, url: {}'.format(img_url))
-                    # 逻辑删除任务
-                    self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
-                    return
-
-                img_content = media_resp.content
-                # 存储图片
-                self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
-
-            # # 记录已抓取任务
-            # self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
-            return sha
-
-        else:
-            LOGGING.warning('{}: 已被抓取过'.format(sha))
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+        # # 记录已抓取任务
+        # self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
+        return sha
 
     def run(self, task):
         # 创建数据存储字典
@@ -173,7 +164,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_INSTITUTE, count=10, lockname=config.REDIS_INSTITUTE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_ZHIWANG_INSTITUTE, count=30, lockname=config.REDIS_ZHIWANG_INSTITUTE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -207,7 +198,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"sha": "dd06db73593fec370c69225f8d4454147bdf9665", "url": "http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=in&skey=%E6%B2%B3%E5%8D%97%E7%9C%81%E6%B0%94%E8%B1%A1%E5%B1%80&code=0005380", "ss": "机构"}')
+        # main.run(task='{"name": "东莞理工学院生物传感器研究中心 广东东莞523106", "url": "https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=in&skey=%E5%AE%89%E5%BE%BD%E7%90%86%E5%B7%A5%E5%A4%A7%E5%AD%A6&code=0167619", "sha": "634d0b957efb8b481dbb0983aa65c22f4499afbb", "ss": "机构"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

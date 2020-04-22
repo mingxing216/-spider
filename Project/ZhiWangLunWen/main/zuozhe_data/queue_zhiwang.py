@@ -29,13 +29,9 @@ class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
-                                                                  timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY,
-                                                                  proxy_city=config.CITY)
-        self.server = service.ZhiWangLunWen_ZuoZheDataServer(logging=LOGGING)
-        self.dao = dao.Dao(logging=LOGGING,
-                           mysqlpool_number=config.MYSQL_POOL_NUMBER,
-                           redispool_number=config.REDIS_POOL_NUMBER)
+                                                                  timeout=config.TIMEOUT)
+        self.server = service.ZhiWangLunWen_ZuoZhe(logging=LOGGING)
+        self.dao = dao.Dao(logging=LOGGING)
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
@@ -49,14 +45,14 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_PEOPLE)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_ZHIWANG_PEOPLE)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PEOPLE, ws='中国知网', es='论文', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PEOPLE, ws='中国知网', es='论文', count=1000)
                 # print(new_task_list)
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_PEOPLE, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_ZHIWANG_PEOPLE, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 

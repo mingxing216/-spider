@@ -19,7 +19,7 @@ from Utils import proxy
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
-class GongKaiDownloader(downloader.Downloader):
+class GongKaiDownloader(downloader.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         super(GongKaiDownloader, self).__init__(logging=logging, timeout=timeout)
         self.proxy_type = proxy_type
@@ -264,7 +264,7 @@ class GongKaiDownloader(downloader.Downloader):
         return self.begin(url=url, method=method, headers=headers, proxies=proxies)
 
 
-class ShouQuanDownloader(downloader.Downloader):
+class ShouQuanDownloader(downloader.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         super(ShouQuanDownloader, self).__init__(logging=logging, timeout=timeout)
         self.proxy_type = proxy_type
@@ -508,7 +508,7 @@ class ShouQuanDownloader(downloader.Downloader):
         return self.begin(url=url, method=method, headers=headers, proxies=proxies)
 
 
-class WaiGuanDownloader(downloader.Downloader):
+class WaiGuanDownloader(downloader.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         super(WaiGuanDownloader, self).__init__(logging=logging, timeout=timeout)
         self.proxy_type = proxy_type
@@ -751,7 +751,7 @@ class WaiGuanDownloader(downloader.Downloader):
         return self.begin(url=url, method=method, headers=headers, proxies=proxies)
 
 
-class ShiYongDownloader(downloader.Downloader):
+class ShiYongDownloader(downloader.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         super(ShiYongDownloader, self).__init__(logging=logging, timeout=timeout)
         self.proxy_type = proxy_type

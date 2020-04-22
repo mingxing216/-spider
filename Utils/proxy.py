@@ -84,62 +84,82 @@ class ProxyUtils(object):
     # 获取代理
     def getProxy(self):
         while True:
-            url = "{}?random={}&country={}&city={}&type={}".format(settings.GET_PROXY_API, self.random,
-                                                                   self.country, self.city, self.type)
-
             try:
-                proxy_data = requests.get(url=url).content.decode('utf-8')
-            except:
-                proxy_data = None
-
-            if proxy_data:
-                data = json.loads(proxy_data)
-                if data['status'] == 0:
-                    ip = data['ip']
-                    port = data['port']
-                    proxy_ip = 'https://' + ip + ':' + port
-
-                    # # 判断是否为高匿代理
-                    # allow = self.__jianChaNiMingDu(https=proxy_ip)
-                    # print(allow)
-                    # if allow:
-
-                    # 判断协议种类
-                    if self.type == 'http':
-                        return {'http': 'http://{}:{}'.format(ip, port)}
-
-                    elif self.type == 'https':
-                        return {'https': 'https://{}:{}'.format(ip, port)}
-
-                    elif self.type == 'socks5':
-                        return {'http': 'socks5://{}:{}'.format(ip, port),
-                                'https': 'socks5://{}:{}'.format(ip, port)}
-
-                    elif self.type == 'adsl':
-                        # return {'http': 'http://{}:{}'.format(ip, port)}
-
-                        return {'http': 'http://{}:{}'.format(ip, port),
-                                'https': 'https://{}:{}'.format(ip, port)}
-
-                    else:
-                        self.logging.error('status: False | err: type error!!! | from: getProxy')
-
-                        continue
-
-                    # else:
-                    #     self.logging.error('代理非高匿代理，获取失败')
-                    #     continue
-
+                r = requests.get('http://60.195.249.95:5000/random')
+                proxy = r.text
+                # print(proxy)
+                if proxy:
+                    return {'http': 'http://' + proxy,
+                            'https': 'https://' + proxy}
                 else:
                     self.logging.error('代理池代理获取失败')
-                    time.sleep(5)
+                    time.sleep(2)
+                    continue
 
+            except Exception:
+                self.logging.error('代理接口请求失败')
+                time.sleep(2)
                 continue
 
-            else:
-                self.logging.error('代理池代理获取失败')
-                time.sleep(5)
-                continue
+    # # 获取代理
+    # def getProxy(self):
+    #     while True:
+    #         url = "{}?random={}&country={}&city={}&type={}".format(settings.GET_PROXY_API, self.random,
+    #                                                                self.country, self.city, self.type)
+    #
+    #         try:
+    #             proxy_data = requests.get(url=url).content.decode('utf-8')
+    #         except:
+    #             proxy_data = None
+    #
+    #         if proxy_data:
+    #             data = json.loads(proxy_data)
+    #             if data['status'] == 0:
+    #                 ip = data['ip']
+    #                 port = data['port']
+    #                 proxy_ip = 'https://' + ip + ':' + port
+    #
+    #                 # # 判断是否为高匿代理
+    #                 # allow = self.__jianChaNiMingDu(https=proxy_ip)
+    #                 # print(allow)
+    #                 # if allow:
+    #
+    #                 # 判断协议种类
+    #                 if self.type == 'http':
+    #                     return {'http': 'http://{}:{}'.format(ip, port)}
+    #
+    #                 elif self.type == 'https':
+    #                     return {'https': 'https://{}:{}'.format(ip, port)}
+    #
+    #                 elif self.type == 'socks5':
+    #                     return {'http': 'socks5://{}:{}'.format(ip, port),
+    #                             'https': 'socks5://{}:{}'.format(ip, port)}
+    #
+    #                 elif self.type == 'adsl':
+    #                     # return {'http': 'http://{}:{}'.format(ip, port)}
+    #
+    #                     return {'http': 'http://{}:{}'.format(ip, port),
+    #                             'https': 'https://{}:{}'.format(ip, port)}
+    #
+    #                 else:
+    #                     self.logging.error('status: False | err: type error!!! | from: getProxy')
+    #
+    #                     continue
+    #
+    #                 # else:
+    #                 #     self.logging.error('代理非高匿代理，获取失败')
+    #                 #     continue
+    #
+    #             else:
+    #                 self.logging.error('代理池代理获取失败')
+    #                 time.sleep(5)
+    #
+    #             continue
+    #
+    #         else:
+    #             self.logging.error('代理池代理获取失败')
+    #             time.sleep(5)
+    #             continue
 
     # 删除代理
     def delProxy(self, proxies):

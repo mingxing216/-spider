@@ -133,7 +133,7 @@ class SpiderMain(BastSpiderMain):
             # 获取列表首响应
             catalog_resp = self.__getResp(url=self.base_url, method='POST', data=json.dumps(data))
             if not catalog_resp:
-                LOGGING.error('列表页响应失败, url: {}'.format(self.base_url))
+                LOGGING.error('第{}页列表页响应失败, url: {}'.format(i, self.base_url))
                 # 队列一条任务
                 task['num'] = i
                 self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)

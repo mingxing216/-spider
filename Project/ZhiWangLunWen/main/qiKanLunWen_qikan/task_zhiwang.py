@@ -26,9 +26,7 @@ class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
-                                                                  timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY,
-                                                                  proxy_city=config.CITY)
+                                                                  timeout=config.TIMEOUT)
         self.server = service.QiKanLunWen_QiKanTaskServer(logging=LOGGING)
         self.dao = dao.QiKanLunWen_QiKanTaskDao(logging=LOGGING)
 
