@@ -168,7 +168,7 @@ class SpiderMain(BastSpiderMain):
         cookies = self.download_middleware.create_cookie(url=url)
         if not cookies:
             # 队列一条任务
-            self.dao.QueueOneTask(key=config.REDIS_XUEWEI_CLASS, data=task)
+            self.dao.QueueOneTask(key=config.REDIS_XUEWEI_CATALOG, data=task)
             return
         # 设置会话cookies
         self.s.cookies = cookies
@@ -184,7 +184,7 @@ class SpiderMain(BastSpiderMain):
         if not zhuanye_resp:
             LOGGING.error('学科专业分类接口响应失败, url: {}'.format(zhuanye_url))
             # 队列一条任务
-            self.dao.QueueOneTask(key=config.REDIS_XUEWEI_CLASS, data=task)
+            self.dao.QueueOneTask(key=config.REDIS_XUEWEI_CATALOG, data=task)
             return
         # zhuanye_resp.encoding = zhuanye_resp.apparent_encoding
         zhuanye_text = zhuanye_resp.text
