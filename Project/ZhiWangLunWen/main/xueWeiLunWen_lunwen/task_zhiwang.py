@@ -82,9 +82,9 @@ class SpiderMain(BastSpiderMain):
                 self.dao.QueueOneTask(key=config.REDIS_XUEWEI_CATALOG, data=task)
                 return
             # 处理验证码
-            if '请输入验证码' in lunwen_list_resp.text or len(lunwen_list_resp.text) < 10:
+            if '请输入验证码' in lunwen_list_resp.text or 'location.href' in lunwen_list_resp.text or len(lunwen_list_resp.text) < 10:
                 LOGGING.error('出现验证码,重新建立会话')
-                # 创建cookies
+                # 重新创建cookies
                 cookies = self.download_middleware.create_cookie(url=url)
                 if not cookies:
                     # 队列一条任务
@@ -122,9 +122,9 @@ class SpiderMain(BastSpiderMain):
                 self.dao.QueueOneTask(key=config.REDIS_XUEWEI_CATALOG, data=task)
                 return
             # 处理验证码
-            if '请输入验证码' in catalog_resp.text or len(catalog_resp.text) < 10:
+            if '请输入验证码' in catalog_resp.text or 'location.href' in catalog_resp.text or len(catalog_resp.text) < 10:
                 LOGGING.error('出现验证码,重新建立会话')
-                # 创建cookies
+                # 重新创建cookies
                 cookies = self.download_middleware.create_cookie(url=url)
                 if not cookies:
                     # 队列一条任务
