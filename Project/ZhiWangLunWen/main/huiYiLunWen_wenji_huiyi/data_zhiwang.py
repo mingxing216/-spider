@@ -16,13 +16,14 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
+from Utils import timeutils
 from Project.ZhiWangLunWen.middleware import download_middleware
 from Project.ZhiWangLunWen.service import service
 from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<知网论文_机构_data>'  # LOG名
+LOGNAME = '<会议论文_文集_会议_data>'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
@@ -31,7 +32,7 @@ class BastSpiderMain(object):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT)
-        self.server = service.XueWeiLunWen_xueWeiShouYuDanWei(logging=LOGGING)
+        self.server = service.HuiYiLunWen_WenJi_HuiYi(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_MAX_NUMBER,
                            redispool_number=config.REDIS_POOL_MAX_NUMBER)
@@ -40,6 +41,8 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
+        # 会议文集/会议详情页
+        self.base_url = 'https://navi.cnki.net/knavi/DpaperDetail/CreateDPaperBaseInfo?'
 
     def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
@@ -65,7 +68,7 @@ class SpiderMain(BastSpiderMain):
             # 存储图片种子
             self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            # self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
             return
 
         img_content = media_resp.content
@@ -75,19 +78,78 @@ class SpiderMain(BastSpiderMain):
             # 逻辑删除任务
             self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
 
+    def getHuiYi(self, url, sha, jibie, html):
+        # 会议存储字典
+        meeting_data = {}
+        # ======================= 获取数据 =====================
+        # 标题
+        meeting_data['title'] = self.server.getField(html, '会议名称')
+        print(meeting_data['title'])
+        # 举办时间
+        juBanShiJian = self.server.getField(html, '会议时间')
+        if juBanShiJian:
+            try:
+                meeting_data['juBanShiJian'] = timeutils.getDateTimeRecord(juBanShiJian)
+            except:
+                meeting_data['juBanShiJian'] = juBanShiJian
+        else:
+            meeting_data['juBanShiJian'] = ""
+        print(meeting_data['juBanShiJian'])
+        # 所在地_内容
+        meeting_data['suoZaiDiNeiRong'] = self.server.getField(html, '会议地点')
+        print(meeting_data['suoZaiDiNeiRong'])
+        # 主办单位
+        meeting_data['zhuBanDanWei'] = self.server.getField(html, '学会名称')
+        print(meeting_data['zhuBanDanWei'])
+        # 级别
+        meeting_data['jiBie'] = jibie
+        print(meeting_data['jiBie'])
+        # 关联主办单位 (目前无此数据)
+        meeting_data['guanLianZhuBanDanWei'] = {}
+
+        # ======================= 公共字段
+        # url
+        meeting_data['url'] = url
+        # 生成key
+        meeting_data['key'] = url
+        # 生成sha
+        meeting_data['sha'] = sha
+        # 生成ss ——实体
+        meeting_data['ss'] = '活动'
+        # 生成es ——栏目名称
+        meeting_data['es'] = '会议论文'
+        # 生成ws ——目标网站
+        meeting_data['ws'] = '中国知网'
+        # 生成clazz ——层级关系
+        meeting_data['clazz'] = '活动_会议'
+        # 生成biz ——项目
+        meeting_data['biz'] = '文献大数据_论文'
+        # 生成ref
+        meeting_data['ref'] = ''
+
+        # ======================= 存储数据 =========================
+        suc = self.dao.saveDataToHbase(data=meeting_data)
+        if not suc:
+            # 逻辑删除任务
+            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
+
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
         # print(task_data)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
+        jibie = task_data['jibie']
+        hangye = task_data['s_hangYe']
 
-        # 获取授予单位详情页html源码
-        resp = self.__getResp(url=url, method='GET')
+        # 获取会议文集/会议详情页html源码
+        pro_url = self.server.getProfileUrl(base_url=self.base_url, url=url)
+        print(url)
+        resp = self.__getResp(url=pro_url, method='GET')
         if not resp:
-            LOGGING.error('学位授予单位页面响应失败, url: {}'.format(url))
+            LOGGING.error('会议文集页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
             return
 
         resp.encoding = resp.apparent_encoding
@@ -95,22 +157,50 @@ class SpiderMain(BastSpiderMain):
         # ========================获取数据==========================
         # 获取标题
         save_data['title'] = self.server.geTitle(article_html)
-        # 获取曾用名
-        save_data['cengYongMing'] = self.server.getField(article_html, '曾用名')
-        # 获取所在地_内容
-        save_data['suoZaiDiNeiRong'] = self.server.getField(article_html, '地域')
-        # 获取主页(官网地址)
-        save_data['zhuYe'] = self.server.getZhuYe(article_html)
+        print(save_data['title'])
         # 获取标识(图片)
         save_data['biaoShi'] = self.server.getTuPian(article_html)
-        # 获取标签
-        save_data['biaoQian'] = self.server.getBiaoQian(article_html)
+        print(save_data['biaoShi'])
+        # 获取出版单位
+        save_data['chuBanDanWei'] = self.server.getField(article_html, '出版单位')
+        print(save_data['chuBanDanWei'])
+        # 获取出版时间
+        chuBanShiJian = self.server.getField(article_html, '出版日期')
+        if chuBanShiJian:
+            try:
+                save_data['chuBanShiJian'] = timeutils.getDateTimeRecord(chuBanShiJian)
+            except:
+                save_data['chuBanShiJian'] = chuBanShiJian
+        else:
+            save_data['chuBanShiJian'] = ""
+        print(save_data['chuBanShiJian'])
+        # 获取主编
+        save_data['zhuBian'] = self.server.getField(article_html, '主编')
+        print(save_data['zhuBian'])
+        # 获取编者
+        save_data['bianZhe'] = self.server.getField(article_html, '编者')
+        print(save_data['bianZhe'])
+        # 获取专辑名称
+        save_data['zhunaJiMingCheng'] = self.server.getField(article_html, '专辑名称')
+        print(save_data['zhunaJiMingCheng'])
+        # 获取专题名称
+        save_data['zhuanTiMingCheng'] = self.server.getField(article_html, '专题名称')
+        print(save_data['zhuanTiMingCheng'])
+        # 获取行业
+        save_data['hangYe'] = hangye
+        print(save_data['hangYe'])
+        # 关联活动_会议
+        save_data['guanLianHuoDongHuiYi'] = self.server.guanLianHuoDongHuiYi(url, sha)
+        print(save_data['guanLianHuoDongHuiYi'])
+
+        # 保存会议实体
+        self.getHuiYi(url=url, sha=sha, jibie=jibie, html=article_html)
 
         # 保存图片
         if save_data['biaoShi']:
             img_dict = {}
             img_dict['bizTitle'] = save_data['title']
-            img_dict['relEsse'] = self.server.guanLianDanWei(url=url, sha=sha)
+            img_dict['relEsse'] = self.server.guanLianWenJi(url=url, sha=sha)
             img_dict['relPics'] = {}
             img_dict['url'] = save_data['biaoShi']
 
@@ -124,13 +214,13 @@ class SpiderMain(BastSpiderMain):
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
-        save_data['ss'] = '机构'
+        save_data['ss'] = '期刊'
         # 生成es ——栏目名称
-        save_data['es'] = '学位论文'
+        save_data['es'] = '会议论文'
         # 生成ws ——目标网站
         save_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '机构_学位授予单位'
+        save_data['clazz'] = '期刊_会议文集'
         # 生成biz ——项目
         save_data['biz'] = '文献大数据_论文'
         # 生成ref
@@ -154,15 +244,15 @@ class SpiderMain(BastSpiderMain):
         success = self.dao.saveDataToHbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.deleteTask(table=config.MYSQL_MAGAZINE, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_XUEWEI_INSTITUTE, count=30, lockname=config.REDIS_XUEWEI_INSTITUTE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_HUIYI_MAGAZINE, count=30, lockname=config.REDIS_HUIYI_MAGAZINE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -196,7 +286,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GLMWY", "value": "0030"}')
+        # main.run(task='{"url": "https://navi.cnki.net/knavi/DPaperDetail?pcode=CIPD&lwjcode=DNKF200908001&hycode=009789", "jibie": "国际", "s_hangYe": "农、林、牧、渔业_农、林、牧、渔业综合"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

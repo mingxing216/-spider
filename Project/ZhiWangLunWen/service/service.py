@@ -1276,6 +1276,231 @@ class XueWeiLunWen_LunWen(Service):
 
         return people_list
 
+class HuiYiLunWen_WenJi_HuiYi(Service):
+    def getDaoHangPageData(self):
+        data = {
+            "productcode": "CIPD",
+            "ClickIndex": "2",
+            "random": random.random()
+        }
+
+        return data
+
+    # 获取分类参数
+    def getFenLeiDataList(self, resp):
+        return_data = []
+        selector = Selector(text=resp)
+        try:
+            li_list = selector.xpath("//ul/li")
+            for li in li_list:
+                fir_a = li.xpath("./span/a")
+                sec_a_list = li.xpath("./dl/dd/a")
+                onclick1 = fir_a.xpath("./@onclick").extract_first().strip()
+                name1 = fir_a.xpath("./@title").extract_first().strip()
+                if not sec_a_list:
+                    try:
+                        data_dict = {}
+                        count1 = fir_a.xpath("./em/text()").extract_first()
+                        data_dict['data'] = re.findall(r"naviSearch(\(.*\));", onclick1, re.S)[0]
+                        data_dict['totalCount'] = re.findall(r"\((.*)\)", count1, re.S)[0].strip()
+                        data_dict['s_hangYe'] = name1
+                        # 列表页首页
+                        data_dict['num'] = 1
+                        return_data.append(data_dict)
+                    except Exception:
+                        continue
+
+                for a in sec_a_list:
+                    try:
+                        data_dict = {}
+                        onclick2 = a.xpath("./@onclick").extract_first().strip()
+                        count2 = a.xpath("./em/text()").extract_first()
+                        name2 = a.xpath("./@title").extract_first().strip()
+                        data_dict['data'] = re.findall(r"naviSearch(\(.*\));", onclick2, re.S)[0]
+                        data_dict['totalCount'] = re.findall(r"\((.*)\)", count2, re.S)[0].strip()
+                        data_dict['s_hangYe'] = name1 + '_' + name2
+                        # 列表页首页
+                        data_dict['num'] = 1
+                        return_data.append(data_dict)
+                    except Exception:
+                        continue
+
+        except Exception:
+            return return_data
+
+        return return_data
+
+    # 生成行业列表页文集总页数
+    def getPageNumber(self, totalCount):
+        if int(totalCount) % 20 == 0:
+            return int(int(totalCount) / 20)
+
+        else:
+            return int(int(totalCount) / 20) + 1
+
+    # 生成论文集列表页请求参数
+    def getLunWenJiUrlData(self, data, page):
+        return_data = {}
+        data_tuple = ast.literal_eval(data)
+        return_data['SearchStateJson'] = json.dumps(
+            {
+                "StateID": "",
+                "Platfrom": "",
+                "QueryTime": "",
+                "Account": "knavi",
+                "ClientToken": "",
+                "Language": "",
+                "CNode": {"PCode": "CIPD",
+                          "SMode": "",
+                          "OperateT": ""},
+                "QNode": {"SelectT": "",
+                          "Select_Fields": "",
+                          "S_DBCodes": "",
+                          "QGroup": [{"Key": "Navi",
+                                      "Logic": 1,
+                                      "Items": [],
+                                      "ChildItems": [{"Key": "DPaper1",
+                                                      "Logic": 1,
+                                                      "Items": [{"Key": 1,
+                                                                 "Title": "",
+                                                                 "Logic": 1,
+                                                                 "Name": "行业分类代码",
+                                                                 "Operate": "",
+                                                                 "Value": "{}?".format(data_tuple[2]),
+                                                                 "ExtendType": 0,
+                                                                 "ExtendValue": "",
+                                                                 "Value2": ""}],
+                                                      "ChildItems": []}]}],
+                          "GroupBy": "",
+                          "Additon": ""}
+            }
+        )
+        return_data['displaymode'] = 1
+        return_data['pageindex'] = page
+        return_data['pagecount'] = 20
+        return_data['index'] = 2
+        return_data['random'] = random.random()
+
+        return return_data
+
+    # 获取会议文集种子
+    def getWenJiUrlList(self, resp, hangye):
+        return_data = []
+        selector = Selector(text=resp)
+        try:
+            dl_list = selector.xpath("//div[@class='papersList']/dl")
+            if dl_list:
+                for dl in dl_list:
+                    save_data = {}
+                    url_template = 'https://navi.cnki.net/knavi/DPaperDetail?pcode={}&lwjcode={}&hycode={}'
+
+                    if dl.xpath("./dt/em/text()"):
+                        jibie = dl.xpath("./dt/em/text()").extract_first().strip()
+                    else:
+                        jibie = ""
+
+                    if dl.xpath("./dt/a/@href"):
+                        url_data = dl.xpath("./dt/a/@href").extract_first()
+
+                        # 获取pcode
+                        if re.findall(r"pcode=(.*?)&", url_data):
+                            pcode = re.findall(r"pcode=(.*?)&", url_data, re.S)[0]
+                        elif re.findall(r"pcode=(.*)", url_data):
+                            pcode = re.findall(r"pcode=(.*)", url_data, re.S)[0]
+                        else:
+                            continue
+
+                        # 获取lwjcode
+                        if re.findall(r"baseid=(.*?),.*", url_data):
+                            lwjcode = re.findall(r"baseid=(.*?),.*", url_data, re.S)[0]
+                        elif re.findall(r"baseid=(.*?)&", url_data):
+                            lwjcode = re.findall(r"baseid=(.*?)&", url_data, re.S)[0]
+                        elif re.findall(r"baseid=(.*)", url_data):
+                            lwjcode = re.findall(r"baseid=(.*)", url_data, re.S)[0]
+                        else:
+                            continue
+
+                        # 获取hycode
+                        if re.findall(r"baseid=.*,(.*?)&", url_data):
+                            hycode = re.findall(r"baseid=.*,(.*?)&", url_data, re.S)[0]
+                        elif re.findall(r"baseid=.*,(.*)", url_data):
+                            hycode = re.findall(r"baseid=.*,(.*)", url_data, re.S)[0]
+                        else:
+                            hycode = ''
+
+                        save_data['url'] = url_template.format(pcode, lwjcode, hycode)
+                        save_data['jibie'] = jibie
+                        save_data['s_hangYe'] = hangye
+
+                        return_data.append(save_data)
+
+            else:
+                return return_data
+
+        except Exception:
+            return return_data
+
+        return return_data
+
+    # ==================================== 会议文集-DATA
+    # 获取文集详情url
+    def getProfileUrl(self, base_url, url):
+        try:
+            profile_url = base_url + re.findall(r"\?(.*)", url)[0]
+        except:
+            profile_url = ''
+
+        return profile_url
+
+    def geTitle(self, resp):
+        selector = Selector(text=resp)
+        try:
+            title = selector.xpath("//h3/text()").extract_first().strip()
+
+        except Exception:
+            title = ''
+
+        return title
+
+    def getTuPian(self, resp):
+        selector = Selector(text=resp)
+        try:
+            src = selector.xpath("//dt[contains(@class, 'pic')]/img/@src").extract_first().strip()
+            img = 'https:' + src
+
+        except Exception:
+            img = ''
+
+        return img
+
+    def getField(self, resp, para):
+        selector = Selector(text=resp)
+        try:
+            if selector.xpath("//ul/li/p[contains(text(), '" + para + "')]/span/@title"):
+                value = selector.xpath("//ul/li/p[contains(text(), '" + para + "')]/span/@title").extract_first().strip()
+            else:
+                value = selector.xpath("//ul/li/p[contains(text(), '" + para + "')]/span/text()").extract_first().strip()
+
+        except Exception:
+            value = ''
+
+        return value
+
+    def guanLianHuoDongHuiYi(self, url, sha):
+        e = {}
+        e['url'] = url
+        e['sha'] = sha
+        e['ss'] = '活动'
+        return e
+
+    def guanLianWenJi(self, url, sha):
+        e = {}
+        e['url'] = url
+        e['sha'] = sha
+        e['ss'] = '期刊'
+        return e
+
+
 class ZhiWangLunWen_JiGou(Service):
     # ================================= DATA
     # 获取字段值（曾用名、地域）
@@ -1471,134 +1696,6 @@ class QiKanLunWen_QiKanTaskServer(object):
             yield {'url': url, 'title': title}
 
 
-class HuiYiLunWen_QiKanTaskServer(object):
-    def __init__(self, logging):
-        self.logging = logging
-
-    def getDaoHangPageData(self):
-        data = {
-            "productcode": "CIPD",
-            "index": "1",
-            "random": "0.8249670375543876"
-        }
-
-        return data
-
-    # 获取学科导航的最底层导航列表
-    def getNavigationList(self, resp):
-        return_data = []
-        resp_etree = etree.HTML(bytes(bytearray(resp, encoding='utf-8')))
-
-        if resp_etree.xpath("//div[@class='guide']"):
-            for div in resp_etree.xpath("//div[@class='guide']"):
-                if '学科导航' in div.xpath(".//span[@class='wrap']/text()")[0]:
-                    li_list = div.xpath(".//ul[@class='contentbox']/li")
-                    if li_list:
-                        for li in li_list:
-                            # 获取'_'前部分栏目名
-                            firstname = li.xpath("./span[@class='refirstcol']/a/@title")[0]
-                            a_list = li.xpath("./dl[@class='resecondlayer']/dd/a")
-                            for a in a_list:
-                                save_data = {}
-                                # 获取'_'后部分栏目名
-                                lastname = a.xpath("./@title")[0]
-                                # 生成完整栏目名
-                                save_data['lanmu_name'] = firstname + '_' + lastname
-                                # 获取栏目url参数
-                                save_data['lanmu_url_data'] = re.findall(r"(\(.*\))", a.xpath("./@onclick")[0])[0]
-
-                                return_data.append(save_data)
-
-        else:
-            self.logging.error('学科导航下级导航列表获取失败。')
-
-            return return_data
-
-        return return_data
-
-    # 生成论文集列表页请求参数
-    def getLunWenJiUrlData(self, data, page):
-        return_data = {}
-        SearchStateJson_template = '{"StateID":"","Platfrom":"","QueryTime":"","Account":"knavi","ClientToken":"","Language":"","CNode":{"PCode":"CIPD","SMode":"","OperateT":""},"QNode":{"SelectT":"","Select_Fields":"","S_DBCodes":"","QGroup":[{"Key":"Navi","Logic":1,"Items":[],"ChildItems":[{"Key":"DPaper1","Logic":1,"Items":[{"Key":1,"Title":"","Logic":1,"Name":"168专题代码","Operate":"","Value":"%s?","ExtendType":0,"ExtendValue":"","Value2":""}],"ChildItems":[]}]}],"GroupBy":"","Additon":""}}'
-        lanmu_url_data = data['lanmu_url_data']
-        lanmu_url_data_dict = ast.literal_eval(lanmu_url_data)
-        value = lanmu_url_data_dict[2]
-        return_data['SearchStateJson'] = SearchStateJson_template % value
-        return_data['displaymode'] = 1
-        return_data['pageindex'] = page
-        return_data['pagecount'] = 20
-        return_data['index'] = 1
-        return_data['random'] = random.random()
-
-        return return_data
-
-    # 获取文集数量
-    def getHuiYiWenJiNumber(self, resp):
-        resp_etree = etree.HTML(bytes(bytearray(resp, encoding='utf-8')))
-        if resp_etree.xpath("//em[@class='lblCount']"):
-            return re.findall(r"\d+", resp_etree.xpath("//em[@class='lblCount']/text()")[0])[0]
-
-        else:
-            return None
-
-    # 生成文集总页数
-    def getWenJiPageNumber(self, huiYiWenJi_Number):
-        if int(huiYiWenJi_Number) % 20 == 0:
-            return int(int(huiYiWenJi_Number) / 20)
-
-        else:
-            return int(int(huiYiWenJi_Number) / 20) + 1
-
-    # 获取会议文集种子
-    def getWenJiUrlList(self, resp):
-        return_data = []
-        resp_etree = etree.HTML(bytes(bytearray(resp, encoding='utf-8')))
-        if resp_etree.xpath("//div[@class='papersList']/dl"):
-            dl_list = resp_etree.xpath("//div[@class='papersList']/dl")
-            for dl in dl_list:
-                save_data = {}
-                url_template = 'http://navi.cnki.net/knavi/DPaperDetail?pcode={}&lwjcode={}&hycode={}'
-                url_data = dl.xpath("./dt/a/@href")[0]
-                if dl.xpath("./dt/em/text()"):
-                    jibie = dl.xpath("./dt/em/text()")[0]
-                else:
-                    jibie = ""
-
-                # 获取pcode
-                if re.findall(r"pcode=(.*?)&", url_data):
-                    pcode = re.findall(r"pcode=(.*?)&", url_data)[0]
-                elif re.findall(r"pcode=(.*)", url_data):
-                    pcode = re.findall(r"pcode=(.*)", url_data)[0]
-                else:
-                    continue
-
-                # 获取lwjcode
-                if re.findall(r"baseid=(.*?),.*", url_data):
-                    lwjcode = re.findall(r"baseid=(.*?),.*", url_data)[0]
-                elif re.findall(r"baseid=(.*?)&", url_data):
-                    lwjcode = re.findall(r"baseid=(.*?)&", url_data)[0]
-                elif re.findall(r"baseid=(.*)", url_data):
-                    lwjcode = re.findall(r"baseid=(.*)", url_data)[0]
-                else:
-                    continue
-
-                # 获取hycode
-                if re.findall(r"baseid=.*,(.*?)&", url_data):
-                    hycode = re.findall(r"baseid=.*,(.*?)&", url_data)[0]
-                elif re.findall(r"baseid=.*,(.*)", url_data):
-                    hycode = re.findall(r"baseid=.*,(.*)", url_data)[0]
-                else:
-                    hycode = ''
-
-                save_data['url'] = url_template.format(pcode, lwjcode, hycode)
-                save_data['jibie'] = jibie
-
-                return_data.append(save_data)
-
-        else:
-            return return_data
-
-        return return_data
 
 
 class HuiYiLunWen_LunWenTaskServer(object):

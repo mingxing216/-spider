@@ -17,8 +17,8 @@ from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<知网_期刊_queue>'  # LOG名
-NAME = '知网_期刊_data'  # 爬虫名
+LOGNAME = '<会议论文_文集_会议_queue>'  # LOG名
+NAME = '会议论文_文集_会议_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -29,13 +29,9 @@ class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
-                                                                  timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY,
-                                                                  proxy_city=config.CITY)
-        self.server = service.ZhiWangLunWen_QiKanDataServer(logging=LOGGING)
-        self.dao = dao.Dao(logging=LOGGING,
-                           mysqlpool_number=config.MYSQL_POOL_NUMBER,
-                           redispool_number=config.REDIS_POOL_NUMBER)
+                                                                  timeout=config.TIMEOUT)
+        self.server = service.HuiYiLunWen_WenJi_HuiYi(logging=LOGGING)
+        self.dao = dao.Dao(logging=LOGGING)
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
@@ -49,14 +45,14 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_QIKANLUNWEN_MAGAZINE)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_HUIYI_MAGAZINE)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_MAGAZINE, ws='中国知网', es='期刊', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_MAGAZINE, ws='中国知网', es='会议论文', count=10000)
                 # print(new_task_list)
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_QIKANLUNWEN_MAGAZINE, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_HUIYI_MAGAZINE, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 
@@ -72,8 +68,14 @@ def process_start():
 
 
 if __name__ == '__main__':
+    LOGGING.info('======The Start!======')
     begin_time = time.time()
     process_start()
+    # po = Pool(1)
+    # for i in range(1):
+    #     po.apply_async(func=process_start)
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))
+    LOGGING.info('======Time consuming is %.2fs======' %(end_time - begin_time))
