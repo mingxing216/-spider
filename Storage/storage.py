@@ -202,6 +202,7 @@ class Dao(object):
                         self.logging.warning('Save data to Hbase | status: NO | memo: {} | use time: {}s'.format(resp, '%.2f' %(time.time() - start_time)))
                         return False
                     else:
+                        self.logging.warning('Save data to Hbase again ...')
                         count += 1
                         time.sleep(1)
                         continue
@@ -211,6 +212,7 @@ class Dao(object):
                     self.logging.error('Save data to Hbase | status: NO | memo: {} | use time: {}s'.format(e, '%.2f' %(time.time() - start_time)))
                     return False
                 else:
+                    self.logging.warning('Save data to Hbase again ...')
                     count += 1
                     time.sleep(1)
                     continue
@@ -294,6 +296,7 @@ class Dao(object):
                         self.logging.warning('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}s'.format(sha, resp, '%.2f' %(time.time() - start_time)))
                         return False
                     else:
+                        self.logging.warning('Save media to Hbase again ...')
                         count += 1
                         time.sleep(1)
                         continue
@@ -303,6 +306,7 @@ class Dao(object):
                     self.logging.error('Save media to Hbase | status: NO | sha: {} | memo: {} | use time: {}s'.format(sha, e, '%.2f' %(time.time() - start_time)))
                     return False
                 else:
+                    self.logging.warning('Save media to Hbase again ...')
                     count += 1
                     time.sleep(1)
                     continue

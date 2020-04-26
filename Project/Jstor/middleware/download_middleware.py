@@ -105,19 +105,6 @@ class DownloaderMiddleware(downloader.Downloader):
         headers = random.choice(headers_list)
         return headers
 
-    def get_proxy(self):
-        while True:
-            try:
-                r = requests.get('http://60.195.249.95:5000/random')
-                proxy = r.text
-                # print(proxy)
-                return {
-                    'http': 'http://' + proxy,
-                    'https': 'https://' + proxy
-                }
-            except Exception:
-                time.sleep(1)
-                continue
 
     def getResp(self, url, method, session=None, data=None, cookies=None, referer=None):
         # 响应状态码错误重试次数
@@ -146,7 +133,11 @@ class DownloaderMiddleware(downloader.Downloader):
             proxies = None
             if self.proxy_type:
                 # proxies = self.proxy_obj.getProxy()
-                proxies = self.get_proxy()
+                ip = self.proxy_obj.get_proxy()
+                proxies =  {
+                    'http': 'http://' + ip,
+                    'https': 'https://' + ip
+                }
 
             # # 设置请求开始时间
             # start_time = time.time()
@@ -160,10 +151,16 @@ class DownloaderMiddleware(downloader.Downloader):
             #     ))
 
             if down_data['code'] == 0:
+                # 设置代理最大权重
+                max = self.proxy_obj.max_proxy(ip)
+                print(max)
                 # self.logging.info('请求成功: {} | 用时: {}秒'.format(url, '%.2f' %(time.time() - start_time)))
                 return down_data['data']
 
             if down_data['code'] == 1:
+                # 代理权重减1
+                num = self.proxy_obj.dec_proxy(ip)
+                print(num)
                 # self.logging.warning('请求内容错误: {} | 响应码: {} | 用时: {}秒'.format(url, down_data['status'], '%.2f' %(time.time() - start_time)))
                 if stat_count > 20:
                     return
@@ -172,6 +169,9 @@ class DownloaderMiddleware(downloader.Downloader):
                     continue
 
             if down_data['code'] == 2:
+                # 代理权重减1
+                num = self.proxy_obj.dec_proxy(ip)
+                print(num)
                 # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
                 if err_count > 10:
                     return
