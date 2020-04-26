@@ -3,9 +3,9 @@
 '''
 
 '''
-# import gevent
-# from gevent import monkey
-# monkey.patch_all()
+import gevent
+from gevent import monkey
+monkey.patch_all()
 import sys
 import os
 import time
@@ -68,7 +68,7 @@ class SpiderMain(BastSpiderMain):
     def getCategory(self):
         # 生成含行业导航栏页面post请求参数
         hangye_data = self.server.getDaoHangPageData()
-        print(hangye_data)
+        # print(hangye_data)
         # 获取导航页响应
         hangye_resp = self.__getResp(url=self.hangye_url, method='POST', data=hangye_data)
         # print(index_resp.text)
@@ -81,7 +81,7 @@ class SpiderMain(BastSpiderMain):
 
         # 获取分类参数
         catalog_list = self.server.getFenLeiDataList(resp=hangye_text)
-        print(catalog_list)
+        # print(catalog_list)
         # 列表页参数进入队列
         self.dao.QueueJobTask(key=config.REDIS_HUIYI_CATEGORY, data=catalog_list)
 
@@ -110,7 +110,7 @@ class SpiderMain(BastSpiderMain):
             # 获取单位url
             # para_value = self.server.getEvalResponse(para)
             wenji_url_list = self.server.getWenJiUrlList(resp=catalog_text, hangye=hangye)
-            print(wenji_url_list)
+            # print(wenji_url_list)
             # 学位授予单位详情页作为二级分类页进入redis队列
             self.dao.QueueJobTask(key=config.REDIS_HUIYI_CATALOG, data=wenji_url_list)
             for wenji_url in wenji_url_list:
@@ -156,9 +156,9 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.getCategory()
-        # main.start()
-        main.run("{'data': \"('2','行业分类代码','A00','农、林、牧、渔业综合')\", 'totalCount': '198', 's_hangYe': '农、林、牧、渔业_农、林、牧、渔业综合', 'num': 1}")
+        main.getCategory()
+        main.start()
+        # main.run("{'data': \"('2','行业分类代码','A00','农、林、牧、渔业综合')\", 'totalCount': '198', 's_hangYe': '农、林、牧、渔业_农、林、牧、渔业综合', 'num': 1}")
     except:
         LOGGING.error(str(traceback.format_exc()))
 

@@ -84,7 +84,6 @@ class SpiderMain(BastSpiderMain):
         # ======================= 获取数据 =====================
         # 标题
         meeting_data['title'] = self.server.getField(html, '会议名称')
-        print(meeting_data['title'])
         # 举办时间
         juBanShiJian = self.server.getField(html, '会议时间')
         if juBanShiJian:
@@ -94,16 +93,12 @@ class SpiderMain(BastSpiderMain):
                 meeting_data['juBanShiJian'] = juBanShiJian
         else:
             meeting_data['juBanShiJian'] = ""
-        print(meeting_data['juBanShiJian'])
         # 所在地_内容
         meeting_data['suoZaiDiNeiRong'] = self.server.getField(html, '会议地点')
-        print(meeting_data['suoZaiDiNeiRong'])
         # 主办单位
         meeting_data['zhuBanDanWei'] = self.server.getField(html, '学会名称')
-        print(meeting_data['zhuBanDanWei'])
         # 级别
         meeting_data['jiBie'] = jibie
-        print(meeting_data['jiBie'])
         # 关联主办单位 (目前无此数据)
         meeting_data['guanLianZhuBanDanWei'] = {}
 
@@ -144,7 +139,7 @@ class SpiderMain(BastSpiderMain):
 
         # 获取会议文集/会议详情页html源码
         pro_url = self.server.getProfileUrl(base_url=self.base_url, url=url)
-        print(url)
+        # print(url)
         resp = self.__getResp(url=pro_url, method='GET')
         if not resp:
             LOGGING.error('会议文集页面响应失败, url: {}'.format(url))
@@ -157,13 +152,10 @@ class SpiderMain(BastSpiderMain):
         # ========================获取数据==========================
         # 获取标题
         save_data['title'] = self.server.geTitle(article_html)
-        print(save_data['title'])
         # 获取标识(图片)
         save_data['biaoShi'] = self.server.getTuPian(article_html)
-        print(save_data['biaoShi'])
         # 获取出版单位
         save_data['chuBanDanWei'] = self.server.getField(article_html, '出版单位')
-        print(save_data['chuBanDanWei'])
         # 获取出版时间
         chuBanShiJian = self.server.getField(article_html, '出版日期')
         if chuBanShiJian:
@@ -173,25 +165,18 @@ class SpiderMain(BastSpiderMain):
                 save_data['chuBanShiJian'] = chuBanShiJian
         else:
             save_data['chuBanShiJian'] = ""
-        print(save_data['chuBanShiJian'])
         # 获取主编
         save_data['zhuBian'] = self.server.getField(article_html, '主编')
-        print(save_data['zhuBian'])
         # 获取编者
         save_data['bianZhe'] = self.server.getField(article_html, '编者')
-        print(save_data['bianZhe'])
         # 获取专辑名称
         save_data['zhunaJiMingCheng'] = self.server.getField(article_html, '专辑名称')
-        print(save_data['zhunaJiMingCheng'])
         # 获取专题名称
         save_data['zhuanTiMingCheng'] = self.server.getField(article_html, '专题名称')
-        print(save_data['zhuanTiMingCheng'])
         # 获取行业
         save_data['hangYe'] = hangye
-        print(save_data['hangYe'])
         # 关联活动_会议
         save_data['guanLianHuoDongHuiYi'] = self.server.guanLianHuoDongHuiYi(url, sha)
-        print(save_data['guanLianHuoDongHuiYi'])
 
         # 保存会议实体
         self.getHuiYi(url=url, sha=sha, jibie=jibie, html=article_html)

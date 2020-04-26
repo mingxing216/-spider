@@ -1869,10 +1869,6 @@ class QiKanLunWen_LunWenTaskServer(object):
         else:
             return return_list
 
-
-
-
-
 class QiKanLunWen_LunWenDataServer(object):
     def __init__(self, logging):
         self.logging = logging
@@ -4554,71 +4550,3 @@ class ZhiWangLunWen_QiKanDataServer(object):
 
         else:
             return return_list
-
-
-class ZhiWangLunWen_WenJiDataServer(object):
-    def __init__(self, logging):
-        self.logging = logging
-
-    def getTask(self, task_data):
-
-        return ast.literal_eval(task_data)
-
-    def getTitle(self, resp):
-        resp_etree = etree.HTML(resp)
-        if resp_etree.xpath("//h3[@class='titbox']/text()"):
-            return resp_etree.xpath("//h3[@class='titbox']/text()")[0]
-
-        else:
-            return ""
-
-    def getBiaoShi(self, resp):
-        return_data = {}
-        resp_etree = etree.HTML(resp)
-        if resp_etree.xpath("//img/@src"):
-            src = resp_etree.xpath("//img/@src")[0]
-            if re.match("http", src):
-                return_data['url'] = src
-                return_data['sha'] = hashlib.sha1(return_data['url'].encode('utf-8')).hexdigest()
-
-                return return_data
-            else:
-                return_data['url'] = 'http:' + src
-                return_data['sha'] = hashlib.sha1(return_data['url'].encode('utf-8')).hexdigest()
-
-                return return_data
-        return return_data
-
-    def getGuanLianHuoDong_HuiYi(self, url, ss):
-        return {
-            'url': url,
-            'sha': hashlib.sha1(url.encode('utf-8')).hexdigest(),
-            'ss': ss
-        }
-
-
-
-    # 获取字段内容
-    def getField(self, resp, text):
-        resp_etree = etree.HTML(resp)
-        if resp_etree.xpath("//p[@class='hostUnit']"):
-            for p in resp_etree.xpath("//p[@class='hostUnit']"):
-                if p.xpath("./text()"):
-                    if '{}'.format(text) in p.xpath("./text()")[0]:
-                        if p.xpath("./span/text()"):
-                            return p.xpath("./span/text()")[0]
-
-        return ""
-
-
-class Server(object):
-    def __init__(self, logging):
-        self.logging = logging
-
-    def getTitle(self, resp):
-        '''This is demo'''
-        response = resp.content.decode('utf-8')
-        response_etree = etree.HTML(response)
-        title = response_etree.xpath("//title/text()")[0]
-
-        return title
