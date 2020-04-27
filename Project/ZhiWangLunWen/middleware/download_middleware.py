@@ -49,7 +49,9 @@ class Downloader(downloader.BaseDownloader):
             # 设置proxy
             proxies = None
             if self.proxy_type:
-                proxies = self.proxy_obj.getProxy()
+                ip = self.proxy_obj.get_proxy()
+                proxies = {'http': 'http://' + ip,
+                           'https': 'https://' + ip}
 
             # # 设置请求开始时间
             # start_time = time.time()
@@ -59,10 +61,16 @@ class Downloader(downloader.BaseDownloader):
                                    cookies=cookies)
 
             if down_data['code'] == 0:
+                # 设置代理最大权重
+                max = self.proxy_obj.max_proxy(ip)
+                # print(max)
                 # self.logging.info('请求成功: {} | 用时: {}秒'.format(url, '%.2f' %(time.time() - start_time)))
                 return down_data['data']
 
             if down_data['code'] == 1:
+                # 代理权重减1
+                dec = self.proxy_obj.dec_proxy(ip)
+                # print(dec)
                 # self.logging.warning('请求内容错误: {} | 响应码: {} | 用时: {}秒'.format(url, down_data['status'], '%.2f' %(time.time() - start_time)))
                 if stat_count > 5:
                     return
@@ -71,6 +79,9 @@ class Downloader(downloader.BaseDownloader):
                     continue
 
             if down_data['code'] == 2:
+                # 代理权重减1
+                dec = self.proxy_obj.dec_proxy(ip)
+                # print(dec)
                 # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
                 if err_count > 5:
                     return
@@ -211,156 +222,12 @@ class QiKanLunWen_QiKanTaskDownloader(downloader.BaseDownloader):
         return self.__judge_verify(param=param)
 
 
-class HuiYiLunWen_QiKanTaskDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(HuiYiLunWen_QiKanTaskDownloader, self).__init__(logging=logging,
-                                                              timeout=timeout,
-                                                              proxy_type=proxy_type,
-                                                              proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if 'window.location.href' in response.text:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
-class XueWeiLunWen_QiKanTaskDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(XueWeiLunWen_QiKanTaskDownloader, self).__init__(logging=logging,
-                                                               timeout=timeout,
-                                                               proxy_type=proxy_type,
-                                                               proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if 'window.location.href' in response.text:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
-class HuiYiLunWen_LunWenTaskDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(HuiYiLunWen_LunWenTaskDownloader, self).__init__(logging=logging,
-                                                               timeout=timeout,
-                                                               proxy_type=proxy_type,
-                                                               proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if 'window.location.href' in response.text:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
 class QiKanLunWen_LunWenTaskDownloader(downloader.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country):
         super(QiKanLunWen_LunWenTaskDownloader, self).__init__(logging=logging,
                                                                timeout=timeout,
                                                                proxy_type=proxy_type,
                                                                proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if 'window.location.href' in response.text:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
-class XueWeiLunWen_LunWenTaskDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(XueWeiLunWen_LunWenTaskDownloader, self).__init__(logging=logging,
-                                                                timeout=timeout,
-                                                                proxy_type=proxy_type,
-                                                                proxy_country=proxy_country)
 
     # 检查验证码
     def __judge_verify(self, param):
@@ -430,186 +297,6 @@ class QiKanLunWen_LunWenDataDownloader(downloader.BaseDownloader):
         return self.__judge_verify(param=param)
 
 
-class HuiYiLunWen_LunWenDataDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(HuiYiLunWen_LunWenDataDownloader, self).__init__(logging=logging,
-                                                               timeout=timeout,
-                                                               proxy_type=proxy_type,
-                                                               proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if 'window.location.href' in response.text:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
-class XueWeiLunWen_LunWenDataDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(XueWeiLunWen_LunWenDataDownloader, self).__init__(logging=logging,
-                                                                timeout=timeout,
-                                                                proxy_type=proxy_type,
-                                                                proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if 'window.location.href' in response.text:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
-class ZhiWangLunWen_JiGouDataDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(ZhiWangLunWen_JiGouDataDownloader, self).__init__(logging=logging,
-                                                                timeout=timeout,
-                                                                proxy_type=proxy_type,
-                                                                proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if 'window.location.href' in response.text:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
-class ZhiWangLunWen_ZuoZheDataDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(ZhiWangLunWen_ZuoZheDataDownloader, self).__init__(logging=logging,
-                                                                 timeout=timeout,
-                                                                 proxy_type=proxy_type,
-                                                                 proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if 'window.location.href' in response.text:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
-class ZhiWangLunWen_HuiYiDataDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(ZhiWangLunWen_HuiYiDataDownloader, self).__init__(logging=logging,
-                                                                timeout=timeout,
-                                                                proxy_type=proxy_type,
-                                                                proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if len(response.text) < 200 and len(response.text) > 0:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
 class ZhiWangLunWen_QiKanDataDownloader(downloader.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country):
         super(ZhiWangLunWen_QiKanDataDownloader, self).__init__(logging=logging,
@@ -644,64 +331,3 @@ class ZhiWangLunWen_QiKanDataDownloader(downloader.BaseDownloader):
         param['data'] = data
 
         return self.__judge_verify(param=param)
-
-
-class ZhiWangLunWen_WenJiDataDownloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country):
-        super(ZhiWangLunWen_WenJiDataDownloader, self).__init__(logging=logging,
-                                                                timeout=timeout,
-                                                                proxy_type=proxy_type,
-                                                                proxy_country=proxy_country)
-
-    # 检查验证码
-    def __judge_verify(self, param):
-        while True:
-            # 下载
-            resp = self._startDownload(param=param)
-            if resp['status'] == 0:
-                response = resp['data']
-                if len(response.text) < 200 and len(response.text) > 0:
-                    self.logging.info('出现验证码')
-                    # 更换代理重新下载
-                    continue
-
-            return resp
-
-    def getResp(self, url, mode, data=None):
-        param = {'url': url}
-
-        # 设置请求方式：GET或POST
-        param['mode'] = mode
-        # 设置请求头
-        param['headers'] = {
-            'User-Agent': user_agent_u.get_ua()
-        }
-        # 设置post参数
-        param['data'] = data
-
-        return self.__judge_verify(param=param)
-
-
-# class Downloader(downloader.BaseDownloaderMiddleware):
-#     def __init__(self, logging, timeout, retry, update_proxy_frequency, proxy_type, proxy_country):
-#         super(Downloader, self).__init__(logging=logging,
-#                                          timeout=timeout,
-#                                          retry=retry,
-#                                          update_proxy_frequency=update_proxy_frequency,
-#                                          proxy_type=proxy_type,
-#                                          proxy_country=proxy_country)
-#
-#     def getResp(self, url, mode, data=None):
-#         param = {'url': url}
-#
-#         # 设置请求方式：GET或POST
-#         param['mode'] = mode
-#         # 设置请求头
-#         param['headers'] = {
-#             'User-Agent': user_agent_u.get_ua()
-#         }
-#         # 设置post参数
-#         param['data'] = data
-#
-#         self.logging.info('Begin {} request for url: {} | request data is {}'.format(param['mode'], url, param['data']))
-#         return self._startDownload(param=param)

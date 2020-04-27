@@ -39,9 +39,9 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
         # 地域导航页url
-        self.index_url = 'https://navi.cnki.net/knavi/Common/LeftNavi/PPaper'
+        self.index_url = 'http://navi.cnki.net/knavi/Common/LeftNavi/PPaper'
         # 单位列表页url
-        self.page_url = 'https://navi.cnki.net/knavi/Common/Search/PPaper'
+        self.page_url = 'http://navi.cnki.net/knavi/Common/Search/PPaper'
         self.num = 0
 
 

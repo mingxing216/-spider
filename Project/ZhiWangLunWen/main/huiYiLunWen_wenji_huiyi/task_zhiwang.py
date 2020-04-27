@@ -39,11 +39,11 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
         # 初始化导航栏url
-        self.daohang_url = 'https://navi.cnki.net/knavi/Common/LeftNavi/DPaper1'
+        self.daohang_url = 'http://navi.cnki.net/knavi/Common/LeftNavi/DPaper1'
         # 行业导航url
-        self.hangye_url = 'https://navi.cnki.net/knavi/Common/ClickNavi/DPaper1'
+        self.hangye_url = 'http://navi.cnki.net/knavi/Common/ClickNavi/DPaper1'
         # 初始化论文集列表页url
-        self.wenji_url = 'https://navi.cnki.net/knavi/Common/Search/DPaper1'
+        self.wenji_url = 'http://navi.cnki.net/knavi/Common/Search/DPaper1'
         # 记录种子抓取数
         self.num = 0
 

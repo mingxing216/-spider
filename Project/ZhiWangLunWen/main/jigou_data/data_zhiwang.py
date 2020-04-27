@@ -43,7 +43,6 @@ class SpiderMain(BastSpiderMain):
 
     def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
-        resp = None
         for i in range(3):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer)
@@ -55,7 +54,7 @@ class SpiderMain(BastSpiderMain):
 
         else:
             LOGGING.error('页面出现验证码: {}'.format(url))
-            return resp
+            return
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -198,7 +197,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"name": "东莞理工学院生物传感器研究中心 广东东莞523106", "url": "https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=in&skey=%E5%AE%89%E5%BE%BD%E7%90%86%E5%B7%A5%E5%A4%A7%E5%AD%A6&code=0167619", "sha": "634d0b957efb8b481dbb0983aa65c22f4499afbb", "ss": "机构"}')
+        # main.run(task='{"name": "浙江农林大学旅游与健康学院", "url": "http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=in&skey=浙江农林大学旅游与健康学院&code=", "sha": "3d572583c142e7b2dca434d9474c9a301117fb3a", "ss": "机构"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

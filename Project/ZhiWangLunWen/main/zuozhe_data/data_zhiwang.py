@@ -146,7 +146,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZHIWANG_PEOPLE, count=20, lockname=config.REDIS_ZHIWANG_PEOPLE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_ZHIWANG_PEOPLE, count=30, lockname=config.REDIS_ZHIWANG_PEOPLE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -180,7 +180,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"name": "张敏", "url": "https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=au&skey=张敏&code=06608417", "sha": "3865db420546261be91cd91fd1a3337961d708d1", "ss": "人物", "shiJian": {"v": "2018", "u": "年"}}')
+        # main.run(task='{"name": "康微", "url": "http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield=au&skey=康微&code=33288882", "sha": "134e9400821993c5245f6c6f493ba4014dbe869c", "ss": "人物", "shiJian": {"Y": 2013, "M": 11, "D": 1}}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

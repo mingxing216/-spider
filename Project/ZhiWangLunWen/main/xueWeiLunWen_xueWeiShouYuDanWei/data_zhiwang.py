@@ -22,7 +22,7 @@ from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<知网论文_机构_data>'  # LOG名
+LOGNAME = '<学位论文_学位授予单位_data>'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
@@ -196,7 +196,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GLMWY", "value": "0030"}')
+        # main.run(task='{"url": "http://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GLMWY", "value": "0030"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

@@ -33,7 +33,7 @@ class BastSpiderMain(object):
                                                                                         proxy_type=config.PROXY_TYPE,
                                                                                         timeout=config.TIMEOUT,
                                                                                         proxy_country=config.COUNTRY)
-        self.server = service.HuiYiLunWen_LunWenTaskServer(logging=LOGGING)
+        self.server = service.HuiYiLunWen_LunWen(logging=LOGGING)
         self.dao = dao.HuiYiLunWen_LunWenTaskDao(logging=LOGGING)
 
 

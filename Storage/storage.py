@@ -185,7 +185,7 @@ class Dao(object):
         # 重试次数
         count = 0
         while True:
-            save_data = json.dumps(data)
+            save_data = json.dumps(data, ensure_ascii=False)
             url = '{}'.format(settings.SpiderDataSaveUrl)
             save_data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
                          "wid": "python",
@@ -281,7 +281,7 @@ class Dao(object):
                     "content": "{}".format(content_bs64.decode('utf-8')),
                     # "content": "{}".format(content_bs64),
                     "ref": "",
-                    "item": json.dumps(item)
+                    "item": json.dumps(item, ensure_ascii=False)
                     }
 
             headers = {

@@ -82,6 +82,63 @@ class ProxyUtils(object):
             return False
 
     # 获取代理
+    def get_proxy(self):
+        while True:
+            try:
+                r = requests.get('http://60.195.249.95:5000/random')
+                ip = r.text
+                # print(proxy)
+                if ip:
+                    return ip
+                else:
+                    self.logging.error('代理池代理获取失败')
+                    time.sleep(3)
+                    continue
+
+            except Exception:
+                self.logging.error('代理池代理获取失败')
+                time.sleep(3)
+                continue
+
+    # 设置代理最大权重
+    def max_proxy(self, ip):
+        while True:
+            try:
+                r = requests.get('http://60.195.249.95:5000/max?ip={}'.format(ip))
+                num = r.text
+                # print(proxy)
+                if num:
+                    return num
+                else:
+                    self.logging.error('代理最大权重设置失败')
+                    time.sleep(3)
+                    continue
+
+            except Exception:
+                self.logging.error('代理最大权重设置失败')
+                time.sleep(3)
+                continue
+
+    # 代理权重减1
+    def dec_proxy(self, ip):
+        while True:
+            try:
+                r = requests.get('http://60.195.249.95:5000/decrease?ip={}'.format(ip))
+                num = r.text
+                # print(proxy)
+                if num:
+                    return num
+                else:
+                    self.logging.error('代理权重 -1 失败')
+                    time.sleep(3)
+                    continue
+
+            except Exception:
+                self.logging.error('代理权重 -1 失败')
+                time.sleep(3)
+                continue
+
+    # 获取代理
     def getProxy(self):
         while True:
             try:

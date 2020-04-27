@@ -42,7 +42,7 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
         # 会议文集/会议详情页
-        self.base_url = 'https://navi.cnki.net/knavi/DpaperDetail/CreateDPaperBaseInfo?'
+        self.base_url = 'http://navi.cnki.net/knavi/DpaperDetail/CreateDPaperBaseInfo?'
 
     def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
@@ -271,7 +271,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "https://navi.cnki.net/knavi/DPaperDetail?pcode=CIPD&lwjcode=DNKF200908001&hycode=009789", "jibie": "国际", "s_hangYe": "农、林、牧、渔业_农、林、牧、渔业综合"}')
+        # main.run(task='{"url": "http://navi.cnki.net/knavi/DPaperDetail?pcode=CIPD&lwjcode=LYFH201311001&hycode=020974", "jibie": "国内", "s_hangYe": "租赁和商务服务业_商务服务业"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

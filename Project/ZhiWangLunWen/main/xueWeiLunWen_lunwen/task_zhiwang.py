@@ -43,11 +43,11 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
         # 索引页
-        self.index_url = 'https://navi.cnki.net/KNavi/PPaper.html?productcode=CDFD'
+        self.index_url = 'http://navi.cnki.net/KNavi/PPaper.html?productcode=CDFD'
         # 列表首页url
-        self.page_number_url = 'https://navi.cnki.net/knavi/PPaperDetail/GetArticleBySubject'
+        self.page_number_url = 'http://navi.cnki.net/knavi/PPaperDetail/GetArticleBySubject'
         # 翻页url
-        self.lunwen_list_url = 'https://navi.cnki.net/knavi/PPaperDetail/GetArticleBySubjectinPage'
+        self.lunwen_list_url = 'http://navi.cnki.net/knavi/PPaperDetail/GetArticleBySubjectinPage'
         # 会话
         self.s = requests.Session()
         # 记录存储种子数量
@@ -230,7 +230,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run("{'url': 'https://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GJZSC', 'value': '0018'}")
+        # main.run("{'url': 'http://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GJZSC', 'value': '0018'}")
     except:
         LOGGING.error(str(traceback.format_exc()))
 

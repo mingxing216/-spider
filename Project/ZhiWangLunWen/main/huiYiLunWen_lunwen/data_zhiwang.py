@@ -22,9 +22,10 @@ from Project.ZhiWangLunWen.middleware import download_middleware
 from Project.ZhiWangLunWen.service import service
 from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
+from Utils import timeutils
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<学位论文_论文_data>'  # LOG名
+LOGNAME = '<会议论文_论文_data>'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
@@ -88,7 +89,7 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
-        # print(task)
+        # print(task_data)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
@@ -98,7 +99,7 @@ class SpiderMain(BastSpiderMain):
         # 获取论文主页html源码
         resp = self.__getResp(url=url, method='GET')
         if not resp:
-            LOGGING.error('学位论文详情页响应失败, url: {}'.format(url))
+            LOGGING.error('会议论文详情页响应失败, url: {}'.format(url))
             # 逻辑删除任务
             self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             return
@@ -118,37 +119,49 @@ class SpiderMain(BastSpiderMain):
         save_data['guanJianCi'] = self.server.getMoreFields(article_html, '关键词')
         # 获取基金
         save_data['jiJin'] = self.server.getMoreFields(article_html, '基金')
-        # 获取导师姓名
-        save_data['daoShiXingMing'] = self.server.getMoreFields(article_html, '导师')
+        # 获取时间
+        shijian = self.server.getMoreFields(article_html, '时间')
+        if shijian:
+            save_data['shiJian'] = timeutils.getDateTimeRecord(shijian)
+        else:
+            save_data['shiJian'] = ''
         # 获取中图分类号
         save_data['zhongTuFenLeiHao'] = self.server.getMoreFields(article_html, '分类号')
         # 获取下载次数
         save_data['xiaZaiCiShu'] = task_data['xiaZaiCiShu']
+        # 获取所在页码
+        save_data['suoZaiYeMa'] = self.server.getSuoZaiYeMa(article_html)
         # 获取页数
         save_data['yeShu'] = self.server.getYeShu(article_html)
         # 获取大小
         save_data['daXiao'] = self.server.getDaXiao(article_html)
+        # 获取论文集url
+        wenji_url = self.server.getLunWenJiUrl(article_html)
+        if wenji_url:
+            wenji_resp = self.__getResp(url=wenji_url, method='GET')
+            if not wenji_resp:
+                LOGGING.error('会议论文集响应失败, url: {}'.format(wenji_url))
+                # 逻辑删除任务
+                self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+                return
+            save_data['lunWenJi'] = self.server.getLunWenJi(wenji_resp.text)
+        else:
+            save_data['lunWenJi'] = ''
         # 获取下载
-        save_data['xiaZai'] = self.server.getUrl(article_html, '整本下载')
+        save_data['xiaZai'] = task_data['xiaZai']
         # 获取在线阅读
-        save_data['zaiXianYueDu'] = self.server.getUrl(article_html, '在线阅读')
-        # 获取时间
-        save_data['shiJian'] = task_data['shiJian']
-        # 获取学位类型
-        save_data['xueWeiLeiXing'] = task_data['xueWeiLeiXing']
-        # 获取专业
-        save_data['zhuanYe'] = task_data['s_zhuanYe']
+        save_data['zaiXianYueDu'] = task_data['zaiXianYueDu']
         # 获取参考文献
         save_data['guanLianCanKaoWenXian'] = self.server.canKaoWenXian(url=url, download=self.__getResp)
-        # 获取关联人物
+        # 关联文集
+        save_data['guanLianWenJi'] = self.server.guanLianWenJi(task_data.get('parentUrl'))
+        # 关联活动_会议
+        save_data['guanLianHuoDongHuiYi'] = self.server.guanLianHuoDongHuiYi(task_data.get('parentUrl'))
+        # 关联人物
         save_data['guanLianRenWu'] = self.server.guanLianRenWu(article_html)
-        # 获取关联导师
-        save_data['guanLianDaoShi'] = self.server.guanLianDaoShi(article_html)
-        # 获取学位授予单位
-        save_data['guanLianXueWeiShouYuDaWei'] = self.server.guanLianXueWeiShouYuDanWei(task_data.get('parentUrl'))
-        # 获取关联企业机构
+        # 关联企业机构
         save_data['guanLianQiYeJiGou'] = self.server.guanLianQiYeJiGou(article_html)
-        # 获取关联文档
+        # 关联文档
         save_data['guanLianWenDang'] = {}
 
         # 获取所有图片链接
@@ -226,11 +239,11 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '论文'
         # 生成es ——栏目名称
-        save_data['es'] = '学位论文'
+        save_data['es'] = '会议论文'
         # 生成ws ——目标网站
         save_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '论文_学位论文'
+        save_data['clazz'] = '论文_会议论文'
         # 生成biz ——项目
         save_data['biz'] = '文献大数据_论文'
         # 生成ref
@@ -240,7 +253,7 @@ class SpiderMain(BastSpiderMain):
         # 存储部分
         # --------------------------
         # 保存人物队列
-        people_list = self.server.getPeople(zuozhe=save_data['guanLianRenWu'], daoshi=save_data['guanLianDaoShi'], t=save_data['shiJian'])
+        people_list = self.server.getPeople(zuozhe=save_data['guanLianRenWu'], daoshi=save_data.get('guanLianDaoShi'), t=save_data['shiJian'])
         # print(people_list)
         if people_list:
             for people in people_list:
@@ -274,9 +287,9 @@ class SpiderMain(BastSpiderMain):
             self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
 
     def start(self):
-        while True:
+        while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_XUEWEI_PAPER, count=20, lockname=config.REDIS_XUEWEI_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_HUIYI_PAPER, count=20, lockname=config.REDIS_HUIYI_PAPER_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -311,7 +324,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run('{"url": "http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CMFD&filename=1018293294.nh&dbname=CMFD201901", "shiJian": {"v": "2018", "u": "年"}, "xueWeiLeiXing": "硕士", "xiaZaiCiShu": "128", "s_zhuanYe": "哲学_哲学_伦理学", "parentUrl": "http://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GNJSU"}')
+        # main.run('{"url": "http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CPFD&filename=LYFH201311001017&dbname=CPFDLAST2015", "xiaZai": "http://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=xTcOp1CBr1oGmJJrRBsvYGuis7puqo%mmd2Fh9G1LMdSvKCDB3BhMhqNWFJMO4pmjr5y9&tableName=CPFDLAST2015", "ziXianYueDu": "http://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CPFD&fileName=LYFH201311001017&tableName=CPFDLAST2015&filetype=", "xiaZaiCiShu": "108", "parentUrl": "http://navi.cnki.net/knavi/DPaperDetail?pcode=CIPD&lwjcode=LYFH201311001&hycode=020974"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

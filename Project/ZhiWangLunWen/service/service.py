@@ -154,7 +154,7 @@ class XueWeiLunWen_xueWeiShouYuDanWei(Service):
                             logo = re.findall(r"baseid=(.*?)&", href)[0]
                         else:
                             continue
-                        url = 'https://navi.cnki.net/knavi/PPaperDetail?pcode={}&logo={}'.format(pcode, logo)
+                        url = 'http://navi.cnki.net/knavi/PPaperDetail?pcode={}&logo={}'.format(pcode, logo)
                         return_data.append({'url': url, 'value': value})
 
                     except Exception:
@@ -198,7 +198,7 @@ class XueWeiLunWen_xueWeiShouYuDanWei(Service):
     def getTuPian(self, resp):
         selector = Selector(text=resp)
         try:
-            pic = 'https:' + selector.xpath("//dt[contains(@class, 'pic')]/img/@src").extract_first().strip()
+            pic = 'http:' + selector.xpath("//dt[contains(@class, 'pic')]/img/@src").extract_first().strip()
 
         except Exception:
             pic = ''
@@ -229,7 +229,7 @@ class XueWeiLunWen_LunWen(Service):
     def getXueKeZhuanYe(self, url):
         pcode = re.findall(r"pcode=(.*?)&", url)[0]
         baseID = re.findall(r"logo=(.*)", url)[0]
-        url = 'https://navi.cnki.net/knavi/PPaperDetail/GetSubject?pcode={}&baseID={}&scope=%25u5168%25u90E8'.format(
+        url = 'http://navi.cnki.net/knavi/PPaperDetail/GetSubject?pcode={}&baseID={}&scope=%25u5168%25u90E8'.format(
             pcode, baseID)
 
         return url
@@ -327,28 +327,28 @@ class XueWeiLunWen_LunWen(Service):
             # 获取论文种子
             try:
                 href = td_list[1].xpath('./a/@href').extract_first().strip()
-                if re.findall(r"dbCode=(.*?)&", href):
+                if re.findall(r"dbCode=(.*?)&", href, re.I):
                     dbcode = re.findall(r"dbCode=(.*?)&", href, re.I)[0]
-                elif re.findall(r"dbCode=(.*)", href):
+                elif re.findall(r"dbCode=(.*)", href, re.I):
                     dbcode = re.findall(r"dbCode=(.*)", href, re.I)[0]
                 else:
                     continue
 
-                if re.findall(r"fileName=(.*?)&", href):
+                if re.findall(r"fileName=(.*?)&", href, re.I):
                     filename = re.findall(r"fileName=(.*?)&", href, re.I)[0]
-                elif re.findall(r"fileName=(.*)", href):
+                elif re.findall(r"fileName=(.*)", href, re.I):
                     filename = re.findall(r"fileName=(.*)", href, re.I)[0]
                 else:
                     continue
 
-                if re.findall(r"tableName=(.*?)&", href):
+                if re.findall(r"tableName=(.*?)&", href, re.I):
                     dbname = re.findall(r"tableName=(.*?)&", href, re.I)[0]
-                elif re.findall(r"tableName=(.*)", href):
+                elif re.findall(r"tableName=(.*)", href, re.I):
                     dbname = re.findall(r"tableName=(.*)", href, re.I)[0]
                 else:
                     continue
 
-                save_data['url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
+                save_data['url'] = 'http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
             except:
                 save_data['url'] = ''
 
@@ -378,6 +378,7 @@ class XueWeiLunWen_LunWen(Service):
 
         return return_data
 
+class LunWen_Data(Service):
     # ========================================= DATA
     def getTitle(self, resp):
         selector = Selector(text=resp)
@@ -456,7 +457,7 @@ class XueWeiLunWen_LunWen(Service):
                 self.logging.error('图片参数获取失败, url: {}'.format(image_data_url))
                 return return_data
             image_data_response = image_data_resp.content.decode('utf-8')
-            print(image_data_response)
+            # print(image_data_response)
             try:
                 img_para = re.findall(r"var oJson={'IDs':'(.*)'}", image_data_response)[0]
                 if img_para:
@@ -465,7 +466,7 @@ class XueWeiLunWen_LunWen(Service):
                         image_data = {}
                         url_data = re.findall(r"(.*)##", index)[0]
                         image_title = re.findall(r"##(.*)", index)[0]
-                        image_url = 'https://image.cnki.net/getimage.ashx?id={}'.format(url_data)
+                        image_url = 'http://image.cnki.net/getimage.ashx?id={}'.format(url_data)
                         image_data['url'] = image_url
                         image_data['title'] = image_title
                         return_data.append(image_data)
@@ -525,6 +526,16 @@ class XueWeiLunWen_LunWen(Service):
 
         return labelObj
 
+    def getSuoZaiYeMa(self, resp):
+        selector = Selector(text=resp)
+        try:
+            yema = selector.xpath("//label[contains(text(), '页码')]/../b/text()").extract_first().strip()
+
+        except Exception:
+            yema = ''
+
+        return yema
+
     def getYeShu(self, resp):
         selector = Selector(text=resp)
         try:
@@ -552,6 +563,40 @@ class XueWeiLunWen_LunWen(Service):
 
         return daxiao
 
+    # 获取论文集url
+    def getLunWenJiUrl(self, resp):
+        if re.findall(r"RegisterSBlock(\(.*?\));", resp, re.I):
+            try:
+                data = ast.literal_eval(re.findall(r"RegisterSBlock(\(.*?\));", resp, re.I)[0])
+                dbcode = data[2]
+                dbname = data[1]
+                filename = data[0]
+                curdbcode = data[3]
+                reftype = data[4]
+                url = 'http://kns.cnki.net/kcms/detail/frame/asynlist.aspx?dbcode={}&dbname={}&filename={}&curdbcode={}&reftype={}'.format(
+                    dbcode,
+                    dbname,
+                    filename,
+                    curdbcode,
+                    reftype)
+                return url
+            except:
+                return ''
+        else:
+            return ''
+
+    # 获取论文集
+    def getLunWenJi(self, resp):
+        selector = Selector(text=resp)
+        try:
+            wenji_list = selector.xpath("//div[@class='sourinfo']/p//text()").extract()
+            wenji = re.sub(r"(\r|\n|\t)", "", ' '.join(wenji_list)).strip()
+
+        except Exception:
+            wenji = ''
+
+        return wenji
+
     def getUrl(self, resp, para):
         selector = Selector(text=resp)
         try:
@@ -559,7 +604,7 @@ class XueWeiLunWen_LunWen(Service):
             if re.match(r"http", url):
                 href = url
             else:
-                href = 'https://kns.cnki.net' + url
+                href = 'http://kns.cnki.net' + url
 
         except Exception:
             href = ''
@@ -610,10 +655,10 @@ class XueWeiLunWen_LunWen(Service):
         else:
             return return_data
 
-        # 'https://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=1&vl='
-        # 'https://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=3&vl='
+        # 'http://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=1&vl='
+        # 'http://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=3&vl='
         # ================================================
-        index_url = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+        index_url = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                      'dbcode={}'
                      '&filename={}'
                      '&dbname={}'
@@ -654,7 +699,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -696,7 +741,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -747,7 +792,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -813,7 +858,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -855,7 +900,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -906,7 +951,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -964,7 +1009,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -1019,7 +1064,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -1069,7 +1114,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -1118,7 +1163,7 @@ class XueWeiLunWen_LunWen(Service):
                 # pass
                 # 翻页获取
                 for page in range(page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                    qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
                                            '&dbname={}'
@@ -1176,7 +1221,7 @@ class XueWeiLunWen_LunWen(Service):
                     onclick = a.xpath("./@onclick").extract_first()
                     if onclick:
                         onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
-                        url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
+                        url = 'http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
                               onclick[0],
                               onclick[1],
                               onclick[2])
@@ -1205,7 +1250,7 @@ class XueWeiLunWen_LunWen(Service):
                     onclick = a.xpath("./@onclick").extract_first()
                     if onclick:
                         onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
-                        url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
+                        url = 'http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
                               onclick[0],
                               onclick[1],
                               onclick[2])
@@ -1234,7 +1279,7 @@ class XueWeiLunWen_LunWen(Service):
                     onclick = a.xpath("./@onclick").extract_first()
                     if onclick:
                         onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
-                        url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
+                        url = 'http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
                             onclick[0],
                             onclick[1],
                             onclick[2])
@@ -1266,9 +1311,40 @@ class XueWeiLunWen_LunWen(Service):
         else:
             return e
 
+    def guanLianWenJi(self, url):
+        e = {}
+        if url:
+            e['url'] = url
+            e['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
+            e['ss'] = '期刊'
+
+            return e
+
+        else:
+            return e
+
+    def guanLianHuoDongHuiYi(self, url):
+        e = {}
+        if url:
+            e['url'] = url
+            e['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
+            e['ss'] = '活动'
+
+            return e
+
+        else:
+            return e
+
     def getPeople(self, zuozhe, daoshi, t):
-        zuozheList = copy.deepcopy(zuozhe)
-        daoshiList = copy.deepcopy(daoshi)
+        if zuozhe:
+            zuozheList = copy.deepcopy(zuozhe)
+        else:
+            zuozheList = []
+        if daoshi:
+            daoshiList = copy.deepcopy(daoshi)
+        else:
+            daoshiList = []
+
         people_list = zuozheList + daoshiList
         if people_list:
             for people in people_list:
@@ -1392,7 +1468,7 @@ class HuiYiLunWen_WenJi_HuiYi(Service):
             if dl_list:
                 for dl in dl_list:
                     save_data = {}
-                    url_template = 'https://navi.cnki.net/knavi/DPaperDetail?pcode={}&lwjcode={}&hycode={}'
+                    url_template = 'http://navi.cnki.net/knavi/DPaperDetail?pcode={}&lwjcode={}&hycode={}'
 
                     if dl.xpath("./dt/em/text()"):
                         jibie = dl.xpath("./dt/em/text()").extract_first().strip()
@@ -1466,7 +1542,7 @@ class HuiYiLunWen_WenJi_HuiYi(Service):
         selector = Selector(text=resp)
         try:
             src = selector.xpath("//dt[contains(@class, 'pic')]/img/@src").extract_first().strip()
-            img = 'https:' + src
+            img = 'http:' + src
 
         except Exception:
             img = ''
@@ -1500,6 +1576,121 @@ class HuiYiLunWen_WenJi_HuiYi(Service):
         e['ss'] = '期刊'
         return e
 
+class HuiYiLunWen_LunWen(Service):
+    # 获取列表页首页URL
+    def getCatalogUrl(self, url, target_url):
+        try:
+            pcode = re.findall(r"pcode=(.*?)&", url)[0]
+        except:
+            pcode = None
+
+        try:
+            lwjcode = re.findall(r"lwjcode=(.*?)&", url)[0]
+        except:
+            lwjcode = None
+
+        if pcode and lwjcode:
+            catalog_url = target_url.format(pcode, lwjcode)
+        else:
+            catalog_url = ''
+
+        return catalog_url
+
+    # 获取列表页翻页URL
+    def getPageUpUrl(self, catalog_url, page):
+        try:
+            url = re.sub(r"\d+$", str(page), catalog_url)
+        except:
+            url = None
+
+        return url
+
+    # 获取总页数
+    def getPageNumber(self, resp):
+        selector = Selector(text=resp)
+        if selector.xpath("//input[@id='pageCount']/@value"):
+            total_page = selector.xpath("//input[@id='pageCount']/@value").extract_first()
+        else:
+            total_page = 1
+
+        return int(total_page)
+
+    # 获取论文详情页及相关字段
+    def getProfileUrl(self, resp, parent_url):
+        return_data = []
+        selector = Selector(text=resp)
+
+        tr_list = selector.xpath("//tr[@class]")
+
+        for tr in tr_list:
+            save_data = {}
+            td_list = tr.xpath("./td")
+
+            # 获取论文种子
+            try:
+                href = td_list[1].xpath('./a/@href').extract_first().strip()
+                if re.findall(r"dbCode=(.*?)&", href, re.I):
+                    dbcode = re.findall(r"dbCode=(.*?)&", href, re.I)[0]
+                elif re.findall(r"dbCode=(.*)", href, re.I):
+                    dbcode = re.findall(r"dbCode=(.*)", href, re.I)[0]
+                else:
+                    continue
+
+                if re.findall(r"fileName=(.*?)&", href, re.I):
+                    filename = re.findall(r"fileName=(.*?)&", href, re.I)[0]
+                elif re.findall(r"fileName=(.*)", href, re.I):
+                    filename = re.findall(r"fileName=(.*)", href, re.I)[0]
+                else:
+                    continue
+
+                if re.findall(r"tableName=(.*?)&", href, re.I):
+                    dbname = re.findall(r"tableName=(.*?)&", href, re.I)[0]
+                elif re.findall(r"tableName=(.*)", href, re.I):
+                    dbname = re.findall(r"tableName=(.*)", href, re.I)[0]
+                else:
+                    continue
+
+                save_data['url'] = 'http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
+
+            except:
+                continue
+
+            # 获取论文下载URL
+            try:
+                xiazai = td_list[2].xpath('./ul/li/a/@href').extract_first().strip()
+                save_data['xiaZai'] = 'http://navi.cnki.net/knavi/' + xiazai
+            except:
+                save_data['xiaZai'] = ''
+
+            # 获取在线阅读
+            try:
+                yuedu = td_list[2].xpath("./ul/li[@class='btn-view']/a/@href").extract_first().strip()
+                save_data['zaiXianYueDu'] = 'http://navi.cnki.net/knavi/' + yuedu
+            except:
+                save_data['zaiXianYueDu'] = ''
+
+            # 获取下载次数
+            try:
+                save_data['xiaZaiCiShu'] = td_list[6].xpath('./text()').extract_first().strip()
+            except:
+                save_data['xiaZaiCiShu'] = ''
+
+            save_data['parentUrl'] = parent_url
+
+            return_data.append(save_data)
+
+        return return_data
+
+    # 生成会议列表页请求参数
+    def getHuiYiListUrlData(self, pcode, lwjcode, page):
+        data = {
+            'pcode': pcode,
+            'lwjcode': lwjcode,
+            'orderBy': 'FN|ASC',
+            'pIdx': page
+        }
+
+        return data
 
 class ZhiWangLunWen_JiGou(Service):
     # ================================= DATA
@@ -1538,7 +1729,7 @@ class ZhiWangLunWen_JiGou(Service):
         selector = Selector(text=resp)
         try:
             img = selector.xpath("//div[@class='aboutIntro']/p/img/@src").extract_first()
-            href = 'https:' + img
+            href = 'http:' + img
 
         except:
             href = ''
@@ -1573,7 +1764,10 @@ class ZhiWangLunWen_ZuoZhe(Service):
                 for com in companies:
                     com_dict = {}
                     com_dict['所在单位'] = re.sub(r'\s+', ' ', re.sub('r(\r|\n|\t|&nbsp;)', '', com)).strip()
-                    com_dict['时间'] = shijian
+                    if shijian:
+                        com_dict['时间'] = shijian
+                    else:
+                        com_dict['时间'] = ''
                     return_data.append(com_dict)
 
         except:
@@ -1592,7 +1786,7 @@ class ZhiWangLunWen_ZuoZhe(Service):
                     onclick = a.xpath("./@onclick").extract_first()
                     if onclick:
                         onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
-                        url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
+                        url = 'http://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
                               onclick[0],
                               onclick[1],
                               onclick[2])
@@ -1698,77 +1892,7 @@ class QiKanLunWen_QiKanTaskServer(object):
 
 
 
-class HuiYiLunWen_LunWenTaskServer(object):
-    def __init__(self, logging):
-        self.logging = logging
 
-    # 获取pcode、lwjcode
-    def getPcodeAndLwjcode(self, data):
-        try:
-            pcode = re.findall(r"pcode=(.*?)&", data)[0]
-        except:
-            pcode = None
-
-        try:
-            lwjcode = re.findall(r"lwjcode=(.*?)&", data)[0]
-        except:
-            lwjcode = None
-
-        return pcode, lwjcode
-
-    # 生成会议数量页url
-    def getHuiYiNumberUrl(self, pcode, lwjcode):
-        url = 'http://navi.cnki.net/knavi/DpaperDetail/GetDpaperList?pcode={}&lwjcode={}&orderBy=FN&pIdx=0'.format(
-            pcode, lwjcode)
-
-        return url
-
-    # 获取会议数量
-    def getHuiYiNumber(self, resp):
-        selector = Selector(text=resp)
-        data = selector.xpath("//span[@id='partiallistcount']/text()").extract_first()
-        if data:
-            return int(data)
-        else:
-            return 0
-
-    # 生成总页数
-    def getPageNumber(self, huiyi_number):
-        if int(huiyi_number) % 20 == 0:
-            return int(int(huiyi_number) / 20)
-
-        else:
-            return int((int(huiyi_number) / 20) + 1)
-
-    # 生成会议列表页请求参数
-    def getHuiYiListUrlData(self, pcode, lwjcode, page):
-        data = {
-            'pcode': pcode,
-            'lwjcode': lwjcode,
-            'orderBy': 'FN|ASC',
-            'pIdx': page
-        }
-
-        return data
-
-    # 获取会议url
-    def getHuiYiUrlList(self, resp):
-        return_data = []
-        selector = Selector(text=resp)
-        a_list = selector.xpath("//td[@class='nobreak']/following-sibling::td[@class='name']/a")
-        for a in a_list:
-            href = a.xpath("./@href").extract_first()
-            if href:
-                try:
-                    url = 'http://kns.cnki.net/kcms/detail/detail.aspx?' + re.findall(r"\?(.*)", href)[0]
-                    return_data.append(url)
-                except:
-                    continue
-
-            else:
-                continue
-
-        return return_data
 
 
 class QiKanLunWen_LunWenTaskServer(object):
