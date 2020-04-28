@@ -439,26 +439,36 @@ class Dao(object):
     # 物理删除mysql中任务
     def deleteTask(self, table, sha=None, url=None):
         if sha:
-            sql = "delete from {} where `sha` = '{}' and `del` = '0'".format(table, sha)
+            try:
+                sql = "delete from {} where `sha` = '{}' and `del` = '0'".format(table, sha)
+                self.mysql_client.execute(sql=sql)
+                self.logging.info('任务已删除: {}'.format(sha))
+            except:
+                self.logging.warning('任务删除异常: {}'.format(sha))
+
         elif url:
-            sql = "delete from {} where `url` = '{}' and `del` = '0'".format(table, url)
-        try:
-            self.mysql_client.execute(sql=sql)
-            self.logging.info('任务已删除: {}'.format(sha))
-        except:
-            self.logging.warning('任务删除异常: {}'.format(sha))
+            try:
+                sql = "delete from {} where `url` = '{}' and `del` = '0'".format(table, url)
+                self.mysql_client.execute(sql=sql)
+                self.logging.info('任务已删除: {}'.format(url))
+            except:
+                self.logging.warning('任务删除异常: {}'.format(url))
 
     # 逻辑删除mysql中任务
     def deleteLogicTask(self, table, sha=None, url=None):
         data = {
             'del': '1'
         }
-        try:
-            if sha:
+        if sha:
+            try:
                 self.mysql_client.update(table=table, data=data, where="sha = '{}'".format(sha))
-            elif url:
+                self.logging.info('任务已逻辑删除: {}'.format(sha))
+            except:
+                self.logging.warning('任务逻辑删除异常: {}'.format(sha))
+            
+        elif url:
+            try:
                 self.mysql_client.update(table=table, data=data, where="url = '{}'".format(url))
-
-            self.logging.info('任务已逻辑删除: {}'.format(sha))
-        except:
-            self.logging.warning('任务逻辑删除异常: {}'.format(sha))
+                self.logging.info('任务已逻辑删除: {}'.format(url))
+            except:
+                self.logging.warning('任务逻辑删除异常: {}'.format(url))
