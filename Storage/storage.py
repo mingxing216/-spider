@@ -465,7 +465,7 @@ class Dao(object):
                 self.logging.info('任务已逻辑删除: {}'.format(sha))
             except:
                 self.logging.warning('任务逻辑删除异常: {}'.format(sha))
-            
+
         elif url:
             try:
                 self.mysql_client.update(table=table, data=data, where="url = '{}'".format(url))

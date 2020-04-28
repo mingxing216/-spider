@@ -250,14 +250,15 @@ class SpiderMain(BastSpiderMain):
             for jigou  in save_data['guanLianQiYeJiGou']:
                 self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
 
-        return url
-        # return sha
+        https_url = url.replace('http', 'https')
+        https_sha = hashlib.sha1(https_url.encode('utf-8')).hexdigest()
+        return https_sha
 
     def run(self, task):
         # 创建数据存储字典
         save_data = {}
         # 获取字段值存入字典并返回sha
-        url = self.handle(task=task, save_data=save_data)
+        sha = self.handle(task=task, save_data=save_data)
         # 保存数据到Hbase
         if not save_data:
             LOGGING.info('没有获取数据, 存储失败')
@@ -269,10 +270,10 @@ class SpiderMain(BastSpiderMain):
         success = self.dao.saveDataToHbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_PAPER, url=url)
+            self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, url=url)
+            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
 
     def start(self):
         while True:
