@@ -75,8 +75,10 @@ class SpiderMain(BastSpiderMain):
         # 存储图片
         succ = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
         if not succ:
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            # 存储图片种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
 
     def getHuiYi(self, url, sha, jibie, html):
         # 会议存储字典

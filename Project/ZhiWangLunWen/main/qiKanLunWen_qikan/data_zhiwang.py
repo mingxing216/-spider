@@ -3,9 +3,9 @@
 '''
 
 '''
-# import gevent
-# from gevent import monkey
-# monkey.patch_all()
+import gevent
+from gevent import monkey
+monkey.patch_all()
 import sys
 import os
 import time
@@ -24,7 +24,7 @@ from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<知网_期刊_data>'  # LOG名
+LOGNAME = '<期刊论文_期刊_data>'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
@@ -32,91 +32,57 @@ class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
-                                                                  timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY,
-                                                                  proxy_city=config.CITY)
-        self.server = service.ZhiWangLunWen_QiKanDataServer(logging=LOGGING)
+                                                                  timeout=config.TIMEOUT)
+        self.server = service.QiKanLunWen_QiKan(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
-                           mysqlpool_number=config.MYSQL_POOL_NUMBER,
-                           redispool_number=config.REDIS_POOL_NUMBER)
+                           mysqlpool_number=config.MYSQL_POOL_MAX_NUMBER,
+                           redispool_number=config.REDIS_POOL_MAX_NUMBER)
 
 
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
-        # 初始化期刊时间列表种子模板
-        self.qiKan_time_list_url_template = 'http://navi.cnki.net/knavi/JournalDetail/GetJournalYearList?pcode={}&pykm={}&pIdx=0'
-        # 初始化论文列表种子模板
-        self.lunLun_url_template = 'http://navi.cnki.net/knavi/JournalDetail/GetArticleList?year={}&issue={}&pykm={}&pageIdx=0&pcode={}'
 
-    def __getResp(self, url, mode, s=None, data=None, cookies=None, referer=None):
-        for i in range(10):
-            resp = self.download_middleware.getResp(url=url,
-                                                    mode=mode,
-                                                    s=s,
-                                                    data=data,
-                                                    cookies=cookies,
-                                                    referer=referer)
-            if resp['code'] == 0:
-                response = resp['data']
-                if '请输入验证码' in response.text or len(response.text) < 200:
-                    LOGGING.info('出现验证码')
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        # 发现验证码，请求页面3次
+        for i in range(3):
+            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+                                                    cookies=cookies, referer=referer)
+            if resp:
+                if '请输入验证码' in resp.text or len(resp.text) < 10:
+                    LOGGING.error('出现验证码')
                     continue
 
-                else:
-                    return response
+            return resp
 
-            if resp['code'] == 1:
-                return None
         else:
-            return None
-
-    def getPaperTask(self, qiKanUrl, qikanSha, xueKeLeiBie):
-        # 生成单个知网期刊的时间列表种子
-        qiKanTimeListUrl, pcode, pykm = self.server.qiKanTimeListUrl(qiKanUrl, self.qiKan_time_list_url_template)
-        # 获取期刊时间列表页html源码
-        qikanTimeListHtml = self.__getResp(url=qiKanTimeListUrl, mode='get')
-        if not qikanTimeListHtml:
-            LOGGING.error('期刊时间列表页获取失败, url: {}'.format(qiKanTimeListUrl))
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=qikanSha)
+            LOGGING.error('页面出现验证码: {}'.format(url))
             return
 
-        # 获取期刊【年】、【期】列表
-        qiKanTimeList = self.server.getQiKanTimeList(qikanTimeListHtml)
-        if qiKanTimeList:
-            # 循环获取指定年、期页文章列表页种子
-            for qikan_year in qiKanTimeList:
-                # 获取文章列表页种子
-                articleListUrl = self.server.getArticleListUrl(url=self.lunLun_url_template,
-                                                               data=qikan_year,
-                                                               pcode=pcode,
-                                                               pykm=pykm)
-                for articleUrl in articleListUrl:
-                    # 获取论文列表页html源码
-                    article_list_html = self.__getResp(url=articleUrl, mode='get')
-                    if not qikanTimeListHtml:
-                        LOGGING.error('论文列表页html源码获取失败, url: {}'.format(articleUrl))
-                        # 逻辑删除任务
-                        self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=qikanSha)
-                        return
+    def img(self, img_dict, sha):
+        # 获取图片响应
+        media_resp = self.__getResp(url=img_dict['url'], method='GET')
+        if not media_resp:
+            LOGGING.error('图片响应失败, url: {}'.format(img_dict['url']))
+            # 存储图片种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
+            return
 
-                    # 获取论文种子列表
-                    article_url_list = self.server.getArticleUrlList(article_list_html, qiKanUrl, xueKeLeiBie)
-                    if article_url_list:
-                        for paper_url in article_url_list:
-                            print(paper_url)
-                            # 存储种子
-                            self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=paper_url, ws='中国知网', es='期刊论文')
-                    else:
-                        LOGGING.error('论文种子列表获取失败')
-        else:
-            LOGGING.error('年、期列表获取失败。')
-
+        img_content = media_resp.content
+        # 存储图片
+        succ = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
+        if not succ:
+            # 存储图片种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
 
     def handle(self, task, save_data):
         # 获取task数据
-        task_data = self.server.getTask(task)
+        task_data = self.server.getEvalResponse(task)
+        # print(task_data)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         title = task_data['title']
@@ -124,10 +90,10 @@ class SpiderMain(BastSpiderMain):
         heXinQiKanMuLu = task_data['s_zhongWenHeXinQiKanMuLu']
 
         # 获取会议主页html源码
-        resp = self.__getResp(url=url, mode='get')
+        resp = self.__getResp(url=url, method='GET')
 
         # with open('article.html', 'w', encoding='utf-8') as f:
-        #     f.write(article_html.text)
+        #     f.write(resp.text)
 
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
@@ -137,6 +103,7 @@ class SpiderMain(BastSpiderMain):
 
         response = resp.text
         # ========================获取数据==========================
+        # 标题
         save_data['title'] = title
         # 获取核心收录
         save_data['heXinShouLu'] = self.server.getHeXinShouLu(response)
@@ -145,40 +112,39 @@ class SpiderMain(BastSpiderMain):
         # 获取图片
         save_data['biaoShi'] = self.server.getBiaoShi(response)
         # 获取曾用名
-        save_data['cengYongMing'] = self.server.getData(response, '曾用刊名：')
+        save_data['cengYongMing'] = self.server.getData(response, '曾用刊名')
         # 获取主办单位
-        save_data['zhuBanDanWei'] = self.server.getData(response, '主办单位：')
+        save_data['zhuBanDanWei'] = self.server.getMoreData(response, '主办单位')
         # 获取出版周期
-        save_data['chuBanZhouQi'] = self.server.getData(response, '出版周期：')
+        save_data['chuBanZhouQi'] = self.server.getData(response, '出版周期')
         # 获取issn
-        save_data['ISSN'] = self.server.getData(response, 'ISSN：')
+        save_data['ISSN'] = self.server.getData(response, 'ISSN')
         # 获取CN
-        save_data['guoNeiKanHao'] = self.server.getData(response, 'CN：')
+        save_data['guoNeiKanHao'] = self.server.getData(response, 'CN')
         # 获取出版地
-        save_data['chuBanDi'] = self.server.getData(response, '出版地：')
+        save_data['chuBanDi'] = self.server.getData(response, '出版地')
         # 获取语种
-        # TODO 语种有多值
-        save_data['yuZhong'] = self.server.getData(response, '语种：')
+        save_data['yuZhong'] = self.server.getData(response, '语种')
         # 获取开本
-        save_data['kaiBen'] = self.server.getData(response, '开本：')
+        save_data['kaiBen'] = self.server.getData(response, '开本')
         # 获取邮发代号
-        save_data['youFaDaiHao'] = self.server.getData(response, '邮发代号：')
+        save_data['youFaDaiHao'] = self.server.getData(response, '邮发代号')
         # 获取创刊时间
-        shijian = self.server.getData(response, '创刊时间：')
-        save_data['shiJian'] = timeutils.getDateTimeRecord(shijian)
+        shijian = self.server.getData(response, '创刊时间')
+        save_data['chuangKanShiJian'] = timeutils.getDateTimeRecord(shijian)
         # 获取专辑名称
-        save_data['zhuanJiMingCheng'] = self.server.getData2(response, '专辑名称：')
+        save_data['zhuanJiMingCheng'] = self.server.getMoreData(response, '专辑名称')
         # 获取专题名称
-        save_data['zhuanTiMingCheng'] = self.server.getData2(response, '专题名称：')
+        save_data['zhuanTiMingCheng'] = self.server.getMoreData(response, '专题名称')
         # 获取出版文献量
         try:
-            save_data['chuBanWenXianLiang'] = {'v': re.findall(r'\d+', self.server.getData2(response, '出版文献量：'))[0], 'u': '篇'}
+            save_data['chuBanWenXianLiang'] = {'v': re.findall(r'\d+', self.server.getData(response, '出版文献量'))[0], 'u': '篇'}
         except:
             save_data['chuBanWenXianLiang'] = ""
         # 获取复合影响因子
-        save_data['fuHeYingXiangYinZi'] = self.server.getFuHeYingXiangYinZi(response)
+        save_data['fuHeYingXiangYinZi'] = self.server.getYingXiangYinZi(response, '复合影响因子')
         # 获取综合影响因子
-        save_data['zongHeYingXiangYinZi'] = self.server.getZongHeYingXiangYinZi(response)
+        save_data['zongHeYingXiangYinZi'] = self.server.getYingXiangYinZi(response, '综合影响因子')
         # 获取来源数据库
         save_data['laiYuanShuJuKu'] = self.server.getLaiYuanShuJuKu(response)
         # 获取期刊荣誉
@@ -200,21 +166,13 @@ class SpiderMain(BastSpiderMain):
             img_dict['bizTitle'] = save_data['title']
             img_dict['relEsse'] = self.server.guanLianQiKan(url, sha)
             img_dict['relPics'] = {}
-            img_url = save_data['biaoShi']
-            # # 存储图片种子
-            # self.dao.saveProjectUrlToMysql(table=config.MYSQL_IMG, memo=img_dict)
-            # 获取图片响应
-            media_resp = self.__getResp(url=img_url,
-                                        mode='GET')
-            if not media_resp:
-                LOGGING.error('图片响应失败, url: {}'.format(img_url))
-                # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
-                return
+            img_dict['url'] = save_data['biaoShi']
 
-            img_content = media_resp.content
             # 存储图片
-            self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
+            self.img(img_dict=img_dict, sha=sha)
+
+        # # 获取期刊论文种子
+        # self.getPaperTask(qiKanUrl=url, qikanSha=sha, xueKeLeiBie=xueKeLeiBie)
 
         # =========================== 公共字段
         # url
@@ -236,6 +194,13 @@ class SpiderMain(BastSpiderMain):
         # 生成ref
         save_data['ref'] = ''
 
+        return sha
+
+    def run(self, task):
+        # 创建数据存储字典
+        save_data = {}
+        # 获取字段值存入字典并返回sha
+        sha = self.handle(task=task, save_data=save_data)
         # 保存数据到Hbase
         if not save_data:
             LOGGING.info('没有获取数据, 存储失败')
@@ -245,18 +210,6 @@ class SpiderMain(BastSpiderMain):
             return
         # 存储数据
         success = self.dao.saveDataToHbase(data=save_data)
-
-        # 获取期刊论文种子
-        self.getPaperTask(qiKanUrl=url, qikanSha=sha, xueKeLeiBie=xueKeLeiBie)
-
-        return success
-
-    def run(self, task):
-        # 创建数据存储字典
-        save_data = {}
-        # 获取字段值存入字典并返回sha
-        success = self.handle(task=task, save_data=save_data)
-
         if success:
             # 删除任务
             self.dao.deleteTask(table=config.MYSQL_MAGAZINE, sha=sha)
@@ -267,27 +220,27 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_QIKANLUNWEN_MAGAZINE, count=1, lockname=config.REDIS_QIKANLUNWEN_MAGAZINE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_QIKAN_MAGAZINE, count=30, lockname=config.REDIS_QIKAN_MAGAZINE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-                # # 创建gevent协程
-                # g_list = []
-                # for task in task_list:
-                #     s = gevent.spawn(self.run, task)
-                #     g_list.append(s)
-                # gevent.joinall(g_list)
+                # 创建gevent协程
+                g_list = []
+                for task in task_list:
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
 
-                # 创建线程池
-                threadpool = ThreadPool()
-                for url in task_list:
-                    threadpool.apply_async(func=self.run, args=(url,))
-
-                threadpool.close()
-                threadpool.join()
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for url in task_list:
+                #     threadpool.apply_async(func=self.run, args=(url,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
                 time.sleep(1)
 
@@ -300,15 +253,16 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.start()
-        main.run(task='{"url": "http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=JZCK", "title": "计算机测量与控制", "s_xueKeLeiBie": "信息科技_自动化技术", "s_zhongWenHeXinQiKanMuLu": ""}')
+        main.start()
+        # main.run(task='{"url": "http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=YXDZ", "title": "医学动物防制", "s_xueKeLeiBie": "医药卫生科技_预防医学与卫生学", "s_zhongWenHeXinQiKanMuLu": ""}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
+    LOGGING.info('======The Start!======')
     begin_time = time.time()
     process_start()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is {}s======'.format(int(end_time - begin_time)))
+    LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))

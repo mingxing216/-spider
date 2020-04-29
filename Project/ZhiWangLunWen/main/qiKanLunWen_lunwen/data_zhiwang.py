@@ -25,7 +25,7 @@ from Project.ZhiWangLunWen import config
 from Utils import timeutils
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<会议论文_论文_data>'  # LOG名
+LOGNAME = '<期刊论文_论文_data>'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
@@ -119,44 +119,40 @@ class SpiderMain(BastSpiderMain):
         save_data['guanJianCi'] = self.server.getMoreFields(article_html, '关键词')
         # 获取基金
         save_data['jiJin'] = self.server.getMoreFields(article_html, '基金')
-        # 获取时间
-        shijian = self.server.getMoreFields(article_html, '时间')
-        if shijian:
-            save_data['shiJian'] = timeutils.getDateTimeRecord(shijian)
-        else:
-            save_data['shiJian'] = ''
+        # 数字对象标识符
+        save_data['DOI'] = self.server.getMoreFields(article_html, 'DOI')
         # 获取中图分类号
         save_data['zhongTuFenLeiHao'] = self.server.getMoreFields(article_html, '分类号')
+        # 期刊名称
+        save_data['qiKanMingCheng'] = self.server.getQiKanName(article_html)
+        # 期号
+        save_data['qiHao'] = self.server.getQiHao(article_html)
+        # 获取下载
+        save_data['xiaZai'] = task_data.get('xiaZai')
+        # 获取在线阅读
+        save_data['zaiXianYueDu'] = task_data.get('zaiXianYueDu')
         # 获取下载次数
-        save_data['xiaZaiCiShu'] = task_data['xiaZaiCiShu']
+        save_data['xiaZaiCiShu'] = self.server.getXiaZai(article_html)
         # 获取所在页码
         save_data['suoZaiYeMa'] = self.server.getSuoZaiYeMa(article_html)
         # 获取页数
         save_data['yeShu'] = self.server.getYeShu(article_html)
         # 获取大小
         save_data['daXiao'] = self.server.getDaXiao(article_html)
-        # 获取论文集url
-        wenji_url = self.server.getLunWenJiUrl(article_html)
-        if wenji_url:
-            wenji_resp = self.__getResp(url=wenji_url, method='GET')
-            if not wenji_resp:
-                LOGGING.error('会议论文集响应失败, url: {}'.format(wenji_url))
-                # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                return
-            save_data['lunWenJi'] = self.server.getLunWenJi(wenji_resp.text)
+        # 获取时间
+        shijian = self.server.getYear(article_html)
+        if shijian:
+            save_data['shiJian'] = timeutils.getDateTimeRecord(shijian)
         else:
-            save_data['lunWenJi'] = ''
-        # 获取下载
-        save_data['xiaZai'] = task_data['xiaZai']
-        # 获取在线阅读
-        save_data['zaiXianYueDu'] = task_data['zaiXianYueDu']
+            save_data['shiJian'] = ''
+        # 学科类别
+        save_data['xueKeLeiBie'] = task_data.get('xueKeLeiBie')
+        # 来源分类
+        save_data['laiYuanFenLei'] = ''
         # 获取参考文献
         save_data['guanLianCanKaoWenXian'] = self.server.canKaoWenXian(url=url, download=self.__getResp)
-        # 关联文集
-        save_data['guanLianWenJi'] = self.server.guanLianWenJi(task_data.get('parentUrl'))
-        # 关联活动_会议
-        save_data['guanLianHuoDongHuiYi'] = self.server.guanLianHuoDongHuiYi(task_data.get('parentUrl'))
+        # 关联期刊
+        save_data['guanLianQiKan'] = self.server.guanLianQiKan(task_data.get('parentUrl'))
         # 关联人物
         save_data['guanLianRenWu'] = self.server.guanLianRenWu(article_html)
         # 关联企业机构
@@ -186,7 +182,7 @@ class SpiderMain(BastSpiderMain):
             # 生成ss ——实体
             pics['ss'] = '组图'
             # 生成es ——栏目名称
-            pics['es'] = '会议论文'
+            pics['es'] = '期刊论文'
             # 生成ws ——目标网站
             pics['ws'] = '中国知网'
             # 生成clazz ——层级关系
@@ -239,11 +235,11 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '论文'
         # 生成es ——栏目名称
-        save_data['es'] = '会议论文'
+        save_data['es'] = '期刊论文'
         # 生成ws ——目标网站
         save_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '论文_会议论文'
+        save_data['clazz'] = '论文_期刊论文'
         # 生成biz ——项目
         save_data['biz'] = '文献大数据_论文'
         # 生成ref
@@ -289,7 +285,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_HUIYI_PAPER, count=20, lockname=config.REDIS_HUIYI_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_QIKAN_PAPER, count=20, lockname=config.REDIS_QIKAN_PAPER_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -324,7 +320,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run('{"url": "http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CPFD&filename=LYFH201311001017&dbname=CPFDLAST2015", "xiaZai": "http://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=xTcOp1CBr1oGmJJrRBsvYGuis7puqo%mmd2Fh9G1LMdSvKCDB3BhMhqNWFJMO4pmjr5y9&tableName=CPFDLAST2015", "ziXianYueDu": "http://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CPFD&fileName=LYFH201311001017&tableName=CPFDLAST2015&filetype=", "xiaZaiCiShu": "108", "parentUrl": "http://navi.cnki.net/knavi/DPaperDetail?pcode=CIPD&lwjcode=LYFH201311001&hycode=020974"}')
+        # main.run('{"url": "http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=KYGL2017S1059&dbname=CJFDLAST2017", "xiaZai": "http://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=rqbwtGUZJ7kGEDCwAni8wGOGuEv0N4vz%mmd2BiQ8as210mgQvjcNzI7jHsUpk0WIr%mmd2B0y&tableName=CJFDLAST2017", "zaiXianYueDu": "http://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=KYGL2017S1059&tablename=CJFDLAST2017&filetype=XML;EPUB;", "xueKeLeiBie": "基础科学_基础科学综合", "parentUrl": "http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=KYGL"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
@@ -333,11 +329,13 @@ if __name__ == '__main__':
     LOGGING.info('======The Start!======')
     begin_time = time.time()
     process_start()
+
     # po = Pool(1)
     # for i in range(1):
     #     po.apply_async(func=process_start)
     # po.close()
     # po.join()
+
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))
