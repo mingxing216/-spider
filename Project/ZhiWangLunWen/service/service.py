@@ -1947,18 +1947,27 @@ class QiKanLunWen_QiKan(Service):
         li_list = selector.xpath("//ul[@class='list_tup']/li")
         for li in li_list:
             try:
-                title = li.xpath("./a/@title").extract_first()
                 href = li.xpath("./a/@href").extract_first()
                 pcode = re.findall(r"pcode=(.*?)&", href)[0]
                 pykm = re.findall(r"&baseid=(.*)", href)[0]
                 url = "http://navi.cnki.net/knavi/JournalDetail?pcode={}&pykm={}".format(pcode, pykm)
 
-                yield {'url': url, 'title': title}
+                yield {'url': url}
 
             except Exception:
                 continue
 
     # ============================================= DATA
+    def getTitle(self, resp):
+        selector = Selector(text=resp)
+        try:
+            title = selector.xpath("//h3/text()").extract_first().strip()
+            # title = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp;)', '', data)).strip()
+        except Exception:
+            title = ''
+
+        return title
+
     def getHeXinShouLu(self, resp):
         selector = Selector(text=resp)
         try:

@@ -85,7 +85,6 @@ class SpiderMain(BastSpiderMain):
         # print(task_data)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        title = task_data['title']
         xueKeLeiBie = task_data['s_xueKeLeiBie']
         heXinQiKanMuLu = task_data['s_zhongWenHeXinQiKanMuLu']
 
@@ -104,7 +103,7 @@ class SpiderMain(BastSpiderMain):
         response = resp.text
         # ========================获取数据==========================
         # 标题
-        save_data['title'] = title
+        save_data['title'] = self.server.getTitle(response)
         # 获取核心收录
         save_data['heXinShouLu'] = self.server.getHeXinShouLu(response)
         # 获取外文名称
@@ -254,7 +253,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=YXDZ", "title": "医学动物防制", "s_xueKeLeiBie": "医药卫生科技_预防医学与卫生学", "s_zhongWenHeXinQiKanMuLu": ""}')
+        # main.run(task='{"url": "http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=ZDWY", "s_xueKeLeiBie": "经济与管理科学_贸易经济", "s_zhongWenHeXinQiKanMuLu": ""}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
