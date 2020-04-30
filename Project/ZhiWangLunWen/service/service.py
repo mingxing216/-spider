@@ -2104,11 +2104,10 @@ class QiKanLunWen_LunWen(Service):
         :return: 【年】、【期】列表
         '''
         html = resp.text
-        return_data = []
         selector = Selector(text=html)
-        try:
-            dl_list = selector.xpath("//div[@class='yearissuepage']/dl")
-            for dl in dl_list:
+        dl_list = selector.xpath("//div[@class='yearissuepage']/dl")
+        for dl in dl_list:
+            try:
                 year = dl.xpath("./dt/em/text()").extract_first().strip()
                 # 只获取2018-2020年份的期刊论文
                 if int(year) >= 2017:
@@ -2120,10 +2119,8 @@ class QiKanLunWen_LunWen(Service):
                 else:
                     continue
 
-        except:
-            return return_data
-
-        return return_data
+            except Exception:
+                continue
 
     # 获取论文列表页种子
     def getArticleListUrl(self, url, data, pcode, pykm):
