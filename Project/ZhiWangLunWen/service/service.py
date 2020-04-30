@@ -1885,30 +1885,35 @@ class QiKanLunWen_QiKan(Service):
                 name1 = li.xpath("./span/a/@title").extract_first()
                 a_list = li.xpath('./dl/dd/a')
                 for a in a_list:
-                    name2 = a.xpath("./@title").extract_first()
-                    onclick = ast.literal_eval(re.findall(r"(\(.*\))", a.xpath("./@onclick").extract_first())[0])
-                    SearchStateJson = ('{"StateID":"","Platfrom":"","QueryTime":"","Account":"knavi",'
-                                       '"ClientToken":"","Language":"","CNode":{"PCode":"CJFD","SMode":"",'
-                                       '"OperateT":""},"QNode":{"SelectT":"","Select_Fields":"","S_DBCodes":"",'
-                                       '"QGroup":[{"Key":"Navi","Logic":1,"Items":[],'
-                                       '"ChildItems":[{"Key":"Journal","Logic":1,"Items":[{"Key":1,"Title":"",'
-                                       '"Logic":1,"Name":"%s","Operate":"","Value":"%s?","ExtendType":0,'
-                                       '"ExtendValue":"","Value2":""}],"ChildItems":[]}]}],"OrderBy":"OTA|DESC",'
-                                       '"GroupBy":"","Additon":""}}' % (
-                                           onclick[1], onclick[2]))
-                    data = {
-                        'SearchStateJson': SearchStateJson,
-                        'displaymode': 1,
-                        'pageindex': int(page),
-                        'pagecount': 21,
-                        # 'index': re.findall(r"ClickIndex=(.*?)&", url)[0],
-                        'random': random.random()
-                    }
+                    try:
+                        name2 = a.xpath("./@title").extract_first()
+                        onclick = ast.literal_eval(re.findall(r"(\(.*\))", a.xpath("./@onclick").extract_first())[0])
+                        SearchStateJson = ('{"StateID":"","Platfrom":"","QueryTime":"","Account":"knavi",'
+                                           '"ClientToken":"","Language":"","CNode":{"PCode":"CJFD","SMode":"",'
+                                           '"OperateT":""},"QNode":{"SelectT":"","Select_Fields":"","S_DBCodes":"",'
+                                           '"QGroup":[{"Key":"Navi","Logic":1,"Items":[],'
+                                           '"ChildItems":[{"Key":"Journal","Logic":1,"Items":[{"Key":1,"Title":"",'
+                                           '"Logic":1,"Name":"%s","Operate":"","Value":"%s?","ExtendType":0,'
+                                           '"ExtendValue":"","Value2":""}],"ChildItems":[]}]}],"OrderBy":"OTA|DESC",'
+                                           '"GroupBy":"","Additon":""}}' % (
+                                               onclick[1], onclick[2]))
+                        data = {
+                            'SearchStateJson': SearchStateJson,
+                            'displaymode': 1,
+                            'pageindex': int(page),
+                            'pagecount': 21,
+                            # 'index': re.findall(r"ClickIndex=(.*?)&", url)[0],
+                            'random': random.random()
+                        }
 
-                    if fenlei == '学科导航':
-                        yield {'xueKeLeiBie': name1 + '_' + name2, 'data': data, 'SearchStateJson': SearchStateJson}
-                    elif fenlei == '核心期刊导航':
-                        yield {'heXinQiKan': name1 + '_' + name2, 'data': data, 'SearchStateJson': SearchStateJson}
+                        if fenlei == '学科导航':
+                            yield {'xueKeLeiBie': name1 + '_' + name2, 'data': data, 'SearchStateJson': SearchStateJson}
+
+                        elif fenlei == '核心期刊导航':
+                            yield {'heXinQiKan': name1 + '_' + name2, 'data': data, 'SearchStateJson': SearchStateJson}
+
+                    except Exception:
+                        continue
 
     def getPageNumber(self, resp):
         selector = Selector(text=resp)
@@ -1941,7 +1946,7 @@ class QiKanLunWen_QiKan(Service):
         selector = Selector(text=resp)
         li_list = selector.xpath("//ul[@class='list_tup']/li")
         for li in li_list:
-            if li.xpath("./a"):
+            try:
                 title = li.xpath("./a/@title").extract_first()
                 href = li.xpath("./a/@href").extract_first()
                 pcode = re.findall(r"pcode=(.*?)&", href)[0]
@@ -1950,6 +1955,8 @@ class QiKanLunWen_QiKan(Service):
 
                 yield {'url': url, 'title': title}
 
+            except Exception:
+                continue
 
     # ============================================= DATA
     def getHeXinShouLu(self, resp):
