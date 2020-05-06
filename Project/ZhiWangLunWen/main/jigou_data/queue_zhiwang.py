@@ -49,7 +49,7 @@ class SpiderMain(BastSpiderMain):
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_INSTITUTE, ws='中国知网', es='论文', count=1000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_INSTITUTE, ws='中国知网', es='论文', count=10000)
                 # print(new_task_list)
                 # 队列任务
                 self.dao.QueueTask(key=config.REDIS_ZHIWANG_INSTITUTE, data=new_task_list)

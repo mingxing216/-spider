@@ -61,7 +61,7 @@ class SpiderMain(BastSpiderMain):
         task_data = self.server.getEvalResponse(task)
         # print(task_data)
         url = task_data['url']
-        print(url)
+        # print(url)
         # sha = task_data['sha']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
@@ -163,7 +163,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZHIWANG_INSTITUTE, count=30, lockname=config.REDIS_ZHIWANG_INSTITUTE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_ZHIWANG_INSTITUTE, count=50, lockname=config.REDIS_ZHIWANG_INSTITUTE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
