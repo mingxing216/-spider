@@ -1586,7 +1586,7 @@ class HuiYiLunWen_WenJi_HuiYi(Service):
     # 获取文集详情url
     def getProfileUrl(self, base_url, url):
         try:
-            profile_url = base_url + re.findall(r"\?(.*)", url)[0]
+            profile_url = base_url + re.findall(r"\?(.*)&hycode", url)[0] + '&pIdx=0'
         except:
             profile_url = ''
 
