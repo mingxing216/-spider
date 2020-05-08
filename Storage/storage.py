@@ -70,8 +70,7 @@ class Dao(object):
                 self.mysql_client.insert_one(table=table, data=data)
                 self.logging.info('已存储种子: {}'.format(url))
             except Exception as e:
-                self.logging.warning('种子存储警告: {}'.format(e))
-                print(ctx)
+                self.logging.warning('种子存储警告: {}'.format(ctx))
 
         else:
             # self.logging.warning('种子已存在: {}'.format(sha))
@@ -122,8 +121,7 @@ class Dao(object):
                     self.mysql_client.update(table=table, data=newdata, where="`sha` = '{}'".format(sha))
                     self.logging.info('已更新种子: {}'.format(url))
                 except Exception as e:
-                    self.logging.warning('种子更新警告: {}'.format(e))
-                    print(ctx)
+                    self.logging.warning('种子更新警告: {}'.format(ctx))
 
     # 从Mysql获取指定一条任务
     def getOneTask(self, table, sha):
