@@ -1433,6 +1433,8 @@ class LunWen_Data(Service):
         people_list = zuozheList + daoshiList
         if people_list:
             for people in people_list:
+                people['name'] = people['name'].replace('"', '\\"').replace("'", "''")
+                people['url'] = people['url'].replace('"', '\\"').replace("'", "''")
                 people['shiJian'] = t
 
         return people_list

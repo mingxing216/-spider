@@ -62,8 +62,8 @@ class SpiderMain(BastSpiderMain):
         # print(task_data)
         url = task_data['url']
         # print(url)
-        # sha = task_data['sha']
-        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
+        sha = task_data['sha']
+        # sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
         # # # 查询当前文章是否被抓取过
         # status = self.dao.getTaskStatus(sha=sha)

@@ -260,7 +260,10 @@ class SpiderMain(BastSpiderMain):
                 self.dao.saveTaskToMysql(table=config.MYSQL_PEOPLE, memo=people, ws='中国知网', es='论文')
         # 保存机构队列
         if save_data['guanLianQiYeJiGou']:
-            for jigou  in save_data['guanLianQiYeJiGou']:
+            jigouList = copy.deepcopy(save_data['guanLianQiYeJiGou'])
+            for jigou in jigouList:
+                jigou['name'] = jigou['name'].replace('"', '\\"').replace("'", "''")
+                jigou['url'] = jigou['url'].replace('"', '\\"').replace("'", "''")
                 self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
 
         return sha
@@ -289,7 +292,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_HUIYI_PAPER, count=30, lockname=config.REDIS_HUIYI_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_HUIYI_PAPER, count=50, lockname=config.REDIS_HUIYI_PAPER_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

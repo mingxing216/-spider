@@ -256,7 +256,10 @@ class SpiderMain(BastSpiderMain):
                 self.dao.saveTaskToMysql(table=config.MYSQL_PEOPLE, memo=people, ws='中国知网', es='论文')
         # 保存机构队列
         if save_data['guanLianQiYeJiGou']:
-            for jigou  in save_data['guanLianQiYeJiGou']:
+            jigouList = copy.deepcopy(save_data['guanLianQiYeJiGou'])
+            for jigou in jigouList:
+                jigou['name'] = jigou['name'].replace('"', '\\"').replace("'", "''")
+                jigou['url'] = jigou['url'].replace('"', '\\"').replace("'", "''")
                 self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
 
         return sha
