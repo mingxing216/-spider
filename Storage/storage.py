@@ -269,21 +269,23 @@ class Dao(object):
             #     'rel_esse':
             #
             # }
-            item['relEsse'] = str(item['relEsse'])
-            item['relPics'] = str(item['relPics'])
-            item['pk'] = sha
-            item['type'] = type
-            item['url'] = media_url
-            item['tagSrc'] = media_url
-            item['length'] = "{}".format(len(dbs))
-            item['naturalHeight'] = "{}".format(img.height)
-            item['naturalWidth'] = "{}".format(img.width)
+            dict = {}
+            dict['relEsse'] = str(item['relEsse'])
+            dict['relPics'] = str(item['relPics'])
+            dict['bizTitle'] = item['bizTitle']
+            dict['url'] = media_url
+            dict['pk'] = sha
+            dict['type'] = type
+            dict['tagSrc'] = media_url
+            dict['length'] = "{}".format(len(dbs))
+            dict['naturalHeight'] = "{}".format(img.height)
+            dict['naturalWidth'] = "{}".format(img.width)
             data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
                     "wid": "100",
                     "content": "{}".format(content_bs64.decode('utf-8')),
                     # "content": "{}".format(content_bs64),
                     "ref": "",
-                    "item": json.dumps(item, ensure_ascii=False)
+                    "item": json.dumps(dict, ensure_ascii=False)
                     }
 
             headers = {
