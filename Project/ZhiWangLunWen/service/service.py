@@ -740,17 +740,27 @@ class LunWen_Data(Service):
             article_number = int(div.xpath("./div[@class='dbTitle']/b/span/text()").extract_first())
             if article_number % 10 == 0:
                 page_number = int(article_number / 10)
+                # 判断总页数是否大于50页，大于50页，只翻最后50页
+                if page_number > 50:
+                    first_page = int(page_number - 50)
+                else:
+                    first_page = 0
             else:
                 page_number = int((article_number / 10)) + 1
+                # 判断总页数是否大于50页，大于50页，只翻最后50页
+                if page_number > 50:
+                    first_page = int(page_number - 50)
+                else:
+                    first_page = 0
 
             # 题录
             if '题录' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '题录'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -782,17 +792,19 @@ class LunWen_Data(Service):
                             except:
                                 data["其他信息"] = ""
 
-                            lexing_list.append(data)
+                            # 列表去重
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['题录'] = lexing_list
+                leixing_dict['题录'] = leixing_list
 
             elif '学术期刊' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '学术期刊'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -833,17 +845,18 @@ class LunWen_Data(Service):
                             except:
                                 data['年卷期'] = ""
 
-                            lexing_list.append(data)
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['期刊论文'] = lexing_list
+                leixing_dict['期刊论文'] = leixing_list
 
             elif '国际期刊' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '国际期刊'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -899,17 +912,18 @@ class LunWen_Data(Service):
                             except:
                                 data['链接'] = ''
 
-                            lexing_list.append(data)
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['外文文献'] = lexing_list
+                leixing_dict['外文文献'] = leixing_list
 
             elif '图书' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '图书'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -941,17 +955,18 @@ class LunWen_Data(Service):
                             except:
                                 data['标题'] = ""
 
-                            lexing_list.append(data)
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['图书'] = lexing_list
+                leixing_dict['图书'] = leixing_list
 
             elif '学位' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '学位'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -992,17 +1007,18 @@ class LunWen_Data(Service):
                             except:
                                 data['机构'] = ""
 
-                            lexing_list.append(data)
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['学位论文'] = lexing_list
+                leixing_dict['学位论文'] = leixing_list
 
             elif '标准' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '标准'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -1050,17 +1066,18 @@ class LunWen_Data(Service):
                             except:
                                 data['链接'] = ''
 
-                            lexing_list.append(data)
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['标准'] = lexing_list
+                leixing_dict['标准'] = leixing_list
 
             elif '专利' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '专利'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -1105,17 +1122,18 @@ class LunWen_Data(Service):
                             except:
                                 data['链接'] = ''
 
-                            lexing_list.append(data)
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['专利'] = lexing_list
+                leixing_dict['专利'] = leixing_list
 
             elif '报纸' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '报纸'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -1155,17 +1173,18 @@ class LunWen_Data(Service):
                             except:
                                 data['链接'] = ''
 
-                            lexing_list.append(data)
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['报纸'] = lexing_list
+                leixing_dict['报纸'] = leixing_list
 
             elif '年鉴' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '年鉴'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -1204,17 +1223,18 @@ class LunWen_Data(Service):
                             except:
                                 data['时间'] = ''
 
-                            lexing_list.append(data)
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['年鉴'] = lexing_list
+                leixing_dict['年鉴'] = leixing_list
 
             elif '会议' in shiTiLeiXing:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '会议'
-                lexing_list = []
+                leixing_list = []
                 # pass
                 # 翻页获取
-                for page in range(page_number):
+                for page in range(first_page, page_number):
                     qiKanLunWenIndexUrl = ('http://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -1254,9 +1274,10 @@ class LunWen_Data(Service):
                             except:
                                 data['时间'] = {}
 
-                            lexing_list.append(data)
+                            if data not in leixing_list:
+                                leixing_list.append(data)
 
-                leixing_dict['会议论文'] = lexing_list
+                leixing_dict['会议论文'] = leixing_list
 
             return_data.append(leixing_dict)
 

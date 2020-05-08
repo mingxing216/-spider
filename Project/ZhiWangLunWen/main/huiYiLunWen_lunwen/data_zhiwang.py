@@ -148,9 +148,9 @@ class SpiderMain(BastSpiderMain):
         else:
             save_data['lunWenJi'] = ''
         # 获取下载
-        save_data['xiaZai'] = task_data['xiaZai']
+        save_data['xiaZai'] = task_data.get('xiaZai')
         # 获取在线阅读
-        save_data['zaiXianYueDu'] = task_data['zaiXianYueDu']
+        save_data['zaiXianYueDu'] = task_data.get('zaiXianYueDu')
         # 获取参考文献
         save_data['guanLianCanKaoWenXian'] = self.server.canKaoWenXian(url=url, download=self.__getResp)
         # 关联文集
