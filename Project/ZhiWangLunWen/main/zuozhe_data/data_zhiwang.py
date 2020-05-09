@@ -8,6 +8,7 @@ from gevent import monkey
 monkey.patch_all()
 import sys
 import os
+import copy
 import time
 import traceback
 from multiprocessing import Pool
@@ -112,7 +113,10 @@ class SpiderMain(BastSpiderMain):
             # --------------------------
             # 保存机构队列
             if save_data['guanLianQiYeJiGou']:
-                for jigou in save_data['guanLianQiYeJiGou']:
+                jigouList = copy.deepcopy(save_data['guanLianQiYeJiGou'])
+                for jigou in jigouList:
+                    jigou['name'] = jigou['name'].replace('"', '\\"').replace("'", "''")
+                    jigou['url'] = jigou['url'].replace('"', '\\"').replace("'", "''")
                     self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
 
             return sha
@@ -138,10 +142,10 @@ class SpiderMain(BastSpiderMain):
         success = self.dao.saveDataToHbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
+            self.dao.deleteTask(table=config.MYSQL_PEOPLE, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            self.dao.deleteLogicTask(table=config.MYSQL_PEOPLE, sha=sha)
 
     def start(self):
         while 1:
