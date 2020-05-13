@@ -947,7 +947,7 @@ class LunWen_Data(Service):
                         for li in li_list:
                             data = {}
                             try:
-                                data['其它信息'] = re.sub(r'\s+', ' ', re.sub('.*\[M\]\.', '', ''.join(re.findall(r"[^&nbsp\r\n]", li.xpath("./text()").extract_first())))).strip()
+                                data['其它信息'] = re.sub(r'\s+', ' ', re.sub('.*\[M\]\.', '', re.sub(r"&nbsp", "", ''.join(re.findall(r"[^\r\n]", li.xpath("./text()").extract_first()))))).strip()
                             except:
                                 data['其他信息'] = ""
                             try:
@@ -1262,15 +1262,15 @@ class LunWen_Data(Service):
                             except:
                                 data['标题'] = ''
                             try:
-                                data['作者'] = re.sub(r"(,|，)", "|", re.findall(r"\[A\]\.(.*?)\.", re.sub(r"(\r|\n|\s+)", "", li.xpath("./text()").extract_first()))[0])
+                                data['作者'] = re.sub(r"(,|，)", "|", re.findall(r"\[A\]\.(.*?)\.", re.sub(r'\s+', ' ', re.sub(r"(\r|\n)", "", li.xpath("./text()").extract_first())))[0])
                             except:
                                 data['作者'] = ''
                             try:
-                                data['文集'] = re.findall(r"\[A\]\..*?\.(.*?)\[C\]", re.sub(r"(\r|\n|\s+)", "", li.xpath("./text()").extract_first()))[0]
+                                data['文集'] = re.findall(r"\[A\]\..*?\.(.*?)\[C\]", re.sub(r'\s+', ' ', re.sub(r"(\r|\n)", "", li.xpath("./text()").extract_first())))[0]
                             except:
                                 data['文集'] = ''
                             try:
-                                data['时间'] = re.findall(r"\[C\]\.(.*)", re.sub(r"(\r|\n|\s+)", "", li.xpath("./text()").extract_first()))[0]
+                                data['时间'] = re.findall(r"\[C\]\.(.*)", re.sub(r'\s+', ' ', re.sub(r"(\r|\n)", "", li.xpath("./text()").extract_first())))[0]
                             except:
                                 data['时间'] = {}
 
