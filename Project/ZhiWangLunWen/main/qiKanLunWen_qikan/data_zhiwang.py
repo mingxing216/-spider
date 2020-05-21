@@ -64,6 +64,8 @@ class SpiderMain(BastSpiderMain):
         media_resp = self.__getResp(url=img_dict['url'], method='GET')
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_dict['url']))
+            # 标题内容调整格式
+            img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
             self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             # # 逻辑删除任务
@@ -74,6 +76,8 @@ class SpiderMain(BastSpiderMain):
         # 存储图片
         succ = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
         if not succ:
+            # 标题内容调整格式
+            img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
             self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             # # 逻辑删除任务
@@ -140,12 +144,24 @@ class SpiderMain(BastSpiderMain):
             save_data['chuBanWenXianLiang'] = {'v': re.findall(r'\d+', self.server.getData(response, '出版文献量'))[0], 'u': '篇'}
         except:
             save_data['chuBanWenXianLiang'] = ""
+        # 获取总下载次数
+        try:
+            save_data['zongXiaZaiCiShu'] = {'v': re.findall(r'\d+', self.server.getData(response, '总下载次数'))[0], 'u': '次'}
+        except:
+            save_data['zongXiaZaiCiShu'] = ""
+        # 获取总被引次数
+        try:
+            save_data['zongBeiYinCiShu'] = {'v': re.findall(r'\d+', self.server.getData(response, '总被引次数'))[0], 'u': '次'}
+        except:
+            save_data['zongBeiYinCiShu'] = ""
         # 获取复合影响因子
         save_data['fuHeYingXiangYinZi'] = self.server.getYingXiangYinZi(response, '复合影响因子')
         # 获取综合影响因子
         save_data['zongHeYingXiangYinZi'] = self.server.getYingXiangYinZi(response, '综合影响因子')
         # 获取来源数据库
         save_data['laiYuanShuJuKu'] = self.server.getLaiYuanShuJuKu(response)
+        # 获取来源版本
+        save_data['laiYuanBanBen'] = self.server.getLaiYuanBanBen(response)
         # 获取期刊荣誉
         save_data['qiKanRongYu'] = self.server.getQiKanRongYu(response)
         # 获取来源分类
@@ -219,7 +235,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_QIKAN_MAGAZINE, count=30, lockname=config.REDIS_QIKAN_MAGAZINE_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_QIKAN_MAGAZINE, count=50, lockname=config.REDIS_QIKAN_MAGAZINE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -253,7 +269,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"url": "http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=ZDWY", "s_xueKeLeiBie": "经济与管理科学_贸易经济", "s_zhongWenHeXinQiKanMuLu": ""}')
+        # main.run(task='{"url": "http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=JSGG", "s_xueKeLeiBie": "经济与管理科学_贸易经济", "s_zhongWenHeXinQiKanMuLu": ""}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

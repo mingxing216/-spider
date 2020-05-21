@@ -65,6 +65,8 @@ class SpiderMain(BastSpiderMain):
         media_resp = self.__getResp(url=img_dict['url'], method='GET')
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_dict['url']))
+            # 标题内容调整格式
+            img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
             self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             # # 逻辑删除任务
@@ -75,6 +77,8 @@ class SpiderMain(BastSpiderMain):
         # 存储图片
         succ = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
         if not succ:
+            # 标题内容调整格式
+            img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
             self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             # # 逻辑删除任务
@@ -114,7 +118,7 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         meeting_data['ss'] = '活动'
         # 生成es ——栏目名称
-        meeting_data['es'] = '会议论文'
+        meeting_data['es'] = '会议'
         # 生成ws ——目标网站
         meeting_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
@@ -203,7 +207,7 @@ class SpiderMain(BastSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '期刊'
         # 生成es ——栏目名称
-        save_data['es'] = '会议论文'
+        save_data['es'] = '会议文集'
         # 生成ws ——目标网站
         save_data['ws'] = '中国知网'
         # 生成clazz ——层级关系

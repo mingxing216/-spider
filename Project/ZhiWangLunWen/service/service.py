@@ -469,12 +469,15 @@ class LunWen_Data(Service):
             if selector.xpath("//label[contains(text(), '" + para + "')]/../a"):
                 value_list = selector.xpath("//label[contains(text(), '" + para + "')]/../a/text()").extract()
                 for v in value_list:
-                    data_list.append(v.strip())
-                value = re.sub(r"[;；]", "", '|'.join(data_list))
+                    # 去除每个关键词末尾分号
+                    value = re.sub(r"[;；]$", "", v.strip())
+                    data_list.append(value)
+                value = '|'.join(data_list)
             else:
                 values = selector.xpath("//label[contains(text(), '" + para + "')]/../text()").extract_first().strip()
                 value = re.sub(r"[;；]", "|", re.sub(r"[;；]$", "", values))
                 value_list = value.split('|')
+                # 每个关键词去除左右空格
                 for v in value_list:
                     data_list.append(v.strip())
                 value = '|'.join(data_list)
@@ -1433,8 +1436,8 @@ class LunWen_Data(Service):
         people_list = zuozheList + daoshiList
         if people_list:
             for people in people_list:
-                people['name'] = people['name'].replace('"', '\\"').replace("'", "''")
-                people['url'] = people['url'].replace('"', '\\"').replace("'", "''")
+                people['name'] = people['name'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
+                people['url'] = people['url'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
                 people['shiJian'] = t
 
         return people_list
@@ -2080,13 +2083,24 @@ class QiKanLunWen_QiKan(Service):
     def getLaiYuanShuJuKu(self, html):
         selector = Selector(text=html)
         try:
-            tags = selector.xpath("//p[@class='database']").extract()
-            database = ''.join(tags)
+            tags = selector.xpath("//p[@class='database']/@title").extract()
+            database = '|'.join(tags)
 
         except Exception:
             database = ""
 
         return database
+
+    def getLaiYuanBanBen(self, html):
+        selector = Selector(text=html)
+        try:
+            tag = selector.xpath("//p[@class='hostUnit']/span/@title").extract_first()
+            banben = re.sub(r"[\|;；]$", "", re.sub(r"[,，]", "|", tag))
+
+        except Exception:
+            banben = ""
+
+        return banben
 
     def getQiKanRongYu(self, html):
         selector = Selector(text=html)

@@ -58,31 +58,30 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('页面出现验证码: {}'.format(url))
             return
 
-    def imgDownload(self, img_task):
+    def imgDownload(self, img_dict, sha):
         # 获取图片响应
-        media_resp = self.__getResp(url=img_task['img_dict']['url'], method='GET')
+        media_resp = self.__getResp(url=img_dict['url'], method='GET')
         if not media_resp:
-            LOGGING.error('图片响应失败, url: {}'.format(img_task['img_dict']['url']))
+            LOGGING.error('图片响应失败, url: {}'.format(img_dict['url']))
             # 标题内容调整格式
-            img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
+            img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'], ws='中国知网', es='论文')
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
 
             # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=img_task['sha'])
+            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             return
-        media_resp.encoding = media_resp.apparent_encoding
+        # media_resp.encoding = media_resp.apparent_encoding
         img_content = media_resp.content
         # 存储图片
-        succ = self.dao.saveMediaToHbase(media_url=img_task['img_dict']['url'], content=img_content, item=img_task['img_dict'],
-                                         type='image')
+        succ = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
         if not succ:
             # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=img_task['sha'])
+            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             # 标题内容调整格式
-            img_task['img_dict']['bizTitle'] = img_task['img_dict']['bizTitle'].replace('"', '\\"').replace("'", "''")
+            img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_task['img_dict'], ws='中国知网', es='论文')
+            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             return
 
     def handle(self, task, save_data):
@@ -190,26 +189,31 @@ class SpiderMain(BastSpiderMain):
 
             # 下载图片
             for img in picDatas:
-                dict = {}
-                dict['sha'] = sha
-                dict['img_dict'] = {}
-                dict['img_dict']['url'] = img['url']
-                dict['img_dict']['bizTitle'] = img['title']
-                dict['img_dict']['relEsse'] = self.server.guanLianLunWen(url, sha)
-                dict['img_dict']['relPics'] = self.server.guanLianPics(url, sha)
-                img_tasks.append(dict)
+                img_dict = {}
+                img_dict['url'] = img['url']
+                img_dict['bizTitle'] = img['title'].replace('"', '\\"').replace("'","''").replace('\\', '\\\\')
+                img_dict['relEsse'] = self.server.guanLianLunWen(url, sha)
+                img_dict['relPics'] = self.server.guanLianPics(url, sha)
+                # img_tasks.append(img_dict)
 
-            # 创建gevent协程
-            img_list = []
-            for img_task in img_tasks:
-                s = gevent.spawn(self.imgDownload, img_task)
-                img_list.append(s)
-            gevent.joinall(img_list)
+                # 存储图片种子
+                suc = self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
+                if not suc:
+                    LOGGING.error('图片种子存储失败, url: {}'.format(img['url']))
+                    # 逻辑删除任务
+                    self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+
+            # # 创建gevent协程
+            # img_list = []
+            # for img_task in img_tasks:
+            #     s = gevent.spawn(self.imgDownload, img_task, sha)
+            #     img_list.append(s)
+            # gevent.joinall(img_list)
 
             # # 创建线程池
             # threadpool = ThreadPool()
             # for img_task in img_tasks:
-            #     threadpool.apply_async(func=self.imgDownload, args=(img_task,))
+            #     threadpool.apply_async(func=self.imgDownload, args=(img_task, sha))
             #
             # threadpool.close()
             # threadpool.join()
@@ -249,8 +253,8 @@ class SpiderMain(BastSpiderMain):
         if save_data['guanLianQiYeJiGou']:
             jigouList = copy.deepcopy(save_data['guanLianQiYeJiGou'])
             for jigou  in jigouList:
-                jigou['name'] = jigou['name'].replace('"', '\\"').replace("'", "''")
-                jigou['url'] = jigou['url'].replace('"', '\\"').replace("'", "''")
+                jigou['name'] = jigou['name'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
+                jigou['url'] = jigou['url'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
                 self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
 
         https_url = url.replace('http', 'https')
@@ -316,7 +320,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run('{"url": "http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CMFD&filename=1018293294.nh&dbname=CMFD201901", "shiJian": {"v": "2018", "u": "年"}, "xueWeiLeiXing": "硕士", "xiaZaiCiShu": "128", "s_zhuanYe": "哲学_哲学_伦理学", "parentUrl": "http://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GNJSU"}')
+        # main.run('{"url": "http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CDFD&filename=2008098664.nh&dbname=CDFD0911", "shiJian": {"v": "2018", "u": "年"}, "xueWeiLeiXing": "硕士", "xiaZaiCiShu": "128", "s_zhuanYe": "哲学_哲学_伦理学", "parentUrl": "http://navi.cnki.net/knavi/PPaperDetail?pcode=CDMD&logo=GNJSU"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 
