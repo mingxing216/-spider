@@ -57,8 +57,10 @@ class Server(object):
             for data in datas:
                 data['xueKeLeiBie'] = xuekeleibie
                 data['chineseTitle'] = re.sub(r"(\(|（)[^\(（）\)]*?(）|\))$", "", data['chineseTitle']).strip()
+                data['authors'] = re.sub(r"(\(\)|\(#\)|\(\*\)|<.*?>)", "", data['authors']).strip()
                 t = round(time.time()* 1000)
                 data['url'] = 'http://kns.cnki.net/kns/brief/brief.aspx?pagename=ASP.brief_default_result_aspx&isinEn=1&dbPrefix=SCDB&dbCatalog=%e4%b8%ad%e5%9b%bd%e5%ad%a6%e6%9c%af%e6%96%87%e7%8c%ae%e7%bd%91%e7%bb%9c%e5%87%ba%e7%89%88%e6%80%bb%e5%ba%93&ConfigFile=SCDBINDEX.xml&research=off&t=' + str(t) + '&keyValue=' + quote(data['chineseTitle']) + '&S=1&sorttype='
+                data['pdfUrl'] = 'http://ir.nsfc.gov.cn/paperDownload/' + data['fulltext'] + '.pdf'
                 return_data.append(data)
 
         except Exception:

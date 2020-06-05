@@ -141,7 +141,7 @@ class SpiderMain(BastSpiderMain):
                 self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)
                 return
 
-            # catalog_resp.encoding = catalog_resp.apparent_encoding
+            catalog_resp.encoding = catalog_resp.apparent_encoding
             try:
                 catalog_json = catalog_resp.json()
                 LOGGING.info('已翻到第{}页'.format(i+1))
@@ -155,6 +155,7 @@ class SpiderMain(BastSpiderMain):
                 # 队列一条任务
                 task['num'] = i
                 self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)
+                return
 
         else:
             LOGGING.info('已翻到最后一页')
