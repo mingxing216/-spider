@@ -3,9 +3,9 @@
 '''
 
 '''
-import gevent
-from gevent import monkey
-monkey.patch_all()
+# import gevent
+# from gevent import monkey
+# monkey.patch_all()
 import sys
 import os
 import time
@@ -74,14 +74,14 @@ class SpiderMain(BastSpiderMain):
             return
 
     # 获取文档实体字段
-    def document(self, title, doc, url, sha):
-        # 公告数据存储字典
+    def document(self, pdf_dict, url, sha):
+        # 文档数据存储字典
         doc_data = {}
 
         # 获取标题
-        doc_data['title'] = title
+        doc_data['title'] = pdf_dict['bizTitle']
         # 获取URL
-        doc_data['URL'] = doc['url']
+        doc_data['URL'] = pdf_dict['url']
         # 获取格式
         doc_data['geShi'] = ""
         # 获取大小
@@ -95,15 +95,15 @@ class SpiderMain(BastSpiderMain):
 
         # ===================公共字段
         # url
-        doc_data['url'] = doc['url']
+        doc_data['url'] = pdf_dict['url']
         # 生成key
-        doc_data['key'] = doc['url']
+        doc_data['key'] = pdf_dict['url']
         # 生成sha
-        doc_data['sha'] = doc['sha']
+        doc_data['sha'] = pdf_dict['sha']
         # 生成ss ——实体
         doc_data['ss'] = '文档'
         # 生成es ——栏目名称
-        doc_data['es'] = '期刊论文'
+        doc_data['es'] = '论文'
         # 生成ws ——目标网站
         doc_data['ws'] = '国家自然科学基金委员会'
         # 生成clazz ——层级关系
@@ -117,15 +117,43 @@ class SpiderMain(BastSpiderMain):
         sto = self.dao.saveDataToHbase(data=doc_data)
 
         if sto:
-            LOGGING.info('文档数据存储成功, sha: {}'.format(doc['sha']))
+            LOGGING.info('文档数据存储成功, sha: {}'.format(pdf_dict['sha']))
         else:
-            LOGGING.error('文档数据存储失败, url: {}'.format(doc['url']))
+            LOGGING.error('文档数据存储失败, url: {}'.format(pdf_dict['url']))
             # 逻辑删除任务
             self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+
+        # 获取页面响应
+        pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
+        if not pdf_resp:
+            LOGGING.error('文档响应失败, url: {}'.format(pdf_dict['url']))
+            # 标题内容调整格式
+            pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
+            # 存储文档种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            return
+        # media_resp.encoding = media_resp.apparent_encoding
+        pdf_content = pdf_resp.content
+        # with open('profile.pdf', 'wb') as f:
+        #     f.write(pdf_resp)
+        # 存储文档
+        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document')
+        if not succ:
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            # 标题内容调整格式
+            pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
+            # 存储图片种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            return
 
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
+        print(task_data)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         id = task_data['id']
@@ -157,8 +185,40 @@ class SpiderMain(BastSpiderMain):
         save_data['title'] = self.server.getFieldValue(resp_json, 'chineseTitle')
         # 获取作者
         save_data['zuoZhe'] = self.server.getMoreFieldValue(resp_json, 'authors')
-        # 获取期刊名称
-        save_data['qiKanMingCheng'] = self.server.getFieldValue(resp_json, 'journal')
+        # 获取成果类型
+        productType = int(resp_json['data'][0]['productType'])
+        if productType == 3:
+            # 成果类型
+            save_data['chengGuoLeiXing'] = '会议论文'
+            # es ——栏目名称
+            save_data['es'] = '会议论文'
+            # 获取会议名称
+            save_data['huiYiMingCheng'] = self.server.getFieldValue(resp_json, 'journal')
+            # 获取语种
+            if save_data['huiYiMingCheng']:
+                hasChinese = self.server.hasChinese(resp_json, 'journal')
+                if hasChinese:
+                    save_data['yuZhong'] = "中文"
+                else:
+                    save_data['yuZhong'] = "英文"
+            else:
+                save_data['yuZhong'] = ""
+        elif productType == 4:
+            # 成果类型
+            save_data['chengGuoLeiXing'] = '会议论文'
+            # es ——栏目名称
+            save_data['es'] = '期刊论文'
+            # 获取会议名称
+            save_data['qiKanMingCheng'] = self.server.getFieldValue(resp_json, 'journal')
+            # 获取语种
+            if save_data['qiKanMingCheng']:
+                hasChinese = self.server.hasChinese(resp_json, 'journal')
+                if hasChinese:
+                    save_data['yuZhong'] = "中文"
+                else:
+                    save_data['yuZhong'] = "英文"
+            else:
+                save_data['yuZhong'] = ""
         # 获取数字对象标识符
         save_data['DOI'] = self.server.getFieldValue(resp_json, 'doi')
         # 获取时间
@@ -193,8 +253,7 @@ class SpiderMain(BastSpiderMain):
         save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(resp_json, 'fieldName', xueKeLeiBie)
         # 获取学科领域代码
         save_data['xueKeLingYuDaiMa'] = self.server.getFieldValue(resp_json, 'fieldCode')
-        # 获取语种
-        save_data['yuZhong'] = ""
+
         # 获取关联文档
         doc_id = self.server.getFieldValue(resp_json, 'fulltext')
         if doc_id:
@@ -203,8 +262,15 @@ class SpiderMain(BastSpiderMain):
             doc_sha = hashlib.sha1(doc_url.encode('utf-8')).hexdigest()
             save_data['guanLianWenDang'] = self.server.guanLianWenDang(doc_url, doc_sha)
 
-            # 获取文档实体
-            self.document(title=save_data['title'], doc=save_data['guanLianWenDang'], url=url, sha=sha)
+            pdf_dict = {}
+            pdf_dict['url'] = doc_url
+            pdf_dict['sha'] = doc_sha
+            pdf_dict['bizTitle'] = save_data['title']
+            pdf_dict['relEsse'] = self.server.guanLianLunWen(url, sha)
+            # pdf_dict['relPics'] = self.server.guanLianWenDang(doc_url, doc_sha)
+
+            # 存储文档实体及文档本身
+            self.document(pdf_dict=pdf_dict, url=url, sha=sha)
         else:
             save_data['guanLianWenDang'] = {}
 
@@ -217,8 +283,6 @@ class SpiderMain(BastSpiderMain):
         save_data['sha'] = sha
         # 生成ss ——实体
         save_data['ss'] = '论文'
-        # 生成es ——栏目名称
-        save_data['es'] = '期刊论文'
         # 生成ws ——目标网站
         save_data['ws'] = '国家自然科学基金委员会'
         # 生成clazz ——层级关系
@@ -255,27 +319,27 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_PAPER, count=20, lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_PAPER, count=1, lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-                # 创建gevent协程
-                g_list = []
-                for task in task_list:
-                    s = gevent.spawn(self.run, task)
-                    g_list.append(s)
-                gevent.joinall(g_list)
+                # # 创建gevent协程
+                # g_list = []
+                # for task in task_list:
+                #     s = gevent.spawn(self.run, task)
+                #     g_list.append(s)
+                # gevent.joinall(g_list)
 
-                # # 创建线程池
-                # threadpool = ThreadPool()
-                # for url in task_list:
-                #     threadpool.apply_async(func=self.run, args=(url,))
-                #
-                # threadpool.close()
-                # threadpool.join()
+                # 创建线程池
+                threadpool = ThreadPool()
+                for url in task_list:
+                    threadpool.apply_async(func=self.run, args=(url,))
+
+                threadpool.close()
+                threadpool.join()
 
                 time.sleep(1)
 
@@ -289,7 +353,7 @@ def process_start():
     main = SpiderMain()
     try:
         main.start()
-        # main.run(task='{"id": "e71a52c4-c2ad-40ec-bbe2-f3490383b8e5", "xueKeLeiBie": "地球科学部", "url": "http://ir.nsfc.gov.cn/paperDetail/e71a52c4-c2ad-40ec-bbe2-f3490383b8e5"}')
+        # main.run(task="{'id': '207d122a-3a68-41b1-8d8a-f20552f22054', 'xueKeLeiBie': '信息科学部', 'url': 'http://ir.nsfc.gov.cn/paperDetail/207d122a-3a68-41b1-8d8a-f20552f22054'}")
     except:
         LOGGING.error(str(traceback.format_exc()))
 

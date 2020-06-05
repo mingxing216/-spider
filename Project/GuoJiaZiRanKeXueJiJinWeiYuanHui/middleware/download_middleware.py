@@ -48,7 +48,9 @@ class Downloader(downloader.BaseDownloader):
             # 设置proxy
             proxies = None
             if self.proxy_type:
-                proxies = self.proxy_obj.getProxy()
+                ip = self.proxy_obj.get_proxy()
+                proxies = {'http': 'http://' + ip,
+                           'https': 'https://' + ip}
 
             # # 设置请求开始时间
             # start_time = time.time()
@@ -58,18 +60,24 @@ class Downloader(downloader.BaseDownloader):
                                    cookies=cookies)
 
             if down_data['code'] == 0:
+                # 设置代理最大权重
+                max = self.proxy_obj.max_proxy(ip)
                 # self.logging.info('请求成功: {} | 用时: {}秒'.format(url, '%.2f' %(time.time() - start_time)))
                 return down_data['data']
 
             if down_data['code'] == 1:
+                # 代理权重减1
+                dec = self.proxy_obj.dec_proxy(ip)
                 # self.logging.warning('请求内容错误: {} | 响应码: {} | 用时: {}秒'.format(url, down_data['status'], '%.2f' %(time.time() - start_time)))
-                if stat_count > 20:
+                if stat_count > 10:
                     return
                 else:
                     stat_count += 1
                     continue
 
             if down_data['code'] == 2:
+                # 代理权重减1
+                dec = self.proxy_obj.dec_proxy(ip)
                 # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
                 if err_count > 10:
                     return

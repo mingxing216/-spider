@@ -7,6 +7,8 @@ import sys
 import os
 import ast
 import re
+import time
+from urllib.parse import quote,unquote
 import requests
 from lxml import etree
 from lxml.html import fromstring, tostring
@@ -53,11 +55,11 @@ class Server(object):
         try:
             datas = json['data']
             for data in datas:
-                dict = {}
-                dict['id'] = data['id']
-                dict['xueKeLeiBie'] = xuekeleibie
-                dict['url'] = 'http://ir.nsfc.gov.cn/paperDetail/' + data['id']
-                return_data.append(dict)
+                data['xueKeLeiBie'] = xuekeleibie
+                data['chineseTitle'] = re.sub(r"(\(|（)[^\(（）\)]*?(）|\))$", "", data['chineseTitle']).strip()
+                t = round(time.time()* 1000)
+                data['url'] = 'http://kns.cnki.net/kns/brief/brief.aspx?pagename=ASP.brief_default_result_aspx&isinEn=1&dbPrefix=SCDB&dbCatalog=%e4%b8%ad%e5%9b%bd%e5%ad%a6%e6%9c%af%e6%96%87%e7%8c%ae%e7%bd%91%e7%bb%9c%e5%87%ba%e7%89%88%e6%80%bb%e5%ba%93&ConfigFile=SCDBINDEX.xml&research=off&t=' + str(t) + '&keyValue=' + quote(data['chineseTitle']) + '&S=1&sorttype='
+                return_data.append(data)
 
         except Exception:
             return return_data
@@ -71,7 +73,9 @@ class Server(object):
     # ====== 论文实体
     def getFieldValue(self, json, para):
         try:
-            value = json['data'][0][para].strip()
+            value = json['data'][0][para]
+            if isinstance(value, str):
+                value = value.strip()
 
         except Exception:
             value = ""
@@ -91,9 +95,18 @@ class Server(object):
 
         return values
 
+    def hasChinese(self, json, para):
+        journal = json['data'][0][para]
+        for ch in journal:
+            if '\u4e00' <= ch <= '\u9fa5':
+                return True
+
+        return False
+
+
     def getXueKeLeiBie(self, json, para, xueke):
         try:
-            value = json['data'][0][para].strip()
+            value = str(json['data'][0][para]).strip()
             if value:
                 xuekeleibie = xueke + '_' + value
             else:

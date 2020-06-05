@@ -119,8 +119,9 @@ class MysqlPool(object):
                 value.append(data[key])
 
             sql = "insert into {table}(`{name}`) VALUES ('{value}')".format(table='`' + table + '`',
-                                                                          name='`,`'.join(str(n) for n in name),
-                                                                          value='\',\''.join(str(v) for v in value))
+                                                                            name='`,`'.join(str(n) for n in name),
+                                                                            value="','".join(pymysql.escape_string(str(v)) for v in value))
+            # print(sql)
 
             cursor.execute(sql)
 
@@ -137,10 +138,11 @@ class MysqlPool(object):
             updates = []
 
             for key in data:
-                index = "{}='{}'".format(key, data[key])
+                index = "{}='{}'".format(key, pymysql.escape_string(data[key])) # 存数据库时，单双引号反斜杠转义，防止存储失败
                 updates.append(index)
 
             sql = "update `{}` set {} WHERE {}".format(table, ','.join(updates), where)
+            # print(sql)
 
             cursor.execute(sql)
 

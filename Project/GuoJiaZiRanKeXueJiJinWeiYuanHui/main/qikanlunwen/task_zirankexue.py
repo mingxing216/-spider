@@ -22,6 +22,7 @@ from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.middleware import download_middlewa
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.service import service
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.dao import dao
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui import config
+from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.main.qikanlunwen import data_zirankexue
 
 log_file_dir = 'ZiRanKeXue'  # LOG日志存放路径
 LOGNAME = '<国家自然科学_论文_task>'  # LOG名
@@ -102,7 +103,7 @@ class SpiderMain(BastSpiderMain):
             self.num += 1
             LOGGING.info('当前已抓种子数量: {}'.format(self.num))
             # 存入数据库
-            self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=url, ws='国家自然科学基金委员会', es='期刊论文')
+            self.dao.saveTaskToMysql(table=config.MYSQL_TEST, memo=url, ws='中国知网', es='论文_catalog')
 
     def run(self, category):
         # 数据类型转换
@@ -130,16 +131,17 @@ class SpiderMain(BastSpiderMain):
                 'pageNum': i,
                 'pageSize': 10
             }
-            # 获取列表首响应
+
+            # 获取列表页
             catalog_resp = self.__getResp(url=self.base_url, method='POST', data=json.dumps(data))
             if not catalog_resp:
-                LOGGING.error('第{}页列表页响应失败, url: {}'.format(i, self.base_url))
+                LOGGING.error('第{}页列表页响应失败, url: {}'.format(i+1, self.base_url))
                 # 队列一条任务
                 task['num'] = i
                 self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)
                 return
 
-            catalog_resp.encoding = catalog_resp.apparent_encoding
+            # catalog_resp.encoding = catalog_resp.apparent_encoding
             try:
                 catalog_json = catalog_resp.json()
                 LOGGING.info('已翻到第{}页'.format(i+1))
@@ -151,7 +153,8 @@ class SpiderMain(BastSpiderMain):
             except Exception:
                 LOGGING.error('列表页json内容获取失败')
                 # 队列一条任务
-                self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=category)
+                task['num'] = i
+                self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)
 
         else:
             LOGGING.info('已翻到最后一页')
@@ -192,7 +195,6 @@ def process_start():
     try:
         main.getCatalog()
         main.start()
-        # main.run('{"url": "http://www.chinabgao.com/report/c_led/", "s_hangYe": "IT_液晶产业", "s_leiXing": "不限"}')
     except:
         LOGGING.error(str(traceback.format_exc()))
 

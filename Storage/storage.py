@@ -259,9 +259,10 @@ class Dao(object):
             content_bs64 = base64.b64encode(content)
             # 解码base64图片文件
             dbs = base64.b64decode(content_bs64)
-            # 内存中打开图片
-            img = Image.open(BytesIO(content))
+            # # 内存中打开图片
+            # img = Image.open(BytesIO(content))
             sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
+
             # item = {
             #     'pk': sha,
             #     'type': type,
@@ -275,18 +276,22 @@ class Dao(object):
             # }
             dict = {}
             dict['relEsse'] = str(item['relEsse'])
-            dict['relPics'] = str(item['relPics'])
+            dict['relPics'] = str(item.get('relPics'))
             dict['bizTitle'] = item['bizTitle']
             dict['url'] = media_url
-            dict['pk'] = sha
+            if type == 'image':
+                dict['pk'] = sha
+            else:
+                dict['pk'] = type + sha
             dict['type'] = type
             dict['tagSrc'] = media_url
             dict['length'] = "{}".format(len(dbs))
-            dict['naturalHeight'] = "{}".format(img.height)
-            dict['naturalWidth'] = "{}".format(img.width)
+            dict['content'] = "{}".format(content_bs64.decode('utf-8'))
+            # dict['naturalHeight'] = "{}".format(img.height)
+            # dict['naturalWidth'] = "{}".format(img.width)
             data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
                     "wid": "100",
-                    "content": "{}".format(content_bs64.decode('utf-8')),
+                    # "content": "{}".format(content_bs64.decode('utf-8')),
                     # "content": "{}".format(content_bs64),
                     "ref": "",
                     "item": json.dumps(dict, ensure_ascii=False)
