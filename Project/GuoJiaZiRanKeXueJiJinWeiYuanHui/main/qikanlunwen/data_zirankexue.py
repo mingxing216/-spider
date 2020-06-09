@@ -74,7 +74,7 @@ class SpiderMain(BastSpiderMain):
             return
 
     # 获取文档实体字段
-    def document(self, pdf_dict, url, sha):
+    def document(self, pdf_dict, sha):
         # 文档数据存储字典
         doc_data = {}
 
@@ -91,13 +91,13 @@ class SpiderMain(BastSpiderMain):
         # 获取来源网站
         doc_data['laiYuanWangZhan'] = ""
         # 关联论文
-        doc_data['guanLianLunWen'] = self.server.guanLianLunWen(url=url, sha=sha)
+        doc_data['guanLianLunWen'] = pdf_dict['relEsse']
 
         # ===================公共字段
         # url
         doc_data['url'] = pdf_dict['url']
         # 生成key
-        doc_data['key'] = pdf_dict['url']
+        doc_data['key'] = pdf_dict['id']
         # 生成sha
         doc_data['sha'] = pdf_dict['sha']
         # 生成ss ——实体
@@ -126,26 +126,22 @@ class SpiderMain(BastSpiderMain):
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
         if not pdf_resp:
-            LOGGING.error('文档响应失败, url: {}'.format(pdf_dict['url']))
-            # 标题内容调整格式
-            pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
+            LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
+            # # 标题内容调整格式
+            # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储文档种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-
-            # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             return
+
         # media_resp.encoding = media_resp.apparent_encoding
         pdf_content = pdf_resp.content
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         # 存储文档
-        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document')
+        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='test')
         if not succ:
-            # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-            # 标题内容调整格式
-            pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
+            # # 标题内容调整格式
+            # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
@@ -153,124 +149,102 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task, save_data):
         # 数据类型转换
         task_data = self.server.getEvalResponse(task)
-        print(task_data)
-        url = task_data['url']
-        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        id = task_data['id']
+        # print(task_data)
+        id = task_data.get('id')
+        sha = hashlib.sha1(id.encode('utf-8')).hexdigest()
+        url = 'http://ir.nsfc.gov.cn/paperDetail/' + task_data.get('id')
         xueKeLeiBie = task_data['xueKeLeiBie']
 
-        data = {'achievementID': id}
-        # 获取页面响应
-        resp = self.__getResp(url=self.profile_url, method='POST', data=json.dumps(data))
-        if not resp:
-            LOGGING.error('页面响应失败, url: {}'.format(url))
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-            return
-
-        resp.encoding = resp.apparent_encoding
-        resp_json = ''
-        try:
-            resp_json = resp.json()
-            # with open ('profile.txt', 'w', encoding='utf-8') as f:
-            #     f.write(json.dumps(resp_json, indent=4, sort_keys=True))
-            # return
-
-        except Exception:
-            LOGGING.error('详情接口json内容获取失败')
-            # 队列一条任务
-            self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_PAPER, data=task)
-
         # 获取标题
-        save_data['title'] = self.server.getFieldValue(resp_json, 'chineseTitle')
+        save_data['title'] = task_data.get('chineseTitle')
         # 获取作者
-        save_data['zuoZhe'] = self.server.getMoreFieldValue(resp_json, 'authors')
-        # 获取成果类型
-        productType = int(resp_json['data'][0]['productType'])
-        if productType == 3:
-            # 成果类型
-            save_data['chengGuoLeiXing'] = '会议论文'
-            # es ——栏目名称
-            save_data['es'] = '会议论文'
-            # 获取会议名称
-            save_data['huiYiMingCheng'] = self.server.getFieldValue(resp_json, 'journal')
-            # 获取语种
-            if save_data['huiYiMingCheng']:
-                hasChinese = self.server.hasChinese(resp_json, 'journal')
-                if hasChinese:
-                    save_data['yuZhong'] = "中文"
-                else:
-                    save_data['yuZhong'] = "英文"
-            else:
-                save_data['yuZhong'] = ""
-        elif productType == 4:
-            # 成果类型
-            save_data['chengGuoLeiXing'] = '会议论文'
-            # es ——栏目名称
-            save_data['es'] = '期刊论文'
-            # 获取会议名称
-            save_data['qiKanMingCheng'] = self.server.getFieldValue(resp_json, 'journal')
-            # 获取语种
-            if save_data['qiKanMingCheng']:
-                hasChinese = self.server.hasChinese(resp_json, 'journal')
-                if hasChinese:
-                    save_data['yuZhong'] = "中文"
-                else:
-                    save_data['yuZhong'] = "英文"
-            else:
-                save_data['yuZhong'] = ""
-        # 获取数字对象标识符
-        save_data['DOI'] = self.server.getFieldValue(resp_json, 'doi')
-        # 获取时间
-        shiJian = self.server.getFieldValue(resp_json, 'year')
-        if shiJian:
-            try:
-                save_data['shiJian'] = timeutils.getDateTimeRecord(shiJian)
-
-            except:
-                save_data['shiJian'] = shiJian
-        else:
-            save_data['shiJian'] = ""
-        # 获取关键词
-        save_data['guanJianCi'] = self.server.getMoreFieldValue(resp_json, 'zhKeyword')
-        # 获取摘要
-        save_data['zhaiYao'] = self.server.getFieldValue(resp_json, 'zhAbstract')
-        # 获取项目类型
-        save_data['xinagMuLeiXing'] = self.server.getFieldValue(resp_json, 'supportTypeName')
-        # 获取项目编号
-        save_data['xinagMuBianHao'] = self.server.getFieldValue(resp_json, 'fundProjectNo')
-        # 获取项目名称
-        save_data['xinagMuMingCheng'] = self.server.getFieldValue(resp_json, 'fundProject')
-        # 获取研究机构
-        save_data['yanJiuJiGou'] = self.server.getFieldValue(resp_json, 'organization')
-        # 获取点击量
-        save_data['dianJiLiang'] = self.server.getFieldValue(resp_json, 'browseCount')
-        # 获取下载次数
-        save_data['xiaZaiCiShu'] = self.server.getFieldValue(resp_json, 'downloadCount')
-        # 获取其它来源网站
-        save_data['qiTaLaiYuanWangZhan'] = self.server.getFieldValue(resp_json, 'doiUrl')
-        # 获取学科类别
-        save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(resp_json, 'fieldName', xueKeLeiBie)
-        # 获取学科领域代码
-        save_data['xueKeLingYuDaiMa'] = self.server.getFieldValue(resp_json, 'fieldCode')
+        save_data['zuoZhe'] = self.server.getMoreFieldValue(task_data.get('authors'))
+        # # 获取成果类型
+        # productType = int(task_data.get('productType'))
+        # if productType == 3:
+        #     # 成果类型
+        #     save_data['chengGuoLeiXing'] = '会议论文'
+        #     # es ——栏目名称
+        #     save_data['es'] = '会议论文'
+        #     # 获取会议名称
+        #     save_data['huiYiMingCheng'] = task_data.get('journal')
+        #     # 获取语种
+        #     if save_data['huiYiMingCheng']:
+        #         hasChinese = self.server.hasChinese(task_data.get('journal'))
+        #         if hasChinese:
+        #             save_data['yuZhong'] = "中文"
+        #         else:
+        #             save_data['yuZhong'] = "英文"
+        #     else:
+        #         save_data['yuZhong'] = ""
+        # elif productType == 4:
+        #     # 成果类型
+        #     save_data['chengGuoLeiXing'] = '会议论文'
+        #     # es ——栏目名称
+        #     save_data['es'] = '期刊论文'
+        #     # 获取会议名称
+        #     save_data['qiKanMingCheng'] = task_data.get('journal')
+        #     # 获取语种
+        #     if save_data['qiKanMingCheng']:
+        #         hasChinese = self.server.hasChinese(task_data.get('journal'))
+        #         if hasChinese:
+        #             save_data['yuZhong'] = "中文"
+        #         else:
+        #             save_data['yuZhong'] = "英文"
+        #     else:
+        #         save_data['yuZhong'] = ""
+        # # 获取数字对象标识符
+        # save_data['DOI'] = task_data.get('doi')
+        # # 获取时间
+        # shiJian = task_data.get('publishDate')
+        # if shiJian:
+        #     try:
+        #         save_data['shiJian'] = timeutils.getDateTimeRecord(shiJian)
+        #
+        #     except:
+        #         save_data['shiJian'] = shiJian
+        # else:
+        #     save_data['shiJian'] = ""
+        # # 获取关键词
+        # save_data['guanJianCi'] = task_data.get('zhKeyword')
+        # # 获取摘要
+        # save_data['zhaiYao'] = task_data.get('zhAbstract')
+        # # 获取项目类型
+        # save_data['xinagMuLeiXing'] = task_data.get('supportTypeName')
+        # # 获取项目编号
+        # save_data['xinagMuBianHao'] = self.server.getFieldValue(resp_json, 'fundProjectNo')
+        # # 获取项目名称
+        # save_data['xinagMuMingCheng'] = self.server.getFieldValue(resp_json, 'fundProject')
+        # # 获取研究机构
+        # save_data['yanJiuJiGou'] = self.server.getFieldValue(resp_json, 'organization')
+        # # 获取点击量
+        # save_data['dianJiLiang'] = self.server.getFieldValue(resp_json, 'browseCount')
+        # # 获取下载次数
+        # save_data['xiaZaiCiShu'] = self.server.getFieldValue(resp_json, 'downloadCount')
+        # # 获取其它来源网站
+        # save_data['qiTaLaiYuanWangZhan'] = self.server.getFieldValue(resp_json, 'doiUrl')
+        # # 获取学科类别
+        # save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(resp_json, 'fieldName', xueKeLeiBie)
+        # # 获取学科领域代码
+        # save_data['xueKeLingYuDaiMa'] = self.server.getFieldValue(resp_json, 'fieldCode')
 
         # 获取关联文档
-        doc_id = self.server.getFieldValue(resp_json, 'fulltext')
+        doc_id = task_data.get('fulltext')
         if doc_id:
-            # docu_url = 'http://ir.nsfc.gov.cn/baseQuery/data/paperFulltextDownload/' + id
-            doc_url = 'http://ir.nsfc.gov.cn/paperDownload/' + doc_id + '.pdf'
-            doc_sha = hashlib.sha1(doc_url.encode('utf-8')).hexdigest()
-            save_data['guanLianWenDang'] = self.server.guanLianWenDang(doc_url, doc_sha)
+            doc_sha = hashlib.sha1(doc_id.encode('utf-8')).hexdigest()
+            doc_url = task_data.get('pdfUrl')
+            save_data['guanLianWenDang'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
 
             pdf_dict = {}
             pdf_dict['url'] = doc_url
+            pdf_dict['id'] = doc_id
             pdf_dict['sha'] = doc_sha
             pdf_dict['bizTitle'] = save_data['title']
-            pdf_dict['relEsse'] = self.server.guanLianLunWen(url, sha)
-            # pdf_dict['relPics'] = self.server.guanLianWenDang(doc_url, doc_sha)
+            pdf_dict['relEsse'] = self.server.guanLianLunWen(url, id, sha)
+            pdf_dict['relPics'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
 
             # 存储文档实体及文档本身
-            self.document(pdf_dict=pdf_dict, url=url, sha=sha)
+            self.document(pdf_dict=pdf_dict, sha=sha)
         else:
             save_data['guanLianWenDang'] = {}
 
@@ -278,7 +252,7 @@ class SpiderMain(BastSpiderMain):
         # url
         save_data['url'] = url
         # 生成key
-        save_data['key'] = url
+        save_data['key'] = id
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
@@ -309,17 +283,17 @@ class SpiderMain(BastSpiderMain):
             return
         # 存储数据
         success = self.dao.saveDataToHbase(data=save_data)
-        if success:
-            # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
-        else:
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+        # if success:
+        #     # 删除任务
+        #     self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
+        # else:
+        #     # 逻辑删除任务
+        #     self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_PAPER, count=1, lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_ZHIWANG_TEST, count=1, lockname=config.REDIS_ZHIWANG_TEST_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -341,7 +315,7 @@ class SpiderMain(BastSpiderMain):
                 threadpool.close()
                 threadpool.join()
 
-                time.sleep(1)
+                # time.sleep(1)
 
             else:
                 time.sleep(2)

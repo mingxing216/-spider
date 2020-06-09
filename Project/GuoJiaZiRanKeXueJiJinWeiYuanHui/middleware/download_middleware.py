@@ -39,7 +39,7 @@ class Downloader(downloader.BaseDownloader):
                 # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'Accept-Encoding': 'gzip, deflate, br',
                 # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                'Content-Type': 'application/json',
+                # 'Content-Type': 'application/json',
                 'Referer': referer,
                 'Connection': 'close',
                 # 'Host': 'http://www.chinabgao.com/',
@@ -68,12 +68,14 @@ class Downloader(downloader.BaseDownloader):
             if down_data['code'] == 1:
                 # 代理权重减1
                 dec = self.proxy_obj.dec_proxy(ip)
-                # self.logging.warning('请求内容错误: {} | 响应码: {} | 用时: {}秒'.format(url, down_data['status'], '%.2f' %(time.time() - start_time)))
-                if stat_count > 10:
+                if down_data['status'] == 404:
                     return
                 else:
-                    stat_count += 1
-                    continue
+                    if stat_count > 10:
+                        return
+                    else:
+                        stat_count += 1
+                        continue
 
             if down_data['code'] == 2:
                 # 代理权重减1

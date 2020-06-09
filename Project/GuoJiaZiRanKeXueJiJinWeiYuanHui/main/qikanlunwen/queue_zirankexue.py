@@ -49,14 +49,14 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_ZIRANKEXUE_PAPER)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_ZHIWANG_TEST)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_PAPER, ws='国家自然科学基金委员会', es='期刊论文', count=2000)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_TEST, ws='中国知网', es='论文_catalog', count=10000)
                 # print(new_task_list)
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_ZIRANKEXUE_PAPER, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_ZHIWANG_TEST, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 

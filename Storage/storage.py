@@ -279,10 +279,11 @@ class Dao(object):
             dict['relPics'] = str(item.get('relPics'))
             dict['bizTitle'] = item['bizTitle']
             dict['url'] = media_url
-            if type == 'image':
-                dict['pk'] = sha
-            else:
-                dict['pk'] = type + sha
+            dict['pk'] = sha
+            # if type == 'image':
+            #     dict['pk'] = sha
+            # else:
+            #     dict['pk'] = type + sha
             dict['type'] = type
             dict['tagSrc'] = media_url
             dict['length'] = "{}".format(len(dbs))
@@ -303,17 +304,17 @@ class Dao(object):
 
             start_time = time.time()
             try:
-                resp = requests.post(url=url, headers=headers, data=data, timeout=10).content.decode('utf-8')
+                resp = requests.post(url=url, headers=headers, data=data, timeout=5).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info(
-                        'Save media to Hbase | status: OK | memo: {} | sha: {} | use time: {}s'.format(resp, sha, '%.2f' %(time.time() - start_time)))
+                        'Save media to Hbase | status: OK | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], resp, '%.2f' %(time.time() - start_time)))
                     return True
 
                 else:
                     if count > 3:
                         self.logging.warning(
-                            'Save media to Hbase | status: OK | memo: {} | sha: {} | use time: {}s'.format(resp, sha, '%.2f' %(time.time() - start_time)))
+                            'Save media to Hbase | status: NO | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], resp, '%.2f' %(time.time() - start_time)))
                         return False
                     else:
                         count += 1
@@ -324,7 +325,7 @@ class Dao(object):
             except Exception as e:
                 if count > 3:
                     self.logging.error(
-                        'Save media to Hbase | status: OK | memo: {} | sha: {} | use time: {}s'.format(e, sha, '%.2f' %(time.time() - start_time)))
+                        'Save media to Hbase | status: NO | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], e, '%.2f' %(time.time() - start_time)))
                     return False
                 else:
                     count += 1
