@@ -200,7 +200,7 @@ class Dao(object):
         while True:
             save_data = json.dumps(data, ensure_ascii=False)
             url = '{}'.format(settings.SpiderDataSaveUrl)
-            save_data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
+            save_data = {"ip": "{}".format(self.localIP),
                          "wid": "python",
                          "ref": "",
                          "item": save_data}
