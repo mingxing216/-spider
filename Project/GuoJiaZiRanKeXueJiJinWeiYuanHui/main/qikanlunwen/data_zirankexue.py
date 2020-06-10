@@ -55,6 +55,7 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
+
         self.profile_url = 'http://ir.nsfc.gov.cn/baseQuery/data/paperInfo'
 
     def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
@@ -81,7 +82,7 @@ class SpiderMain(BastSpiderMain):
         # 获取标题
         doc_data['title'] = pdf_dict['bizTitle']
         # 获取URL
-        doc_data['URL'] = pdf_dict['url']
+        doc_data['xiaZaiLianJie'] = pdf_dict['url']
         # 获取格式
         doc_data['geShi'] = ""
         # 获取大小

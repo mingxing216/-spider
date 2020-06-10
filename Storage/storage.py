@@ -28,6 +28,13 @@ class Dao(object):
         self.logging = logging
 
         self.proxy_obj = proxy.ProxyUtils(logging=logging)
+        # 获取本机IP，存储使用
+        while True:
+            if self.proxy_obj.getLocalIP():
+                self.localIP =self.proxy_obj.getLocalIP()
+                break
+            else:
+                continue
 
         if int(mysqlpool_number) == 0 or int(mysqlpool_number) < 0:
             # 默认创建一个mysql链接
@@ -290,13 +297,14 @@ class Dao(object):
             dict['content'] = "{}".format(content_bs64.decode('utf-8'))
             # dict['naturalHeight'] = "{}".format(img.height)
             # dict['naturalWidth'] = "{}".format(img.width)
-            data = {"ip": "{}".format(self.proxy_obj.getLocalIP()),
+            data = {"ip": "{}".format(self.localIP),
                     "wid": "100",
                     # "content": "{}".format(content_bs64.decode('utf-8')),
                     # "content": "{}".format(content_bs64),
                     "ref": "",
                     "item": json.dumps(dict, ensure_ascii=False)
                     }
+            print(data['ip'])
 
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
@@ -304,7 +312,7 @@ class Dao(object):
 
             start_time = time.time()
             try:
-                resp = requests.post(url=url, headers=headers, data=data, timeout=5).content.decode('utf-8')
+                resp = requests.post(url=url, headers=headers, data=data, timeout=20).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info(
@@ -318,7 +326,7 @@ class Dao(object):
                         return False
                     else:
                         count += 1
-                        self.logging.warning('Save media to Hbase again ...')
+                        self.logging.warning('Save media to Hbase again ... | memo: {} | use time: {}s'.format(resp, '%.2f' %(time.time() - start_time)))
                         time.sleep(1)
                         continue
 
@@ -329,7 +337,7 @@ class Dao(object):
                     return False
                 else:
                     count += 1
-                    self.logging.warning('Save media to Hbase again ...')
+                    self.logging.warning('Save media to Hbase again ... | memo: {} | use time: {}s'.format(e, '%.2f' %(time.time() - start_time)))
                     time.sleep(1)
                     continue
 
