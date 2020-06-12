@@ -206,6 +206,25 @@ class Server(object):
 
         return xuekeleibie
 
+    # 获取文档
+    def getDocs(self, pdfData):
+        labelObj = {}
+        return_docs = []
+        try:
+            if pdfData:
+                if pdfData['url']:
+                    picObj = {
+                        'url': pdfData['url'],
+                        'title': pdfData['bizTitle'],
+                        'desc': ""
+                    }
+                    return_docs.append(picObj)
+                labelObj['全部'] = return_docs
+        except Exception:
+            labelObj['全部'] = []
+
+        return labelObj
+
     # 关联文档
     def guanLianWenDang(self, url, id, sha):
         e = {}

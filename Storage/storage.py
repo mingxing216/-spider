@@ -285,26 +285,25 @@ class Dao(object):
             dict['relEsse'] = str(item['relEsse'])
             dict['relPics'] = str(item.get('relPics'))
             dict['bizTitle'] = item['bizTitle']
-            dict['url'] = media_url
+            dict['type'] = type,
             dict['pk'] = sha
             # if type == 'image':
             #     dict['pk'] = sha
             # else:
             #     dict['pk'] = type + sha
-            dict['type'] = type
             dict['tagSrc'] = media_url
             dict['length'] = "{}".format(len(dbs))
-            dict['content'] = "{}".format(content_bs64.decode('utf-8'))
             # dict['naturalHeight'] = "{}".format(img.height)
             # dict['naturalWidth'] = "{}".format(img.width)
             data = {"ip": "{}".format(self.localIP),
                     "wid": "100",
-                    # "content": "{}".format(content_bs64.decode('utf-8')),
+                    'url': media_url,
+                    "content": "{}".format(content_bs64.decode('utf-8')),
                     # "content": "{}".format(content_bs64),
+                    # 'type': type,
                     "ref": "",
                     "item": json.dumps(dict, ensure_ascii=False)
                     }
-            print(data['ip'])
 
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
@@ -326,7 +325,7 @@ class Dao(object):
                         return False
                     else:
                         count += 1
-                        self.logging.warning('Save media to Hbase again ... | memo: {} | use time: {}s'.format(resp, '%.2f' %(time.time() - start_time)))
+                        self.logging.warning('Save media to Hbase again ... | sha: {} | memo: {} | use time: {}s'.format(sha, resp, '%.2f' %(time.time() - start_time)))
                         time.sleep(1)
                         continue
 
@@ -337,7 +336,8 @@ class Dao(object):
                     return False
                 else:
                     count += 1
-                    self.logging.warning('Save media to Hbase again ... | memo: {} | use time: {}s'.format(e, '%.2f' %(time.time() - start_time)))
+                    # print(e)
+                    self.logging.warning('Save media to Hbase again ... | sha: {} | memo: {} | use time: {}s'.format(sha, e, '%.2f' %(time.time() - start_time)))
                     time.sleep(1)
                     continue
 

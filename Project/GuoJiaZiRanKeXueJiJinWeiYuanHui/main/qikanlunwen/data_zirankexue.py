@@ -65,13 +65,12 @@ class SpiderMain(BastSpiderMain):
                                                     cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text:
-                    LOGGING.error('出现验证码')
+                    LOGGING.error('出现验证码: {}'.format(url))
                     continue
 
             return resp
 
         else:
-            LOGGING.error('页面出现验证码: {}'.format(url))
             return
 
     # 获取文档实体字段
@@ -83,6 +82,8 @@ class SpiderMain(BastSpiderMain):
         doc_data['title'] = pdf_dict['bizTitle']
         # 获取URL
         doc_data['xiaZaiLianJie'] = pdf_dict['url']
+        # 文档内容
+        doc_data['labelObj'] = self.server.getDocs(pdf_dict)
         # 获取格式
         doc_data['geShi'] = ""
         # 获取大小
@@ -121,8 +122,10 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('文档数据存储成功, sha: {}'.format(pdf_dict['sha']))
         else:
             LOGGING.error('文档数据存储失败, url: {}'.format(pdf_dict['url']))
-            # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            # 存储文档种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
 
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
