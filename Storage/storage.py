@@ -260,7 +260,7 @@ class Dao(object):
         #         return resp
 
     # 保存流媒体到hbase
-    def saveMediaToHbase(self, media_url, content, item, type):
+    def saveMediaToHbase(self, media_url, content, item, ss, type):
         # 重试次数
         count = 0
         while True:
@@ -315,9 +315,9 @@ class Dao(object):
 
             start_time = time.time()
             try:
-                self.logging.info('post begin {}'.format(sha))
+                self.logging.info('post begin {}'.format(ss))
                 resp = self.s.post(url=url, headers=headers, data=data, timeout=20).content.decode('utf-8')
-                self.logging.info('post end {}'.format(sha))
+                self.logging.info('post end {}'.format(ss))
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info(

@@ -3,9 +3,9 @@
 '''
 
 '''
-import gevent
-from gevent import monkey
-monkey.patch_all()
+# import gevent
+# from gevent import monkey
+# monkey.patch_all()
 import sys
 import os
 import time
@@ -150,9 +150,9 @@ class SpiderMain(BastSpiderMain):
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         # 存储文档
-        LOGGING.info('saveMediaToHbase begin')
-        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='test')
-        LOGGING.info('saveMediaToHbase end')
+        LOGGING.info('saveMediaToHbase begin {}'.format(sha))
+        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, ss=sha, type='test')
+        LOGGING.info('saveMediaToHbase end {}'.format(sha))
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
@@ -311,27 +311,27 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_TEST, count=30, lockname=config.REDIS_ZIRANKEXUE_TEST_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_TEST, count=8, lockname=config.REDIS_ZIRANKEXUE_TEST_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
             if task_list:
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-                # 创建gevent协程
-                g_list = []
-                for task in task_list:
-                    s = gevent.spawn(self.run, task)
-                    g_list.append(s)
-                gevent.joinall(g_list)
+                # # 创建gevent协程
+                # g_list = []
+                # for task in task_list:
+                #     s = gevent.spawn(self.run, task)
+                #     g_list.append(s)
+                # gevent.joinall(g_list)
 
-                # # 创建线程池
-                # threadpool = ThreadPool()
-                # for url in task_list:
-                #     threadpool.apply_async(func=self.run, args=(url,))
-                #
-                # threadpool.close()
-                # threadpool.join()
+                # 创建线程池
+                threadpool = ThreadPool()
+                for url in task_list:
+                    threadpool.apply_async(func=self.run, args=(url,))
+
+                threadpool.close()
+                threadpool.join()
 
                 # time.sleep(1)
 
@@ -353,13 +353,13 @@ def process_start():
 if __name__ == '__main__':
     LOGGING.info('======The Start!======')
     begin_time = time.time()
-    process_start()
+    # process_start()
 
-    # po = Pool(config.DATA_SCRIPT_PROCESS)
-    # for i in range(config.DATA_SCRIPT_PROCESS):
-    #     po.apply_async(func=process_start)
-    # po.close()
-    # po.join()
+    po = Pool(config.DATA_SCRIPT_PROCESS)
+    for i in range(config.DATA_SCRIPT_PROCESS):
+        po.apply_async(func=process_start)
+    po.close()
+    po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('====== Time consuming is %.2fs ======' %(end_time - begin_time))
