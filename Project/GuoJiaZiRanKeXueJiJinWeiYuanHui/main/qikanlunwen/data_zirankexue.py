@@ -116,9 +116,7 @@ class SpiderMain(BastSpiderMain):
         doc_data['ref'] = ''
 
         # 保存数据到Hbase
-        LOGGING.info('saveDataToHbase begin')
         sto = self.dao.saveDataToHbase(data=doc_data)
-        LOGGING.info('saveDataToHbase end')
 
         if sto:
             LOGGING.info('文档数据存储成功, sha: {}'.format(pdf_dict['sha']))
@@ -127,22 +125,16 @@ class SpiderMain(BastSpiderMain):
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             # 存储文档种子
-            LOGGING.info('saveTaskToMysql begin1')
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-            LOGGING.info('saveTaskToMysql end1')
 
         # 获取页面响应
-        LOGGING.info('getResp begin {}'.format(sha))
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
-        LOGGING.info('getResp end {}'.format(sha))
         if not pdf_resp:
             LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储文档种子
-            LOGGING.info('saveTaskToMysql begin2')
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-            LOGGING.info('saveTaskToMysql end2')
             return
 
         # media_resp.encoding = media_resp.apparent_encoding
@@ -150,23 +142,17 @@ class SpiderMain(BastSpiderMain):
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         # 存储文档
-        LOGGING.info('saveMediaToHbase begin {}'.format(sha))
-        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, ss=sha, type='test')
-        LOGGING.info('saveMediaToHbase end {}'.format(sha))
+        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='test')
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
-            LOGGING.info('saveTaskToMysql begin3')
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-            LOGGING.info('saveTaskToMysql end3')
             return
 
     def handle(self, task, save_data):
         # 数据类型转换
-        LOGGING.info('getEvalResponse begin')
         task_data = self.server.getEvalResponse(task)
-        LOGGING.info('getEvalResponse end')
         # print(task_data)
         id = task_data.get('id')
         sha = hashlib.sha1(id.encode('utf-8')).hexdigest()
@@ -336,7 +322,7 @@ class SpiderMain(BastSpiderMain):
                 # time.sleep(1)
 
             else:
-                time.sleep(2)
+                time.sleep(1)
                 continue
                 # LOGGING.info('队列中已无任务，结束程序')
                 # return
