@@ -3,9 +3,9 @@
 '''
 
 '''
-# import gevent
-# from gevent import monkey
-# monkey.patch_all()
+import gevent
+from gevent import monkey
+monkey.patch_all()
 import sys
 import os
 import time
@@ -116,7 +116,9 @@ class SpiderMain(BastSpiderMain):
         doc_data['ref'] = ''
 
         # 保存数据到Hbase
+        LOGGING.info('saveDataToHbase begin')
         sto = self.dao.saveDataToHbase(data=doc_data)
+        LOGGING.info('saveDataToHbase end')
 
         if sto:
             LOGGING.info('文档数据存储成功, sha: {}'.format(pdf_dict['sha']))
@@ -125,16 +127,22 @@ class SpiderMain(BastSpiderMain):
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             # 存储文档种子
+            LOGGING.info('saveTaskToMysql begin1')
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            LOGGING.info('saveTaskToMysql end1')
 
         # 获取页面响应
+        LOGGING.info('getResp begin')
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
+        LOGGING.info('getResp end')
         if not pdf_resp:
             LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储文档种子
+            LOGGING.info('saveTaskToMysql begin2')
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            LOGGING.info('saveTaskToMysql end2')
             return
 
         # media_resp.encoding = media_resp.apparent_encoding
@@ -142,17 +150,23 @@ class SpiderMain(BastSpiderMain):
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         # 存储文档
+        LOGGING.info('saveMediaToHbase begin')
         succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='test')
+        LOGGING.info('saveMediaToHbase end')
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
+            LOGGING.info('saveTaskToMysql begin3')
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            LOGGING.info('saveTaskToMysql end3')
             return
 
     def handle(self, task, save_data):
         # 数据类型转换
+        LOGGING.info('getEvalResponse begin')
         task_data = self.server.getEvalResponse(task)
+        LOGGING.info('getEvalResponse end')
         # print(task_data)
         id = task_data.get('id')
         sha = hashlib.sha1(id.encode('utf-8')).hexdigest()
@@ -304,20 +318,20 @@ class SpiderMain(BastSpiderMain):
             if task_list:
                 # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-                # # 创建gevent协程
-                # g_list = []
-                # for task in task_list:
-                #     s = gevent.spawn(self.run, task)
-                #     g_list.append(s)
-                # gevent.joinall(g_list)
+                # 创建gevent协程
+                g_list = []
+                for task in task_list:
+                    s = gevent.spawn(self.run, task)
+                    g_list.append(s)
+                gevent.joinall(g_list)
 
-                # 创建线程池
-                threadpool = ThreadPool()
-                for url in task_list:
-                    threadpool.apply_async(func=self.run, args=(url,))
-
-                threadpool.close()
-                threadpool.join()
+                # # 创建线程池
+                # threadpool = ThreadPool()
+                # for url in task_list:
+                #     threadpool.apply_async(func=self.run, args=(url,))
+                #
+                # threadpool.close()
+                # threadpool.join()
 
                 # time.sleep(1)
 

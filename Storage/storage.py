@@ -265,13 +265,13 @@ class Dao(object):
         count = 0
         while True:
             url = '{}'.format(settings.SpiderMediaSaveUrl)
-            # 二进制图片文件转成base64文件
+            # # 二进制图片文件转成base64文件
             content_bs64 = base64.b64encode(content)
             # 解码base64图片文件
-            dbs = base64.b64decode(content)
+            dbs = base64.b64decode(content_bs64)
             # # 内存中打开图片
             # img = Image.open(BytesIO(content))
-            sha = int(random.random()*100000)
+            sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
 
             # item = {
             #     'pk': sha,
@@ -302,7 +302,7 @@ class Dao(object):
             data = {"ip": "{}".format(self.localIP),
                     "wid": "100",
                     'url': media_url,
-                    "content": "{}".format(content),
+                    "content": "{}".format(content_bs64.decode('utf-8')),
                     # "content": "{}".format(content_bs64),
                     'type': type,
                     "ref": "",
@@ -315,7 +315,9 @@ class Dao(object):
 
             start_time = time.time()
             try:
+                self.logging.info('post begin')
                 resp = self.s.post(url=url, headers=headers, data=data, timeout=20).content.decode('utf-8')
+                self.logging.info('post end')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info(
