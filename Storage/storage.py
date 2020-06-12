@@ -7,6 +7,7 @@ import sys
 import os
 import json
 import base64
+import random
 from PIL import Image
 from io import BytesIO
 import hashlib
@@ -26,6 +27,8 @@ from Utils import timeutils
 class Dao(object):
     def __init__(self, logging, mysqlpool_number=0, redispool_number=0):
         self.logging = logging
+
+        self.s = requests.Session()
 
         self.proxy_obj = proxy.ProxyUtils(logging=logging)
         # 获取本机IP，存储使用
@@ -262,13 +265,13 @@ class Dao(object):
         count = 0
         while True:
             url = '{}'.format(settings.SpiderMediaSaveUrl)
-            # 二进制图片文件转成base64文件
-            content_bs64 = base64.b64encode(content)
+            # # 二进制图片文件转成base64文件
+            # content_bs64 = base64.b64encode(content)
             # 解码base64图片文件
-            dbs = base64.b64decode(content_bs64)
+            dbs = base64.b64decode(content)
             # # 内存中打开图片
             # img = Image.open(BytesIO(content))
-            sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
+            sha = int(random.random()*100000)
 
             # item = {
             #     'pk': sha,
@@ -285,12 +288,13 @@ class Dao(object):
             dict['relEsse'] = str(item['relEsse'])
             dict['relPics'] = str(item.get('relPics'))
             dict['bizTitle'] = item['bizTitle']
-            dict['type'] = type,
+            dict['type'] = type
             dict['pk'] = sha
             # if type == 'image':
             #     dict['pk'] = sha
             # else:
             #     dict['pk'] = type + sha
+            dict['url'] = media_url
             dict['tagSrc'] = media_url
             dict['length'] = "{}".format(len(dbs))
             # dict['naturalHeight'] = "{}".format(img.height)
@@ -298,9 +302,9 @@ class Dao(object):
             data = {"ip": "{}".format(self.localIP),
                     "wid": "100",
                     'url': media_url,
-                    "content": "{}".format(content_bs64.decode('utf-8')),
+                    "content": "{}".format(content),
                     # "content": "{}".format(content_bs64),
-                    # 'type': type,
+                    'type': type,
                     "ref": "",
                     "item": json.dumps(dict, ensure_ascii=False)
                     }
@@ -311,7 +315,7 @@ class Dao(object):
 
             start_time = time.time()
             try:
-                resp = requests.post(url=url, headers=headers, data=data, timeout=20).content.decode('utf-8')
+                resp = self.s.post(url=url, headers=headers, data=data, timeout=20).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info(

@@ -9,7 +9,7 @@ DOWNLOAD_MIN_DELAY = 0.2
 DOWNLOAD_MAX_DELAY = 0.5
 
 # Mysql
-DB_HOST='127.0.0.1'
+DB_HOST='localhost'
 DB_PORT=3306
 DB_USER='root'
 DB_PASS='onecooo'
@@ -17,13 +17,13 @@ DB_NAME='spider'
 # DB_POOL_NUMBER=10 # 连接池内连接默认数量
 
 # redis
-REDIS_HOST='127.0.0.1'
+REDIS_HOST='localhost'
 REDIS_PORT=6379
 REDIS_PASSWORD='onecooo'
 # REDIS_POOL_MAX_NUMBER=10 # redis链接池最大连接数
 
 # MongoDB
-M_HOST='127.0.0.1'
+M_HOST='localhost'
 M_PORT=27017
 
 # 若快打码================================================
@@ -45,7 +45,7 @@ SpiderMediaSaveUrl='http://60.195.249.89:8086/dataserver/dat/saveMediaData?'
 
 # ==================《adsl代理池》==================
 # 获取代理接口
-GET_PROXY_API = "http://60.195.249.95:5000/get-proxy"
+GET_PROXY_API = "http://60.195.249.95:5000/random"
 # 代理状态更新接口
 UPDATE_PROXY_API = "http://60.195.249.95:5000/update-proxy"
 # 删除代理接口
