@@ -81,12 +81,14 @@ class BaseDownloader(object):
 
     def begin(self, url, session=None, headers=None, data=None, proxies=None, cookies=None, method='GET'):
         start_time = time.time()
+        self.logging.info('fetch begin {}'.format(url))
         down_data = self.fetch(url=url, session=session, headers=headers, data=data,
                                cookies=cookies, proxies=proxies,
                                method=method.upper())
         # print(headers)
 
         end_time = time.time()
+        self.logging.info('fetch end {}'.format(url))
 
         self.logging.info(
             "request for url: {} | code: {} | status: {} | mode: {} | message: {} | data: {} | proxy: {} | use time: {}".format(

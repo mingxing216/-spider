@@ -31,6 +31,7 @@ class Downloader(downloader.BaseDownloader):
         # 请求异常重试次数
         err_count = 0
         while 1:
+            self.logging.info('requests begin {}'.format(url))
             # 每次请求的等待时间
             time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
 
@@ -58,6 +59,7 @@ class Downloader(downloader.BaseDownloader):
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
+            self.logging.info('requests end {}'.format(url))
 
             if down_data['code'] == 0:
                 # 设置代理最大权重

@@ -315,9 +315,9 @@ class Dao(object):
 
             start_time = time.time()
             try:
-                self.logging.info('post begin')
+                self.logging.info('post begin {}'.format(sha))
                 resp = self.s.post(url=url, headers=headers, data=data, timeout=20).content.decode('utf-8')
-                self.logging.info('post end')
+                self.logging.info('post end {}'.format(sha))
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info(

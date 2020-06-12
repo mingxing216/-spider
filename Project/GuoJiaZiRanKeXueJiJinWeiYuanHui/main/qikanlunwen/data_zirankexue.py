@@ -132,9 +132,9 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('saveTaskToMysql end1')
 
         # 获取页面响应
-        LOGGING.info('getResp begin')
+        LOGGING.info('getResp begin {}'.format(sha))
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
-        LOGGING.info('getResp end')
+        LOGGING.info('getResp end {}'.format(sha))
         if not pdf_resp:
             LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
             # # 标题内容调整格式
