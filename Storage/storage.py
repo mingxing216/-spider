@@ -265,8 +265,8 @@ class Dao(object):
         count = 0
         while True:
             url = '{}'.format(settings.SpiderMediaSaveUrl)
-            # # 二进制图片文件转成base64文件
-            # content_bs64 = base64.b64encode(content)
+            # 二进制图片文件转成base64文件
+            content_bs64 = base64.b64encode(content)
             # 解码base64图片文件
             dbs = base64.b64decode(content)
             # # 内存中打开图片
