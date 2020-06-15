@@ -27,12 +27,14 @@ class Downloader(downloader.BaseDownloader):
 
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         start_time = time.time()
+        self.logging.info('开始下载附件')
         ret = self.__getResp(url, method, s, data, cookies, referer)
         if ret:
             self.logging.info('request for url: {} | use time: {}s'.format(url, '%.3f' % (time.time() - start_time)))
         else:
             self.logging.info('request for url: {} | use time: {}s'.format(url, '%.3f' % (time.time() - start_time)))
 
+        self.logging.info('结束下载附件')
         return ret
 
     def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
@@ -42,6 +44,7 @@ class Downloader(downloader.BaseDownloader):
         err_count = 0
         while 1:
             start_time = time.time()
+
             # 每次请求的等待时间
             time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
 

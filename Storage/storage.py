@@ -59,12 +59,13 @@ class Dao(object):
 
     def saveTaskToMysql(self, table, memo, ws, es):
         start_time = time.time()
+        self.logging.info('开始存储种子')
         ret = self.__saveTaskToMysql(table, memo, ws, es)
         if ret:
             self.logging.info('种子存储成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
             self.logging.info('种子存储失败 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
-
+        self.logging.info('结束存储种子')
         return ret
 
     # 种子任务存入Mysql数据库
@@ -209,16 +210,18 @@ class Dao(object):
 
     def saveDataToHbase(self, data):
         start_time = time.time()
+        self.logging.info('开始存储实体')
         ret = self.__saveDataToHbase(data)
         if ret:
             self.logging.info('Save data to Hbase | status: OK | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
             self.logging.info('Save data to Hbase | status: NO | use time: {}s'.format('%.3f' % (time.time() - start_time)))
-
+        self.logging.info('结束存储实体')
         return ret
 
     # 存储数据到Hbase数据库 resultCode
     def __saveDataToHbase(self, data):
+        self.logging.info('start Save data to Hbase')
         # 重试次数
         count = 0
         while True:
@@ -237,6 +240,7 @@ class Dao(object):
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info('Save data to Hbase | status: OK | memo: {} | use time: {}s'.format(resp, '%.3f' %(time.time() - start_time)))
+                    self.logging.info('end Save data to Hbase')
                     return True
 
                 else:
@@ -282,16 +286,19 @@ class Dao(object):
 
     def saveMediaToHbase(self, media_url, content, item, type):
         start_time = time.time()
+        self.logging.info('开始存储附件')
         ret = self.__saveMediaToHbase(media_url, content, item, type)
         if ret:
-            self.logging.info('Save media to Hbase | status: OK | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('存储附件耗时: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('Save media to Hbase | status: NO | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('存储附件耗时: {}s'.format('%.3f' % (time.time() - start_time)))
+        self.logging.info('结束存储附件')
 
         return ret
 
     # 保存流媒体到hbase
     def __saveMediaToHbase(self, media_url, content, item, type):
+        self.logging.info('start Save media to Hbase')
         # 重试次数
         count = 0
         while True:
@@ -351,6 +358,7 @@ class Dao(object):
                 if respon['resultCode'] == 0:
                     self.logging.info(
                         'Save media to Hbase | status: OK | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], resp, '%.3f' %(time.time() - start_time)))
+                    self.logging.info('end Save media to Hbase')
                     return True
 
                 else:

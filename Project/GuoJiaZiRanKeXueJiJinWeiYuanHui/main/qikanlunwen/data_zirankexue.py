@@ -130,6 +130,7 @@ class SpiderMain(BastSpiderMain):
 
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
+        LOGGING.info('开始判断下载内容')
         if not pdf_resp:
             LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
             # # 标题内容调整格式
@@ -137,9 +138,11 @@ class SpiderMain(BastSpiderMain):
             # 存储文档种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
-
+        LOGGING.info('结束判断下载内容')
         # media_resp.encoding = media_resp.apparent_encoding
+        LOGGING.info('开始获取二进制内容')
         pdf_content = pdf_resp.content
+        LOGGING.info('结束获取二进制内容')
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         # 存储文档
