@@ -64,7 +64,7 @@ class SpiderMain(BastSpiderMain):
         for i in range(3):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer)
-            if resp:
+            if resp and resp.headers['Content-Type'].startswith('text'):
                 if '请输入验证码' in resp.text:
                     LOGGING.error('出现验证码: {}'.format(url))
                     continue
@@ -303,7 +303,7 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_TEST, count=8, lockname=config.REDIS_ZIRANKEXUE_TEST_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_TEST, count=1, lockname=config.REDIS_ZIRANKEXUE_TEST_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
@@ -345,13 +345,13 @@ def process_start():
 if __name__ == '__main__':
     LOGGING.info('======The Start!======')
     begin_time = time.time()
-    # process_start()
+    process_start()
 
-    po = Pool(config.DATA_SCRIPT_PROCESS)
-    for i in range(config.DATA_SCRIPT_PROCESS):
-        po.apply_async(func=process_start)
-    po.close()
-    po.join()
+    # po = Pool(config.DATA_SCRIPT_PROCESS)
+    # for i in range(config.DATA_SCRIPT_PROCESS):
+    #     po.apply_async(func=process_start)
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('====== Time consuming is %.2fs ======' %(end_time - begin_time))
