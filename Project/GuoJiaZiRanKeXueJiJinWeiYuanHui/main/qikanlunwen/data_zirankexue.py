@@ -14,6 +14,7 @@ import hashlib
 import requests
 from datetime import datetime
 import json
+import threading
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -274,6 +275,7 @@ class SpiderMain(BastSpiderMain):
         return sha
 
     def run(self, task):
+        start_time = time.time()
         # 创建数据存储字典
         save_data = {}
         # 获取字段值存入字典并返回sha
@@ -293,6 +295,7 @@ class SpiderMain(BastSpiderMain):
         # else:
         #     # 逻辑删除任务
         #     self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+        LOGGING.info('threading use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
     def start(self):
         while 1:

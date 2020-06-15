@@ -26,11 +26,22 @@ class Downloader(downloader.BaseDownloader):
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+        start_time = time.time()
+        ret = self.__getResp(url, method, s, data, cookies, referer)
+        if ret:
+            self.logging.info('request for url: {} | use time: {}s'.format(url, '%.3f' % (time.time() - start_time)))
+        else:
+            self.logging.info('request for url: {} | use time: {}s'.format(url, '%.3f' % (time.time() - start_time)))
+
+        return ret
+
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 响应状态码错误重试次数
         stat_count = 0
         # 请求异常重试次数
         err_count = 0
         while 1:
+            start_time = time.time()
             # 每次请求的等待时间
             time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
 
@@ -58,6 +69,8 @@ class Downloader(downloader.BaseDownloader):
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
+            self.logging.info(
+                "request for url: {} | code: {} | status: {} | length: {} | mode: {} | use time: {}".format(url, down_data['code'], down_data['status'], len(down_data['data'].content), method, '%.3fs' % (time.time() - start_time)))
 
             if down_data['code'] == 0:
                 # 设置代理最大权重

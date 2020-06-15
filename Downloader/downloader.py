@@ -89,8 +89,8 @@ class BaseDownloader(object):
         end_time = time.time()
 
         self.logging.info(
-            "request for url: {} | code: {} | status: {} | mode: {} | message: {} | data: {} | proxy: {} | use time: {}".format(
-                url, down_data['code'], down_data['status'], method, down_data['message'], data, proxies,
+            "request for url: {} | code: {} | status: {} | length: {} | mode: {} | message: {} | data: {} | proxy: {} | use time: {}".format(
+                url, down_data['code'], down_data['status'], len(down_data['data'].content), method, down_data['message'], data, proxies,
                 '%.2fs' % (end_time - start_time)
             ))
 

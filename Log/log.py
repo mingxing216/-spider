@@ -7,6 +7,7 @@
 import logging
 import time
 import os
+import threading
 from logging import FileHandler
 from logging.handlers import TimedRotatingFileHandler
 import traceback
@@ -53,26 +54,26 @@ class ILog(object):
         self.logger.info(str(msg))
 
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        print(self.name + " " + now + " INFO " + str(msg))
+        print(self.name + " " + now + " INFO " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
     def error(self, msg):
         self.logger.error(str(msg))
 
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        print(self.name + " " + now + " ERROR " + str(msg))
+        print(self.name + " " + now + " ERROR " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
     def exception(self, e):
         self.logger.exception(e)
 
         msg = traceback.format_exc()
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        print(self.name + " " + now + " ERROR " + str(msg))
+        print(self.name + " " + now + " ERROR " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
     def warning(self, msg):
         self.logger.warning(str(msg))
 
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        print(self.name + " " + now + " WARNING " + str(msg))
+        print(self.name + " " + now + " WARNING " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
 
 if __name__ == '__main__':
