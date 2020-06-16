@@ -116,6 +116,7 @@ class SpiderMain(BastSpiderMain):
         # 生成ref
         doc_data['ref'] = ''
 
+        LOGGING.info('文档数据开始存储')
         # 保存数据到Hbase
         sto = self.dao.saveDataToHbase(data=doc_data)
 
@@ -290,14 +291,19 @@ class SpiderMain(BastSpiderMain):
         if 'sha' not in save_data:
             LOGGING.info('数据获取不完整, 存储失败')
             return
+        LOGGING.info('论文数据开始存储')
         # 存储数据
         success = self.dao.saveDataToHbase(data=save_data)
-        # if success:
-        #     # 删除任务
-        #     self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
-        # else:
-        #     # 逻辑删除任务
-        #     self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+
+        if success:
+            LOGGING.info('论文数据存储成功')
+            # # 删除任务
+            # self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
+        else:
+            LOGGING.info('论文数据存储失败')
+            # # 逻辑删除任务
+            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+
         LOGGING.info('threading use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
     def start(self):

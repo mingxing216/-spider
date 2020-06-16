@@ -213,34 +213,33 @@ class Dao(object):
         self.logging.info('开始存储实体')
         ret = self.__saveDataToHbase(data)
         if ret:
-            self.logging.info('Save data to Hbase | status: OK | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('存储实体成功, 耗时: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('Save data to Hbase | status: NO | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('存储实体失败, 耗时: {}s'.format('%.3f' % (time.time() - start_time)))
         self.logging.info('结束存储实体')
         return ret
 
     # 存储数据到Hbase数据库 resultCode
     def __saveDataToHbase(self, data):
-        self.logging.info('start Save data to Hbase')
+        save_data = json.dumps(data, ensure_ascii=False)
+        url = '{}'.format(settings.SpiderDataSaveUrl)
+        form_data = {"ip": "{}".format(self.localIP),
+                     "wid": "python",
+                     "ref": "",
+                     "item": save_data}
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
+        }
+
         # 重试次数
         count = 0
         while True:
-            save_data = json.dumps(data, ensure_ascii=False)
-            url = '{}'.format(settings.SpiderDataSaveUrl)
-            save_data = {"ip": "{}".format(self.localIP),
-                         "wid": "python",
-                         "ref": "",
-                         "item": save_data}
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
-            }
             start_time = time.time()
             try:
-                resp = requests.post(url=url, headers=headers, data=save_data, timeout=10).content.decode('utf-8')
+                resp = requests.post(url=url, headers=headers, data=form_data, timeout=10).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info('Save data to Hbase | status: OK | memo: {} | use time: {}s'.format(resp, '%.3f' %(time.time() - start_time)))
-                    self.logging.info('end Save data to Hbase')
                     return True
 
                 else:
@@ -289,82 +288,78 @@ class Dao(object):
         self.logging.info('开始存储附件')
         ret = self.__saveMediaToHbase(media_url, content, item, type)
         if ret:
-            self.logging.info('存储附件耗时: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('存储附件成功, 耗时: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('存储附件耗时: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('存储附件失败, 耗时: {}s'.format('%.3f' % (time.time() - start_time)))
         self.logging.info('结束存储附件')
 
         return ret
 
     # 保存流媒体到hbase
     def __saveMediaToHbase(self, media_url, content, item, type):
-        self.logging.info('start Save media to Hbase')
+        url = '{}'.format(settings.SpiderMediaSaveUrl)
+        # # 二进制图片文件转成base64文件
+        content_bs64 = base64.b64encode(content)
+        # 解码base64图片文件
+        dbs = base64.b64decode(content_bs64)
+        # # 内存中打开图片
+        # img = Image.open(BytesIO(content))
+        sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
+
+        # item = {
+        #     'pk': sha,
+        #     'type': type,
+        #     'url': media_url,
+        #     'biz_title':
+        #     'length': "{}".format(len(dbs)),
+        #     'natural_height': str(img['height']),
+        #     'natural_width': str(img['width']),
+        #     'rel_esse':
+        #
+        # }
+        dict = {}
+        dict['relEsse'] = str(item['relEsse'])
+        dict['relPics'] = str(item.get('relPics'))
+        dict['bizTitle'] = item['bizTitle']
+        dict['type'] = type
+        dict['pk'] = sha
+        # if type == 'image':
+        #     dict['pk'] = sha
+        # else:
+        #     dict['pk'] = type + sha
+        dict['url'] = media_url
+        dict['tagSrc'] = media_url
+        dict['length'] = "{}".format(len(dbs))
+        # dict['naturalHeight'] = "{}".format(img.height)
+        # dict['naturalWidth'] = "{}".format(img.width)
+        form_data = {"ip": "{}".format(self.localIP),
+                "wid": "100",
+                'url': media_url,
+                "content": "{}".format(content_bs64.decode('utf-8')),
+                # "content": "{}".format(content_bs64),
+                'type': type,
+                "ref": "",
+                "item": json.dumps(dict, ensure_ascii=False)
+                }
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
+        }
+
         # 重试次数
         count = 0
         while True:
-            url = '{}'.format(settings.SpiderMediaSaveUrl)
-            # # 二进制图片文件转成base64文件
-            content_bs64 = base64.b64encode(content)
-            # 解码base64图片文件
-            dbs = base64.b64decode(content_bs64)
-            # # 内存中打开图片
-            # img = Image.open(BytesIO(content))
-            sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
-
-            # item = {
-            #     'pk': sha,
-            #     'type': type,
-            #     'url': media_url,
-            #     'biz_title':
-            #     'length': "{}".format(len(dbs)),
-            #     'natural_height': str(img['height']),
-            #     'natural_width': str(img['width']),
-            #     'rel_esse':
-            #
-            # }
-            dict = {}
-            dict['relEsse'] = str(item['relEsse'])
-            dict['relPics'] = str(item.get('relPics'))
-            dict['bizTitle'] = item['bizTitle']
-            dict['type'] = type
-            dict['pk'] = sha
-            # if type == 'image':
-            #     dict['pk'] = sha
-            # else:
-            #     dict['pk'] = type + sha
-            dict['url'] = media_url
-            dict['tagSrc'] = media_url
-            dict['length'] = "{}".format(len(dbs))
-            # dict['naturalHeight'] = "{}".format(img.height)
-            # dict['naturalWidth'] = "{}".format(img.width)
-            data = {"ip": "{}".format(self.localIP),
-                    "wid": "100",
-                    'url': media_url,
-                    "content": "{}".format(content_bs64.decode('utf-8')),
-                    # "content": "{}".format(content_bs64),
-                    'type': type,
-                    "ref": "",
-                    "item": json.dumps(dict, ensure_ascii=False)
-                    }
-
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
-            }
-
             start_time = time.time()
             try:
-                resp = self.s.post(url=url, headers=headers, data=data, timeout=20).content.decode('utf-8')
+                resp = self.s.post(url=url, headers=headers, data=form_data, timeout=20).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
-                    self.logging.info(
-                        'Save media to Hbase | status: OK | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], resp, '%.3f' %(time.time() - start_time)))
-                    self.logging.info('end Save media to Hbase')
+                    self.logging.info('Save media to Hbase | status: OK | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], resp, '%.3f' %(time.time() - start_time)))
                     return True
 
                 else:
                     if count > 3:
-                        self.logging.warning(
-                            'Save media to Hbase | status: NO | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], resp, '%.3f' %(time.time() - start_time)))
+                        self.logging.warning('Save media to Hbase | status: NO | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], resp, '%.3f' %(time.time() - start_time)))
                         return False
                     else:
                         count += 1

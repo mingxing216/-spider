@@ -28,7 +28,7 @@ class Downloader(downloader.BaseDownloader):
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         start_time = time.time()
         self.logging.info('开始下载附件')
-        ret = self.__getResp(url, method, s, data, cookies, referer)
+        ret = self._getResp(url, method, s, data, cookies, referer)
         if ret:
             self.logging.info('request for url: {} | use time: {}s'.format(url, '%.3f' % (time.time() - start_time)))
         else:
@@ -37,7 +37,7 @@ class Downloader(downloader.BaseDownloader):
         self.logging.info('结束下载附件')
         return ret
 
-    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+    def _getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 响应状态码错误重试次数
         stat_count = 0
         # 请求异常重试次数
@@ -73,7 +73,7 @@ class Downloader(downloader.BaseDownloader):
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
             self.logging.info(
-                "request for url: {} | code: {} | status: {} | length: {} | mode: {} | use time: {}".format(url, down_data['code'], down_data['status'], len(down_data['data'].content), method, '%.3fs' % (time.time() - start_time)))
+                "request for url: {} | code: {} | status: {} | mode: {} | use time: {}".format(url, down_data['code'], down_data['status'], method, '%.3fs' % (time.time() - start_time)))
 
             if down_data['code'] == 0:
                 # 设置代理最大权重
