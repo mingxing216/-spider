@@ -196,11 +196,27 @@ class Dao(object):
         else:
             return
 
+    # # 从mysql队列任务到redis
+    # def QueueTask(self, key, data):
+    #     if data:
+    #         for url_data in data:
+    #             url = url_data['ctx']
+    #             self.redis_client.sadd(key=key, value=url)
+    #
+    #         self.logging.info('已成功向redis队列{}个任务'.format(len(data)))
+    #
+    #     else:
+    #         return
+
     # 从mysql队列任务到redis
     def QueueTask(self, key, data):
         if data:
             for url_data in data:
-                url = url_data['ctx']
+                sha = url_data['sha']
+                json_ctx = json.loads(url_data['ctx'])
+                json_ctx['sha'] = sha
+                url = json.dumps(json_ctx)
+
                 self.redis_client.sadd(key=key, value=url)
 
             self.logging.info('已成功向redis队列{}个任务'.format(len(data)))
@@ -323,10 +339,6 @@ class Dao(object):
         dict['bizTitle'] = item['bizTitle']
         dict['type'] = type
         dict['pk'] = sha
-        # if type == 'image':
-        #     dict['pk'] = sha
-        # else:
-        #     dict['pk'] = type + sha
         dict['url'] = media_url
         dict['tagSrc'] = media_url
         dict['length'] = "{}".format(len(dbs))

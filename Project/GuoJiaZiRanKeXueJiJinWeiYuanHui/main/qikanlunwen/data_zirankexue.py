@@ -155,10 +155,8 @@ class SpiderMain(BastSpiderMain):
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
 
-    def handle(self, task, save_data):
-        # 数据类型转换
-        task_data = self.server.getEvalResponse(task)
-        # print(task_data)
+    def handle(self, task_data, save_data):
+        print(task_data)
         id = task_data.get('id')
         sha = hashlib.sha1(id.encode('utf-8')).hexdigest()
         url = 'http://ir.nsfc.gov.cn/paperDetail/' + task_data.get('id')
@@ -275,69 +273,71 @@ class SpiderMain(BastSpiderMain):
         # 生成ref
         save_data['ref'] = ''
 
-        # 返回sha为删除任务做准备
-        return sha
+        # # 返回sha为删除任务做准备
+        # return sha
 
-    def run(self, task):
-        start_time = time.time()
-        # 创建数据存储字典
-        save_data = {}
-        # 获取字段值存入字典并返回sha
-        sha = self.handle(task=task, save_data=save_data)
-        # 保存数据到Hbase
-        if not save_data:
-            LOGGING.info('没有获取数据, 存储失败')
-            return
-        if 'sha' not in save_data:
-            LOGGING.info('数据获取不完整, 存储失败')
-            return
-        LOGGING.info('论文数据开始存储')
-        # 存储数据
-        success = self.dao.saveDataToHbase(data=save_data)
-
-        if success:
-            LOGGING.info('论文数据存储成功')
-            # # 删除任务
-            # self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
-        else:
-            LOGGING.info('论文数据存储失败')
-            # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-
-        LOGGING.info('threading use time: {}s'.format('%.3f' % (time.time() - start_time)))
-
-    def start(self):
+    def run(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_TEST, count=8, lockname=config.REDIS_ZIRANKEXUE_TEST_LOCK)
-            # print(task_list)
-            LOGGING.info('获取{}个任务'.format(len(task_list)))
-
+            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_TEST, count=1,
+                                         lockname=config.REDIS_ZIRANKEXUE_TEST_LOCK)
             if task_list:
-                # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
+                for task in task_list:
+                    try:
+                        start_time = time.time()
+                        # 创建数据存储字典
+                        save_data = {}
+                        # json数据类型转换
+                        task_data = json.loads(task)
+                        sha = task_data['sha']
+                        # 获取字段值存入字典并返回sha
+                        self.handle(task_data=task_data, save_data=save_data)
+                        # 保存数据到Hbase
+                        if not save_data:
+                            LOGGING.info('没有获取数据, 存储失败')
+                            return
+                        if 'sha' not in save_data:
+                            LOGGING.info('数据获取不完整, 存储失败')
+                            return
+                        LOGGING.info('论文数据开始存储')
+                        # 存储数据
+                        success = self.dao.saveDataToHbase(data=save_data)
 
-                # # 创建gevent协程
-                # g_list = []
-                # for task in task_list:
-                #     s = gevent.spawn(self.run, task)
-                #     g_list.append(s)
-                # gevent.joinall(g_list)
+                        if success:
+                            LOGGING.info('论文数据存储成功')
+                            # # 删除任务
+                            # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
+                        else:
+                            LOGGING.info('论文数据存储失败')
 
-                # 创建线程池
-                threadpool = ThreadPool()
-                for url in task_list:
-                    threadpool.apply_async(func=self.run, args=(url,))
+                        # 逻辑删除任务
+                        self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
 
-                threadpool.close()
-                threadpool.join()
+                        LOGGING.info('threading use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
-                # time.sleep(1)
-
+                    except:
+                        LOGGING.error(str(traceback.format_exc()))
             else:
                 time.sleep(1)
                 continue
-                # LOGGING.info('队列中已无任务，结束程序')
-                # return
+
+    def start(self):
+        # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
+
+        # # 创建gevent协程
+        # g_list = []
+        # for i in range(8):
+        #     s = gevent.spawn(self.run)
+        #     g_list.append(s)
+        # gevent.joinall(g_list)
+
+        # 创建线程池
+        threadpool = ThreadPool()
+        for i in range(8):
+            threadpool.apply_async(func=self.run)
+
+        threadpool.close()
+        threadpool.join()
 
 def process_start():
     main = SpiderMain()
