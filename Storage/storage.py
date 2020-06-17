@@ -503,8 +503,14 @@ class Dao(object):
             except Exception as e:
                 self.logging.error('uodate data error: {}'.format(e))
 
-    # 从redis队列中获取任务
     def getTask(self, key, count, lockname):
+        start_time = time.time()
+        ret = self._getTask(key, count, lockname)
+        self.logging.info('handle | 获取任务 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+        return ret
+
+    # 从redis队列中获取任务
+    def _getTask(self, key, count, lockname):
         return self.redis_client.queue_spops(key=key, count=count, lockname=lockname)
 
     def deleteTask(self, table, sha=None, url=None):

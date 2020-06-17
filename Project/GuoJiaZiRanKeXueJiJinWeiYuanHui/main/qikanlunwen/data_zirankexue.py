@@ -148,7 +148,7 @@ class SpiderMain(BastSpiderMain):
         LOGGING.info('开始获取二进制内容')
         pdf_content = pdf_resp.content
         LOGGING.info('结束获取二进制内容')
-        LOGGING.info('handle | 判断获取内容成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
+        LOGGING.info('handle | 判断获取内容成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         # 存储文档
@@ -289,12 +289,12 @@ class SpiderMain(BastSpiderMain):
 
         while 1:
             # 获取任务
+            start_time = time.time()
             task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_TEST, count=1,
                                          lockname=config.REDIS_ZIRANKEXUE_TEST_LOCK)
             if task_list:
                 for task in task_list:
                     try:
-                        start_time = time.time()
                         # 创建数据存储字典
                         save_data = {}
                         # json数据类型转换
