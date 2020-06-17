@@ -11,6 +11,7 @@ import os
 import time
 import traceback
 import hashlib
+import random
 import requests
 from datetime import datetime
 import json
@@ -25,6 +26,7 @@ from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.middleware import download_middlewa
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.service import service
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.dao import dao
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui import config
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
 log_file_dir = 'ZiRanKeXue'  # LOG日志存放路径
@@ -131,6 +133,8 @@ class SpiderMain(BastSpiderMain):
 
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
+
+        start_time = time.time()
         LOGGING.info('开始判断下载内容')
         if not pdf_resp:
             LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
@@ -144,6 +148,7 @@ class SpiderMain(BastSpiderMain):
         LOGGING.info('开始获取二进制内容')
         pdf_content = pdf_resp.content
         LOGGING.info('结束获取二进制内容')
+        LOGGING.info('handle | 判断获取内容成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         # 存储文档
@@ -156,7 +161,7 @@ class SpiderMain(BastSpiderMain):
             return
 
     def handle(self, task_data, save_data):
-        print(task_data)
+        # print(task_data)
         id = task_data.get('id')
         sha = hashlib.sha1(id.encode('utf-8')).hexdigest()
         url = 'http://ir.nsfc.gov.cn/paperDetail/' + task_data.get('id')
@@ -277,6 +282,11 @@ class SpiderMain(BastSpiderMain):
         # return sha
 
     def run(self):
+        #第一次请求的等待时间
+        start_time = time.time()
+        time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
+        LOGGING.info('handle | download delay | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+
         while 1:
             # 获取任务
             task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_TEST, count=1,
@@ -313,7 +323,7 @@ class SpiderMain(BastSpiderMain):
                         # 逻辑删除任务
                         self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
 
-                        LOGGING.info('threading use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                        LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
                     except:
                         LOGGING.error(str(traceback.format_exc()))

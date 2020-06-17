@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
 from Utils import user_agent_u
 from Utils import proxy
-from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
+
 
 
 class Downloader(downloader.BaseDownloader):
@@ -30,9 +30,9 @@ class Downloader(downloader.BaseDownloader):
         self.logging.info('开始下载附件')
         ret = self._getResp(url, method, s, data, cookies, referer)
         if ret:
-            self.logging.info('request for url: {} | use time: {}s'.format(url, '%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | request for url: {} | use time: {}s'.format(url, '%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('request for url: {} | use time: {}s'.format(url, '%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | request for url: {} | use time: {}s'.format(url, '%.3f' % (time.time() - start_time)))
 
         self.logging.info('结束下载附件')
         return ret
@@ -44,10 +44,6 @@ class Downloader(downloader.BaseDownloader):
         err_count = 0
         while 1:
             start_time = time.time()
-
-            # 每次请求的等待时间
-            time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
-
             # 设置请求头
             headers = {
                 # 'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -72,8 +68,7 @@ class Downloader(downloader.BaseDownloader):
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
-            self.logging.info(
-                "request for url: {} | code: {} | status: {} | mode: {} | use time: {}".format(url, down_data['code'], down_data['status'], method, '%.3fs' % (time.time() - start_time)))
+            self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | mode: {}".format(url, '%.3fs' % (time.time() - start_time), down_data['code'], down_data['status'], method))
 
             if down_data['code'] == 0:
                 # 设置代理最大权重

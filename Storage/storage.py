@@ -62,9 +62,9 @@ class Dao(object):
         self.logging.info('开始存储种子')
         ret = self.__saveTaskToMysql(table, memo, ws, es)
         if ret:
-            self.logging.info('种子存储成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 种子存储成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('种子存储失败 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 种子存储失败 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         self.logging.info('结束存储种子')
         return ret
 
@@ -229,9 +229,9 @@ class Dao(object):
         self.logging.info('开始存储实体')
         ret = self.__saveDataToHbase(data)
         if ret:
-            self.logging.info('存储实体成功, 耗时: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 存储实体成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('存储实体失败, 耗时: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 存储实体失败 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         self.logging.info('结束存储实体')
         return ret
 
@@ -255,26 +255,26 @@ class Dao(object):
                 resp = requests.post(url=url, headers=headers, data=form_data, timeout=10).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
-                    self.logging.info('Save data to Hbase | status: OK | memo: {} | use time: {}s'.format(resp, '%.3f' %(time.time() - start_time)))
+                    self.logging.info('handle | Save data to Hbase | use time: {}s | status: OK | memo: {}'.format('%.3f' %(time.time() - start_time), resp))
                     return True
 
                 else:
                     if count > 3:
-                        self.logging.warning('Save data to Hbase | status: NO | memo: {} | use time: {}s'.format(resp, '%.3f' %(time.time() - start_time)))
+                        self.logging.warning('handle | Save data to Hbase | use time: {}s | status: NO | memo: {}'.format('%.3f' %(time.time() - start_time), resp))
                         return False
                     else:
                         count += 1
-                        self.logging.warning('Save data to Hbase again ... | memo: {} | use time: {}s'.format(resp, '%.3f' %(time.time() - start_time)))
+                        self.logging.warning('handle | Save data to Hbase again ... | use time: {}s | memo: {}'.format('%.3f' %(time.time() - start_time), resp))
                         time.sleep(1)
                         continue
 
             except Exception as e:
                 if count > 3:
-                    self.logging.error('Save data to Hbase | status: NO | memo: {} | use time: {}s'.format(e, '%.3f' %(time.time() - start_time)))
+                    self.logging.error('handle | Save data to Hbase | use time: {}s | status: NO | memo: {}'.format('%.3f' %(time.time() - start_time), e))
                     return False
                 else:
                     count += 1
-                    self.logging.warning('Save data to Hbase again ... | memo: {} | use time: {}s'.format(e, '%.3f' %(time.time() - start_time)))
+                    self.logging.warning('handle | Save data to Hbase again ... | use time: {}s | memo: {}'.format('%.3f' %(time.time() - start_time), e))
                     time.sleep(1)
                     continue
 
@@ -304,9 +304,9 @@ class Dao(object):
         self.logging.info('开始存储附件')
         ret = self.__saveMediaToHbase(media_url, content, item, type)
         if ret:
-            self.logging.info('存储附件成功, 耗时: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 存储附件成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('存储附件失败, 耗时: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 存储附件失败 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         self.logging.info('结束存储附件')
 
         return ret
@@ -366,27 +366,27 @@ class Dao(object):
                 resp = self.s.post(url=url, headers=headers, data=form_data, timeout=20).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
-                    self.logging.info('Save media to Hbase | status: OK | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], resp, '%.3f' %(time.time() - start_time)))
+                    self.logging.info('handle | Save media to Hbase | use time: {}s | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, dict['length'], resp))
                     return True
 
                 else:
                     if count > 3:
-                        self.logging.warning('Save media to Hbase | status: NO | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], resp, '%.3f' %(time.time() - start_time)))
+                        self.logging.warning('handle | Save media to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, dict['length'], resp))
                         return False
                     else:
                         count += 1
-                        self.logging.warning('Save media to Hbase again ... | sha: {} | memo: {} | use time: {}s'.format(sha, resp, '%.3f' %(time.time() - start_time)))
+                        self.logging.warning('handle | Save media to Hbase again ... | use time: {}s | sha: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, resp))
                         time.sleep(1)
                         continue
 
             except Exception as e:
                 if count > 3:
-                    self.logging.error('Save media to Hbase | status: NO | sha: {} | length: {} | memo: {} | use time: {}s'.format(sha, dict['length'], e, '%.3f' %(time.time() - start_time)))
+                    self.logging.error('handle | Save media to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, dict['length'], e))
                     return False
                 else:
                     count += 1
                     # print(e)
-                    self.logging.warning('Save media to Hbase again ... | sha: {} | memo: {} | use time: {}s'.format(sha, e, '%.3f' %(time.time() - start_time)))
+                    self.logging.warning('handle | Save media to Hbase again ... | use time: {}s | sha: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, e))
                     time.sleep(1)
                     continue
 
@@ -510,7 +510,7 @@ class Dao(object):
     def deleteTask(self, table, sha=None, url=None):
         start_time = time.time()
         self.__deleteTask(table, sha, url)
-        self.logging.info('删除任务 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+        self.logging.info('handle | 删除任务 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
     # 物理删除mysql中任务
     def __deleteTask(self, table, sha=None, url=None):
@@ -533,7 +533,7 @@ class Dao(object):
     def deleteLogicTask(self, table, sha=None, url=None):
         start_time = time.time()
         self.__deleteLogicTask(table, sha, url)
-        self.logging.info('逻辑删除任务 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+        self.logging.info('handle | 逻辑删除任务 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
     # 逻辑删除mysql中任务
     def __deleteLogicTask(self, table, sha=None, url=None):

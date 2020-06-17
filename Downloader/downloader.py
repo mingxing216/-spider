@@ -89,14 +89,12 @@ class BaseDownloader(object):
         end_time = time.time()
 
         if down_data['code'] == 0:
-            self.logging.info("request for url: {} | code: {} | status: {} | length: {} | mode: {} | message: {} | data: {} | proxy: {} | use time: {}".format(
-                    url, down_data['code'], down_data['status'], len(down_data['data'].content), method, down_data['message'], data, proxies,
-                    '%.2fs' % (end_time - start_time)
+            self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | length: {} | mode: {} | message: {} | data: {} | proxy: {}".format(
+                    url, '%.3fs' % (end_time - start_time), down_data['code'], down_data['status'], len(down_data['data'].content), method, down_data['message'], data, proxies
                 ))
         else:
-            self.logging.info("request for url: {} | code: {} | status: {} | mode: {} | message: {} | data: {} | proxy: {} | use time: {}".format(
-                    url, down_data['code'], down_data['status'], method, down_data['message'], data, proxies,
-                    '%.2fs' % (end_time - start_time)
+            self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | mode: {} | message: {} | data: {} | proxy: {}".format(
+                    url, '%.3fs' % (end_time - start_time), down_data['code'], down_data['status'], method, down_data['message'], data, proxies
                 ))
 
         return down_data
