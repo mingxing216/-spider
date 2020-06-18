@@ -30,8 +30,8 @@ from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
 log_file_dir = 'ZiRanKeXue'  # LOG日志存放路径
-LOGNAME = '<国家自然科学_论文_data>'  # LOG名
-NAME = '国家自然科学_论文_data'  # 爬虫名
+LOGNAME = '<国家自然科学_论文_test>'  # LOG名
+NAME = '国家自然科学_论文_test'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库

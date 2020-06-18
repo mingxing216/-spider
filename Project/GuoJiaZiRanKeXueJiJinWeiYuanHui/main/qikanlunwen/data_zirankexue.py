@@ -342,7 +342,7 @@ class SpiderMain(BastSpiderMain):
         # gevent.joinall(g_list)
 
         # 创建线程池
-        threadpool = ThreadPool()
+        threadpool = ThreadPool(8)
         for i in range(8):
             threadpool.apply_async(func=self.run)
 
