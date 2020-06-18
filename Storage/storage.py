@@ -322,7 +322,7 @@ class Dao(object):
         # # 内存中打开图片
         # img = Image.open(BytesIO(content))
         # sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
-        sha = int(random.random()*10000)
+        sha = int(random.random()*10000000000000000)
 
         # item = {
         #     'pk': sha,
