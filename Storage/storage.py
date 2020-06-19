@@ -337,16 +337,17 @@ class Dao(object):
             # 'naturalWidth': "{}".format(img.width)
         }
 
-        form_data = {"ip": "{}".format(self.localIP),
-                "wid": "100",
-                'url': media_url,
-                "content": "{}".format(content_bs64.decode('utf-8')),
-                # "content": "{}".format(content),
-                # "content": "{}".format(content_bs64),
-                'type': type,
-                "ref": "",
-                "item": json.dumps(data_dict, ensure_ascii=False)
-                }
+        form_data = {
+            "ip": "{}".format(self.localIP),
+            "wid": "100",
+            'url': media_url,
+            "content": "{}".format(content_bs64.decode('utf-8')),
+            # "content": "{}".format(content),
+            # "content": "{}".format(content_bs64),
+            'type': type,
+            "ref": "",
+            "item": json.dumps(data_dict, ensure_ascii=False)
+        }
 
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
@@ -360,12 +361,12 @@ class Dao(object):
                 resp = self.s.post(url=url, headers=headers, data=form_data, timeout=20).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
-                    self.logging.info('handle | Save media to Hbase | use time: {}s | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, dict['length'], resp))
+                    self.logging.info('handle | Save media to Hbase | use time: {}s | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
                     return True
 
                 else:
                     if count > 3:
-                        self.logging.warning('handle | Save media to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, dict['length'], resp))
+                        self.logging.warning('handle | Save media to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
                         return False
                     else:
                         count += 1
@@ -375,7 +376,7 @@ class Dao(object):
 
             except Exception as e:
                 if count > 3:
-                    self.logging.error('handle | Save media to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, dict['length'], e))
+                    self.logging.error('handle | Save media to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], e))
                     return False
                 else:
                     count += 1
