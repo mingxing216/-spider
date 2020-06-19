@@ -324,7 +324,7 @@ class Dao(object):
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
         # sha = int(random.random()*10000000000000000)
 
-        dict = {
+        data_dict = {
             'pk': sha,
             'type': type,
             'url': media_url,
@@ -345,7 +345,7 @@ class Dao(object):
                 # "content": "{}".format(content_bs64),
                 'type': type,
                 "ref": "",
-                "item": json.dumps(dict, ensure_ascii=False)
+                "item": json.dumps(data_dict, ensure_ascii=False)
                 }
 
         headers = {
