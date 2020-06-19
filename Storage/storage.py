@@ -324,28 +324,19 @@ class Dao(object):
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
         # sha = int(random.random()*10000000000000000)
 
-        # item = {
-        #     'pk': sha,
-        #     'type': type,
-        #     'url': media_url,
-        #     'biz_title':
-        #     'length': "{}".format(len(dbs)),
-        #     'natural_height': str(img['height']),
-        #     'natural_width': str(img['width']),
-        #     'rel_esse':
-        #
-        # }
-        dict = {}
-        dict['relEsse'] = str(item['relEsse'])
-        dict['relPics'] = str(item.get('relPics'))
-        dict['bizTitle'] = item['bizTitle']
-        dict['type'] = type
-        dict['pk'] = sha
-        dict['url'] = media_url
-        dict['tagSrc'] = media_url
-        dict['length'] = "{}".format(len(dbs))
-        # dict['naturalHeight'] = "{}".format(img.height)
-        # dict['naturalWidth'] = "{}".format(img.width)
+        dict = {
+            'pk': sha,
+            'type': type,
+            'url': media_url,
+            'biz_title': item.get('bizTitle'),
+            'relEsse': str(item.get('relEsse')),
+            'relPics': str(item.get('relPics')),
+            'length': "{}".format(len(dbs)),
+            'tagSrc': media_url
+            # 'naturalHeight': "{}".format(img.height),
+            # 'naturalWidth': "{}".format(img.width)
+        }
+
         form_data = {"ip": "{}".format(self.localIP),
                 "wid": "100",
                 'url': media_url,
