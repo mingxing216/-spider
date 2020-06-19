@@ -315,14 +315,14 @@ class Dao(object):
     def __saveMediaToHbase(self, media_url, content, item, type):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
         # # # 二进制图片文件转成base64文件
-        # content_bs64 = base64.b64encode(content)
-        content_bs64 = content
+        content_bs64 = base64.b64encode(content)
+        # content_bs64 = content
         # 解码base64图片文件
         dbs = base64.b64decode(content_bs64)
         # # 内存中打开图片
         # img = Image.open(BytesIO(content))
-        # sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
-        sha = int(random.random()*10000000000000000)
+        sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
+        # sha = int(random.random()*10000000000000000)
 
         # item = {
         #     'pk': sha,
@@ -349,8 +349,8 @@ class Dao(object):
         form_data = {"ip": "{}".format(self.localIP),
                 "wid": "100",
                 'url': media_url,
-                # "content": "{}".format(content_bs64.decode('utf-8')),
-                "content": "{}".format(content),
+                "content": "{}".format(content_bs64.decode('utf-8')),
+                # "content": "{}".format(content),
                 # "content": "{}".format(content_bs64),
                 'type': type,
                 "ref": "",
