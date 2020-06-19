@@ -135,7 +135,7 @@ class SpiderMain(BastSpiderMain):
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
 
         start_time = time.time()
-        LOGGING.info('开始判断下载内容')
+        LOGGING.info('开始判断下载是否成功')
         if not pdf_resp:
             LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
             # # 标题内容调整格式
@@ -143,7 +143,7 @@ class SpiderMain(BastSpiderMain):
             # 存储文档种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
-        LOGGING.info('结束判断下载内容')
+        LOGGING.info('结束判断下载是否成功')
         # media_resp.encoding = media_resp.apparent_encoding
         LOGGING.info('开始获取二进制内容')
         pdf_content = pdf_resp.content
@@ -326,7 +326,7 @@ class SpiderMain(BastSpiderMain):
                         LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
                     except:
-                        LOGGING.error(str(traceback.format_exc()))
+                        LOGGING.exception(str(traceback.format_exc()))
             else:
                 time.sleep(1)
                 continue
@@ -342,8 +342,8 @@ class SpiderMain(BastSpiderMain):
         # gevent.joinall(g_list)
 
         # 创建线程池
-        threadpool = ThreadPool(8)
-        for i in range(8):
+        threadpool = ThreadPool(processes=config.THREAD_NUM)
+        for i in range(config.THREAD_NUM):
             threadpool.apply_async(func=self.run)
 
         threadpool.close()
@@ -355,7 +355,7 @@ def process_start():
         main.start()
         # main.run(task="{'id': '207d122a-3a68-41b1-8d8a-f20552f22054', 'xueKeLeiBie': '信息科学部', 'url': 'http://ir.nsfc.gov.cn/paperDetail/207d122a-3a68-41b1-8d8a-f20552f22054'}")
     except:
-        LOGGING.error(str(traceback.format_exc()))
+        LOGGING.exception(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
@@ -363,8 +363,8 @@ if __name__ == '__main__':
     begin_time = time.time()
     # process_start()
 
-    po = Pool(config.DATA_SCRIPT_PROCESS)
-    for i in range(config.DATA_SCRIPT_PROCESS):
+    po = Pool(processes=config.PROCESS_NUM)
+    for i in range(config.PROCESS_NUM):
         po.apply_async(func=process_start)
     po.close()
     po.join()

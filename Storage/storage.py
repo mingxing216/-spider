@@ -509,7 +509,7 @@ class Dao(object):
     def getTask(self, key, count, lockname):
         start_time = time.time()
         ret = self._getTask(key, count, lockname)
-        self.logging.info('handle | 获取任务 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+        self.logging.info('handle | 获取 {} 条任务 | use time: {}s'.format(len(ret), '%.3f' % (time.time() - start_time)))
         return ret
 
     # 从redis队列中获取任务

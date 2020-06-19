@@ -132,8 +132,8 @@ class SpiderMain(BastSpiderMain):
         # gevent.joinall(g_list)
 
         # 创建线程池
-        threadpool = ThreadPool()
-        for i in range(8):
+        threadpool = ThreadPool(processes=config.THREAD_NUM)
+        for i in range(config.THREAD_NUM):
             threadpool.apply_async(func=self.run)
 
         threadpool.close()
@@ -145,7 +145,7 @@ def process_start():
         main.start()
         # main.run(task="{'id': '207d122a-3a68-41b1-8d8a-f20552f22054', 'xueKeLeiBie': '信息科学部', 'url': 'http://ir.nsfc.gov.cn/paperDetail/207d122a-3a68-41b1-8d8a-f20552f22054'}")
     except:
-        LOGGING.error(str(traceback.format_exc()))
+        LOGGING.exception(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
@@ -153,8 +153,8 @@ if __name__ == '__main__':
     begin_time = time.time()
     # process_start()
 
-    po = Pool(config.DATA_SCRIPT_PROCESS)
-    for i in range(config.DATA_SCRIPT_PROCESS):
+    po = Pool(processes=config.PROCESS_NUM)
+    for i in range(config.PROCESS_NUM):
         po.apply_async(func=process_start)
     po.close()
     po.join()

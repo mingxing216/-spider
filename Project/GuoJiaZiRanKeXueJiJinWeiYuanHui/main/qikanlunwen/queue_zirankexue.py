@@ -68,7 +68,7 @@ def process_start():
     try:
         main.start()
     except:
-        LOGGING.error(str(traceback.format_exc()))
+        LOGGING.exception(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
