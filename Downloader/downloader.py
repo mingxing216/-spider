@@ -8,8 +8,8 @@ import sys
 import os
 import requests
 import time
-from requests.exceptions import ConnectTimeout
 from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectTimeout
 from requests.exceptions import ReadTimeout
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
@@ -26,8 +26,7 @@ def _error(func):
                 return {'code': 1, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
         except ConnectTimeout or ReadTimeout as e:
-            # self.logging.error("Downloader" + " | " + "request timeout: {}s".format(kwargs['timeout']) + " | "
-            #                         + kwargs['url'])
+            # self.logging.error("Downloader" + " | " + "request timeout: {}s".format(kwargs['timeout']) + " | " + kwargs['url'])
             return {'code': 2, 'data': None, 'status': None, 'message': e}
 
         except ConnectionError as e:
@@ -88,7 +87,7 @@ class BaseDownloader(object):
 
         end_time = time.time()
 
-        if down_data['code'] == 0:
+        if down_data['code'] == 0 or down_data['code'] == 1:
             self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | length: {} | mode: {} | message: {} | data: {} | proxy: {}".format(
                     url, '%.3fs' % (end_time - start_time), down_data['code'], down_data['status'], len(down_data['data'].content), method, down_data['message'], data, proxies
                 ))

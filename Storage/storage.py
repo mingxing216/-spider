@@ -259,7 +259,7 @@ class Dao(object):
                     return True
 
                 else:
-                    if count > 3:
+                    if count >= 2:
                         self.logging.warning('handle | Save data to Hbase | use time: {}s | status: NO | memo: {}'.format('%.3f' %(time.time() - start_time), resp))
                         return False
                     else:
@@ -269,7 +269,7 @@ class Dao(object):
                         continue
 
             except Exception as e:
-                if count > 3:
+                if count >= 2:
                     self.logging.error('handle | Save data to Hbase | use time: {}s | status: NO | memo: {}'.format('%.3f' %(time.time() - start_time), e))
                     return False
                 else:
@@ -365,7 +365,7 @@ class Dao(object):
                     return True
 
                 else:
-                    if count > 3:
+                    if count >= 2:
                         self.logging.warning('handle | Save media to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
                         return False
                     else:
@@ -375,7 +375,7 @@ class Dao(object):
                         continue
 
             except Exception as e:
-                if count > 3:
+                if count >= 2:
                     self.logging.error('handle | Save media to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], e))
                     return False
                 else:
