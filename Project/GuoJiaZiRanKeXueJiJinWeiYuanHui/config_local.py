@@ -4,7 +4,7 @@
 # ----------------------------
 
 PROXY_TYPE = 'http' # 代理IP协议种类
-TIMEOUT = 5 # 请求超时
+TIMEOUT = (5, 10) # 请求超时(连接超时、读取超时)
 COUNTRY = 1 # 代理IP所属国家
 CITY = 0 # 代理IP所属城市
 MYSQL_POOL_NUMBER = 10 # Mysql连接池数量

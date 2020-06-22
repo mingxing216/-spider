@@ -82,7 +82,6 @@ class SpiderMain(BastSpiderMain):
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
 
         start_time = time.time()
-        LOGGING.info('开始判断下载是否成功')
         if not pdf_resp:
             LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
             # # 标题内容调整格式
@@ -91,12 +90,9 @@ class SpiderMain(BastSpiderMain):
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
 
-        LOGGING.info('结束判断下载是否成功')
         # media_resp.encoding = media_resp.apparent_encoding
-        LOGGING.info('开始获取二进制内容')
         pdf_content = pdf_resp.content
-        LOGGING.info('结束获取二进制内容')
-        LOGGING.info('handle | 判断获取内容成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+        LOGGING.info('handle | 判断内容及获取内容成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
 
@@ -133,7 +129,7 @@ class SpiderMain(BastSpiderMain):
         # 生成key
         doc_data['key'] = pdf_dict['id']
         # 生成sha
-        doc_data['sha'] = pdf_dict['sha']
+        doc_data['sha'] = hashlib.sha1(pdf_dict['id'].encode('utf-8')).hexdigest()
         # 生成ss ——实体
         doc_data['ss'] = '文档'
         # 生成es ——栏目名称
@@ -152,9 +148,9 @@ class SpiderMain(BastSpiderMain):
         sto = self.dao.saveDataToHbase(data=doc_data)
 
         if sto:
-            LOGGING.info('文档数据存储成功, sha: {}'.format(pdf_dict['sha']))
+            LOGGING.info('文档数据存储成功, sha: {}'.format(doc_data['sha']))
         else:
-            LOGGING.error('文档数据存储失败, url: {}'.format(pdf_dict['url']))
+            LOGGING.error('文档数据存储失败, url: {}'.format(doc_data['url']))
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             # 存储文档种子
@@ -250,7 +246,6 @@ class SpiderMain(BastSpiderMain):
             pdf_dict = {}
             pdf_dict['url'] = doc_url
             pdf_dict['id'] = doc_id
-            pdf_dict['sha'] = doc_sha
             pdf_dict['bizTitle'] = save_data['title']
             pdf_dict['relEsse'] = self.server.guanLianLunWen(url, id, sha)
             pdf_dict['relPics'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
@@ -283,9 +278,9 @@ class SpiderMain(BastSpiderMain):
 
     def run(self):
         #第一次请求的等待时间
-        start_time = time.time()
+        delay_time = time.time()
         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
-        LOGGING.info('handle | download delay | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+        LOGGING.info('handle | download delay | use time: {}s'.format('%.3f' % (time.time() - delay_time)))
 
         while 1:
             # 获取任务
@@ -319,6 +314,8 @@ class SpiderMain(BastSpiderMain):
                             # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
                         else:
                             LOGGING.info('论文数据存储失败')
+                            # # 逻辑删除任务
+                            # self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
 
                         # 逻辑删除任务
                         self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
@@ -340,6 +337,8 @@ class SpiderMain(BastSpiderMain):
         #     s = gevent.spawn(self.run)
         #     g_list.append(s)
         # gevent.joinall(g_list)
+
+        # self.run()
 
         # 创建线程池
         threadpool = ThreadPool(processes=config.THREAD_NUM)

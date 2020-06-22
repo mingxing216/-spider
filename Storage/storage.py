@@ -72,7 +72,7 @@ class Dao(object):
     def __saveTaskToMysql(self, table, memo, ws, es):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
-        url = memo['sha'] = sha
+        memo['sha'] = sha
         ctx = json.dumps(memo, ensure_ascii=False)  # 参数防止中文字符串变成Unicode字节码
         # 查询数据库是否含有此数据
         data_status_sql = "select * from {} where `sha` = '{}'".format(table, sha)
@@ -238,6 +238,8 @@ class Dao(object):
     # 存储数据到Hbase数据库 resultCode
     def __saveDataToHbase(self, data):
         save_data = json.dumps(data, ensure_ascii=False)
+        # 将待存储数据编码成二进制数据
+        b_data = save_data.encode('utf-8')
         url = '{}'.format(settings.SpiderDataSaveUrl)
         form_data = {"ip": "{}".format(self.localIP),
                      "wid": "python",
@@ -252,29 +254,29 @@ class Dao(object):
         while True:
             start_time = time.time()
             try:
-                resp = requests.post(url=url, headers=headers, data=form_data, timeout=10).content.decode('utf-8')
+                resp = requests.post(url=url, headers=headers, data=form_data, timeout=(5, 5)).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
-                    self.logging.info('handle | Save data to Hbase | use time: {}s | status: OK | memo: {}'.format('%.3f' %(time.time() - start_time), resp))
+                    self.logging.info('handle | Save data to Hbase | use time: {}s | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
                     return True
 
                 else:
                     if count >= 2:
-                        self.logging.warning('handle | Save data to Hbase | use time: {}s | status: NO | memo: {}'.format('%.3f' %(time.time() - start_time), resp))
+                        self.logging.warning('handle | Save data to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
                         return False
                     else:
                         count += 1
-                        self.logging.warning('handle | Save data to Hbase again ... | use time: {}s | memo: {}'.format('%.3f' %(time.time() - start_time), resp))
+                        self.logging.warning('handle | Save data to Hbase again ... | use time: {}s | sha: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), resp))
                         time.sleep(1)
                         continue
 
             except Exception as e:
                 if count >= 2:
-                    self.logging.error('handle | Save data to Hbase | use time: {}s | status: NO | memo: {}'.format('%.3f' %(time.time() - start_time), e))
+                    self.logging.error('handle | Save data to Hbase | use time: {}s | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), e))
                     return False
                 else:
                     count += 1
-                    self.logging.warning('handle | Save data to Hbase again ... | use time: {}s | memo: {}'.format('%.3f' %(time.time() - start_time), e))
+                    self.logging.warning('handle | Save data to Hbase again ... | use time: {}s | sha: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), e))
                     time.sleep(1)
                     continue
 
@@ -314,10 +316,10 @@ class Dao(object):
     # 保存流媒体到hbase
     def __saveMediaToHbase(self, media_url, content, item, type):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
-        # # # 二进制图片文件转成base64文件
+        # # 二进制图片文件转成base64文件
         content_bs64 = base64.b64encode(content)
         # content_bs64 = content
-        # 解码base64图片文件
+        # 解码base64图片文件为二进制文件
         dbs = base64.b64decode(content_bs64)
         # # 内存中打开图片
         # img = Image.open(BytesIO(content))
@@ -358,7 +360,7 @@ class Dao(object):
         while True:
             start_time = time.time()
             try:
-                resp = self.s.post(url=url, headers=headers, data=form_data, timeout=20).content.decode('utf-8')
+                resp = self.s.post(url=url, headers=headers, data=form_data, timeout=(5, 5)).content.decode('utf-8')
                 respon = ast.literal_eval(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info('handle | Save media to Hbase | use time: {}s | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
