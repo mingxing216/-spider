@@ -82,7 +82,7 @@ class SpiderMain(BastSpiderMain):
     def document(self, pdf_dict, sha):
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
-
+        LOGGING.info('开始获取内容')
         start_time = time.time()
         if not pdf_resp:
             LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
@@ -91,27 +91,25 @@ class SpiderMain(BastSpiderMain):
             # 存储文档种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
-
         # media_resp.encoding = media_resp.apparent_encoding
         # pdf_content = pdf_resp.content
 
         bytes_container = BytesIO()
         time_begin = time.time()
-
         try:
-            for chunk in pdf_resp.iter_content(chunk_size=1024):
+            for chunk in pdf_resp.iter_content(chunk_size=8192):
                 time_end = time.time()
-                if time_end - time_begin >= 10:
-                    LOGGING.info("handle | RequestTooLong Timeout | use time: {}s".format('%.3f' % (time.time() - start_time)))
+                if time_end - time_begin >= 2:
+                    LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
                     # 存储文档种子
                     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
                     return
 
-                time_begin = time_end
                 bytes_container.write(chunk)
+                time_begin = time.time()
             pdf_content = bytes_container.getvalue()
         except Exception as e:
-            LOGGING.info("handle | 获取内容失败 | use time: {}s | message: {}".format('%.3f' % (time.time() - start_time), e))
+            LOGGING.info("handle | 获取内容失败 | use time: {}s | length: {} | message: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue()), e))
             # 存储文档种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
@@ -119,6 +117,7 @@ class SpiderMain(BastSpiderMain):
         LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
+        LOGGING.info('结束获取内容')
 
         # 存储文档
         succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='test')
