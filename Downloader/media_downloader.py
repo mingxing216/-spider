@@ -41,10 +41,9 @@ def _error(func):
 
 
 class BaseDownloader(object):
-    def __init__(self, logging, stream, timeout):
+    def __init__(self, logging, timeout):
         self.logging = logging
         self.timeout = timeout
-        self.stream = stream
 
     @_error
     def fetch(self, url, method, session=None, headers=None, data=None, proxies=None, cookies=None):
@@ -57,13 +56,15 @@ class BaseDownloader(object):
                 session.keep_alive = False  # 关闭多余连接
                 # start_time = float(time.time())
                 r = session.get(url=url, headers=headers, params=data, cookies=cookies, proxies=proxies,
-                                stream=self.stream, timeout=self.timeout)
+                                timeout=self.timeout)
                 # end_time = float(time.time())
                 # print(round(end_time - start_time, 4))
                 # print(r.elapsed.total_seconds())
             else:
+                print(self.timeout)
+                print(type(self.timeout))
                 r = requests.get(url=url, headers=headers, params=data, cookies=cookies, proxies=proxies,
-                                 stream=self.stream, timeout=self.timeout)
+                                 timeout=self.timeout)
 
             return r
 
@@ -72,11 +73,10 @@ class BaseDownloader(object):
                 requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
                 # s = requests.session()
                 session.keep_alive = False  # 关闭多余连接
-                r = session.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies,
-                                 stream=self.stream, timeout=self.timeout)
+                r = session.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies, timeout=self.timeout)
             else:
                 r = requests.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies,
-                                  stream=self.stream, timeout=self.timeout)
+                                  timeout=self.timeout)
 
             return r
 
@@ -91,7 +91,7 @@ class BaseDownloader(object):
 
         if down_data['code'] == 0 or down_data['code'] == 1:
             self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | length: {} | method: {} | message: {} | data: {} | proxy: {}".format(
-                    url, '%.3fs' % (end_time - start_time), down_data['code'], down_data['status'], down_data['data'].headers['Content-Length'], method, down_data['message'], data, proxies
+                    url, '%.3fs' % (end_time - start_time), down_data['code'], down_data['status'], len(down_data['data'].content), method, down_data['message'], data, proxies
                 ))
         else:
             self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | method: {} | message: {} | data: {} | proxy: {}".format(

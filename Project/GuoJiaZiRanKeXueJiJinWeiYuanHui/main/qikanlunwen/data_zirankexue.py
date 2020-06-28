@@ -16,6 +16,7 @@ import requests
 from datetime import datetime
 import json
 import threading
+from io import BytesIO
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
@@ -42,6 +43,7 @@ class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=LOGGING,
                                                                   proxy_type=config.PROXY_TYPE,
+                                                                  stream=config.STREAM,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
@@ -91,8 +93,30 @@ class SpiderMain(BastSpiderMain):
             return
 
         # media_resp.encoding = media_resp.apparent_encoding
-        pdf_content = pdf_resp.content
-        LOGGING.info('handle | 判断内容及获取内容成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+        # pdf_content = pdf_resp.content
+
+        bytes_container = BytesIO()
+        time_begin = time.time()
+
+        try:
+            for chunk in pdf_resp.iter_content(chunk_size=1024):
+                time_end = time.time()
+                if time_end - time_begin >= 10:
+                    LOGGING.info("handle | RequestTooLong Timeout | use time: {}s".format('%.3f' % (time.time() - start_time)))
+                    # 存储文档种子
+                    self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+                    return
+
+                time_begin = time_end
+                bytes_container.write(chunk)
+            pdf_content = bytes_container.getvalue()
+        except Exception as e:
+            LOGGING.info("handle | 获取内容失败 | use time: {}s | message: {}".format('%.3f' % (time.time() - start_time), e))
+            # 存储文档种子
+            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            return
+
+        LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
 

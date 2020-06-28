@@ -20,8 +20,8 @@ from Utils import proxy
 
 
 class Downloader(downloader.BaseDownloader):
-    def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
-        super(Downloader, self).__init__(logging=logging, timeout=timeout)
+    def __init__(self, logging, stream, timeout, proxy_type, proxy_country, proxy_city):
+        super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_type = proxy_type
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
