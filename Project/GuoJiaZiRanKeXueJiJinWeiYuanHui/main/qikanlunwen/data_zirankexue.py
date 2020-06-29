@@ -95,7 +95,7 @@ class SpiderMain(BastSpiderMain):
         # media_resp.encoding = media_resp.apparent_encoding
         # pdf_content = pdf_resp.content
 
-        # 始终释放连接
+        # 释放连接
         with closing(pdf_resp) as response:
             bytes_container = BytesIO()
             # time_begin = time.time()
@@ -103,7 +103,7 @@ class SpiderMain(BastSpiderMain):
                 for chunk in response.iter_content(chunk_size=10240):
                     if chunk:
                         # time_end = time.time()
-                        # if time_end - time_begin >= 3:
+                        # if time_end - time_begin >= 8:
                         #     LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
                         #     # 存储文档种子
                         #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
@@ -119,10 +119,10 @@ class SpiderMain(BastSpiderMain):
                 return
 
         # 判断内容获取是否完整
-        if len(pdf_content) >= len(pdf_resp.headers['Content-Length']):
+        if len(pdf_content) >= int(pdf_resp.headers['Content-Length']):
             LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
         else:
-            LOGGING.info('handle | 获取内容不完整, 取消保存 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
+            LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
             # 存储文档种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
