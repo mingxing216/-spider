@@ -52,7 +52,7 @@ class SpiderMain(BastSpiderMain):
             # 查询redis队列中任务数量
             url_number = self.dao.selectTaskNumber(key=config.REDIS_ZIRANKEXUE_TEST)
             if url_number <= config.MAX_QUEUE_REDIS/20:
-                LOGGING.info('redis中任务已少于 {}, 开始新增队列任务'.format(config.MAX_QUEUE_REDIS/20))
+                LOGGING.info('redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS/20)))
                 # 获取任务
                 new_task_list = self.dao.getNewTaskList(table=config.MYSQL_TEST, ws='中国知网', es='论文_catalog', count=config.MAX_QUEUE_REDIS)
                 # print(new_task_list)

@@ -4,6 +4,7 @@
 # ----------------------------
 
 PROXY_TYPE = 'http' # 代理IP协议种类
+STREAM = True # 是否要流式下载
 TIMEOUT = (5, 10) # 请求超时(连接超时、读取超时)
 COUNTRY = 1 # 代理IP所属国家
 CITY = 0 # 代理IP所属城市

@@ -102,6 +102,7 @@ class Dao(object):
             # 从mysql数据库中取出该种子
             if ctx == data_status['ctx']:
                 self.logging.warning('种子已存在: {}'.format(sha))
+                return True
 
             else:
                 oldCtx = json.loads(data_status['ctx'])

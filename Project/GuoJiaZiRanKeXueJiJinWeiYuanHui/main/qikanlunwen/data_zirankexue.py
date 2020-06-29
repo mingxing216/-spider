@@ -14,6 +14,7 @@ import hashlib
 import random
 import requests
 from datetime import datetime
+from contextlib import closing
 import json
 import threading
 from io import BytesIO
@@ -94,27 +95,38 @@ class SpiderMain(BastSpiderMain):
         # media_resp.encoding = media_resp.apparent_encoding
         # pdf_content = pdf_resp.content
 
-        bytes_container = BytesIO()
-        time_begin = time.time()
-        try:
-            for chunk in pdf_resp.iter_content(chunk_size=8192):
-                time_end = time.time()
-                if time_end - time_begin >= 2:
-                    LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
-                    # 存储文档种子
-                    self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-                    return
+        # 始终释放连接
+        with closing(pdf_resp) as response:
+            bytes_container = BytesIO()
+            # time_begin = time.time()
+            try:
+                for chunk in response.iter_content(chunk_size=10240):
+                    if chunk:
+                        # time_end = time.time()
+                        # if time_end - time_begin >= 3:
+                        #     LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                        #     # 存储文档种子
+                        #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+                        #     return
 
-                bytes_container.write(chunk)
-                time_begin = time.time()
-            pdf_content = bytes_container.getvalue()
-        except Exception as e:
-            LOGGING.info("handle | 获取内容失败 | use time: {}s | length: {} | message: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue()), e))
+                        bytes_container.write(chunk)
+                        # time_begin = time.time()
+                pdf_content = bytes_container.getvalue()
+            except Exception as e:
+                LOGGING.info("handle | 获取内容失败 | use time: {}s | length: {} | message: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue()), e))
+                # 存储文档种子
+                self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+                return
+
+        # 判断内容获取是否完整
+        if len(pdf_content) >= len(pdf_resp.headers['Content-Length']):
+            LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
+        else:
+            LOGGING.info('handle | 获取内容不完整, 取消保存 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
             # 存储文档种子
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
 
-        LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         LOGGING.info('结束获取内容')
