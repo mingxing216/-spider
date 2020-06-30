@@ -64,11 +64,11 @@ class SpiderMain(BastSpiderMain):
 
         self.profile_url = 'http://ir.nsfc.gov.cn/baseQuery/data/paperInfo'
 
-    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
         # 发现验证码，请求页面3次
         for i in range(3):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
-                                                    cookies=cookies, referer=referer)
+                                                    cookies=cookies, referer=referer, ranges=ranges)
             if resp and resp.headers['Content-Type'].startswith('text'):
                 if '请输入验证码' in resp.text:
                     LOGGING.error('出现验证码: {}'.format(url))
@@ -95,38 +95,45 @@ class SpiderMain(BastSpiderMain):
         # media_resp.encoding = media_resp.apparent_encoding
         # pdf_content = pdf_resp.content
 
-        # 释放连接
-        with closing(pdf_resp) as response:
-            bytes_container = BytesIO()
-            # time_begin = time.time()
+        # 内存中读写
+        bytes_container = BytesIO()
+
+        # time_begin = time.time()
+        while True:
             try:
-                for chunk in response.iter_content(chunk_size=10240):
-                    if chunk:
-                        # time_end = time.time()
-                        # if time_end - time_begin >= 8:
-                        #     LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
-                        #     # 存储文档种子
-                        #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-                        #     return
+                # 自动释放连接
+                with closing(pdf_resp) as response:
+                    for chunk in response.iter_content(chunk_size=10240):
+                        if chunk:
+                            # time_end = time.time()
+                            # if time_end - time_begin >= 2:
+                            #     LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                            #     # 存储文档种子
+                            #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+                            #     return
 
-                        bytes_container.write(chunk)
-                        # time_begin = time.time()
-                pdf_content = bytes_container.getvalue()
+                            bytes_container.write(chunk)
+                            # time_begin = time.time()
             except Exception as e:
-                LOGGING.info("handle | 获取内容失败 | use time: {}s | length: {} | message: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue()), e))
-                # 存储文档种子
-                self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-                return
+                LOGGING.info("handle | 获取内容失败, 断点续传 | use time: {}s | length: {} | message: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue()), e))
+                # 请求头增加参数
+                ranges = 'bytes=%d-' % len(bytes_container.getvalue())
+                # 断点续传
+                pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
 
-        # 判断内容获取是否完整
-        if len(pdf_content) >= int(pdf_resp.headers['Content-Length']):
-            LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
-        else:
-            LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(pdf_content)))
-            # 存储文档种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-            return
+            # 判断内容获取是否完整
+            if pdf_resp.raw.tell() >= int(pdf_resp.headers['Content-Length']):
+                LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                break
+            else:
+                LOGGING.info('handle | 获取内容不完整, 断点续传 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                # 请求头增加参数
+                ranges = 'bytes=%d-' % len(bytes_container.getvalue())
+                # 断点续传
+                pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
 
+        # 获取二进制内容
+        pdf_content = bytes_container.getvalue()
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         LOGGING.info('结束获取内容')

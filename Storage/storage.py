@@ -324,7 +324,7 @@ class Dao(object):
         dbs = base64.b64decode(content_bs64)
         # # 内存中打开图片
         # img = Image.open(BytesIO(content))
-        sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest() + '1'
+        sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
         # sha = int(random.random()*10000000000000000)
 
         data_dict = {

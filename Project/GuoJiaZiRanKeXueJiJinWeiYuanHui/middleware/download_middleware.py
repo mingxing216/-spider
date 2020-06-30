@@ -25,10 +25,10 @@ class Downloader(downloader.BaseDownloader):
         self.proxy_type = proxy_type
         self.proxy_obj = proxy.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
 
-    def getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+    def getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
         start_time = time.time()
         self.logging.info('开始下载附件')
-        ret = self._getResp(url, method, s, data, cookies, referer)
+        ret = self._getResp(url, method, s, data, cookies, referer, ranges)
         if ret:
             self.logging.info('handle | 下载附件成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
@@ -37,7 +37,7 @@ class Downloader(downloader.BaseDownloader):
         self.logging.info('结束下载附件')
         return ret
 
-    def _getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+    def _getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
         # 响应状态码错误重试次数
         stat_count = 0
         # 请求异常重试次数
@@ -51,7 +51,8 @@ class Downloader(downloader.BaseDownloader):
                 # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
                 # 'Content-Type': 'application/json',
                 'Referer': referer,
-                'Connection': 'close',
+                'Range': ranges,
+                # 'Connection': 'close',
                 # 'Host': 'http://www.chinabgao.com/',
                 'User-Agent': user_agent_u.get_ua()
             }

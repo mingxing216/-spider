@@ -19,7 +19,7 @@ def _error(func):
     def wrapper(*args, **kwargs):
         try:
             data = func(*args, **kwargs)
-            if data.status_code == 200:
+            if data.status_code in [200, 206]:
                 return {'code': 0, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
             else:
