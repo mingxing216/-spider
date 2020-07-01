@@ -93,47 +93,59 @@ class SpiderMain(BastSpiderMain):
             self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
         # media_resp.encoding = media_resp.apparent_encoding
-        # pdf_content = pdf_resp.content
+        # 判断内容获取是否完整
+        if pdf_resp.raw.tell() >= int(pdf_resp.headers['Content-Length']):
+            LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), pdf_resp.raw.tell()))
+            pdf_content = pdf_resp.content
+        else:
+            LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), pdf_resp.raw.tell()))
+            return
 
-        # 内存中读写
-        bytes_container = BytesIO()
-
-        # time_begin = time.time()
-        while True:
-            try:
-                # 自动释放连接
-                with closing(pdf_resp) as response:
-                    for chunk in response.iter_content(chunk_size=10240):
-                        if chunk:
-                            # time_end = time.time()
-                            # if time_end - time_begin >= 2:
-                            #     LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
-                            #     # 存储文档种子
-                            #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-                            #     return
-
-                            bytes_container.write(chunk)
-                            # time_begin = time.time()
-            except Exception as e:
-                LOGGING.info("handle | 获取内容失败, 断点续传 | use time: {}s | length: {} | message: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue()), e))
-                # 请求头增加参数
-                ranges = 'bytes=%d-' % len(bytes_container.getvalue())
-                # 断点续传
-                pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
-
-            # 判断内容获取是否完整
-            if pdf_resp.raw.tell() >= int(pdf_resp.headers['Content-Length']):
-                LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
-                break
-            else:
-                LOGGING.info('handle | 获取内容不完整, 断点续传 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
-                # 请求头增加参数
-                ranges = 'bytes=%d-' % len(bytes_container.getvalue())
-                # 断点续传
-                pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
-
-        # 获取二进制内容
-        pdf_content = bytes_container.getvalue()
+        # # 内存中读写
+        # bytes_container = BytesIO()
+        #
+        # # time_begin = time.time()
+        # # for i in range(3):
+        # try:
+        #     # 自动释放连接
+        #     with closing(pdf_resp) as response:
+        #         for chunk in response.iter_content(chunk_size=10240):
+        #             if chunk:
+        #                 # time_end = time.time()
+        #                 # if time_end - time_begin >= 2:
+        #                 #     LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+        #                 #     # 存储文档种子
+        #                 #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+        #                 #     return
+        #
+        #                 bytes_container.write(chunk)
+        #                 # time_begin = time.time()
+        # except Exception as e:
+        #     LOGGING.info("handle | 获取内容失败 | use time: {}s | length: {} | message: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue()), e))
+        #     return
+        #     # # 请求头增加参数
+        #     # ranges = 'bytes=%d-' % len(bytes_container.getvalue())
+        #     # # 断点续传
+        #     # pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
+        #
+        # # 判断内容获取是否完整
+        # if pdf_resp.raw.tell() >= int(pdf_resp.headers['Content-Length']):
+        #     LOGGING.info('handle | 获取内容成功 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+        #     # break
+        # else:
+        #     LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+        #     return
+        #     # # 请求头增加参数
+        #     # ranges = 'bytes=%d-' % len(bytes_container.getvalue())
+        #     # # 断点续传
+        #     # pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
+        # # else:
+        # #     LOGGING.info('handle | 获取内容失败, 存储文档种子 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+        # #     # 存储文档种子
+        # #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+        # #     return
+        # # 获取二进制内容
+        # pdf_content = bytes_container.getvalue()
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
         LOGGING.info('结束获取内容')
@@ -380,15 +392,15 @@ class SpiderMain(BastSpiderMain):
         #     g_list.append(s)
         # gevent.joinall(g_list)
 
-        # self.run()
+        self.run()
 
-        # 创建线程池
-        threadpool = ThreadPool(processes=config.THREAD_NUM)
-        for i in range(config.THREAD_NUM):
-            threadpool.apply_async(func=self.run)
-
-        threadpool.close()
-        threadpool.join()
+        # # 创建线程池
+        # threadpool = ThreadPool(processes=config.THREAD_NUM)
+        # for i in range(config.THREAD_NUM):
+        #     threadpool.apply_async(func=self.run)
+        #
+        # threadpool.close()
+        # threadpool.join()
 
 def process_start():
     main = SpiderMain()
@@ -402,13 +414,13 @@ def process_start():
 if __name__ == '__main__':
     LOGGING.info('======The Start!======')
     begin_time = time.time()
-    # process_start()
+    process_start()
 
-    po = Pool(processes=config.PROCESS_NUM)
-    for i in range(config.PROCESS_NUM):
-        po.apply_async(func=process_start)
-    po.close()
-    po.join()
+    # po = Pool(processes=config.PROCESS_NUM)
+    # for i in range(config.PROCESS_NUM):
+    #     po.apply_async(func=process_start)
+    # po.close()
+    # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('====== Time consuming is %.2fs ======' %(end_time - begin_time))
