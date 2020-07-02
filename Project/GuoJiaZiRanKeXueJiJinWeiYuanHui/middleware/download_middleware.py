@@ -89,7 +89,7 @@ class Downloader(downloader.BaseDownloader):
                 if down_data['status'] == 404:
                     return
                 else:
-                    if stat_count >= 5:
+                    if stat_count >= 2:
                         return
                     else:
                         stat_count += 1
@@ -101,7 +101,7 @@ class Downloader(downloader.BaseDownloader):
                 dec = self.proxy_obj.dec_proxy(ip)
                 self.logging.info('handle | 代理IP权重减1 | use time: {}s'.format('%.3f' % (time.time() - dec_time)))
                 # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
-                if err_count >= 5:
+                if err_count >= 2:
                     return
                 else:
                     err_count += 1
