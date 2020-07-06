@@ -80,7 +80,7 @@ class SpiderMain(BastSpiderMain):
             return
 
     # 获取文档实体字段
-    def document(self, pdf_dict, sha):
+    def document(self, pdf_dict):
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
         LOGGING.info('开始获取内容')
@@ -89,8 +89,8 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-            # 存储文档种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            # # 存储文档种子
+            # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
         # media_resp.encoding = media_resp.apparent_encoding
         # 判断内容获取是否完整
@@ -158,8 +158,9 @@ class SpiderMain(BastSpiderMain):
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-            # 存储文档种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            # # 存储文档种子
+            # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            return
 
         # 文档数据存储字典
         doc_data = {}
@@ -206,6 +207,7 @@ class SpiderMain(BastSpiderMain):
 
         if sto:
             LOGGING.info('文档数据存储成功, sha: {}'.format(doc_data['sha']))
+            return True
         else:
             LOGGING.error('文档数据存储失败, url: {}'.format(doc_data['url']))
             # # 逻辑删除任务
@@ -308,11 +310,14 @@ class SpiderMain(BastSpiderMain):
             pdf_dict['relPics'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
 
             # 存储文档实体及文档本身
-            self.document(pdf_dict=pdf_dict, sha=sha)
+            suc = self.document(pdf_dict=pdf_dict)
+            if not suc:
+                return
+
         else:
             save_data['guanLianWenDang'] = {}
 
-            # ======================公共字段
+        # ======================公共字段
         # url
         save_data['url'] = url
         # 生成key
@@ -330,16 +335,13 @@ class SpiderMain(BastSpiderMain):
         # 生成ref
         save_data['ref'] = ''
 
-        # # 返回sha为删除任务做准备
-        # return sha
-
     def run(self):
         #第一次请求的等待时间
         delay_time = time.time()
         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
         LOGGING.info('handle | download delay | use time: {}s'.format('%.3f' % (time.time() - delay_time)))
 
-        while 1:
+        while True:
             # 获取任务
             start_time = time.time()
             task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_TEST, count=1,
@@ -357,10 +359,10 @@ class SpiderMain(BastSpiderMain):
                         # 保存数据到Hbase
                         if not save_data:
                             LOGGING.info('没有获取数据, 存储失败')
-                            return
+                            continue
                         if 'sha' not in save_data:
                             LOGGING.info('数据获取不完整, 存储失败')
-                            return
+                            continue
                         LOGGING.info('论文数据开始存储')
                         # 存储数据
                         success = self.dao.saveDataToHbase(data=save_data)
@@ -375,7 +377,7 @@ class SpiderMain(BastSpiderMain):
                             # self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
 
                         # 逻辑删除任务
-                        self.dao.finishTask(table=config.MYSQL_TEST, sha=sha)
+                        self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
 
                         LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 

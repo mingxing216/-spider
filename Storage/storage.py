@@ -546,14 +546,14 @@ class Dao(object):
         }
         if sha:
             try:
-                self.mysql_client.update(table=table, data=data, where="sha = '{}'".format(sha))
+                self.mysql_client.update(table=table, data=data, where="`sha` = '{}' and `del` = '0'".format(sha))
                 self.logging.info('任务已逻辑删除: {}'.format(sha))
             except:
                 self.logging.warning('任务逻辑删除异常: {}'.format(sha))
 
         elif url:
             try:
-                self.mysql_client.update(table=table, data=data, where="url = '{}'".format(url))
+                self.mysql_client.update(table=table, data=data, where="url = '{}' and `del` = '0'".format(url))
                 self.logging.info('任务已逻辑删除: {}'.format(url))
             except:
                 self.logging.warning('任务逻辑删除异常: {}'.format(url))
@@ -570,14 +570,14 @@ class Dao(object):
         }
         if sha:
             try:
-                self.mysql_client.update(table=table, data=data, where="sha = '{}'".format(sha))
+                self.mysql_client.update(table=table, data=data, where="`sha` = '{}' and `del` = '0'".format(sha))
                 self.logging.info('任务已完成: {}'.format(sha))
             except:
                 self.logging.warning('已完成任务标记异常: {}'.format(sha))
 
         elif url:
             try:
-                self.mysql_client.update(table=table, data=data, where="url = '{}'".format(url))
+                self.mysql_client.update(table=table, data=data, where="url = '{}' and `del` = '0'".format(url))
                 self.logging.info('任务已完成: {}'.format(url))
             except:
                 self.logging.warning('已完成任务标记异常: {}'.format(url))
