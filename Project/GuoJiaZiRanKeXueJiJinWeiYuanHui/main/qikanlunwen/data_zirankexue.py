@@ -375,7 +375,7 @@ class SpiderMain(BastSpiderMain):
                             # self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
 
                         # 逻辑删除任务
-                        self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+                        self.dao.finishTask(table=config.MYSQL_TEST, sha=sha)
 
                         LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 

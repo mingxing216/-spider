@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
 from Utils import user_agent_u
 from Utils import proxy
-
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
 class Downloader(downloader.BaseDownloader):
@@ -93,6 +93,7 @@ class Downloader(downloader.BaseDownloader):
                         return
                     else:
                         stat_count += 1
+                        time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
                         continue
 
             if down_data['code'] == 2:
@@ -105,6 +106,7 @@ class Downloader(downloader.BaseDownloader):
                     return
                 else:
                     err_count += 1
+                    time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
                     continue
 
     # 创建COOKIE

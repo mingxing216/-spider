@@ -557,3 +557,27 @@ class Dao(object):
                 self.logging.info('任务已逻辑删除: {}'.format(url))
             except:
                 self.logging.warning('任务逻辑删除异常: {}'.format(url))
+
+    def finishTask(self, table, sha=None, url=None):
+        start_time = time.time()
+        self.__finishTask(table, sha, url)
+        self.logging.info('handle | 任务已完成 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+
+    # mysql中已完成任务
+    def __finishTask(self, table, sha=None, url=None):
+        data = {
+            'del': '2'
+        }
+        if sha:
+            try:
+                self.mysql_client.update(table=table, data=data, where="sha = '{}'".format(sha))
+                self.logging.info('任务已完成: {}'.format(sha))
+            except:
+                self.logging.warning('已完成任务标记异常: {}'.format(sha))
+
+        elif url:
+            try:
+                self.mysql_client.update(table=table, data=data, where="url = '{}'".format(url))
+                self.logging.info('任务已完成: {}'.format(url))
+            except:
+                self.logging.warning('已完成任务标记异常: {}'.format(url))
