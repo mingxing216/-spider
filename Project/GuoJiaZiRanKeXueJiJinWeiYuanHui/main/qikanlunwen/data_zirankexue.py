@@ -359,9 +359,15 @@ class SpiderMain(BastSpiderMain):
                         # 保存数据到Hbase
                         if not save_data:
                             LOGGING.info('没有获取数据, 存储失败')
+                            # 逻辑删除任务
+                            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+                            LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                             continue
                         if 'sha' not in save_data:
                             LOGGING.info('数据获取不完整, 存储失败')
+                            # 逻辑删除任务
+                            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+                            LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                             continue
                         LOGGING.info('论文数据开始存储')
                         # 存储数据
@@ -376,9 +382,8 @@ class SpiderMain(BastSpiderMain):
                             # # 逻辑删除任务
                             # self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
 
-                        # 逻辑删除任务
-                        self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
-
+                        # 已完成任务
+                        self.dao.finishTask(table=config.MYSQL_TEST, sha=sha)
                         LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
                     except:
