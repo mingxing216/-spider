@@ -93,15 +93,30 @@ class SpiderMain(BastSpiderMain):
             # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
         # media_resp.encoding = media_resp.apparent_encoding
-        # 判断内容获取是否完整
-        if pdf_resp.raw.tell() >= int(pdf_resp.headers['Content-Length']):
-            LOGGING.info('handle | 获取内容完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), pdf_resp.raw.tell()))
-            # 获取二进制内容
-            pdf_content = pdf_resp.content
+        # 内存中读写
+        bytes_container = BytesIO()
+        # 断点续爬，重试3次
+        for i in range(3):
+            # 判断内容获取是否完整
+            if pdf_resp.raw.tell() >= int(pdf_resp.headers['Content-Length']):
+                # 获取二进制内容
+                bytes_container.write(pdf_resp.content)
+                LOGGING.info('handle | 获取内容完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                # pdf_content += pdf_resp.content
+                break
+            else:
+                # 获取二进制内容
+                bytes_container.write(pdf_resp.content)
+                LOGGING.info('handle | 获取内容失败 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                # # 存储文档种子
+                # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+                # 请求头增加参数
+                ranges = 'bytes=%d-' % len(bytes_container.getvalue())
+                # 断点续传
+                pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
+                continue
         else:
-            LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), pdf_resp.raw.tell()))
-            # # 存储文档种子
-            # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
             return
 
         # # 内存中读写
@@ -146,8 +161,8 @@ class SpiderMain(BastSpiderMain):
         #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
         #     return
         #
-        # # 获取二进制内容
-        # pdf_content = bytes_container.getvalue()
+        # 获取二进制内容
+        pdf_content = bytes_container.getvalue()
 
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
