@@ -114,6 +114,9 @@ class SpiderMain(BastSpiderMain):
                 ranges = 'bytes=%d-' % len(bytes_container.getvalue())
                 # 断点续传
                 pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
+                if not pdf_resp:
+                    LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
+                    return
                 continue
         else:
             LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
