@@ -286,7 +286,7 @@ class RedisPoolUtils(object):
 
 
 if __name__ == '__main__':
-    obj = RedisPoolUtils()
+    obj = RedisPoolUtils(5)
     data = obj.smembers(key='demo')
     print(data)
 

@@ -182,7 +182,7 @@ class Dao(object):
     def QueueJobTask(self, key, data):
         if data:
             for url in data:
-                self.redis_client.sadd(key=key, value=str(url))
+                self.redis_client.sadd(key=key, value=json.dumps(url, ensure_ascii=False))
             self.logging.info('已队列 {} 条种子'.format(len(data)))
 
         else:
@@ -191,7 +191,7 @@ class Dao(object):
     # 队列一条种子任务
     def QueueOneTask(self, key, data):
         if data:
-            self.redis_client.sadd(key=key, value=str(data))
+            self.redis_client.sadd(key=key, value=json.dumps(data, ensure_ascii=False))
             self.logging.info('已队列1条种子')
 
         else:

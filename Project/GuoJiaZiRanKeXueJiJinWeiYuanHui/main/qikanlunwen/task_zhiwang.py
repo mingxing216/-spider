@@ -122,7 +122,7 @@ class SpiderMain(BastSpiderMain):
                     LOGGING.info('正确匹配结果, url: {}, title: {}'.format(task.get('url'), task.get('chineseTitle')))
                     # 存储到mysql数据库
                     # task['url'] = data['url']
-                    # self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=task, ws='中国知网', es='论文_profile')
+                    self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=task, ws='中国知网', es='论文_profile')
                     break
             else:
                 LOGGING.error('无匹配结果, url: {}, title: {}'.format(task.get('url'), task.get('chineseTitle')))

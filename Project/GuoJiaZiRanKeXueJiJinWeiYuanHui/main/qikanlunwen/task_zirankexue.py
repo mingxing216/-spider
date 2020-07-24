@@ -3,9 +3,9 @@
 '''
 
 '''
-import gevent
-from gevent import monkey
-monkey.patch_all()
+# import gevent
+# from gevent import monkey
+# monkey.patch_all()
 import sys
 import os
 import json
@@ -67,13 +67,12 @@ class SpiderMain(BastSpiderMain):
                                                     cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text:
-                    LOGGING.error('出现验证码')
+                    LOGGING.error('出现验证码: {}'.format(url))
                     continue
 
             return resp
 
         else:
-            LOGGING.error('页面出现验证码: {}'.format(url))
             return
 
     def getCatalog(self):
@@ -104,93 +103,91 @@ class SpiderMain(BastSpiderMain):
             self.num += 1
             LOGGING.info('当前已抓种子数量: {}'.format(self.num))
             # 存入数据库
-            self.dao.saveTaskToMysql(table=config.MYSQL_TEST, memo=url, ws='中国知网', es='论文_catalog')
+            self.dao.saveTaskToMysql(table=config.MYSQL_TEST, memo=url, ws='国家自然科学基金委员会', es='论文')
 
-    def run(self, category):
-        # 数据类型转换
-        task = self.server.getEvalResponse(category)
-        # print(task)
-        code = task['code']
-        num = task['num']
-        xueKeLeiBie = task['xueKeLeiBie']
-        totalCount = task['totalCount']
-        totalPages = int(int(totalCount)/10)
-
-        # 遍历列表页，获取详情页url
-        for i in range(num, totalPages+1):
-            data = {
-                'query': '',
-                'fieldCode': code,
-                'supportType': '',
-                'organizationID': '',
-                'title': '',
-                'authorID': '',
-                'journalName': '',
-                'orderBy': 'rel',
-                'orderType': 'desc',
-                'year': '',
-                'pageNum': i,
-                'pageSize': 10
-            }
-
-            # 获取列表页
-            catalog_resp = self.__getResp(url=self.base_url, method='POST', data=json.dumps(data))
-            if not catalog_resp:
-                LOGGING.error('第{}页列表页响应失败, url: {}'.format(i+1, self.base_url))
-                # 队列一条任务
-                task['num'] = i
-                self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)
-                return
-
-            catalog_resp.encoding = catalog_resp.apparent_encoding
-            try:
-                catalog_json = catalog_resp.json()
-                LOGGING.info('已翻到第{}页'.format(i+1))
-                # print(json.dumps(catalog_json, indent=4, sort_keys=True))
-
-                # 获取详情url
-                self.getProfile(json=catalog_json, xuekeleibie=xueKeLeiBie)
-
-            except Exception:
-                LOGGING.error('列表页json内容获取失败')
-                # 队列一条任务
-                task['num'] = i
-                self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)
-                return
-
-        else:
-            LOGGING.info('已翻到最后一页')
-
-    def start(self):
+    def run(self):
         while 1:
             # 获取任务
             category_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_CATALOG,
-                                             count=4,
+                                             count=1,
                                              lockname=config.REDIS_ZIRANKEXUE_CATALOG_LOCK)
             # print(category_list)
-            LOGGING.info('获取{}个任务'.format(len(category_list)))
-
             if category_list:
-                # 创建gevent协程
-                g_list = []
                 for category in category_list:
-                    s = gevent.spawn(self.run, category)
-                    g_list.append(s)
-                gevent.joinall(g_list)
+                    # 数据类型转换
+                    task = json.loads(category)
+                    print(task)
+                    code = task['code']
+                    num = task['num']
+                    xueKeLeiBie = task['fieldName']
+                    totalCount = task['totalCount']
+                    totalPages = int(int(totalCount)/10)
 
-                # # 创建线程池
-                # threadpool = ThreadPool()
-                # for category in category_list:
-                #     threadpool.apply_async(func=self.run, args=(category,))
-                #
-                # threadpool.close()
-                # threadpool.join()
+                    # 遍历列表页，获取详情页url
+                    for i in range(num, totalPages+1):
+                        data = {
+                            'query': '',
+                            'fieldCode': code,
+                            'supportType': '',
+                            'organizationID': '',
+                            'title': '',
+                            'authorID': '',
+                            'journalName': '',
+                            'orderBy': 'rel',
+                            'orderType': 'desc',
+                            'year': '',
+                            'pageNum': i,
+                            'pageSize': 10
+                        }
 
-                time.sleep(1)
+                        # 获取列表页
+                        catalog_resp = self.__getResp(url=self.base_url, method='POST', data=json.dumps(data))
+                        if not catalog_resp:
+                            LOGGING.error('第{}页列表页响应失败, url: {}'.format(i+1, self.base_url))
+                            # 队列一条任务
+                            task['num'] = i
+                            self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)
+                            break
+
+                        catalog_resp.encoding = catalog_resp.apparent_encoding
+                        try:
+                            catalog_json = catalog_resp.json()
+                            LOGGING.info('已翻到第{}页'.format(i+1))
+                            # print(json.dumps(catalog_json, indent=4, sort_keys=True))
+
+                            # 获取详情url
+                            self.getProfile(json=catalog_json, xuekeleibie=xueKeLeiBie)
+
+                        except Exception:
+                            LOGGING.error('列表页json内容获取失败')
+                            # 队列一条任务
+                            task['num'] = i
+                            self.dao.QueueOneTask(key=config.REDIS_ZIRANKEXUE_CATALOG, data=task)
+                            return
+
+                    else:
+                        LOGGING.info('已翻到最后一页')
+
             else:
                 LOGGING.info('队列中已无任务，结束程序')
-                return
 
+    def start(self):
+        # # 创建gevent协程
+        # g_list = []
+        # for category in category_list:
+        #     s = gevent.spawn(self.run, category)
+        #     g_list.append(s)
+        # gevent.joinall(g_list)
+
+        # self.run()
+
+        # 创建线程池
+        threadpool = ThreadPool(processes=4)
+        for i in range(4):
+            threadpool.apply_async(func=self.run)
+
+        threadpool.close()
+        threadpool.join()
 
 def process_start():
     main = SpiderMain()

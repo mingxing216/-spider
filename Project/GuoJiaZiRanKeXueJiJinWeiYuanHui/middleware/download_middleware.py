@@ -27,14 +27,14 @@ class Downloader(downloader.BaseDownloader):
 
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
         start_time = time.time()
-        self.logging.info('开始下载附件')
+        self.logging.info('开始下载')
         ret = self._getResp(url, method, s, data, cookies, referer, ranges)
         if ret:
-            self.logging.info('handle | 下载附件成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 下载成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('handle | 下载附件失败 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 下载失败 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
-        self.logging.info('结束下载附件')
+        self.logging.info('结束下载')
         return ret
 
     def _getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
@@ -49,7 +49,7 @@ class Downloader(downloader.BaseDownloader):
                 # 'Accept-Language': 'zh-CN,zh;q=0.9',
                 # 'Accept-Encoding': 'gzip, deflate, br',
                 # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                # 'Content-Type': 'application/json',
+                'Content-Type': 'application/json',
                 'Referer': referer,
                 'Range': ranges,
                 # 'Connection': 'close',

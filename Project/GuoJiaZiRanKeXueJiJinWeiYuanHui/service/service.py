@@ -36,30 +36,29 @@ class Server(object):
         try:
             datas = json['data']
             for data in datas:
-                dict = {}
-                dict['code'] = data['code']
+                data_dict = {}
+                data_dict['code'] = data['code']
                 # 请求第一页
-                dict['num'] = 0
-                dict['xueKeLeiBie'] = data['depC']
-                dict['totalCount'] = data['num']
-                return_data.append(dict)
+                data_dict['num'] = 0
+                data_dict['fieldName'] = data['depC']
+                data_dict['totalCount'] = data['num']
+                return_data.append(data_dict)
 
         except Exception:
             return return_data
 
         return return_data
 
-    # 获取详情种子
+    # 获取详情种子及附加信息
     def getDetailUrl(self, json, xuekeleibie):
         return_data = []
         try:
             datas = json['data']
             for data in datas:
-                data['xueKeLeiBie'] = xuekeleibie
+                data['fieldName'] = xuekeleibie
                 data['chineseTitle'] = re.sub(r"(\(|（)[^\(（）\)]*?(）|\))$", "", data['chineseTitle']).strip()
                 data['authors'] = re.sub(r"(\(\)|\(#\)|\(\*\)|<.*?>)", "", data['authors']).strip()
-                t = round(time.time()* 1000)
-                data['url'] = 'http://kns.cnki.net/kns/brief/brief.aspx?pagename=ASP.brief_default_result_aspx&isinEn=1&dbPrefix=SCDB&dbCatalog=%e4%b8%ad%e5%9b%bd%e5%ad%a6%e6%9c%af%e6%96%87%e7%8c%ae%e7%bd%91%e7%bb%9c%e5%87%ba%e7%89%88%e6%80%bb%e5%ba%93&ConfigFile=SCDBINDEX.xml&research=off&t=' + str(t) + '&keyValue=' + quote(data['chineseTitle']) + '&S=1&sorttype='
+                data['url'] = 'http://ir.nsfc.gov.cn/paperDetail/' + data['id']
                 data['pdfUrl'] = 'http://ir.nsfc.gov.cn/paperDownload/' + data['fulltext'] + '.pdf'
                 return_data.append(data)
 
@@ -80,7 +79,7 @@ class Server(object):
 
         return num
 
-    # 获取搜索结果条数
+    # 获取下页
     def nextPage(self, text):
         selector = Selector(text=text)
         try:
