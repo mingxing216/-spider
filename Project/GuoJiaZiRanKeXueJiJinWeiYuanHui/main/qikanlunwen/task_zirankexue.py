@@ -116,7 +116,7 @@ class SpiderMain(BastSpiderMain):
                 for category in category_list:
                     # 数据类型转换
                     task = json.loads(category)
-                    print(task)
+                    # print(task)
                     code = task['code']
                     num = task['num']
                     xueKeLeiBie = task['fieldName']

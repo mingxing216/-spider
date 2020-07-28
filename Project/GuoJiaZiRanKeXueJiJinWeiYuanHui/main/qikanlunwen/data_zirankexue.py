@@ -12,6 +12,7 @@ import time
 import traceback
 import hashlib
 import random
+import re
 import requests
 from datetime import datetime
 from contextlib import closing
@@ -172,7 +173,7 @@ class SpiderMain(BastSpiderMain):
         LOGGING.info('结束获取内容')
 
         # 存储文档
-        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='test')
+        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document')
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
@@ -184,20 +185,13 @@ class SpiderMain(BastSpiderMain):
         doc_data = {}
         # 获取标题
         doc_data['title'] = pdf_dict['bizTitle']
-        # 获取URL
-        doc_data['xiaZaiLianJie'] = pdf_dict['url']
         # 文档内容
-        doc_data['labelObj'] = self.server.getDocs(pdf_dict)
-        # 获取格式
-        doc_data['geShi'] = ""
-        # 获取大小
-        doc_data['daXiao'] = ""
-        # 获取标签
-        doc_data['biaoQian'] = ""
+        size = pdf_resp.headers.get('Content-Length', '')
+        doc_data['labelObj'] = self.server.getDocs(pdf_dict, size)
         # 获取来源网站
-        doc_data['laiYuanWangZhan'] = ""
+        doc_data['sourceWebSite'] = ""
         # 关联论文
-        doc_data['guanLianLunWen'] = pdf_dict['relEsse']
+        doc_data['relaPaper'] = pdf_dict['relEsse']
 
         # ===================公共字段
         # url
@@ -218,6 +212,20 @@ class SpiderMain(BastSpiderMain):
         doc_data['biz'] = '文献大数据_论文'
         # 生成ref
         doc_data['ref'] = ''
+        # 采集时间
+        doc_data['createTime'] = timeutils.getNowDatetime()
+        # 采集责任人
+        doc_data['creator'] = '张明星'
+        # 更新时间
+        doc_data['lastModifiedTime'] = ''
+        # 更新责任人
+        doc_data['modifiedBy'] = ''
+        # 采集服务器集群
+        doc_data['cluster'] = 'crawler'
+        # 元数据版本号
+        doc_data['metadataVersion'] = 'V1.1'
+        # 采集脚本版本号
+        doc_data['scriptVersion'] = 'V1.3'
 
         LOGGING.info('文档数据开始存储')
         # 保存数据到Hbase
@@ -240,10 +248,10 @@ class SpiderMain(BastSpiderMain):
         url = task_data.get('url')
         xueKeLeiBie = task_data.get('fieldName')
 
-        # 请求详情页
+        # POST请求参数
         payload = {'achievementID': id}
 
-        # 获取列表页
+        # 获取详情页
         profile_resp = self.__getResp(url=self.profile_url, method='POST', data=json.dumps(payload))
         if not profile_resp:
             LOGGING.error('详情页响应失败, url: {}'.format(url))
@@ -263,82 +271,98 @@ class SpiderMain(BastSpiderMain):
         # 获取标题
         save_data['title'] = task_data.get('chineseTitle')
         # 获取作者
-        save_data['zuoZhe'] = self.server.getMoreFieldValue(task_data.get('authors'))
+        save_data['author'] = self.server.getMoreFieldValue(task_data.get('authors'))
         # 获取成果类型
         productType = int(task_data.get('productType'))
         if productType == 3:
             # 成果类型
-            save_data['chengGuoLeiXing'] = '会议论文'
+            save_data['type'] = '会议论文'
             # es ——栏目名称
             save_data['es'] = '会议论文'
             # 获取会议名称
-            save_data['huiYiMingCheng'] = task_data.get('journal')
+            save_data['conferenceName'] = task_data.get('journal')
             # 获取语种
-            if save_data['huiYiMingCheng']:
+            if task_data.get('journal'):
                 hasChinese = self.server.hasChinese(task_data.get('journal'))
                 if hasChinese:
-                    save_data['yuZhong'] = "中文"
+                    save_data['language'] = "中文"
                 else:
-                    save_data['yuZhong'] = "英文"
+                    save_data['language'] = "英文"
             else:
-                save_data['yuZhong'] = ""
+                save_data['language'] = ""
         elif productType == 4:
             # 成果类型
-            save_data['chengGuoLeiXing'] = '期刊论文'
+            save_data['type'] = '期刊论文'
             # es ——栏目名称
             save_data['es'] = '期刊论文'
             # 获取期刊名称
-            save_data['qiKanMingCheng'] = task_data.get('journal')
+            save_data['journalName'] = task_data.get('journal')
             # 获取语种
-            if save_data['qiKanMingCheng']:
+            if task_data.get('journal'):
                 hasChinese = self.server.hasChinese(task_data.get('journal'))
                 if hasChinese:
-                    save_data['yuZhong'] = "中文"
+                    save_data['language'] = "中文"
                 else:
-                    save_data['yuZhong'] = "英文"
+                    save_data['language'] = "英文"
             else:
-                save_data['yuZhong'] = ""
+                save_data['language'] = ""
         # 获取数字对象标识符
-        save_data['DOI'] = task_data.get('doi')
+        save_data['doi'] = {}
+        save_data['doi']['doi'] = task_data.get('doi')
+        save_data['doi']['doiUrl'] = task_data.get('doiUrl')
         # 获取时间
         shiJian = task_data.get('publishDate')
         if shiJian:
             try:
-                save_data['shiJian'] = timeutils.getDateTimeRecord(shiJian)
+                save_data['date'] = timeutils.getDateTimeRecord(shiJian)
 
             except:
-                save_data['shiJian'] = shiJian
+                save_data['date'] = shiJian
         else:
-            save_data['shiJian'] = ""
-        # 获取关键词
-        save_data['guanJianCi'] = self.server.getMoreFieldValue(task_data.get('zhKeyword'))
+            save_data['date'] = ""
+        # 获取年
+        year = task_data.get('publishDate')
+        if year:
+            save_data['year'] = re.findall(r"\d{4}", year)[0]
+        else:
+            save_data['year'] = ""
+            # 获取关键词
+        save_data['keyword'] = {}
+        save_data['keyword']['text'] = self.server.getMoreFieldValue(task_data.get('zhKeyword'))
+        save_data['keyword']['lang'] = save_data['Language']
         # 获取摘要
-        save_data['zhaiYao'] = task_data.get('zhAbstract')
+        save_data['abstract'] = {}
+        save_data['abstract']['text'] = task_data.get('zhAbstract')
+        save_data['abstract']['lang'] = save_data['Language']
+        # 获取项目
+        save_data['funders'] = {}
         # 获取项目类型
-        save_data['xinagMuLeiXing'] = task_data.get('supportTypeName')
+        save_data['funders']['projectType'] = task_data.get('supportTypeName')
         # 获取项目编号
-        save_data['xinagMuBianHao'] = task_data.get('fundProjectNo')
+        save_data['funders']['projectNumber'] = task_data.get('fundProjectNo')
         # 获取项目名称
-        save_data['xinagMuMingCheng'] = task_data.get('fundProject')
+        save_data['funders']['projectName'] = task_data.get('fundProject')
+        # 项目代码
+        save_data['funders']['projectCode'] = task_data.get('fundProjectCode')
         # 获取研究机构
-        save_data['yanJiuJiGou'] = task_data.get('organization')
+        save_data['orgnizationName'] = task_data.get('organization')
         # 获取点击量
-        save_data['dianJiLiang'] = task_data.get('browseCount')
+        save_data['onlineReading'] = browseCount
         # 获取下载次数
-        save_data['xiaZaiCiShu'] = task_data.get('downloadCount')
-        # 获取其它来源网站
-        save_data['qiTaLaiYuanWangZhan'] = task_data.get('doiUrl')
+        save_data['downloads'] = downloadCount
         # 获取学科类别
-        save_data['xueKeLeiBie'] = self.server.getXueKeLeiBie(profile_json, 'fieldName', xueKeLeiBie)
+        save_data['classificationCode'] = {}
+        save_data['classificationCode']['name'] = self.server.getXueKeLeiBie(profile_json, 'fieldName', xueKeLeiBie)
         # 获取学科领域代码
-        save_data['xueKeLingYuDaiMa'] = task_data.get('fieldCode')
+        save_data['classificationCode']['code'] = task_data.get('fieldCode')
+        save_data['classificationCode']['type'] = 'NSFC'
 
         # 获取关联文档
         doc_id = task_data.get('fulltext')
         if doc_id:
             doc_sha = hashlib.sha1(doc_id.encode('utf-8')).hexdigest()
             doc_url = task_data.get('pdfUrl')
-            save_data['guanLianWenDang'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
+            save_data['relaDocument'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
 
             pdf_dict = {}
             pdf_dict['url'] = doc_url
@@ -353,7 +377,7 @@ class SpiderMain(BastSpiderMain):
                 return
 
         else:
-            save_data['guanLianWenDang'] = {}
+            save_data['relaDocument'] = {}
 
         # ======================公共字段
         # url
@@ -372,6 +396,20 @@ class SpiderMain(BastSpiderMain):
         save_data['biz'] = '文献大数据_论文'
         # 生成ref
         save_data['ref'] = ''
+        # 采集时间
+        save_data['createTime'] = timeutils.getNowDatetime()
+        # 采集责任人
+        save_data['creator'] = '张明星'
+        # 更新时间
+        save_data['lastModifiedTime'] = ''
+        # 更新责任人
+        save_data['modifiedBy'] = ''
+        # 采集服务器集群
+        save_data['cluster'] = 'crawler'
+        # 元数据版本号
+        save_data['metadataVersion'] = 'V1.1'
+        # 采集脚本版本号
+        save_data['scriptVersion'] = 'V1.3'
 
     def run(self):
         #第一次请求的等待时间
@@ -440,15 +478,15 @@ class SpiderMain(BastSpiderMain):
         #     g_list.append(s)
         # gevent.joinall(g_list)
 
-        self.run()
+        # self.run()
 
-        # # 创建线程池
-        # threadpool = ThreadPool(processes=config.THREAD_NUM)
-        # for i in range(config.THREAD_NUM):
-        #     threadpool.apply_async(func=self.run)
-        #
-        # threadpool.close()
-        # threadpool.join()
+        # 创建线程池
+        threadpool = ThreadPool(processes=config.THREAD_NUM)
+        for i in range(config.THREAD_NUM):
+            threadpool.apply_async(func=self.run)
+
+        threadpool.close()
+        threadpool.join()
 
 def process_start():
     main = SpiderMain()
@@ -462,13 +500,13 @@ def process_start():
 if __name__ == '__main__':
     LOGGING.info('======The Start!======')
     begin_time = time.time()
-    process_start()
+    # process_start()
 
-    # po = Pool(processes=config.PROCESS_NUM)
-    # for i in range(config.PROCESS_NUM):
-    #     po.apply_async(func=process_start)
-    # po.close()
-    # po.join()
+    po = Pool(processes=config.PROCESS_NUM)
+    for i in range(config.PROCESS_NUM):
+        po.apply_async(func=process_start)
+    po.close()
+    po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('====== Time consuming is %.2fs ======' %(end_time - begin_time))

@@ -10,6 +10,7 @@ import re
 import time
 from urllib.parse import quote,unquote
 import requests
+import hashlib
 from lxml import etree
 from lxml.html import fromstring, tostring
 from scrapy import Selector
@@ -206,7 +207,7 @@ class Server(object):
         return xuekeleibie
 
     # 获取文档
-    def getDocs(self, pdfData):
+    def getDocs(self, pdfData, size):
         labelObj = {}
         return_docs = []
         try:
@@ -215,7 +216,11 @@ class Server(object):
                     picObj = {
                         'url': pdfData['url'],
                         'title': pdfData['bizTitle'],
-                        'desc': ""
+                        'desc': "",
+                        'sha': hashlib.sha1(pdfData['url'].encode('utf-8')).hexdigest(),
+                        'format': 'PDF',
+                        'size': size,
+                        'ss': 'document'
                     }
                     return_docs.append(picObj)
                 labelObj['全部'] = return_docs
