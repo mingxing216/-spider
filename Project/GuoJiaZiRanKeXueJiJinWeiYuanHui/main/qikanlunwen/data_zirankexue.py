@@ -329,11 +329,11 @@ class SpiderMain(BastSpiderMain):
             # 获取关键词
         save_data['keyword'] = {}
         save_data['keyword']['text'] = self.server.getMoreFieldValue(task_data.get('zhKeyword'))
-        save_data['keyword']['lang'] = save_data['Language']
+        save_data['keyword']['lang'] = save_data['language']
         # 获取摘要
         save_data['abstract'] = {}
         save_data['abstract']['text'] = task_data.get('zhAbstract')
-        save_data['abstract']['lang'] = save_data['Language']
+        save_data['abstract']['lang'] = save_data['language']
         # 获取项目
         save_data['funders'] = {}
         # 获取项目类型

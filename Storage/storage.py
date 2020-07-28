@@ -216,7 +216,7 @@ class Dao(object):
                 sha = url_data['sha']
                 json_ctx = json.loads(url_data['ctx'])
                 json_ctx['sha'] = sha
-                url = json.dumps(json_ctx)
+                url = json.dumps(json_ctx, ensure_ascii=False)
 
                 self.redis_client.sadd(key=key, value=url)
 
