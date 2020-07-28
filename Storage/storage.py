@@ -332,10 +332,10 @@ class Dao(object):
             'type': type,
             'url': media_url,
             'biz_title': item.get('bizTitle'),
-            'relEsse': str(item.get('relEsse')),
-            'relPics': str(item.get('relPics')),
+            'rel_esse': str(item.get('relEsse')),
+            'rel_pics': str(item.get('relPics')),
             'length': "{}".format(len(dbs)),
-            'tagSrc': media_url
+            'tag_src': media_url
             # 'naturalHeight': "{}".format(img.height),
             # 'naturalWidth': "{}".format(img.width)
         }

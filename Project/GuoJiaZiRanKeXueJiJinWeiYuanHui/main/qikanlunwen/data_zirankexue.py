@@ -187,11 +187,11 @@ class SpiderMain(BastSpiderMain):
         doc_data['title'] = pdf_dict['bizTitle']
         # 文档内容
         size = pdf_resp.headers.get('Content-Length', '')
-        doc_data['labelObj'] = self.server.getDocs(pdf_dict, size)
+        doc_data['label_obj'] = self.server.getDocs(pdf_dict, size)
         # 获取来源网站
-        doc_data['sourceWebSite'] = ""
+        doc_data['source_website'] = ""
         # 关联论文
-        doc_data['relaPaper'] = pdf_dict['relEsse']
+        doc_data['rela_paper'] = pdf_dict['relEsse']
 
         # ===================公共字段
         # url
@@ -213,19 +213,19 @@ class SpiderMain(BastSpiderMain):
         # 生成ref
         doc_data['ref'] = ''
         # 采集时间
-        doc_data['createTime'] = timeutils.getNowDatetime()
+        doc_data['create_time'] = timeutils.getNowDatetime()
         # 采集责任人
         doc_data['creator'] = '张明星'
         # 更新时间
-        doc_data['lastModifiedTime'] = ''
+        doc_data['last_modified_time'] = ''
         # 更新责任人
-        doc_data['modifiedBy'] = ''
+        doc_data['modified_by'] = ''
         # 采集服务器集群
         doc_data['cluster'] = 'crawler'
         # 元数据版本号
-        doc_data['metadataVersion'] = 'V1.1'
+        doc_data['metadata_version'] = 'V1.1'
         # 采集脚本版本号
-        doc_data['scriptVersion'] = 'V1.3'
+        doc_data['script_version'] = 'V1.3'
 
         LOGGING.info('文档数据开始存储')
         # 保存数据到Hbase
@@ -279,15 +279,17 @@ class SpiderMain(BastSpiderMain):
             save_data['type'] = '会议论文'
             # es ——栏目名称
             save_data['es'] = '会议论文'
+            # 生成clazz ——层级关系
+            save_data['clazz'] = '论文_会议论文'
             # 获取会议名称
-            save_data['conferenceName'] = task_data.get('journal')
+            save_data['conference_name'] = task_data.get('journal')
             # 获取语种
             if task_data.get('journal'):
                 hasChinese = self.server.hasChinese(task_data.get('journal'))
                 if hasChinese:
-                    save_data['language'] = "中文"
+                    save_data['language'] = "zh"
                 else:
-                    save_data['language'] = "英文"
+                    save_data['language'] = "en"
             else:
                 save_data['language'] = ""
         elif productType == 4:
@@ -295,21 +297,23 @@ class SpiderMain(BastSpiderMain):
             save_data['type'] = '期刊论文'
             # es ——栏目名称
             save_data['es'] = '期刊论文'
+            # 生成clazz ——层级关系
+            save_data['clazz'] = '论文_期刊论文'
             # 获取期刊名称
-            save_data['journalName'] = task_data.get('journal')
+            save_data['journal_name'] = task_data.get('journal')
             # 获取语种
             if task_data.get('journal'):
                 hasChinese = self.server.hasChinese(task_data.get('journal'))
                 if hasChinese:
-                    save_data['language'] = "中文"
+                    save_data['language'] = "zh"
                 else:
-                    save_data['language'] = "英文"
+                    save_data['language'] = "en"
             else:
                 save_data['language'] = ""
         # 获取数字对象标识符
         save_data['doi'] = {}
         save_data['doi']['doi'] = task_data.get('doi')
-        save_data['doi']['doiUrl'] = task_data.get('doiUrl')
+        save_data['doi']['doi_url'] = task_data.get('doiUrl')
         # 获取时间
         shiJian = task_data.get('publishDate')
         if shiJian:
@@ -329,40 +333,46 @@ class SpiderMain(BastSpiderMain):
             # 获取关键词
         save_data['keyword'] = {}
         save_data['keyword']['text'] = self.server.getMoreFieldValue(task_data.get('zhKeyword'))
-        save_data['keyword']['lang'] = save_data['language']
+        if save_data['keyword']['text']:
+            save_data['keyword']['lang'] = save_data['language']
+        else:
+            save_data['keyword']['lang'] = ""
         # 获取摘要
         save_data['abstract'] = {}
         save_data['abstract']['text'] = task_data.get('zhAbstract')
-        save_data['abstract']['lang'] = save_data['language']
+        if save_data['abstract']['text']:
+            save_data['abstract']['lang'] = save_data['language']
+        else:
+            save_data['abstract']['lang'] = ""
         # 获取项目
         save_data['funders'] = {}
         # 获取项目类型
-        save_data['funders']['projectType'] = task_data.get('supportTypeName')
+        save_data['funders']['project_type'] = task_data.get('supportTypeName')
         # 获取项目编号
-        save_data['funders']['projectNumber'] = task_data.get('fundProjectNo')
+        save_data['funders']['project_number'] = task_data.get('fundProjectNo')
         # 获取项目名称
-        save_data['funders']['projectName'] = task_data.get('fundProject')
+        save_data['funders']['project_name'] = task_data.get('fundProject')
         # 项目代码
-        save_data['funders']['projectCode'] = task_data.get('fundProjectCode')
+        save_data['funders']['project_code'] = task_data.get('fundProjectCode')
         # 获取研究机构
-        save_data['orgnizationName'] = task_data.get('organization')
+        save_data['orgnization_name'] = task_data.get('organization')
         # 获取点击量
-        save_data['onlineReading'] = browseCount
+        save_data['online_reading'] = browseCount
         # 获取下载次数
         save_data['downloads'] = downloadCount
         # 获取学科类别
-        save_data['classificationCode'] = {}
-        save_data['classificationCode']['name'] = self.server.getXueKeLeiBie(profile_json, 'fieldName', xueKeLeiBie)
+        save_data['classification_code'] = {}
+        save_data['classification_code']['name'] = self.server.getXueKeLeiBie(profile_json, 'fieldName', xueKeLeiBie)
         # 获取学科领域代码
-        save_data['classificationCode']['code'] = task_data.get('fieldCode')
-        save_data['classificationCode']['type'] = 'NSFC'
+        save_data['classification_code']['code'] = task_data.get('fieldCode')
+        save_data['classification_code']['type'] = 'NSFC'
 
         # 获取关联文档
         doc_id = task_data.get('fulltext')
         if doc_id:
             doc_sha = hashlib.sha1(doc_id.encode('utf-8')).hexdigest()
             doc_url = task_data.get('pdfUrl')
-            save_data['relaDocument'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
+            save_data['rela_document'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
 
             pdf_dict = {}
             pdf_dict['url'] = doc_url
@@ -377,7 +387,7 @@ class SpiderMain(BastSpiderMain):
                 return
 
         else:
-            save_data['relaDocument'] = {}
+            save_data['rela_document'] = {}
 
         # ======================公共字段
         # url
@@ -390,26 +400,24 @@ class SpiderMain(BastSpiderMain):
         save_data['ss'] = '论文'
         # 生成ws ——目标网站
         save_data['ws'] = '国家自然科学基金委员会'
-        # 生成clazz ——层级关系
-        save_data['clazz'] = '论文_期刊论文'
         # 生成biz ——项目
         save_data['biz'] = '文献大数据_论文'
         # 生成ref
         save_data['ref'] = ''
         # 采集时间
-        save_data['createTime'] = timeutils.getNowDatetime()
+        save_data['create_time'] = timeutils.getNowDatetime()
         # 采集责任人
         save_data['creator'] = '张明星'
         # 更新时间
-        save_data['lastModifiedTime'] = ''
+        save_data['last_modified_time'] = ''
         # 更新责任人
-        save_data['modifiedBy'] = ''
+        save_data['modified_by'] = ''
         # 采集服务器集群
         save_data['cluster'] = 'crawler'
         # 元数据版本号
-        save_data['metadataVersion'] = 'V1.1'
+        save_data['metadata_version'] = 'V1.1'
         # 采集脚本版本号
-        save_data['scriptVersion'] = 'V1.3'
+        save_data['script_version'] = 'V1.3'
 
     def run(self):
         #第一次请求的等待时间
