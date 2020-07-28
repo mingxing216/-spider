@@ -197,9 +197,9 @@ class SpiderMain(BastSpiderMain):
         # url
         doc_data['url'] = pdf_dict['url']
         # 生成key
-        doc_data['key'] = pdf_dict['id']
+        doc_data['key'] = pdf_dict['key']
         # 生成sha
-        doc_data['sha'] = hashlib.sha1(pdf_dict['id'].encode('utf-8')).hexdigest()
+        doc_data['sha'] = hashlib.sha1(doc_data['key'].encode('utf-8')).hexdigest()
         # 生成ss ——实体
         doc_data['ss'] = '文档'
         # 生成es ——栏目名称
@@ -212,12 +212,8 @@ class SpiderMain(BastSpiderMain):
         doc_data['biz'] = '文献大数据_论文'
         # 生成ref
         doc_data['ref'] = ''
-        # 采集时间
-        doc_data['create_time'] = timeutils.getNowDatetime()
         # 采集责任人
         doc_data['creator'] = '张明星'
-        # 更新时间
-        doc_data['last_modified_time'] = ''
         # 更新责任人
         doc_data['modified_by'] = ''
         # 采集服务器集群
@@ -244,7 +240,8 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task_data, save_data):
         # print(task_data)
         id = task_data.get('id')
-        sha = hashlib.sha1(id.encode('utf-8')).hexdigest()
+        key = 'ir.nsfc.gov.cn|' + id
+        sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
         url = task_data.get('url')
         xueKeLeiBie = task_data.get('fieldName')
 
@@ -370,16 +367,17 @@ class SpiderMain(BastSpiderMain):
         # 获取关联文档
         doc_id = task_data.get('fulltext')
         if doc_id:
-            doc_sha = hashlib.sha1(doc_id.encode('utf-8')).hexdigest()
+            doc_key = 'ir.nsfc.gov.cn|' + doc_id
+            doc_sha = hashlib.sha1(doc_key.encode('utf-8')).hexdigest()
             doc_url = task_data.get('pdfUrl')
-            save_data['rela_document'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
+            save_data['rela_document'] = self.server.guanLianWenDang(doc_url, doc_key, doc_sha)
 
             pdf_dict = {}
             pdf_dict['url'] = doc_url
-            pdf_dict['id'] = doc_id
+            pdf_dict['key'] = doc_key
             pdf_dict['bizTitle'] = save_data['title']
-            pdf_dict['relEsse'] = self.server.guanLianLunWen(url, id, sha)
-            pdf_dict['relPics'] = self.server.guanLianWenDang(doc_url, doc_id, doc_sha)
+            pdf_dict['relEsse'] = self.server.guanLianLunWen(url, key, sha)
+            pdf_dict['relPics'] = save_data['rela_document']
 
             # 存储文档实体及文档本身
             suc = self.document(pdf_dict=pdf_dict)
@@ -393,7 +391,7 @@ class SpiderMain(BastSpiderMain):
         # url
         save_data['url'] = url
         # 生成key
-        save_data['key'] = id
+        save_data['key'] = key
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
@@ -404,12 +402,8 @@ class SpiderMain(BastSpiderMain):
         save_data['biz'] = '文献大数据_论文'
         # 生成ref
         save_data['ref'] = ''
-        # 采集时间
-        save_data['create_time'] = timeutils.getNowDatetime()
         # 采集责任人
         save_data['creator'] = '张明星'
-        # 更新时间
-        save_data['last_modified_time'] = ''
         # 更新责任人
         save_data['modified_by'] = ''
         # 采集服务器集群
@@ -430,6 +424,7 @@ class SpiderMain(BastSpiderMain):
             start_time = time.time()
             task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_PAPER, count=1,
                                          lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
+            # task_list = ['{"achievementID": "19904555687", "authors": "Bao, Liang，Xu, Gang，Sun, Xiaolei，Zeng, Hong，Zhao, Ruoyu，Yang, Xin，Shen, Ge，Han, Gaorong，Zhou, Shaoxiong", "chineseTitle": "Mono-dispersed LiFePO4@C core-shell [001] nanorods for a high power Li-ion battery cathode", "conference": "", "doi": "10.1016/j.jallcom.2017.03.052", "doiUrl": "https://doi.org/10.1016/j.jallcom.2017.03.052", "downloadHref": "", "enAbstract": "", "enKeyword": "", "englishTitle": "", "fieldCode": "E0204", "fulltext": "19904555687", "fundProject": "铁电氧化物一维单晶纳米材料的基础问题研究", "fundProjectCode": "763359", "fundProjectNo": "51232006", "id": "2413b709-6eef-453a-a82d-936f69b67173", "journal": "JOURNAL OF ALLOYS AND COMPOUNDS", "organization": "浙江大学", "organizationID": "100152", "outputSubIrSource": "", "pageRange": "", "productType": "4", "publishDate": "2017-6-25", "source": "origin", "supportType": "220", "supportTypeName": "重点项目", "year": "2017-6-25", "zhAbstract": "", "zhKeyword": "", "fieldName": "工程与材料科学部", "url": "http://ir.nsfc.gov.cn/paperDetail/2413b709-6eef-453a-a82d-936f69b67173", "pdfUrl": "http://ir.nsfc.gov.cn/paperDownload/19904555687.pdf", "sha": "031cd6c60054b7ba13666b05c042d01b11dcf976"}']
             if task_list:
                 for task in task_list:
                     try:

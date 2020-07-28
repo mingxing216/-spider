@@ -76,7 +76,7 @@ class Downloader(downloader.BaseDownloader):
             if down_data['code'] == 0:
                 # 设置代理最大权重
                 max_time = time.time()
-                max = self.proxy_obj.max_proxy(ip)
+                # max = self.proxy_obj.max_proxy(ip)
                 self.logging.info('handle | 设置代理IP最大权重 | use time: {}s'.format('%.3f' % (time.time() - max_time)))
                 # self.logging.info('请求成功: {} | 用时: {}秒'.format(url, '%.2f' %(time.time() - start_time)))
                 return down_data['data']
@@ -84,7 +84,7 @@ class Downloader(downloader.BaseDownloader):
             if down_data['code'] == 1:
                 # 代理权重减1
                 dec_time = time.time()
-                dec = self.proxy_obj.dec_proxy(ip)
+                # dec = self.proxy_obj.dec_proxy(ip)
                 self.logging.info('handle | 代理IP权重减1 | use time: {}s'.format('%.3f' % (time.time() - dec_time)))
                 if down_data['status'] == 404:
                     return
@@ -99,7 +99,7 @@ class Downloader(downloader.BaseDownloader):
             if down_data['code'] == 2:
                 # 代理权重减1
                 dec_time = time.time()
-                dec = self.proxy_obj.dec_proxy(ip)
+                # dec = self.proxy_obj.dec_proxy(ip)
                 self.logging.info('handle | 代理IP权重减1 | use time: {}s'.format('%.3f' % (time.time() - dec_time)))
                 # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
                 if err_count >= 5:

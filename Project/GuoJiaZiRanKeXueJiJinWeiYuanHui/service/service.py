@@ -173,11 +173,22 @@ class Server(object):
         return value
 
     def getMoreFieldValue(self, value):
+        '''
+        多值可能有四种情况：
+        1、多个作者之间以 ";" 或者 "；" 分隔；姓名之间以 " "或"," 分隔；如：http://ir.nsfc.gov.cn/paperDetail/17f8c78b-1c38-4103-ae69-40d2ccd16a2b
+        2、多个作者之间以 "，" 分隔；姓名之间以 " "或"," 分隔；如：http://ir.nsfc.gov.cn/paperDetail/2413b709-6eef-453a-a82d-936f69b67173
+        3、多个作者之间以 "," 分隔；姓名之间以 " " 分隔；
+        4、多个作者之间以 "," 分隔；姓名之间以 "," 分隔；暂未发现该情况，也未解决；
+
+        '''
         try:
             if ';' in value or '；' in value:
                 values = re.sub(r"\s*[;；]\s*", "|", value).strip()
             else:
-                values = re.sub(r"\s*[,，]\s*", "|", value).strip()
+                if '，' in value:
+                    values = re.sub(r"\s*[，]\s*", "|", value).strip()
+                else:
+                    values = re.sub(r"\s*[,]\s*", "|", value).strip()
 
         except Exception:
             values = ""
@@ -230,11 +241,11 @@ class Server(object):
         return labelObj
 
     # 关联文档
-    def guanLianWenDang(self, url, id, sha):
+    def guanLianWenDang(self, url, key, sha):
         e = {}
         try:
             e['url'] = url
-            e['key'] = id
+            e['key'] = key
             e['sha'] = sha
             e['ss'] = '文档'
         except Exception:
@@ -244,11 +255,11 @@ class Server(object):
 
     # ====== 文档实体
     # 关联论文
-    def guanLianLunWen(self, url, id, sha):
+    def guanLianLunWen(self, url, key, sha):
         e = {}
         try:
             e['url'] = url
-            e['key'] = id
+            e['key'] = key
             e['sha'] = sha
             e['ss'] = '论文'
         except Exception:
