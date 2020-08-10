@@ -45,11 +45,11 @@ SpiderMediaSaveUrl='http://60.195.249.89:8086/dataserver/dat/saveMediaData?'
 
 # ==================《adsl代理池》==================
 # 获取代理接口
-GET_PROXY_API = "http://60.195.249.95:5000/random"
+GET_PROXY_API = "http://localhost:5000/random"
 # 代理状态更新接口
-UPDATE_PROXY_API = "http://60.195.249.95:5000/update-proxy"
+MAX_PROXY_API = "http://localhost:5000/max?ip={}"
 # 删除代理接口
-DELETE_PROXY_API = "http://60.195.249.95:5000/delete-proxy"
+DEC_PROXY_API = "http://localhost:5000/decrease?ip={}"
 
 # mysql数据库存储流媒体文件url的表名
 MEDIA_TABLE = 'ss_media'

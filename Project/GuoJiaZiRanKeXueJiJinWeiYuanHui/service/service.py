@@ -196,8 +196,7 @@ class Server(object):
         return values
 
     def hasChinese(self, data):
-        journal = data
-        for ch in journal:
+        for ch in data:
             if '\u4e00' <= ch <= '\u9fa5':
                 return True
 

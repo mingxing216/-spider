@@ -85,7 +85,7 @@ class ProxyUtils(object):
     def get_proxy(self):
         while True:
             try:
-                r = requests.get('http://60.195.249.95:5000/random')
+                r = requests.get(settings.GET_PROXY_API)
                 ip = r.text
                 # print(proxy)
                 if ip:
@@ -104,7 +104,7 @@ class ProxyUtils(object):
     def max_proxy(self, ip):
         while True:
             try:
-                r = requests.get('http://60.195.249.95:5000/max?ip={}'.format(ip))
+                r = requests.get(settings.MAX_PROXY_API.format(ip))
                 num = r.text
                 # print(proxy)
                 if num:
@@ -123,7 +123,7 @@ class ProxyUtils(object):
     def dec_proxy(self, ip):
         while True:
             try:
-                r = requests.get('http://60.195.249.95:5000/decrease?ip={}'.format(ip))
+                r = requests.get(settings.DEC_PROXY_API.format(ip))
                 num = r.text
                 # print(proxy)
                 if num:

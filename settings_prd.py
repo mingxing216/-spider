@@ -46,11 +46,18 @@ SpiderMediaSaveUrl='http://hbase.onecooo.com:8090/hbaseserver/dat/saveMediaData?
 # ==================《adsl代理池》==================
 
 # 获取代理接口
-GET_PROXY_API = "http://proxyserver.onecooo.com:5000/get-proxy"
+GET_PROXY_API = "http://60.195.249.95:5000/random"
 # 代理状态更新接口
-UPDATE_PROXY_API = "http://proxyserver.onecooo.com:5000/update-proxy"
+MAX_PROXY_API = "http://60.195.249.95:5000/max?ip={}"
 # 删除代理接口
-DELETE_PROXY_API = "http://proxyserver.onecooo.com:5000/delete-proxy"
+DEC_PROXY_API = "http://60.195.249.95:5000/decrease?ip={}"
+
+# # 获取代理接口
+# GET_PROXY_API = "http://proxyserver.onecooo.com:5000/get-proxy"
+# # 代理状态更新接口
+# UPDATE_PROXY_API = "http://proxyserver.onecooo.com:5000/update-proxy"
+# # 删除代理接口
+# DELETE_PROXY_API = "http://proxyserver.onecooo.com:5000/delete-proxy"
 
 # mysql数据库存储流媒体文件url的表名
 MEDIA_TABLE = 'ss_media'

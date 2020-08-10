@@ -1,4 +1,4 @@
-# -*-coding:utf-8-*-
+# -*- coding:utf-8 -*-
 
 '''
 
@@ -186,7 +186,7 @@ class SpiderMain(BastSpiderMain):
         # 获取标题
         doc_data['title'] = pdf_dict['bizTitle']
         # 文档内容
-        size = pdf_resp.headers.get('Content-Length', '')
+        size = len(pdf_content)
         doc_data['label_obj'] = self.server.getDocs(pdf_dict, size)
         # 获取来源网站
         doc_data['source_website'] = ""
@@ -331,14 +331,22 @@ class SpiderMain(BastSpiderMain):
         save_data['keyword'] = {}
         save_data['keyword']['text'] = self.server.getMoreFieldValue(task_data.get('zhKeyword'))
         if save_data['keyword']['text']:
-            save_data['keyword']['lang'] = save_data['language']
+            hasChinese = self.server.hasChinese(save_data['keyword']['text'])
+            if hasChinese:
+                save_data['keyword']['lang'] = "zh"
+            else:
+                save_data['keyword']['lang'] = "en"
         else:
             save_data['keyword']['lang'] = ""
         # 获取摘要
         save_data['abstract'] = {}
         save_data['abstract']['text'] = task_data.get('zhAbstract')
         if save_data['abstract']['text']:
-            save_data['abstract']['lang'] = save_data['language']
+            hasChinese = self.server.hasChinese(save_data['abstract']['text'])
+            if hasChinese:
+                save_data['abstract']['lang'] = "zh"
+            else:
+                save_data['abstract']['lang'] = "en"
         else:
             save_data['abstract']['lang'] = ""
         # 获取项目
