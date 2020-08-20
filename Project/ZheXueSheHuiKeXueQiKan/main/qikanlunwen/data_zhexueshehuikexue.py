@@ -418,8 +418,8 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 获取任务
             start_time = time.time()
-            task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
-                                         lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_TEST, count=1,
+                                         lockname=config.REDIS_ZHEXUESHEHUIKEXUE_TEST_LOCK)
             # task_list = ['{"achievementID": "19904555687", "authors": "Bao, Liang，Xu, Gang，Sun, Xiaolei，Zeng, Hong，Zhao, Ruoyu，Yang, Xin，Shen, Ge，Han, Gaorong，Zhou, Shaoxiong", "chineseTitle": "Mono-dispersed LiFePO4@C core-shell [001] nanorods for a high power Li-ion battery cathode", "conference": "", "doi": "10.1016/j.jallcom.2017.03.052", "doiUrl": "https://doi.org/10.1016/j.jallcom.2017.03.052", "downloadHref": "", "enAbstract": "", "enKeyword": "", "englishTitle": "", "fieldCode": "E0204", "fulltext": "19904555687", "fundProject": "铁电氧化物一维单晶纳米材料的基础问题研究", "fundProjectCode": "763359", "fundProjectNo": "51232006", "id": "2413b709-6eef-453a-a82d-936f69b67173", "journal": "JOURNAL OF ALLOYS AND COMPOUNDS", "organization": "浙江大学", "organizationID": "100152", "outputSubIrSource": "", "pageRange": "", "productType": "4", "publishDate": "2017-6-25", "source": "origin", "supportType": "220", "supportTypeName": "重点项目", "year": "2017-6-25", "zhAbstract": "", "zhKeyword": "", "fieldName": "工程与材料科学部", "url": "http://ir.nsfc.gov.cn/paperDetail/2413b709-6eef-453a-a82d-936f69b67173", "pdfUrl": "http://ir.nsfc.gov.cn/paperDownload/19904555687.pdf", "sha": "031cd6c60054b7ba13666b05c042d01b11dcf976"}']
             if task_list:
                 for task in task_list:

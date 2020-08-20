@@ -109,14 +109,16 @@ class SpiderMain(BastSpiderMain):
                     for year in self.server.getYears(text=category_resp.text, xuekeleibie=xuekeleibie):
                         # print(year)
                         # 存储年列表到mysql数据库
-                        LOGGING.info('当前已存年列表种子数量: {}'.format(self.num))
                         self.dao.saveTaskToMysql(table=config.MYSQL_MAGAZINE, memo=year, ws='国家哲学社会科学', es='期刊年列表')
+                        LOGGING.info('当前已存年列表种子数量: {}'.format(self.num + 1))
 
                         # 请求年种子，获取响应
                         year_url = year.get('url')
                         year_resp = self.__getResp(url=year_url, method='GET')
                         if not year_resp:
                             LOGGING.error('{}类下{}年期刊响应失败, url: {}'.format(xuekeleibie, year.get('year'), year_url))
+                            # 队列一条任务
+                            self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, data=task)
                             continue
 
                         # 获取期列表页（年卷期，论文详情列表页）
@@ -127,6 +129,8 @@ class SpiderMain(BastSpiderMain):
                             issue_resp = self.__getResp(url=issue_url, method='GET')
                             if not issue_resp:
                                 LOGGING.error('{}类下{}年{}期期刊响应失败, url: {}'.format(xuekeleibie, year.get('year'), issue.get('issue'), year_url))
+                                # 队列一条任务
+                                self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, data=task)
                                 continue
 
                             # 获取论文详情url
@@ -150,8 +154,8 @@ class SpiderMain(BastSpiderMain):
         # self.run()
 
         # 创建线程池
-        threadpool = ThreadPool(processes=4)
-        for i in range(4):
+        threadpool = ThreadPool(processes=config.THREAD_NUM)
+        for i in range(config.THREAD_NUM):
             threadpool.apply_async(func=self.run)
 
         threadpool.close()
