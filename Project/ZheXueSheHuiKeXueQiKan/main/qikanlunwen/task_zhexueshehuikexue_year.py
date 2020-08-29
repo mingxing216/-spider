@@ -25,8 +25,8 @@ from Project.ZheXueSheHuiKeXueQiKan import config
 from Project.ZheXueSheHuiKeXueQiKan.main.qikanlunwen import data_zhexueshehuikexue
 
 log_file_dir = 'SheHuiKeXue'  # LOG日志存放路径
-LOGNAME = '<国家哲学社会科学_论文_task>'  # LOG名
-NAME = '国家哲学社会科学_论文_task'  # 爬虫名
+LOGNAME = '<国家哲学社会科学_年列表_task>'  # LOG名
+NAME = '国家哲学社会科学_年列表_task'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
