@@ -17,8 +17,8 @@ from Project.ZheXueSheHuiKeXueQiKan.dao import dao
 from Project.ZheXueSheHuiKeXueQiKan import config
 
 log_file_dir = 'SheHuiKeXue'  # LOG日志存放路径
-LOGNAME = '<国家哲学社会科学_期刊论文_queue>'  # LOG名
-NAME = '国家哲学社会科学_期刊论文_queue'  # 爬虫名
+LOGNAME = '<国家哲学社会科学_年列表_queue>'  # LOG名
+NAME = '国家哲学社会科学_年列表_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
@@ -50,14 +50,14 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_ZHEXUESHEHUIKEXUE_TEST)
+            url_number = self.dao.selectTaskNumber(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR)
             if url_number <= config.MAX_QUEUE_REDIS/10:
                 LOGGING.info('redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS/10)))
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_TEST, ws='国家哲学社会科学', es='期刊论文', count=config.MAX_QUEUE_REDIS)
+                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_MAGAZINE, ws='国家哲学社会科学', es='期刊年列表', count=config.MAX_QUEUE_REDIS)
                 # print(new_task_list)
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_TEST, data=new_task_list)
+                self.dao.QueueTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 

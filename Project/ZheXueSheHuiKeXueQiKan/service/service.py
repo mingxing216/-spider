@@ -121,7 +121,8 @@ class Server(object):
         return return_data
 
     # 获取期刊年列表
-    def getYears(self, text, xuekeleibie):
+    def getYears(self, text, xuekeleibie, qikanUrl):
+        return_data = []
         selector = Selector(text=text)
         try:
             a_list = selector.xpath("//div[@id='qkyearslist']/ul/li/a")
@@ -130,11 +131,15 @@ class Server(object):
                 data_dict['url'] = 'http://www.nssd.org' + a.xpath("./@href").extract_first().strip()
                 data_dict['year'] = a.xpath("./text()").extract_first().strip().replace('年', '')
                 data_dict['xuekeleibie'] = xuekeleibie
+                data_dict['qikanUrl'] = qikanUrl
 
-                yield data_dict
+                return_data.append(data_dict)
+                # yield data_dict
 
         except Exception:
-            return
+            return return_data
+
+        return return_data
 
     # 获取期号列表
     def getIssues(self, text):
@@ -187,9 +192,229 @@ class Server(object):
     # data script
     # ---------------------
 
+    # ====== 期刊实体
+    # 是否包含中文（判断语种）
+    def hasChinese(self, data):
+        for ch in data:
+            if '\u4e00' <= ch <= '\u9fa5':
+                return True
+
+        return False
+
+    # 标题
+    def getJournalTitle(self, text):
+        selector = Selector(text=text)
+        try:
+            title = selector.xpath("//h1/text()").extract_first().strip()
+
+        except Exception:
+            title = ""
+
+        return title
+
+    # 英文标题
+    def getParallelTitle(self, text):
+        selector = Selector(text=text)
+        try:
+            title = selector.xpath("//h1/following-sibling::em[1]/text()").extract_first().strip()
+
+        except Exception:
+            title = ""
+
+        return title
+
+    # 封面图片
+    def getCover(self, text):
+        selector = Selector(text=text)
+        try:
+            src = selector.xpath("//div[@class='cover']/img/@src").extract_first().strip()
+            if src.startswith('http'):
+                imgUrl = src
+            else:
+                imgUrl = 'http://image.nssd.org' + src
+
+        except Exception:
+            imgUrl = ""
+
+        return imgUrl
+
+    # 简介
+    def getAbstract(self, text):
+        selector = Selector(text=text)
+        try:
+            abstract = selector.xpath("//p[strong[contains(text(), '简　　介')]]/span[@name='all']/text()").extract_first().strip()
+
+        except Exception:
+            abstract = ""
+
+        return abstract
+
+    # 主管单位/社长
+    def getOneValue(self, text, para):
+        selector = Selector(text=text)
+        try:
+            value = selector.xpath("//p[strong[contains(text(), '{}')]]/text()".format(para)).extract_first().strip()
+
+        except Exception:
+            value = ""
+
+        return value
+
+    # 主办单位
+    def getMoreValues(self, text, para):
+        selector = Selector(text=text)
+        try:
+            values = re.sub(r"[;；]", "|", selector.xpath("//p[strong[contains(text(), '{}')]]/text()".format(para)).extract_first().strip())
+
+        except Exception:
+            values = ""
+
+        return values
+
+    # 期刊变更
+    def getHistory(self, text, para):
+        selector = Selector(text=text)
+        try:
+            value = selector.xpath("//p[strong[contains(text(), '{}')]]//text()".format(para)).extract()
+            history = ''.join(value).replace('期刊变更：', '')
+
+        except Exception:
+            history = ""
+
+        return history
+
+    # 电话
+    def getTelephone(self, text):
+        selector = Selector(text=text)
+        try:
+            telephone = re.sub(r"\s+", "|", selector.xpath("//p[strong[contains(text(), '电　　话')]]/text()").extract_first().strip())
+
+        except Exception:
+            telephone = ""
+
+        return telephone
+
+    # 电子邮件/期刊网址
+    def getHref(self, text, para):
+        selector = Selector(text=text)
+        try:
+            href = selector.xpath("//p[strong[contains(text(), '{}')]]/a/@href".format(para)).extract_first().strip()
+
+        except Exception:
+            href = ""
+
+        return href
+
+    # 期刊荣誉
+    def getHonors(self, text):
+        selector = Selector(text=text)
+        try:
+            honors_list = selector.xpath("//div[@class='coreinfo']/text()").extract()
+            honors = ''.join(honors_list).strip()
+
+        except Exception:
+            honors = ""
+
+        return honors
+
+    # 被收录数据库
+    def getDatabases(self, text):
+        selector = Selector(text=text)
+        try:
+            li_list = selector.xpath("//div[@id='qkintro']/ul/li/text()").extract()
+            databases = '|'.join(li_list)
+
+        except Exception:
+            databases = ""
+
+        return databases
+
+    # 学术评价url
+    def getEvaluateUrl(self, text):
+        selector = Selector(text=text)
+        try:
+            href = selector.xpath("//span[@class='qkpj']/a/@href").extract_first().strip()
+            if href.startswith('http'):
+                evaluateUrl = href
+            else:
+                evaluateUrl = 'http://www.nssd.org' + href
+
+        except Exception:
+            evaluateUrl = ""
+
+        return evaluateUrl
+
+    # 学术评价
+    def getEvaluate(self, text):
+        return_data = []
+        selector = Selector(text=text)
+        try:
+            tr_list = selector.xpath("//table[@class='t_list']//tr[position()>1]")
+            for tr in tr_list:
+                data_dict = {}
+                try:
+                    year = tr.xpath("./td[1]//text()").extract_first().strip()
+                    pattern_value = re.search(r"\d+", year)
+                    if pattern_value:
+                        data_dict['year'] = year
+                    else:
+                        data_dict['year'] = ""
+                except:
+                    data_dict['year'] = ""
+
+                try:
+                    literature_number = tr.xpath("./td[2]//text()").extract_first().strip()
+                    pattern_value = re.search(r"\d+", literature_number)
+                    if pattern_value:
+                        data_dict['literature_number'] = literature_number
+                    else:
+                        data_dict['literature_number'] = ""
+                except:
+                    data_dict['literature_number'] = ""
+
+                try:
+                    journal_cites = tr.xpath("./td[3]//text()").extract_first().strip()
+                    pattern_value = re.search(r"\d+", journal_cites)
+                    if pattern_value:
+                        data_dict['journal_cites'] = journal_cites
+                    else:
+                        data_dict['journal_cites'] = ""
+                except:
+                    data_dict['journal_cites'] = ""
+
+                try:
+                    influence_factor = tr.xpath("./td[4]//text()").extract_first().strip()
+                    pattern_value = re.search(r"\d+", influence_factor)
+                    if pattern_value:
+                        data_dict['influence_factor'] = influence_factor
+                    else:
+                        data_dict['influence_factor'] = ""
+                except:
+                    data_dict['influence_factor'] = ""
+
+                return_data.append(data_dict)
+
+        except Exception:
+            return return_data
+
+        return return_data
+
+    # 关联期刊
+    def rela_journal(self, url, key, sha):
+        e = {}
+        try:
+            e['url'] = url
+            e['key'] = key
+            e['sha'] = sha
+            e['ss'] = '期刊'
+        except Exception:
+            return e
+
+        return e
+
     # ====== 论文实体
     # 标题
-    def getTitle(self, text):
+    def getPaperTitle(self, text):
         selector = Selector(text=text)
         try:
             title = selector.xpath("//h1/span/text()").extract_first().strip()
@@ -199,60 +424,117 @@ class Server(object):
 
         return title
 
-    def getFieldValue(self, value):
+    # 摘要
+    def getPaperAbstract(self, text):
+        selector = Selector(text=text)
         try:
-            if isinstance(value, str):
-                value = value.strip()
+            abstract = selector.xpath("//p[@id='allAbstrack']/text()").extract_first().strip()
+
+        except Exception:
+            abstract = ""
+
+        return abstract
+
+    # 作者单位
+    def getAuthorAffiliation(self, text):
+        unit_list = []
+        selector = Selector(text=text)
+        try:
+            affiliation_list = selector.xpath("//p[strong[contains(text(), '作者单位')]]/a/text()").extract()
+            for unit in affiliation_list:
+                uni = re.sub(r"^\[\d+\]", "", unit)
+                unit_list.append(uni)
+
+            affiliation = '|'.join(unit_list)
+
+        except Exception:
+            affiliation = ""
+
+        return affiliation
+
+    # 期刊名称
+    def getJournalName(self, text):
+        selector = Selector(text=text)
+        try:
+            name = selector.xpath("//p[strong[contains(text(), '期　　刊')]]/a[1]/text()").extract_first().strip()
+
+        except Exception:
+            name = ""
+
+        return name
+
+    # 起始页
+    def getStartPage(self, text):
+        selector = Selector(text=text)
+        try:
+            journal = selector.xpath("//p[strong[contains(text(), '期　　刊')]]/text()").extract_first().strip()
+            start_page = re.findall(r"期(.*)?-", journal)[0]
+
+        except Exception:
+            start_page = ""
+
+        return start_page
+
+    # 结束页
+    def getEndPage(self, text):
+        selector = Selector(text=text)
+        try:
+            journal = selector.xpath("//p[strong[contains(text(), '期　　刊')]]/text()").extract_first().strip()
+            end_page = re.findall(r"-(.*)?,?共", journal)[0]
+
+        except Exception:
+            end_page = ""
+
+        return end_page
+
+    # 总页数
+    def getTotalPages(self, text):
+        selector = Selector(text=text)
+        try:
+            journal = selector.xpath("//p[strong[contains(text(), '期　　刊')]]/text()").extract_first().strip()
+            total_page = re.findall(r"共(\d+)页", journal)[0]
+
+        except Exception:
+            total_page = ""
+
+        return total_page
+
+    # 关键词/分类号
+    def getFieldValues(self, text, para):
+        selector = Selector(text=text)
+        try:
+            values = selector.xpath("//p[strong[contains(text(), '{}')]]/a/text()".format(para)).extract()
+            value = '|'.join(values)
 
         except Exception:
             value = ""
 
         return value
 
-    def getMoreFieldValue(self, value):
-        '''
-        多值可能有四种情况：
-        1、多个作者之间以 ";" 或者 "；" 分隔；姓名之间以 " "或"," 分隔；如：http://ir.nsfc.gov.cn/paperDetail/17f8c78b-1c38-4103-ae69-40d2ccd16a2b
-        2、多个作者之间以 "，" 分隔；姓名之间以 " "或"," 分隔；如：http://ir.nsfc.gov.cn/paperDetail/2413b709-6eef-453a-a82d-936f69b67173
-        3、多个作者之间以 "," 分隔；姓名之间以 " " 分隔；
-        4、多个作者之间以 "," 分隔；姓名之间以 "," 分隔；暂未发现该情况，也未解决；
-
-        '''
+    # 项目基金
+    def getFunders(self, text):
+        selector = Selector(text=text)
         try:
-            if ';' in value or '；' in value:
-                values = re.sub(r"\s*[;；]\s*", "|", value).strip()
-            else:
-                if '，' in value:
-                    values = re.sub(r"\s*[，]\s*", "|", value).strip()
-                else:
-                    values = re.sub(r"\s*[,]\s*", "|", value).strip()
+            funders = selector.xpath("//p[strong[contains(text(), '基金项目')]]/text()").extract()
+            funder = re.sub(r"[;；]", "|", funders)
 
         except Exception:
-            values = ""
+            funder = ""
 
-        return values
+        return funder
 
-    def hasChinese(self, data):
-        for ch in data:
-            if '\u4e00' <= ch <= '\u9fa5':
-                return True
-
-        return False
-
-
-    def getXueKeLeiBie(self, json, para, xueke):
+    # 次数
+    def getCount(self, text, para):
+        selector = Selector(text=text)
         try:
-            value = str(json['data'][0][para]).strip()
-            if value:
-                xuekeleibie = xueke + '_' + value
-            else:
-                xuekeleibie = xueke
+            count = selector.xpath("//strong[contains(text(), '{}')]/following-sibling::span[1]/text()".format(para)).extract_first().strip()
 
         except Exception:
-            xuekeleibie = xueke
+            count = ""
 
-        return xuekeleibie
+        return count
 
+    # =========== 文档实体 =============
     # 获取文档
     def getDocs(self, pdfData, size):
         labelObj = {}
@@ -277,7 +559,7 @@ class Server(object):
         return labelObj
 
     # 关联文档
-    def guanLianWenDang(self, url, key, sha):
+    def rela_document(self, url, key, sha):
         e = {}
         try:
             e['url'] = url
@@ -289,9 +571,8 @@ class Server(object):
 
         return e
 
-    # ====== 文档实体
     # 关联论文
-    def guanLianLunWen(self, url, key, sha):
+    def rela_paper(self, url, key, sha):
         e = {}
         try:
             e['url'] = url

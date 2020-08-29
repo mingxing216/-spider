@@ -71,7 +71,7 @@ class SpiderMain(BastSpiderMain):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer, ranges=ranges)
             if resp and resp.headers['Content-Type'].startswith('text'):
-                if '请输入验证码' in resp.text:
+                if '请输入验证码' in resp.text or 'Sorry' in resp.text:
                     LOGGING.error('出现验证码: {}'.format(url))
                     continue
 
@@ -430,9 +430,9 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 获取任务
             start_time = time.time()
-            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_PAPER, count=1,
-                                         lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
-            # task_list = ['{"achievementID": "19904555687", "authors": "Bao, Liang，Xu, Gang，Sun, Xiaolei，Zeng, Hong，Zhao, Ruoyu，Yang, Xin，Shen, Ge，Han, Gaorong，Zhou, Shaoxiong", "chineseTitle": "Mono-dispersed LiFePO4@C core-shell [001] nanorods for a high power Li-ion battery cathode", "conference": "", "doi": "10.1016/j.jallcom.2017.03.052", "doiUrl": "https://doi.org/10.1016/j.jallcom.2017.03.052", "downloadHref": "", "enAbstract": "", "enKeyword": "", "englishTitle": "", "fieldCode": "E0204", "fulltext": "19904555687", "fundProject": "铁电氧化物一维单晶纳米材料的基础问题研究", "fundProjectCode": "763359", "fundProjectNo": "51232006", "id": "2413b709-6eef-453a-a82d-936f69b67173", "journal": "JOURNAL OF ALLOYS AND COMPOUNDS", "organization": "浙江大学", "organizationID": "100152", "outputSubIrSource": "", "pageRange": "", "productType": "4", "publishDate": "2017-6-25", "source": "origin", "supportType": "220", "supportTypeName": "重点项目", "year": "2017-6-25", "zhAbstract": "", "zhKeyword": "", "fieldName": "工程与材料科学部", "url": "http://ir.nsfc.gov.cn/paperDetail/2413b709-6eef-453a-a82d-936f69b67173", "pdfUrl": "http://ir.nsfc.gov.cn/paperDownload/19904555687.pdf", "sha": "031cd6c60054b7ba13666b05c042d01b11dcf976"}']
+            # task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_PAPER, count=1,
+            #                              lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
+            task_list = ['{"achievementID": "ZD193973", "authors": "", "chineseTitle": "Semi-Supervised Learning for Neural Machine Translation", "conference": "", "doi": "10.18653/v1/p16-1185", "doiUrl": "https://doi.org/10.18653/v1/p16-1185", "downloadHref": "", "enAbstract": "", "enKeyword": "", "englishTitle": "", "fieldCode": "F011305", "fulltext": "ZD193973", "fundProject": "跨语言社会舆情分析基础理论与关键技术研究", "fundProjectCode": "970061", "fundProjectNo": "61331013", "id": "aa16eaa8-a45c-4994-a42b-9cb80a8fc09d", "journal": "Annual Meeting of the Association for Computational Linguistics", "organization": "中央民族大学", "organizationID": "201617", "outputSubIrSource": "", "pageRange": "", "productType": "3", "publishDate": "2016-08-07", "source": "origin", "supportType": "220", "supportTypeName": "重点项目", "year": "2016-08-07", "zhAbstract": "While end-to-end neural machine translation (NMT) has made remarkable progress recently, NMT systems only rely on parallel corpora for parameter estimation. Since parallel corpora are usually limited in quantity, quality, and coverage, especially for low-resource languages, it is appealing to exploit monolingual corpora to improve NMT. We propose a semisupervised approach for training NMT models on the concatenation of labeled (parallel corpora) and unlabeled (monolingual corpora) data. The central idea is to reconstruct the monolingual corpora using an autoencoder, in which the sourceto-target and target-to-source translation models serve as the encoder and decoder, respectively. Our approach can not only exploit the monolingual corpora of the target language, but also of the source language. Experiments on the Chinese English dataset show that our approach achieves significant improvements over state-of-the-art SMT and NMT systems.", "zhKeyword": "", "fieldName": "信息科学部", "url": "http://ir.nsfc.gov.cn/paperDetail/aa16eaa8-a45c-4994-a42b-9cb80a8fc09d", "pdfUrl": "http://ir.nsfc.gov.cn/paperDownload/ZD193973.pdf", "sha": "00052f292efbd1d1a25728aca9d79f288fc15d86"}']
             if task_list:
                 for task in task_list:
                     try:
