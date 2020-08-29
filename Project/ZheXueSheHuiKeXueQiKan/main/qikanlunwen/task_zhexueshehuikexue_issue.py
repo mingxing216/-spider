@@ -111,7 +111,7 @@ class SpiderMain(BastSpiderMain):
 
                     # 获取期列表页（年卷期，论文详情列表页）
                     for issue in self.server.getIssues(text=year_resp.text):
-                        print(issue)
+                        # print(issue)
                         # 请求期种子，获取响应
                         issue_url = issue.get('url')
                         issue_resp = self.__getResp(url=issue_url, method='GET')
@@ -123,6 +123,8 @@ class SpiderMain(BastSpiderMain):
 
                         # 获取论文详情url
                         self.getProfile(text=issue_resp.text, qikanUrl=qikan_url, xuekeleibie=xuekeleibie, year=year, issue=issue.get('issue'))
+                        # mysql标记已完成年列表任务
+                        self.dao.finishTask(table=config.MYSQL_MAGAZINE, sha=task['sha'])
 
                     else:
                         LOGGING.info('{}类下所有年期刊的论文详情种子获取完毕'.format(xuekeleibie))

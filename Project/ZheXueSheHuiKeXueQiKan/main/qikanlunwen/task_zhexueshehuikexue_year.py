@@ -104,6 +104,8 @@ class SpiderMain(BastSpiderMain):
 
                     else:
                         LOGGING.info('{}类下所有年期刊列表种子获取完毕'.format(xuekeleibie))
+                        # 标记已完成期刊任务
+                        self.dao.finishTask(table=config.MYSQL_MAGAZINE, sha=task['sha'])
 
             else:
                 LOGGING.info('队列中已无任务，结束程序')
