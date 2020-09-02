@@ -72,7 +72,7 @@ class Downloader(downloader.BaseDownloader):
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
-            self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | mode: {}".format(url, '%.3fs' % (time.time() - start_time), down_data['code'], down_data['status'], method))
+            self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | method: {}".format(url, '%.3fs' % (time.time() - start_time), down_data['code'], down_data['status'], method))
 
             if down_data['code'] == 0:
                 # 设置代理最大权重

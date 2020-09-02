@@ -322,8 +322,8 @@ class Dao(object):
         # content_bs64 = content
         # 解码base64图片文件为二进制文件
         dbs = base64.b64decode(content_bs64)
-        # 内存中打开图片
-        img = Image.open(BytesIO(content))
+        # # 内存中打开图片
+        # img = Image.open(BytesIO(content))
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
         # sha = int(random.random()*10000000000000000)
 
@@ -335,9 +335,9 @@ class Dao(object):
             'rel_esse': str(item.get('relEsse')),
             'rel_pics': str(item.get('relPics')),
             'length': "{}".format(len(dbs)),
-            'tag_src': media_url,
-            'natural_height': "{}".format(img.height),
-            'natural_width': "{}".format(img.width)
+            'tag_src': media_url
+            # 'natural_height': "{}".format(img.height),
+            # 'natural_width': "{}".format(img.width)
         }
 
         form_data = {

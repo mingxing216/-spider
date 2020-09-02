@@ -314,15 +314,15 @@ class SpiderMain(BastSpiderMain):
         #     g_list.append(s)
         # gevent.joinall(g_list)
 
-        self.run()
+        # self.run()
 
-        # # 创建线程池
-        # threadpool = ThreadPool(processes=config.THREAD_NUM)
-        # for i in range(config.THREAD_NUM):
-        #     threadpool.apply_async(func=self.run)
-        #
-        # threadpool.close()
-        # threadpool.join()
+        # 创建线程池
+        threadpool = ThreadPool(processes=config.THREAD_NUM)
+        for i in range(config.THREAD_NUM):
+            threadpool.apply_async(func=self.run)
+
+        threadpool.close()
+        threadpool.join()
 
 def process_start():
     main = SpiderMain()
@@ -335,13 +335,13 @@ def process_start():
 if __name__ == '__main__':
     LOGGING.info('======The Start!======')
     begin_time = time.time()
-    process_start()
+    # process_start()
 
-    # po = Pool(processes=config.PROCESS_NUM)
-    # for i in range(config.PROCESS_NUM):
-    #     po.apply_async(func=process_start)
-    # po.close()
-    # po.join()
+    po = Pool(processes=config.PROCESS_NUM)
+    for i in range(config.PROCESS_NUM):
+        po.apply_async(func=process_start)
+    po.close()
+    po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
     LOGGING.info('====== Time consuming is %.2fs ======' %(end_time - begin_time))
