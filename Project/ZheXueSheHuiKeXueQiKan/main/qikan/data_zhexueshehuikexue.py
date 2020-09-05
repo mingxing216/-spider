@@ -1,36 +1,27 @@
 # -*- coding:utf-8 -*-
 
-'''
-
-'''
+import hashlib
+import json
+import os
+import random
+import re
 # import gevent
 # from gevent import monkey
 # monkey.patch_all()
 import sys
-import os
 import time
 import traceback
-import hashlib
-import random
-import re
-import requests
-from datetime import datetime
-from contextlib import closing
-import json
-import threading
-from io import BytesIO
-from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
+from multiprocessing.pool import Pool, ThreadPool
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Utils import timeutils
+from Project.ZheXueSheHuiKeXueQiKan import config
+from Project.ZheXueSheHuiKeXueQiKan.dao import dao
 from Project.ZheXueSheHuiKeXueQiKan.middleware import download_middleware
 from Project.ZheXueSheHuiKeXueQiKan.service import service
-from Project.ZheXueSheHuiKeXueQiKan.dao import dao
-from Project.ZheXueSheHuiKeXueQiKan import config
+from Utils import timeutils
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
+sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 
 log_file_dir = 'SheHuiKeXue'  # LOG日志存放路径
 LOGNAME = '<国家哲学社会科学_期刊_data>'  # LOG名
@@ -49,7 +40,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.Server(logging=LOGGING)
+        # self.server = service.Server(logging=LOGGING)
         self.dao = dao.Dao(logging=LOGGING,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -65,7 +56,7 @@ class SpiderMain(BastSpiderMain):
 
         self.profile_url = 'http://ir.nsfc.gov.cn/baseQuery/data/paperInfo'
 
-    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
+    def __get_resp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
         # 发现验证码，请求页面3次
         for i in range(3):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
@@ -81,7 +72,7 @@ class SpiderMain(BastSpiderMain):
     # 存储图片
     def img(self, img_dict):
         # 获取图片响应
-        media_resp = self.__getResp(url=img_dict['url'], method='GET')
+        media_resp = self.__get_resp(url=img_dict['url'], method='GET')
         if not media_resp:
             LOGGING.error('图片响应失败, url: {}'.format(img_dict['url']))
             return
@@ -95,16 +86,16 @@ class SpiderMain(BastSpiderMain):
             return
 
     def handle(self, task_data, save_data):
-        print(task_data)
+        # print(task_data)
         url = task_data.get('url')
-        id = re.findall(r"cn/(\w+)/?", url)[0]
-        print(id)
-        key = 'nssd.org|' + id
+        _id = re.findall(r"cn/(\w+)/?", url)[0]
+        # print(id)
+        key = 'nssd.org|' + _id
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
-        xueKeLeiBie = task_data.get('s_xuekeleibie')
+        xue_ke_lei_bie = task_data.get('s_xuekeleibie')
 
         # 获取期刊详情页
-        profile_resp = self.__getResp(url=url, method='GET')
+        profile_resp = self.__get_resp(url=url, method='GET')
         if not profile_resp:
             LOGGING.error('详情页响应失败, url: {}'.format(url))
             return
@@ -113,106 +104,106 @@ class SpiderMain(BastSpiderMain):
 
         # ========================== 获取期刊实体 ============================
 
+        server = service.Server(logging=LOGGING)
+
         # 获取标题
-        save_data['title'] = self.server.getJournalTitle(profile_text)
+        save_data['title'] = server.getJournalTitle(profile_text)
         # 获取英文标题
         save_data['parallel_title'] = {}
-        save_data['parallel_title']['text'] = self.server.getParallelTitle(profile_text)
+        save_data['parallel_title']['text'] = server.getParallelTitle(profile_text)
         save_data['parallel_title']['lang'] = "en"
         # 获取封面图片
-        save_data['cover'] = self.server.getCover(profile_text)
+        save_data['cover'] = server.getCover(profile_text)
         # 存储图片
         if save_data['cover']:
-            img_dict = {}
-            img_dict['url'] = save_data['cover']
-            img_dict['bizTitle'] = save_data['title']
-            img_dict['relEsse'] = self.server.rela_journal(url=url, key=key, sha=sha)
-            img_dict['relPics'] = {}
+            img_dict = {'url': save_data['cover'], 'bizTitle': save_data['title'],
+                        'relEsse': server.rela_journal(url=url, key=key, sha=sha), 'relPics': {}}
 
-            self.img(img_dict=img_dict)
+            suc = self.img(img_dict=img_dict)
+            if not suc:
+                return
 
         # 获取简介
         save_data['abstract'] = {}
-        save_data['abstract']['text'] = self.server.getAbstract(profile_text)
+        save_data['abstract']['text'] = server.getAbstract(profile_text)
         if save_data['abstract']['text']:
-            hasChinese = self.server.hasChinese(save_data['abstract']['text'])
-            if hasChinese:
+            if server.hasChinese(save_data['abstract']['text']):
                 save_data['abstract']['lang'] = "zh"
             else:
                 save_data['abstract']['lang'] = "en"
         else:
             save_data['abstract']['lang'] = ""
         # 主管单位
-        save_data['governing_body'] = self.server.getOneValue(profile_text, '主管单位')
+        save_data['governing_body'] = server.getOneValue(profile_text, '主管单位')
         # 主办单位
-        save_data['responsible_organization'] = self.server.getMoreValues(profile_text, '主办单位')
+        save_data['responsible_organization'] = server.getMoreValues(profile_text, '主办单位')
         # 社长
-        save_data['president'] = self.server.getOneValue(profile_text, '社　　长')
+        save_data['president'] = server.getOneValue(profile_text, '社　　长')
         # 主编
-        save_data['chief_editor'] = self.server.getOneValue(profile_text, '主　　编')
+        save_data['chief_editor'] = server.getMoreValues(profile_text, '主　　编')
         # 创刊时间
-        shiJian = self.server.getOneValue(profile_text, '创刊时间')
-        if shiJian:
+        shi_jian = server.getOneValue(profile_text, '创刊时间')
+        if shi_jian:
             try:
-                save_data['starting_time'] = timeutils.getDateTimeRecord(shiJian)
-
+                save_data['starting_time'] = timeutils.getDateTimeRecord(shi_jian)
             except:
-                save_data['starting_time'] = shiJian
+                save_data['starting_time'] = shi_jian
         else:
             save_data['starting_time'] = ""
         # 出版周期
-        save_data['interval_of_issue'] = self.server.getOneValue(profile_text, '出版周期')
+        save_data['interval_of_issue'] = server.getOneValue(profile_text, '出版周期')
         # 地址
-        save_data['address'] = self.server.getOneValue(profile_text, '地　　址')
+        save_data['address'] = server.getOneValue(profile_text, '地　　址')
         # 邮编
-        save_data['postal_code'] = self.server.getOneValue(profile_text, '邮政编码')
+        save_data['postal_code'] = server.getOneValue(profile_text, '邮政编码')
         # 电话
-        save_data['telephone'] = self.server.getTelephone(profile_text)
+        save_data['telephone'] = server.getTelephone(profile_text)
         # 电子邮件
-        save_data['email'] = self.server.getHref(profile_text, '电子邮件')
+        save_data['email'] = server.getHref(profile_text, '电子邮件')
         # 期刊网址
-        save_data['journal_website'] = self.server.getHref(profile_text, '期刊网址')
+        save_data['journal_website'] = server.getHref(profile_text, '期刊网址')
         # ISSN
-        issn = self.server.getOneValue(profile_text, '国际标准刊号')
+        issn = server.getOneValue(profile_text, '国际标准刊号')
         if issn:
             save_data['issn'] = re.findall(r"ISSN\s*(.*)", issn)[0]
         else:
             save_data['issn'] = ""
         # CN
-        cn = self.server.getOneValue(profile_text, '国内统一刊号')
+        cn = server.getOneValue(profile_text, '国内统一刊号')
         if cn:
             save_data['cn'] = re.findall(r"CN\s*(.*)", cn)[0]
         else:
             save_data['cn'] = ""
         # 邮发代号
-        save_data['issuing_code'] = self.server.getOneValue(profile_text, '邮发代号')
+        save_data['issuing_code'] = server.getOneValue(profile_text, '邮发代号')
         # 价格
         save_data['price'] = {}
-        save_data['price']['unit_price'] = self.server.getOneValue(profile_text, '单　　价')
-        save_data['price']['total_price'] = self.server.getOneValue(profile_text, '总　　价')
+        save_data['price']['unit_price'] = server.getOneValue(profile_text, '单　　价')
+        save_data['price']['total_price'] = server.getOneValue(profile_text, '总　　价')
         # 描述
         save_data['describe'] = {}
-        save_data['describe']['history'] = self.server.getHistory(profile_text, '期刊变更')
-        honors = self.server.getHonors(profile_text)
+        save_data['describe']['history'] = server.getHistory(profile_text, '期刊变更')
+        honors = server.getHonors(profile_text)
         if honors:
             save_data['describe']['honors'] = '该刊已选入：' + honors
         else:
             save_data['describe']['honors'] = ""
-        #被收录数据库
-        save_data['databases'] = self.server.getDatabases(profile_text)
+        # 被收录数据库
+        save_data['databases'] = server.getDatabases(profile_text)
         # 学科分类
-        save_data['subject_classification_name'] = xueKeLeiBie
+        save_data['subject_classification_name'] = xue_ke_lei_bie
         # 期刊学术评价
-        evaluate_url = self.server.getEvaluateUrl(profile_text)
+        evaluate_url = server.getEvaluateUrl(profile_text)
         if evaluate_url:
             # 请求评价页面，获取响应
-            evaluate_resp = self.__getResp(url=evaluate_url, method='GET')
+            evaluate_resp = self.__get_resp(url=evaluate_url, method='GET')
             if not evaluate_resp:
                 LOGGING.error('学术评价页响应失败, url: {}'.format(evaluate_url))
                 return
 
             evaluate_text = evaluate_resp.text
-            save_data['the_number_of_published_articles_in_journal'] = self.server.getEvaluate(evaluate_text)
+            server.get_new_text()
+            save_data['the_number_of_published_articles_in_journal'] = server.getEvaluate(evaluate_text)
         else:
             save_data['the_number_of_published_articles_in_journal'] = []
 
@@ -247,7 +238,7 @@ class SpiderMain(BastSpiderMain):
         save_data['script_version'] = 'V1.3'
 
     def run(self):
-        #第一次请求的等待时间
+        # 第一次请求的等待时间
         delay_time = time.time()
         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
         LOGGING.info('handle | download delay | use time: {}s'.format('%.3f' % (time.time() - delay_time)))
@@ -257,7 +248,7 @@ class SpiderMain(BastSpiderMain):
             start_time = time.time()
             task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, count=1,
                                          lockname=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE_LOCK)
-            # task_list = ['{"s_xuekeleibie": "自然科学总论", "url": "http://www.nssd.org/journal/cn/82217B/", "sha": "218edec6175ed9383728c4c1643d12d882d0123b"}']
+            # task_list = ['{"s_xuekeleibie": "文化科学", "url": "http://www.nssd.org/journal/cn/71700X/", "sha": "218691f9dda38dd95e04fcfe1252167127cef954"}']
             if task_list:
                 for task in task_list:
                     try:
@@ -273,13 +264,15 @@ class SpiderMain(BastSpiderMain):
                             LOGGING.info('没有获取数据, 存储失败')
                             # 逻辑删除任务
                             self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
-                            LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                            LOGGING.info(
+                                'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                             continue
                         if 'sha' not in save_data:
                             LOGGING.info('数据获取不完整, 存储失败')
                             # 逻辑删除任务
                             self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
-                            LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                            LOGGING.info(
+                                'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                             continue
                         LOGGING.info('论文数据开始存储')
                         # 存储数据
@@ -296,7 +289,8 @@ class SpiderMain(BastSpiderMain):
                             # 逻辑删除任务
                             self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
 
-                        LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                        LOGGING.info(
+                            'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
                     except:
                         LOGGING.exception(str(traceback.format_exc()))
@@ -324,6 +318,7 @@ class SpiderMain(BastSpiderMain):
         threadpool.close()
         threadpool.join()
 
+
 def process_start():
     main = SpiderMain()
     try:
@@ -344,4 +339,4 @@ if __name__ == '__main__':
     po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('====== Time consuming is %.2fs ======' %(end_time - begin_time))
+    LOGGING.info('====== Time consuming is %.2fs ======' % (end_time - begin_time))

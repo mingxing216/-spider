@@ -82,7 +82,6 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('入口页面响应获取失败, url: {}'.format(self.total_url))
             return
 
-        total_resp.encoding = total_resp.apparent_encoding
         total_text = total_resp.text
         # with open ('index.html', 'w') as f:
         #     f.write(index_text)
@@ -98,7 +97,6 @@ class SpiderMain(BastSpiderMain):
             if not journal_resp:
                 LOGGING.error('期刊名录第{}页响应失败, url: {}'.format(i, url))
                 return
-            journal_resp.encoding = journal_resp.apparent_encoding
             journal_text = journal_resp.text
             # 获取期刊种子
             journal_list = self.server.getJournalList(text=journal_text)
@@ -122,7 +120,6 @@ class SpiderMain(BastSpiderMain):
             LOGGING.error('入口页面响应获取失败, url: {}'.format(self.index_url))
             return
 
-        index_resp.encoding = index_resp.apparent_encoding
         index_text = index_resp.text
         # with open ('index.html', 'w') as f:
         #     f.write(index_text)
@@ -181,7 +178,6 @@ class SpiderMain(BastSpiderMain):
                             self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
                             break
 
-                        catalog_resp.encoding = catalog_resp.apparent_encoding
                         catalog_text = catalog_resp.text
                         LOGGING.info('已翻到第{}页'.format(i))
                         # 获取详情url
