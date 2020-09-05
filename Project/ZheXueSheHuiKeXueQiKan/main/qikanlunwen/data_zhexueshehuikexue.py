@@ -396,8 +396,8 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 获取任务
             start_time = time.time()
-            task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_TEST, count=1,
-                                         lockname=config.REDIS_ZHEXUESHEHUIKEXUE_TEST_LOCK)
+            task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
+                                         lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
             # task_list = ['{"url": "http://www.nssd.org/articles/article_detail.aspx?id=12340348", "authors": "阳亚雄|王进|陈正", "pdfUrl": "http://www.nssd.org/articles/article_down.aspx?id=12340348", "qikanUrl": "http://www.nssd.org/journal/cn/97169X/", "xuekeleibie": "文化科学", "year": "2001", "issue": "01", "sha": "0cae80dcdd62d0c7210b2c18adefb7c8b9adcec0"}']
             if task_list:
                 for task in task_list:
@@ -413,13 +413,13 @@ class SpiderMain(BastSpiderMain):
                         if not save_data:
                             LOGGING.info('没有获取数据, 存储失败')
                             # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+                            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                             LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                             continue
                         if 'sha' not in save_data:
                             LOGGING.info('数据获取不完整, 存储失败')
                             # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+                            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                             LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                             continue
                         LOGGING.info('论文数据开始存储')
@@ -429,13 +429,13 @@ class SpiderMain(BastSpiderMain):
                         if success:
                             LOGGING.info('论文数据存储成功')
                             # 已完成任务
-                            self.dao.finishTask(table=config.MYSQL_TEST, sha=sha)
+                            self.dao.finishTask(table=config.MYSQL_PAPER, sha=sha)
                             # # 删除任务
                             # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
                         else:
                             LOGGING.info('论文数据存储失败')
                             # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+                            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
 
                         LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
