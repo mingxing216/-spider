@@ -13,6 +13,8 @@ import time
 import traceback
 from multiprocessing.pool import Pool, ThreadPool
 
+sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
+
 from Log import log
 from Project.ZheXueSheHuiKeXueQiKan import config
 from Project.ZheXueSheHuiKeXueQiKan.dao import dao
@@ -20,8 +22,6 @@ from Project.ZheXueSheHuiKeXueQiKan.middleware import download_middleware
 from Project.ZheXueSheHuiKeXueQiKan.service import service
 from Utils import timeutils
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
-
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 
 log_file_dir = 'SheHuiKeXue'  # LOG日志存放路径
 LOGNAME = '<国家哲学社会科学_期刊_data>'  # LOG名
