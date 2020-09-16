@@ -25,8 +25,8 @@ from Project.ZheXueSheHuiKeXueQiKan import config
 from Project.ZheXueSheHuiKeXueQiKan.main.qikanlunwen import data_zhexueshehuikexue
 
 log_file_dir = 'SheHuiKeXue'  # LOG日志存放路径
-LOGNAME = '<国家哲学社会科学_论文_task>'  # LOG名
-NAME = '国家哲学社会科学_论文_task'  # 爬虫名
+LOGNAME = '<国家哲学社会科学_期列表_task>'  # LOG名
+NAME = '国家哲学社会科学_期列表_task'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 INSERT_SPIDER_NAME = False  # 爬虫名入库
@@ -87,54 +87,44 @@ class SpiderMain(BastSpiderMain):
     def run(self):
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE,
+            year_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR,
                                              count=1,
-                                             lockname=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE_LOCK)
-            # print(category_list)
-            if category_list:
-                for category in category_list:
+                                             lockname=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR_LOCK)
+            # print(year_list)
+            if year_list:
+                for year in year_list:
                     # 数据类型转换
-                    task = json.loads(category)
+                    task = json.loads(year)
                     # print(task)
-                    qikan_url = task['url']
-                    xuekeleibie = task['s_xuekeleibie']
-                    # 获取期刊详情页
-                    category_resp = self.__getResp(url=qikan_url, method='GET')
-                    if not category_resp:
-                        LOGGING.error('期刊详情页响应失败, url: {}'.format(qikan_url))
-                        # 队列一条任务
-                        self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, data=task)
-                        break
-                    # 获取期刊年列表
-                    for year in self.server.getYears(text=category_resp.text, xuekeleibie=xuekeleibie):
-                        # print(year)
-                        # 存储年列表到mysql数据库
-                        self.dao.saveTaskToMysql(table=config.MYSQL_MAGAZINE, memo=year, ws='国家哲学社会科学', es='期刊年列表')
-                        LOGGING.info('当前已存年列表种子数量: {}'.format(self.num + 1))
+                    year_url = task['url']
+                    year = task['year']
+                    xuekeleibie = task['xuekeleibie']
+                    qikan_url = task['qikanUrl']
 
-                        # 请求年种子，获取响应
-                        year_url = year.get('url')
-                        year_resp = self.__getResp(url=year_url, method='GET')
-                        if not year_resp:
-                            LOGGING.error('{}类下{}年期刊响应失败, url: {}'.format(xuekeleibie, year.get('year'), year_url))
+                    # 请求期刊年列表，获取响应
+                    year_resp = self.__getResp(url=year_url, method='GET')
+                    if not year_resp:
+                        LOGGING.error('{}类下{}年期刊响应失败, url: {}'.format(xuekeleibie, year, year_url))
+                        # 队列一条任务
+                        self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR, data=task)
+                        break
+
+                    # 获取期列表页（年卷期，论文详情列表页）
+                    for issue in self.server.getIssues(text=year_resp.text):
+                        # print(issue)
+                        # 请求期种子，获取响应
+                        issue_url = issue.get('url')
+                        issue_resp = self.__getResp(url=issue_url, method='GET')
+                        if not issue_resp:
+                            LOGGING.error('{}类下{}年{}期期刊响应失败, url: {}'.format(xuekeleibie, year, issue.get('issue'), issue_url))
                             # 队列一条任务
-                            self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, data=task)
+                            self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR, data=task)
                             continue
 
-                        # 获取期列表页（年卷期，论文详情列表页）
-                        for issue in self.server.getIssues(text=year_resp.text):
-                            # print(issue)
-                            # 请求期种子，获取响应
-                            issue_url = issue.get('url')
-                            issue_resp = self.__getResp(url=issue_url, method='GET')
-                            if not issue_resp:
-                                LOGGING.error('{}类下{}年{}期期刊响应失败, url: {}'.format(xuekeleibie, year.get('year'), issue.get('issue'), year_url))
-                                # 队列一条任务
-                                self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, data=task)
-                                continue
-
-                            # 获取论文详情url
-                            self.getProfile(text=issue_resp.text, qikanUrl=qikan_url, xuekeleibie=xuekeleibie, year=year.get('year'), issue=issue.get('issue'))
+                        # 获取论文详情url
+                        self.getProfile(text=issue_resp.text, qikanUrl=qikan_url, xuekeleibie=xuekeleibie, year=year, issue=issue.get('issue'))
+                        # mysql标记已完成年列表任务
+                        self.dao.finishTask(table=config.MYSQL_MAGAZINE, sha=task['sha'])
 
                     else:
                         LOGGING.info('{}类下所有年期刊的论文详情种子获取完毕'.format(xuekeleibie))

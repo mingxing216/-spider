@@ -23,7 +23,7 @@ import settings
 
 # 代理IP操作类
 class ProxyUtils(object):
-    def __init__(self, logging, type=None, random=0, country=1, city=0):
+    def __init__(self, logging=None, type=None, random=0, country=1, city=0):
         '''
         :param logging: log对象，实例化参数
         :param type: 所需代理IP种类，实例化参数
@@ -83,12 +83,14 @@ class ProxyUtils(object):
 
     # 获取代理
     def get_proxy(self):
+        stat = time.time()
         while True:
             try:
                 r = requests.get(settings.GET_PROXY_API)
                 ip = r.text
                 # print(proxy)
                 if ip:
+                    self.logging.info('handle | 获取代理IP成功 | use time: {}s'.format('%.3f' % (time.time() - stat)))
                     return ip
                 else:
                     self.logging.error('代理池代理获取失败')
@@ -102,12 +104,14 @@ class ProxyUtils(object):
 
     # 设置代理最大权重
     def max_proxy(self, ip):
+        max_time = time.time()
         while True:
             try:
                 r = requests.get(settings.MAX_PROXY_API.format(ip))
                 num = r.text
                 # print(proxy)
                 if num:
+                    self.logging.info('handle | 设置代理IP最大权重 | use time: {}s'.format('%.3f' % (time.time() - max_time)))
                     return num
                 else:
                     self.logging.error('代理最大权重设置失败')
@@ -121,12 +125,14 @@ class ProxyUtils(object):
 
     # 代理权重减1
     def dec_proxy(self, ip):
+        dec_time = time.time()
         while True:
             try:
                 r = requests.get(settings.DEC_PROXY_API.format(ip))
                 num = r.text
                 # print(proxy)
                 if num:
+                    self.logging.info('handle | 代理IP权重减1 | use time: {}s'.format('%.3f' % (time.time() - dec_time)))
                     return num
                 else:
                     self.logging.error('代理权重 -1 失败')

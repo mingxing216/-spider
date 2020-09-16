@@ -43,7 +43,7 @@ SpiderDataSaveUrl='http://hbase.onecooo.com:8090/hbaseserver/dat/saveStructuredD
 # hbase存储爬虫输出多媒体文件
 SpiderMediaSaveUrl='http://hbase.onecooo.com:8090/hbaseserver/dat/saveMediaData?'
 
-# ==================《adsl代理池》==================
+# ==================《代理池》==================
 
 # 获取代理接口
 GET_PROXY_API = "http://60.195.249.95:5000/random"
@@ -51,6 +51,16 @@ GET_PROXY_API = "http://60.195.249.95:5000/random"
 MAX_PROXY_API = "http://60.195.249.95:5000/max?ip={}"
 # 删除代理接口
 DEC_PROXY_API = "http://60.195.249.95:5000/decrease?ip={}"
+
+# ==================《用户cookie池》==================
+# 获取代理接口
+GET_COOKIE_API = "http://60.195.249.95:5100/random/min"
+# cookie增加分数接口
+INC_COOKIE_API = "http://60.195.249.95:5100/increase?username={}"
+# cookie增加分数接口
+MAX_COOKIE_API = "http://60.195.249.95:5100/increase/max?username={}"
+# cookie减少分数接口
+DEC_COOKIE_API = "http://60.195.249.95:5100/decrease?username={}"
 
 # # 获取代理接口
 # GET_PROXY_API = "http://proxyserver.onecooo.com:5000/get-proxy"

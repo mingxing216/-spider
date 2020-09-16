@@ -51,6 +51,16 @@ MAX_PROXY_API = "http://localhost:5000/max?ip={}"
 # 删除代理接口
 DEC_PROXY_API = "http://localhost:5000/decrease?ip={}"
 
+# ==================《用户cookie池》==================
+# 获取代理接口
+GET_COOKIE_API = "http://localhost:5100/random/min"
+# cookie增加分数接口
+INC_COOKIE_API = "http://localhost:5100/increase?username={}"
+# cookie增加分数接口
+MAX_COOKIE_API = "http://localhost:5100/increase/max?username={}"
+# cookie减少分数接口
+DEC_COOKIE_API = "http://localhost:5100/decrease?username={}"
+
 # mysql数据库存储流媒体文件url的表名
 MEDIA_TABLE = 'ss_media'
 

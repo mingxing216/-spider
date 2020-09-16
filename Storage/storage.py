@@ -18,7 +18,7 @@ import ast
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
-from Utils import proxy
+from Utils import proxy_pool
 from Utils import mysqlpool_utils
 from Utils import redis_pool
 from Utils import timeutils
@@ -30,7 +30,7 @@ class Dao(object):
 
         self.s = requests.Session()
 
-        self.proxy_obj = proxy.ProxyUtils(logging=logging)
+        self.proxy_obj = proxy_pool.ProxyUtils(logging=logging)
         # 获取本机IP，存储使用
         while True:
             if self.proxy_obj.getLocalIP():
@@ -57,10 +57,10 @@ class Dao(object):
     def selectTaskNumber(self, key):
         return self.redis_client.scard(key=key)
 
-    def saveTaskToMysql(self, table, memo, ws, es):
+    def saveTaskToMysql(self, table, memo, ws, es, msg='NULL'):
         start_time = time.time()
         self.logging.info('开始存储种子')
-        ret = self.__saveTaskToMysql(table, memo, ws, es)
+        ret = self.__saveTaskToMysql(table, memo, ws, es, msg)
         if ret:
             self.logging.info('handle | 种子存储成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
@@ -69,7 +69,7 @@ class Dao(object):
         return ret
 
     # 种子任务存入Mysql数据库
-    def __saveTaskToMysql(self, table, memo, ws, es):
+    def __saveTaskToMysql(self, table, memo, ws, es, msg='NULL'):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         memo['sha'] = sha
@@ -86,6 +86,7 @@ class Dao(object):
                 'url': url,
                 'es': es,
                 'ws': ws,
+                'msg': msg,
                 'date_created': timeutils.getNowDatetime()
             }
             try:
@@ -141,6 +142,7 @@ class Dao(object):
                     'url': url,
                     'es': es,
                     'ws': ws,
+                    'msg': msg,
                     'date_created': timeutils.getNowDatetime()
                 }
                 try:
@@ -149,7 +151,7 @@ class Dao(object):
                     return True
 
                 except Exception as e:
-                    self.logging.warning('种子更新警告: {}'.format(ctx))
+                    self.logging.warning('种子更新警告: {}, {}'.format(ctx, e))
                     return False
 
     # 从Mysql获取指定一条任务
@@ -322,8 +324,8 @@ class Dao(object):
         # content_bs64 = content
         # 解码base64图片文件为二进制文件
         dbs = base64.b64decode(content_bs64)
-        # 内存中打开图片
-        img = Image.open(BytesIO(content))
+        # # 内存中打开图片
+        # img = Image.open(BytesIO(content))
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
         # sha = int(random.random()*10000000000000000)
 
@@ -331,13 +333,13 @@ class Dao(object):
             'pk': sha,
             'type': type,
             'url': media_url,
-            'bizTitle': item.get('bizTitle'),
-            'relEsse': str(item.get('relEsse')),
-            'relPics': str(item.get('relPics')),
+            'biz_title': item.get('bizTitle'),
+            'rel_esse': str(item.get('relEsse')),
+            'rel_pics': str(item.get('relPics')),
             'length': "{}".format(len(dbs)),
-            'tagSrc': media_url,
-            'naturalHeight': "{}".format(img.height),
-            'naturalWidth': "{}".format(img.width)
+            'tag_src': media_url
+            # 'naturalHeight': "{}".format(img.height),
+            # 'naturalWidth': "{}".format(img.width)
         }
 
         form_data = {
