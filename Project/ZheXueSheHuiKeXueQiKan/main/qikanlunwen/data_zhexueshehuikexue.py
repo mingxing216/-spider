@@ -103,7 +103,7 @@ class SpiderMain(BastSpiderMain):
         # cookie使用次数+1
         self.cookie_obj.inc_cookie(cookie_info['name'])
         self.num += 1
-        print('请求第 {} 篇全文'.format(self.num))
+        # print('请求第 {} 篇全文'.format(self.num))
         LOGGING.info('开始获取内容')
         start_time = time.time()
         if not pdf_resp:
@@ -135,8 +135,8 @@ class SpiderMain(BastSpiderMain):
                 return
             else:
                 # 更新种子错误信息
-                print(pdf_resp.text)
-                msg = 'Content-Type error: {}'.format(pdf_resp.headers['Content-Type'])
+                print('not PDF')
+                msg = 'not PDF'
                 data_dict = {'url': pdf_dict['relEsse']['url']}
                 self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
         # 内存中读写
@@ -232,7 +232,7 @@ class SpiderMain(BastSpiderMain):
         #     f.write(pdf_content)
 
         # 存储全文
-        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='test')
+        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document')
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
