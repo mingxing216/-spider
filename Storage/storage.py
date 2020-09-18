@@ -304,10 +304,10 @@ class Dao(object):
         #     except:
         #         return resp
 
-    def saveMediaToHbase(self, media_url, content, item, type):
+    def saveMediaToHbase(self, media_url, content, item, type, contype):
         start_time = time.time()
         self.logging.info('开始存储附件')
-        ret = self.__saveMediaToHbase(media_url, content, item, type)
+        ret = self.__saveMediaToHbase(media_url, content, item, type, contype)
         if ret:
             self.logging.info('handle | 存储附件成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
         else:
@@ -317,7 +317,7 @@ class Dao(object):
         return ret
 
     # 保存流媒体到hbase
-    def __saveMediaToHbase(self, media_url, content, item, type):
+    def __saveMediaToHbase(self, media_url, content, item, type, contype):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
         # # 二进制图片文件转成base64文件
         content_bs64 = base64.b64encode(content)
@@ -337,6 +337,7 @@ class Dao(object):
             'rel_esse': str(item.get('relEsse')),
             'rel_pics': str(item.get('relPics')),
             'length': "{}".format(len(dbs)),
+            'content_type': contype,
             'tag_src': media_url
             # 'naturalHeight': "{}".format(img.height),
             # 'naturalWidth': "{}".format(img.width)
