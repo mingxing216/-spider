@@ -102,7 +102,7 @@ class SpiderMain(BastSpiderMain):
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', cookies=cookies)
         # cookie使用次数+1
         self.cookie_obj.inc_cookie(cookie_info['name'])
-        self.num += 1
+        # self.num += 1
         # print('请求第 {} 篇全文'.format(self.num))
         LOGGING.info('开始获取内容')
         start_time = time.time()
@@ -135,10 +135,12 @@ class SpiderMain(BastSpiderMain):
                 return
             else:
                 # 更新种子错误信息
-                print('not PDF')
-                msg = 'not PDF'
+                print('Content-Type error: {}'.format(pdf_resp.headers['Content-Type']))
+                msg = 'Content-Type error: {}'.format(pdf_resp.headers['Content-Type'])
                 data_dict = {'url': pdf_dict['relEsse']['url']}
                 self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+                return
+
         # 内存中读写
         bytes_container = BytesIO()
         # 断点续爬，重试3次
