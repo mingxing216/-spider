@@ -97,7 +97,7 @@ class SpiderMain(BastSpiderMain):
         # # 获取cookie
         cookie_info = self.cookie_obj.get_cookie()
         cookies = cookie_info['cookie']
-        print(cookies)
+        # print(cookies)
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', cookies=cookies)
         # cookie使用次数+1
@@ -115,10 +115,10 @@ class SpiderMain(BastSpiderMain):
             return
         # media_resp.encoding = media_resp.apparent_encoding
         # 判断
-        print(pdf_resp.headers['Content-Type'])
-        if 'text' in pdf_resp.headers['Content-Type'] or 'html' in pdf_resp.headers['Content-Type']:
-            if '请输入验证码' in pdf_resp.text:
-                print('请重新登录: {}'.format(pdf_dict['url']))
+        # print(pdf_resp['data'].headers['Content-Type'])
+        if 'text' in pdf_resp['data'].headers['Content-Type'] or 'html' in pdf_resp['data'].headers['Content-Type']:
+            if '请输入验证码' in pdf_resp['data'].text:
+                LOGGING.warning('请重新登录: {}'.format(pdf_dict['url']))
                 # cookie使用次数+10
                 self.cookie_obj.max_cookie(cookie_info['name'])
                 # 更新种子错误信息
@@ -126,17 +126,29 @@ class SpiderMain(BastSpiderMain):
                 data_dict = {'url': pdf_dict['relEsse']['url']}
                 self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
                 return
-            elif '今日下载数已满' in pdf_resp.text:
-                print('用户今日下载数已满，暂不提供全文下载! {}'.format(pdf_dict['url']))
+            elif '今日下载数已满' in pdf_resp['data'].text:
+                LOGGING.warning('用户今日下载数已满，暂不提供全文下载! {}'.format(pdf_dict['url']))
+                # cookie使用次数+10
+                self.cookie_obj.max_cookie(cookie_info['name'])
                 # 更新种子错误信息
                 msg = '当前用户今日下载数已满'
                 data_dict = {'url': pdf_dict['relEsse']['url']}
                 self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
                 return
+            elif '下载过于频繁' in pdf_resp['data'].text:
+                LOGGING.warning('当前IP下载过于频繁，暂不提供全文下载! {}, {}'.format(pdf_dict['url'], pdf_resp['proxy_ip']))
+                # proxy权重减10
+                self.download_middleware.proxy_obj.dec_max_proxy(pdf_resp['proxy_ip'])
+                # 更新种子错误信息
+                msg = '当前IP下载过于频繁'
+                data_dict = {'url': pdf_dict['relEsse']['url']}
+                self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+                return
             else:
                 # 更新种子错误信息
-                print('Content-Type error: {}'.format(pdf_resp.headers['Content-Type']))
-                msg = 'Content-Type error: {}'.format(pdf_resp.headers['Content-Type'])
+                msg = 'Content-Type error: {}'.format(pdf_resp['data'].headers['Content-Type'])
+                LOGGING.warning(msg)
+                LOGGING.warning(pdf_resp['data'].text)
                 data_dict = {'url': pdf_dict['relEsse']['url']}
                 self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
                 return
@@ -146,15 +158,15 @@ class SpiderMain(BastSpiderMain):
         # 断点续爬，重试3次
         for i in range(3):
             # 判断内容获取是否完整
-            if pdf_resp.raw.tell() >= int(pdf_resp.headers['Content-Length']):
+            if pdf_resp['data'].raw.tell() >= int(pdf_resp['data'].headers['Content-Length']):
                 # 获取二进制内容
-                bytes_container.write(pdf_resp.content)
+                bytes_container.write(pdf_resp['data'].content)
                 LOGGING.info('handle | 获取内容完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
                 # pdf_content += pdf_resp.content
                 break
             else:
                 # 获取二进制内容
-                bytes_container.write(pdf_resp.content)
+                bytes_container.write(pdf_resp['data'].content)
                 LOGGING.info('handle | 获取内容失败 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
@@ -168,9 +180,9 @@ class SpiderMain(BastSpiderMain):
                 continue
         else:
             # LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
-            print('Content-Length error: {}/{}'.format(len(bytes_container.getvalue()), pdf_resp.headers['Content-Length']))
             # 更新种子错误信息
-            msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()), pdf_resp.headers['Content-Length'])
+            msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()), pdf_resp['data'].headers['Content-Length'])
+            LOGGING.warning(msg)
             data_dict = {'url': pdf_dict['relEsse']['url']}
             self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
             return

@@ -46,11 +46,13 @@ SpiderMediaSaveUrl='http://hbase.onecooo.com:8090/hbaseserver/dat/saveMediaData?
 # ==================《代理池》==================
 
 # 获取代理接口
-GET_PROXY_API = "http://60.195.249.95:5000/random"
-# 代理状态更新接口
-MAX_PROXY_API = "http://60.195.249.95:5000/max?ip={}"
-# 删除代理接口
-DEC_PROXY_API = "http://60.195.249.95:5000/decrease?ip={}"
+GET_PROXY_API = "http://localhost:5000/random"
+# 代理权重设置最大接口
+MAX_PROXY_API = "http://localhost:5000/max?ip={}"
+# 代理权重减1
+DEC_PROXY_API = "http://localhost:5000/decrease?ip={}"
+# 代理权重减10
+DEC_MAX_PROXY_API = "http://localhost:5000/decrease/max?ip={}"
 
 # ==================《用户cookie池》==================
 # 获取代理接口
