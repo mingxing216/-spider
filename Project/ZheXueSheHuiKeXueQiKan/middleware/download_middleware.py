@@ -72,7 +72,9 @@ class Downloader(downloader.BaseDownloader):
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
             self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | method: {}".format(url, '%.3fs' % (time.time() - start_time), down_data['code'], down_data['status'], method))
+            # 返回值中添加IP信息
             down_data['proxy_ip'] = ip
+            # 判断
             if down_data['code'] == 0:
                 self.proxy_obj.max_proxy(ip)
                 return down_data
@@ -91,9 +93,7 @@ class Downloader(downloader.BaseDownloader):
 
             if down_data['code'] == 2:
                 # 代理权重减1
-                dec_time = time.time()
                 self.proxy_obj.dec_proxy(ip)
-                self.logging.info('handle | 代理IP权重减1 | use time: {}s'.format('%.3f' % (time.time() - dec_time)))
                 # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
                 if err_count >= 5:
                     return

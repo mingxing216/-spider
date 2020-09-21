@@ -81,15 +81,15 @@ class CookieUtils(object):
                 num = r.text
                 # print(proxy)
                 if num:
-                    self.logging.info('Cookie次数 +10 成功 | use time: {}s'.format('%.3f' % (time.time() - stat)))
+                    self.logging.info('Cookie次数 +50 成功 | use time: {}s'.format('%.3f' % (time.time() - stat)))
                     return num
                 else:
-                    self.logging.error('Cookie 次数 +10 失败')
+                    self.logging.error('Cookie 次数 +50 失败')
                     time.sleep(3)
                     continue
 
             except Exception:
-                self.logging.error('Cookie 次数 +10 失败')
+                self.logging.error('Cookie 次数 +50 失败')
                 time.sleep(3)
                 continue
 

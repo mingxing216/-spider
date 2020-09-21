@@ -93,7 +93,7 @@ class RedisPoolUtils(object):
         self.redis_client = createRedisPool()
 
     # 获取并删除一个set元素【分布式】
-    @_redisLock
+    # @_redisLock
     def queue_spop(self, **kwargs):
         '''
         :param key: 键
@@ -108,7 +108,7 @@ class RedisPoolUtils(object):
         return None
 
     # 获取并删除多个set元素【分布式】
-    @_redisLock
+    # @_redisLock
     def queue_spops(self, **kwargs):
         '''
         :param key: 键

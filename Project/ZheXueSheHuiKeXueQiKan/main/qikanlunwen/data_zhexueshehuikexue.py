@@ -450,6 +450,7 @@ class SpiderMain(BastSpiderMain):
         save_data['script_version'] = 'V1.3'
 
     def run(self):
+        LOGGING.info('线程启动')
         #第一次请求的等待时间
         delay_time = time.time()
         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
@@ -461,7 +462,7 @@ class SpiderMain(BastSpiderMain):
             task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
                                          lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
             # task_list = ['{"url": "http://www.nssd.org/articles/article_detail.aspx?id=12165488", "authors": "鲁歌|刘娜", "pdfUrl": "http://www.nssd.org/articles/article_down.aspx?id=12165488", "id": "12165488", "qikanUrl": "http://www.nssd.org/journal/cn/96698B/", "xuekeleibie": "文化科学", "year": "1992", "issue": "03", "sha": "0007c10a1b210642cfa783c6cf67d076570535aa", "title": "《金瓶梅》作者是贾梦龙吗？"}']
-            if task_list:
+            if len(task_list) == 1:
                 for task in task_list:
                     try:
                         # 创建数据存储字典
@@ -503,9 +504,10 @@ class SpiderMain(BastSpiderMain):
 
                     except:
                         LOGGING.exception(str(traceback.format_exc()))
+                        LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
             else:
                 time.sleep(1)
-                continue
+                LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
     def start(self):
         # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
