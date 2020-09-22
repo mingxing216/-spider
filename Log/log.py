@@ -35,7 +35,6 @@ class ILog(object):
         self.file_dir = file_dir
         self.name = name
         self.logger = logging.getLogger(name)
-        self.pid = os.getpid()
 
         self.haveLogDir(file_dir)
         # 获取当前日期
@@ -52,29 +51,29 @@ class ILog(object):
             self.logger.setLevel(logging.DEBUG)
 
     def info(self, msg):
-        self.logger.info(str(msg) + ' | 进程id: {} | 线程id: {}'.format(self.pid, threading.currentThread().ident))
+        self.logger.info(str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        print(self.name + " " + now + " INFO " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(self.pid, threading.currentThread().ident))
+        print(self.name + " " + now + " INFO " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
     def error(self, msg):
-        self.logger.error(str(msg) + ' | 进程id: {} | 线程id: {}'.format(self.pid, threading.currentThread().ident))
+        self.logger.error(str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        print(self.name + " " + now + " ERROR " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(self.pid, threading.currentThread().ident))
+        print(self.name + " " + now + " ERROR " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
     def exception(self, e):
-        self.logger.exception(e + ' | 进程id: {} | 线程id: {}'.format(self.pid, threading.currentThread().ident))
+        self.logger.exception(e + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
         msg = traceback.format_exc()
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        print(self.name + " " + now + " ERROR " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(self.pid, threading.currentThread().ident))
+        print(self.name + " " + now + " ERROR " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
     def warning(self, msg):
-        self.logger.warning(str(msg) + ' | 进程id: {} | 线程id: {}'.format(self.pid, threading.currentThread().ident))
+        self.logger.warning(str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        print(self.name + " " + now + " WARNING " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(self.pid, threading.currentThread().ident))
+        print(self.name + " " + now + " WARNING " + str(msg) + ' | 进程id: {} | 线程id: {}'.format(os.getpid(), threading.currentThread().ident))
 
 
 if __name__ == '__main__':

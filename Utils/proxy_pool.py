@@ -290,7 +290,8 @@ class ProxyUtils(object):
         return proxies
 
     # 获取本机内网IP
-    def getLocalIP(self):
+    @staticmethod
+    def getLocalIP():
         global s
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
