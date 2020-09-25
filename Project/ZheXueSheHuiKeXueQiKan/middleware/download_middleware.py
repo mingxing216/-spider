@@ -76,15 +76,17 @@ class Downloader(downloader.BaseDownloader):
             down_data['proxy_ip'] = ip
             # 判断
             if down_data['code'] == 0:
+                # 代理权重设最大
                 self.proxy_obj.max_proxy(ip)
                 return down_data
 
             if down_data['code'] == 1:
+                # 代理权重减1
                 self.proxy_obj.dec_proxy(ip)
                 if down_data['status'] == 404:
                     return
                 else:
-                    if stat_count >= 5:
+                    if stat_count > 3:
                         return
                     else:
                         stat_count += 1
@@ -95,7 +97,7 @@ class Downloader(downloader.BaseDownloader):
                 # 代理权重减1
                 self.proxy_obj.dec_proxy(ip)
                 # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
-                if err_count >= 5:
+                if err_count > 3:
                     return
                 else:
                     err_count += 1

@@ -459,52 +459,52 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 获取任务
             start_time = time.time()
-            task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
-                                         lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
+            # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
+            #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
             # task_list = ['{"url": "http://www.nssd.org/articles/article_detail.aspx?id=12165488", "authors": "鲁歌|刘娜", "pdfUrl": "http://www.nssd.org/articles/article_down.aspx?id=12165488", "id": "12165488", "qikanUrl": "http://www.nssd.org/journal/cn/96698B/", "xuekeleibie": "文化科学", "year": "1992", "issue": "03", "sha": "0007c10a1b210642cfa783c6cf67d076570535aa", "title": "《金瓶梅》作者是贾梦龙吗？"}']
-            if len(task_list) == 1:
-                for task in task_list:
-                    try:
-                        # 创建数据存储字典
-                        save_data = {}
-                        # json数据类型转换
-                        task_data = json.loads(task)
-                        sha = task_data['sha']
-                        # 获取字段值存入字典并返回sha
-                        self.handle(task_data=task_data, save_data=save_data)
-                        # 保存数据到Hbase
-                        if not save_data:
-                            LOGGING.info('没有获取数据, 存储失败')
-                            # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                            LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
-                            continue
-                        if 'sha' not in save_data:
-                            LOGGING.info('数据获取不完整, 存储失败')
-                            # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                            LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
-                            continue
-                        LOGGING.info('论文数据开始存储')
-                        # 存储数据
-                        success = self.dao.saveDataToHbase(data=save_data)
-
-                        if success:
-                            LOGGING.info('论文数据存储成功')
-                            # 已完成任务
-                            self.dao.finishTask(table=config.MYSQL_PAPER, sha=sha)
-                            # # 删除任务
-                            # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
-                        else:
-                            LOGGING.info('论文数据存储失败')
-                            # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-
+            task = self.dao.get_one_task(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            if task:
+                try:
+                    # 创建数据存储字典
+                    save_data = {}
+                    # json数据类型转换
+                    task_data = json.loads(task)
+                    sha = task_data['sha']
+                    # 获取字段值存入字典并返回sha
+                    self.handle(task_data=task_data, save_data=save_data)
+                    # 保存数据到Hbase
+                    if not save_data:
+                        LOGGING.info('没有获取数据, 存储失败')
+                        # 逻辑删除任务
+                        self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                         LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
-
-                    except:
-                        LOGGING.exception(str(traceback.format_exc()))
+                        continue
+                    if 'sha' not in save_data:
+                        LOGGING.info('数据获取不完整, 存储失败')
+                        # 逻辑删除任务
+                        self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
                         LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                        continue
+                    LOGGING.info('论文数据开始存储')
+                    # 存储数据
+                    success = self.dao.saveDataToHbase(data=save_data)
+
+                    if success:
+                        LOGGING.info('论文数据存储成功')
+                        # 已完成任务
+                        self.dao.finishTask(table=config.MYSQL_PAPER, sha=sha)
+                        # # 删除任务
+                        # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
+                    else:
+                        LOGGING.info('论文数据存储失败')
+                        # 逻辑删除任务
+                        self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+
+                    LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+
+                except:
+                    LOGGING.exception(str(traceback.format_exc()))
+                    LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
             else:
                 time.sleep(1)
                 LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
