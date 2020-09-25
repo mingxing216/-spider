@@ -14,8 +14,7 @@ import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
-from Utils import user_agent_u
-from Utils import proxy_pool
+from Utils import user_agent_u, proxy_pool, user_pool
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
@@ -24,6 +23,7 @@ class Downloader(downloader.BaseDownloader):
         super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_type = proxy_type
         self.proxy_obj = proxy_pool.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
+        self.cookie_obj = user_pool.CookieUtils(logging=logging)
 
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
         start_time = time.time()
@@ -65,19 +65,55 @@ class Downloader(downloader.BaseDownloader):
                 proxies = {'http': 'http://' + ip,
                            'https': 'https://' + ip}
 
+            # 获取cookie
+            cookie_info = self.cookie_obj.get_cookie()
+            cookies = cookie_info['cookie']
+
             # # 设置请求开始时间
             # start_time = time.time()
 
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
-            self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | method: {}".format(url, '%.3fs' % (time.time() - start_time), down_data['code'], down_data['status'], method))
-            # 返回值中添加IP信息
-            down_data['proxy_ip'] = ip
+            # self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | method: {}".format(url, '%.3fs' % (time.time() - start_time), down_data['code'], down_data['status'], method))
+
+            # cookie使用次数+1
+            self.cookie_obj.inc_cookie(cookie_info['name'])
             # 判断
             if down_data['code'] == 0:
                 # 代理权重设最大
                 self.proxy_obj.max_proxy(ip)
+                # 判断返回数据
+                if 'text' in down_data['data'].headers['Content-Type'] or 'html' in down_data['data'].headers['Content-Type']:
+                    if '请输入验证码' in down_data['data'].text:
+                        self.logging.warning('请重新登录: {}, {}'.format(url, cookie_info['name']))
+                        # cookie使用次数+10
+                        self.cookie_obj.max_cookie(cookie_info['name'])
+                        # 更新种子错误信息
+                        down_data['msg'] = '请重新登录'
+
+                    elif '今日下载数已满' in down_data['data'].text:
+                        self.logging.warning('用户今日下载数已满, 暂不提供全文下载! {}, {}'.format(url, cookie_info['name']))
+                        # cookie使用次数+10
+                        self.cookie_obj.max_cookie(cookie_info['name'])
+                        # 更新种子错误信息
+                        down_data['msg'] = '当前用户今日下载数已满'
+
+                    elif '下载过于频繁' in down_data['data'].text:
+                        self.logging.warning('当前IP下载过于频繁, 暂不提供全文下载! {}, {}'.format(url, ip))
+                        # proxy权重减10
+                        self.proxy_obj.dec_max_proxy(ip)
+                        # 更新种子错误信息
+                        down_data['msg'] = '当前IP下载过于频繁'
+
+                    else:
+                        # 更新种子错误信息
+                        msg = 'Content-Type error: {}'.format(down_data['data'].headers['Content-Type'])
+                        self.logging.warning(msg)
+                        self.logging.warning(down_data['data'].text)
+                        # 更新种子错误信息
+                        down_data['msg'] = msg
+
                 return down_data
 
             if down_data['code'] == 1:
