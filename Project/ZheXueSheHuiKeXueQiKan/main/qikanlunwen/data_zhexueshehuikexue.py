@@ -1,25 +1,20 @@
 # -*- coding:utf-8 -*-
 
-'''
-
-'''
+import hashlib
+import json
+import os
+import random
+import re
 # import gevent
 # from gevent import monkey
 # monkey.patch_all()
 import sys
-import os
 import time
 import traceback
-import hashlib
-import random
-import re
-import requests
-from datetime import datetime
 from contextlib import closing
-import json
-import threading
 from io import BytesIO
 from multiprocessing.pool import Pool, ThreadPool
+
 # from multiprocessing import Pool
 # from multiprocessing.dummy import Pool as ThreadPool
 from PyPDF2 import PdfFileReader
@@ -27,7 +22,6 @@ from PyPDF2 import PdfFileReader
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 
 from Log import log
-from Utils import timeutils
 from Project.ZheXueSheHuiKeXueQiKan.middleware import download_middleware
 from Project.ZheXueSheHuiKeXueQiKan.service import service
 from Project.ZheXueSheHuiKeXueQiKan.dao import dao
@@ -68,10 +62,14 @@ class SpiderMain(BastSpiderMain):
         super().__init__()
         self.num = 0
 
-    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):
+    def __get_resp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):
+        """
+
+        :type referer: basestring
+        """
         # 发现验证码，请求页面3次
-        for i in range(3):
-            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+        for _i in range(3):
+            resp = self.download_middleware.getResp(url, method, s=s, data=data,
                                                     cookies=cookies, referer=referer, ranges=ranges, user=user)
             # if resp and resp.headers['Content-Type'].startswith('text'):
             #     if '请输入验证码' in resp.text:
@@ -83,25 +81,34 @@ class SpiderMain(BastSpiderMain):
             return
 
     # 检测PDF文件正确性
-    def isValidPDF_BytesIO(self, content):
-        bValid = True
+    @staticmethod
+    def is_valid_pdf_bytes_io(content):
+        b_valid = True
         try:
             reader = PdfFileReader(BytesIO(content))
             if reader.getNumPages() < 1:  # 进一步通过页数判断。
-                bValid = False
+                b_valid = False
         except:
-            bValid = False
+            b_valid = False
 
-        return bValid
+        return b_valid
 
     # 获取文档实体字段
     def document(self, pdf_dict):
-        # 获取cookie
-        cookie_info = self.cookie_obj.get_cookie()
-        cookies = cookie_info['cookie']
-        user = cookie_info['name']
-        # 获取页面响应
-        pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', cookies=cookies, user=user)
+        # 新版本 1.1.0 并下载详情时，使用新URL进行采集
+        if hasattr(config, 'VERSION') and getattr(config, 'VERSION') == '1.1.0' and pdf_dict['url'].startswith(
+                'http://www.nssd.org/articles/article_down.aspx?'):
+            cookie_info = None
+            new_url = 'http://www.nssd.org/articles/article_down.aspx?suid=5db370c4ebe73bb71f23fc9f8bdd68e7&id=' + pdf_dict.get('id')
+            pdf_resp = self.__get_resp(url=new_url, method='GET')
+        else:
+            # 其它版本或非下载URL保持不变
+            # 获取cookie
+            cookie_info = self.cookie_obj.get_cookie()
+            cookies = cookie_info['cookie']
+            user = cookie_info['name']
+            # 获取页面响应
+            pdf_resp = self.__get_resp(url=pdf_dict['url'], method='GET', cookies=cookies, user=user)
         # self.num += 1
         # print('请求第 {} 篇全文'.format(self.num))
         LOGGING.info('开始获取内容')
@@ -120,7 +127,8 @@ class SpiderMain(BastSpiderMain):
             if '请输入验证码' in pdf_resp['data'].text:
                 LOGGING.warning('请重新登录: {}'.format(pdf_dict['url']))
                 # cookie使用次数+50
-                self.cookie_obj.max_cookie(cookie_info['name'])
+                if cookie_info is not None:
+                    self.cookie_obj.max_cookie(cookie_info['name'])
                 # 更新种子错误信息
                 msg = '请重新登录'
                 data_dict = {'url': pdf_dict['relEsse']['url']}
@@ -129,7 +137,8 @@ class SpiderMain(BastSpiderMain):
             elif '今日下载数已满' in pdf_resp['data'].text:
                 LOGGING.warning('用户今日下载数已满，暂不提供全文下载! {}'.format(pdf_dict['url']))
                 # cookie使用次数+50
-                self.cookie_obj.max_cookie(cookie_info['name'])
+                if cookie_info is not None:
+                    self.cookie_obj.max_cookie(cookie_info['name'])
                 # 更新种子错误信息
                 msg = '当前用户今日下载数已满'
                 data_dict = {'url': pdf_dict['relEsse']['url']}
@@ -156,32 +165,37 @@ class SpiderMain(BastSpiderMain):
         # 内存中读写
         bytes_container = BytesIO()
         # 断点续爬，重试3次
-        for i in range(3):
+        for retry_count in range(3):
             # 判断内容获取是否完整
             if pdf_resp['data'].raw.tell() >= int(pdf_resp['data'].headers['Content-Length']):
                 # 获取二进制内容
                 bytes_container.write(pdf_resp['data'].content)
-                LOGGING.info('handle | 获取内容完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                LOGGING.info('handle | 获取内容完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time),
+                                                                                   len(bytes_container.getvalue())))
                 # pdf_content += pdf_resp.content
                 break
             else:
                 # 获取二进制内容
                 bytes_container.write(pdf_resp['data'].content)
-                LOGGING.info('handle | 获取内容失败 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                LOGGING.info('handle | 获取内容失败 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time),
+                                                                                   len(bytes_container.getvalue())))
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
                 # 请求头增加参数
                 ranges = 'bytes=%d-' % len(bytes_container.getvalue())
                 # 断点续传
-                pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
+                pdf_resp = self.__get_resp(url=pdf_dict['url'], method='GET', ranges=ranges)
                 if not pdf_resp:
                     LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
                     return
                 continue
         else:
-            # LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+            # LOGGING.info('handle | 获取内容不完整 | use time: {}s |
+            # length: {}'.format('%.3f' % (time.time() - start_time),
+            # len(bytes_container.getvalue())))
             # 更新种子错误信息
-            msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()), pdf_resp['data'].headers['Content-Length'])
+            msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()),
+                                                       pdf_resp['data'].headers['Content-Length'])
             LOGGING.warning(msg)
             data_dict = {'url': pdf_dict['relEsse']['url']}
             self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
@@ -198,33 +212,40 @@ class SpiderMain(BastSpiderMain):
         #                 if chunk:
         #                     # time_end = time.time()
         #                     # if time_end - time_begin >= 2:
-        #                     #     LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+        #                     #     LOGGING.info("handle | RequestTooLong Timeout | use time: {}s | length: {}".
+        #                     # format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
         #                     #     # 存储文档种子
-        #                     #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+        #                     #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT,
+        #                     #                              memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
         #                     #     return
         #
         #                     bytes_container.write(chunk)
         #                     # time_begin = time.time()
         #     except Exception as e:
-        #         LOGGING.info("handle | 获取内容失败 | use time: {}s | length: {} | message: {}".format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue()), e))
+        #         LOGGING.info("handle | 获取内容失败 | use time: {}s | length: {} | message: {}".format(
+        #             '%.3f' % (time.time() - start_time), len(bytes_container.getvalue()), e))
         #         # 请求头增加参数
         #         ranges = 'bytes=%d-' % len(bytes_container.getvalue())
         #         # 断点续传
-        #         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
+        #         pdf_resp = self.__get_resp(url=pdf_dict['url'], method='GET', ranges=ranges)
         #         continue
         #
         #     # 判断内容获取是否完整
         #     if pdf_resp.raw.tell() >= int(pdf_resp.headers['Content-Length']):
-        #         LOGGING.info('handle | 获取内容完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+        #         LOGGING.info('handle | 获取内容完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time),
+        #                                                                            len(bytes_container.getvalue())))
         #         break
         #     else:
-        #         LOGGING.info('handle | 获取内容失败 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+        #         LOGGING.info('handle | 获取内容失败 | use time: {}s | ' +
+        #                      'length: {}'.format('%.3f' % (time.time() - start_time),
+        #                                          len(bytes_container.getvalue())))
         #         # 请求头增加参数
         #         ranges = 'bytes=%d-' % len(bytes_container.getvalue())
         #         # 断点续传
-        #         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
+        #         pdf_resp = self.__get_resp(url=pdf_dict['url'], method='GET', ranges=ranges)
         # else:
-        #     LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+        #     LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.
+        #                  format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
         #     # 存储文档种子
         #     self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
         #     return
@@ -234,8 +255,8 @@ class SpiderMain(BastSpiderMain):
         LOGGING.info('结束获取内容')
 
         # 检测PDF文件
-        isValue = self.isValidPDF_BytesIO(pdf_content)
-        if not isValue:
+        is_value = self.is_valid_pdf_bytes_io(pdf_content)
+        if not is_value:
             # 更新种子错误信息
             msg = 'not PDF'
             data_dict = {'url': pdf_dict['relEsse']['url']}
@@ -247,7 +268,8 @@ class SpiderMain(BastSpiderMain):
 
         # 存储全文
         content_type = 'application/pdf'
-        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document', contype=content_type)
+        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document',
+                                         contype=content_type)
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
@@ -258,7 +280,7 @@ class SpiderMain(BastSpiderMain):
         server = service.Server(logging=LOGGING)
 
         # 文档数据存储字典
-        doc_data = {}
+        doc_data = dict()
         # 获取标题
         doc_data['title'] = pdf_dict['bizTitle']
         # 文档内容
@@ -396,16 +418,17 @@ class SpiderMain(BastSpiderMain):
         # qikan_sha = hashlib.sha1(qikan_key.encode('utf-8')).hexdigest()
         # save_data['rela_journal'] = server.rela_journal(qikan_url, qikan_key, qikan_sha)
         # 获取关联文档
-        pdfUrl = task_data.get('pdfUrl')
-        if pdfUrl:
+        pdf_url = task_data.get('pdfUrl')
+        if pdf_url:
             doc_key = key
             doc_sha = hashlib.sha1(doc_key.encode('utf-8')).hexdigest()
-            doc_url = pdfUrl
+            doc_url = pdf_url
             save_data['rela_document'] = server.rela_document(doc_url, doc_key, doc_sha)
 
-            pdf_dict = {}
+            pdf_dict = dict()
             pdf_dict['url'] = doc_url
             pdf_dict['key'] = doc_key
+            pdf_dict['id'] = task_data.get('id')
             pdf_dict['bizTitle'] = task_data.get('title')
             pdf_dict['relEsse'] = server.rela_paper(url, key, sha)
             pdf_dict['relPics'] = save_data['rela_document']
@@ -452,7 +475,7 @@ class SpiderMain(BastSpiderMain):
 
     def run(self):
         LOGGING.info('线程启动')
-        #第一次请求的等待时间
+        # 第一次请求的等待时间
         delay_time = time.time()
         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
         LOGGING.info('handle | download delay | use time: {}s'.format('%.3f' % (time.time() - delay_time)))
@@ -462,7 +485,13 @@ class SpiderMain(BastSpiderMain):
             start_time = time.time()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            # task_list = ['{"url": "http://www.nssd.org/articles/article_detail.aspx?id=12165488", "authors": "鲁歌|刘娜", "pdfUrl": "http://www.nssd.org/articles/article_down.aspx?id=12165488", "id": "12165488", "qikanUrl": "http://www.nssd.org/journal/cn/96698B/", "xuekeleibie": "文化科学", "year": "1992", "issue": "03", "sha": "0007c10a1b210642cfa783c6cf67d076570535aa", "title": "《金瓶梅》作者是贾梦龙吗？"}']
+            # task_list = ['{"url": "http://www.nssd.org/articles/article_detail.aspx?
+            # id=12165488", "authors": "鲁歌|刘娜",
+            #    "pdfUrl": "http://www.nssd.org/articles/article_down.aspx?id=12165488",
+            #    "id": "12165488", "qikanUrl": "http://www.nssd.org/journal/cn/96698B/",
+            #    "xuekeleibie": "文化科学", "year": "1992", "issue": "03",
+            #    "sha": "0007c10a1b210642cfa783c6cf67d076570535aa",
+            #    "title": "《金瓶梅》作者是贾梦龙吗？"}']
             task = self.dao.get_one_task(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
             if task:
                 try:
@@ -478,13 +507,15 @@ class SpiderMain(BastSpiderMain):
                         LOGGING.info('没有获取数据, 存储失败')
                         # 逻辑删除任务
                         self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                        LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                        LOGGING.info(
+                            'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                         continue
                     if 'sha' not in save_data:
                         LOGGING.info('数据获取不完整, 存储失败')
                         # 逻辑删除任务
                         self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-                        LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                        LOGGING.info(
+                            'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                         continue
                     LOGGING.info('论文数据开始存储')
                     # 存储数据
@@ -523,12 +554,13 @@ class SpiderMain(BastSpiderMain):
         # self.run()
 
         # 创建线程池
-        threadpool = ThreadPool(processes=config.THREAD_NUM)
-        for i in range(config.THREAD_NUM):
-            threadpool.apply_async(func=self.run)
+        thread_pool = ThreadPool(processes=config.THREAD_NUM)
+        for thread_index in range(config.THREAD_NUM):
+            thread_pool.apply_async(func=self.run)
 
-        threadpool.close()
-        threadpool.join()
+        thread_pool.close()
+        thread_pool.join()
+
 
 def process_start():
     main = SpiderMain()
@@ -545,10 +577,10 @@ if __name__ == '__main__':
     # process_start()
     # 创建多进程
     po = Pool(processes=config.PROCESS_NUM)
-    for i in range(config.PROCESS_NUM):
+    for _count in range(config.PROCESS_NUM):
         po.apply_async(func=process_start)
     po.close()
     po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('====== Time consuming is %.2fs ======' %(end_time - begin_time))
+    LOGGING.info('====== Time consuming is %.2fs ======' % (end_time - begin_time))

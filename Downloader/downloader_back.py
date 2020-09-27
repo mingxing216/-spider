@@ -100,7 +100,7 @@ class Downloader(object):
         self.proxy_obj = proxy_pool.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country)
 
     @_error
-    def get(self, url, headers, cookies, timeout, proxies):
+    def get(self, url: object, headers: object, cookies: object, timeout: object, proxies: object) -> object:
         resp = requests.get(url=url, headers=headers, proxies=proxies, timeout=timeout, cookies=cookies)
         return resp
 

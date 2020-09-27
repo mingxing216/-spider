@@ -19,7 +19,7 @@ from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
 class Downloader(downloader.BaseDownloader):
-    def __init__(self, logging, stream, timeout, proxy_type, proxy_country, proxy_city, cookie_obj):
+    def __init__(self, logging, stream, timeout, proxy_type, proxy_country, proxy_city, cookie_obj=None):
         super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_type = proxy_type
         self.proxy_obj = proxy_pool.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
@@ -58,7 +58,8 @@ class Downloader(downloader.BaseDownloader):
             }
 
             # cookie使用次数+1
-            self.cookie_obj.inc_cookie(user)
+            if self.cookie_obj is not None and user is not None:
+                self.cookie_obj.inc_cookie(user)
 
             # 设置proxy
             proxies = None
@@ -99,7 +100,8 @@ class Downloader(downloader.BaseDownloader):
             if down_data['code'] == 2:
                 # 代理权重减1
                 self.proxy_obj.dec_proxy(ip)
-                # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
+                # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'
+                # .format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
                 if err_count > 3:
                     return
                 else:

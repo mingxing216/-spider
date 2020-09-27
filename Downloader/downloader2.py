@@ -54,7 +54,7 @@ class Downloader(object):
         self.logging = logging
 
     @_error
-    def get(self, url, headers=None, cookies=None, timeout=None, proxies=None):
+    def get(self, url: object, headers: object = None, cookies: object = None, timeout: object = None, proxies: object = None) -> object:
         resp = requests.get(url=url, headers=headers, proxies=proxies, timeout=timeout, cookies=cookies)
 
         return resp
