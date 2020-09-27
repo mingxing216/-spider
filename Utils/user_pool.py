@@ -72,7 +72,7 @@ class CookieUtils(object):
                 time.sleep(3)
                 continue
 
-    # cookie使用次数加 10
+    # cookie使用次数加 50
     def max_cookie(self, username):
         stat = time.time()
         while True:
