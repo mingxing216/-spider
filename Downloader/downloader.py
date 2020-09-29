@@ -91,11 +91,11 @@ class BaseDownloader(object):
 
         if down_data['code'] == 0 or down_data['code'] == 1:
             self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | length: {} | method: {} | message: {} | data: {} | proxy: {}".format(
-                    url, '%.3fs' % (end_time - start_time), down_data['code'], down_data['status'], down_data['data'].headers.get('Content-Length'), method, down_data['message'], data, proxies
+                    url, '%.3f' % (end_time - start_time), down_data['code'], down_data['status'], down_data['data'].headers.get('Content-Length'), method, down_data['message'], data, proxies
                 ))
         else:
             self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | method: {} | message: {} | data: {} | proxy: {}".format(
-                    url, '%.3fs' % (end_time - start_time), down_data['code'], down_data['status'], method, down_data['message'], data, proxies
+                    url, '%.3f' % (end_time - start_time), down_data['code'], down_data['status'], method, down_data['message'], data, proxies
                 ))
 
         return down_data

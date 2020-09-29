@@ -39,7 +39,7 @@ class CookieUtils(object):
                 cookie = cookie_info['cookie']
                 # print(cookie)
                 if cookie:
-                    self.logging.info('获取cookie成功 | use time: {}s'.format('%.3f' % (time.time() - stat)))
+                    self.logging.info('handle | 获取cookie成功 | use time: {}'.format('%.3f' % (time.time() - stat)))
                     return cookie_info
                 else:
                     self.logging.error('用户池cookie获取失败')
@@ -60,7 +60,7 @@ class CookieUtils(object):
                 num = r.text
                 # print(proxy)
                 if num:
-                    self.logging.info('Cookie次数 +1 成功 | use time: {}s'.format('%.3f' % (time.time() - stat)))
+                    self.logging.info('handle | Cookie次数 +1 成功 | use time: {}'.format('%.3f' % (time.time() - stat)))
                     return num
                 else:
                     self.logging.error('Cookie 次数 +1 失败')
@@ -81,7 +81,7 @@ class CookieUtils(object):
                 num = r.text
                 # print(proxy)
                 if num:
-                    self.logging.info('Cookie次数 +50 成功 | use time: {}s'.format('%.3f' % (time.time() - stat)))
+                    self.logging.info('handle | Cookie次数 +50 成功 | use time: {}'.format('%.3f' % (time.time() - stat)))
                     return num
                 else:
                     self.logging.error('Cookie 次数 +50 失败')
@@ -102,7 +102,7 @@ class CookieUtils(object):
                 num = r.text
                 # print(proxy)
                 if num:
-                    self.logging.info('Cookie次数 -1 成功 | use time: {}s'.format('%.3f' % (time.time() - stat)))
+                    self.logging.info('handle | Cookie次数 -1 成功 | use time: {}'.format('%.3f' % (time.time() - stat)))
                     return num
                 else:
                     self.logging.error('Cookie次数 -1 失败')

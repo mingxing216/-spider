@@ -30,9 +30,9 @@ class Downloader(downloader.BaseDownloader):
         self.logging.info('开始下载')
         ret = self._getResp(url, method, s, data, cookies, referer, ranges, user)
         if ret:
-            self.logging.info('handle | 下载成功 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 下载成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('handle | 下载失败 | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 下载失败 | use time: {}'.format('%.3f' % (time.time() - start_time)))
 
         self.logging.info('结束下载')
         return ret

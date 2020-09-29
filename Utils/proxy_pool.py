@@ -90,7 +90,7 @@ class ProxyUtils(object):
                 ip = r.text
                 # print(proxy)
                 if ip:
-                    self.logging.info('获取代理IP成功 | use time: {}s'.format('%.3f' % (time.time() - stat)))
+                    self.logging.info('handle | 获取代理IP成功 | use time: {}'.format('%.3f' % (time.time() - stat)))
                     return ip
                 else:
                     self.logging.error('代理池代理获取失败')
@@ -111,7 +111,7 @@ class ProxyUtils(object):
                 num = r.text
                 # print(proxy)
                 if num:
-                    self.logging.info('设置代理IP最大权重成功 | use time: {}s'.format('%.3f' % (time.time() - max_time)))
+                    self.logging.info('handle | 设置代理IP最大权重成功 | use time: {}'.format('%.3f' % (time.time() - max_time)))
                     return num
                 else:
                     self.logging.error('代理最大权重设置失败')
@@ -132,7 +132,7 @@ class ProxyUtils(object):
                 num = r.text
                 # print(proxy)
                 if num:
-                    self.logging.info('代理IP权重 -1 成功 | use time: {}s'.format('%.3f' % (time.time() - dec_time)))
+                    self.logging.info('handle | 代理IP权重 -1 成功 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
                     return num
                 else:
                     self.logging.error('代理权重 -1 失败')
@@ -153,7 +153,7 @@ class ProxyUtils(object):
                 num = r.text
                 # print(proxy)
                 if num:
-                    self.logging.info('代理IP权重 -10 成功 | use time: {}s'.format('%.3f' % (time.time() - dec_time)))
+                    self.logging.info('handle | 代理IP权重 -10 成功 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
                     return num
                 else:
                     self.logging.error('代理权重 -10 失败')
