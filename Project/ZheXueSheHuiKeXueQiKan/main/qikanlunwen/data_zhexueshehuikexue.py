@@ -100,7 +100,8 @@ class SpiderMain(BastSpiderMain):
     # 获取文档实体字段
     def document(self, pdf_dict):
         # 新版本 1.1.0 并下载详情时，使用新URL进行采集
-        if hasattr(config, 'VERSION') and getattr(config, 'VERSION') == '1.1.0' and pdf_dict['url'].startswith(
+        new_url = pdf_dict['url']
+        if hasattr(config, 'VERSION') and getattr(config, 'VERSION') == '1.1.0' and new_url.startswith(
                 'http://www.nssd.org/articles/article_down.aspx?'):
             cookie_info = None
             new_url = 'http://www.nssd.org/articles/article_down.aspx?suid=5db370c4ebe73bb71f23fc9f8bdd68e7&id=' + pdf_dict.get('id')
@@ -112,24 +113,22 @@ class SpiderMain(BastSpiderMain):
             cookies = cookie_info['cookie']
             user = cookie_info['name']
             # 获取页面响应
-            pdf_resp = self.__get_resp(url=pdf_dict['url'], method='GET', cookies=cookies, user=user)
+            pdf_resp = self.__get_resp(url=new_url, method='GET', cookies=cookies, user=user)
         # self.num += 1
         # print('请求第 {} 篇全文'.format(self.num))
         logger.info('开始获取内容')
         start_time = time.time()
         if not pdf_resp:
-            logger.error('附件响应失败, url: {}'.format(pdf_dict['url']))
+            logger.error('附件响应失败, url: {}'.format(new_url))
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-            # # 存储文档种子
-            # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
         # media_resp.encoding = media_resp.apparent_encoding
         # 判断
         # print(pdf_resp['data'].headers['Content-Type'])
         if 'text' in pdf_resp['data'].headers['Content-Type'] or 'html' in pdf_resp['data'].headers['Content-Type']:
             if '请输入验证码' in pdf_resp['data'].text:
-                logger.warning('请重新登录: {}'.format(pdf_dict['url']))
+                logger.warning('请重新登录: {}'.format(new_url))
                 # cookie使用次数+50
                 if cookie_info is not None:
                     self.cookie_obj.max_cookie(cookie_info['name'])
@@ -139,7 +138,7 @@ class SpiderMain(BastSpiderMain):
                 self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
                 return
             elif '今日下载数已满' in pdf_resp['data'].text:
-                logger.warning('用户今日下载数已满，暂不提供全文下载! {}'.format(pdf_dict['url']))
+                logger.warning('用户今日下载数已满，暂不提供全文下载! {}'.format(new_url))
                 # cookie使用次数+50
                 if cookie_info is not None:
                     self.cookie_obj.max_cookie(cookie_info['name'])
@@ -149,7 +148,7 @@ class SpiderMain(BastSpiderMain):
                 self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
                 return
             elif '下载过于频繁' in pdf_resp['data'].text:
-                logger.warning('当前IP下载过于频繁，暂不提供全文下载! {}, {}'.format(pdf_dict['url'], pdf_resp['proxy_ip']))
+                logger.warning('当前IP下载过于频繁，暂不提供全文下载! {}, {}'.format(new_url, pdf_resp['proxy_ip']))
                 # proxy权重减10
                 self.download_middleware.proxy_obj.dec_max_proxy(pdf_resp['proxy_ip'])
                 # 更新种子错误信息
@@ -159,7 +158,8 @@ class SpiderMain(BastSpiderMain):
                 return
             else:
                 # 更新种子错误信息
-                msg = 'Content-Type error: {}'.format(pdf_resp['data'].headers['Content-Type'])
+                msg = 'url: {} StatusCode: {} Content-Type error: {}'.format(new_url, pdf_resp['data'].status_code,
+                                                                             pdf_resp['data'].headers['Content-Type'])
                 logger.warning(msg)
                 logger.warning(pdf_resp['data'].text)
                 data_dict = {'url': pdf_dict['relEsse']['url']}
@@ -171,26 +171,37 @@ class SpiderMain(BastSpiderMain):
         # 断点续爬，重试3次
         for retry_count in range(3):
             # 判断内容获取是否完整
-            if pdf_resp['data'].raw.tell() >= int(pdf_resp['data'].headers['Content-Length']):
+            if pdf_resp['data'].raw.tell() >= int(pdf_resp['data'].headers.get('Content-Length', 0)):
                 # 获取二进制内容
                 bytes_container.write(pdf_resp['data'].content)
                 logger.info('handle | 获取内容完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
-                                                                                   len(bytes_container.getvalue())))
+                                                                                 len(bytes_container.getvalue())))
                 # pdf_content += pdf_resp.content
                 break
             else:
                 # 获取二进制内容
                 bytes_container.write(pdf_resp['data'].content)
                 logger.warning('handle | 获取内容不完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
-                                                                                   len(bytes_container.getvalue())))
+                                                                                 len(bytes_container.getvalue())))
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
                 # 请求头增加参数
                 ranges = 'bytes=%d-' % len(bytes_container.getvalue())
                 # 断点续传
-                pdf_resp = self.__get_resp(url=pdf_dict['url'], method='GET', ranges=ranges)
+                # pdf_resp = self.__get_resp(url=new_url, method='GET', ranges=ranges)
+                # 分两种情况
+                if hasattr(config, 'VERSION') and getattr(config, 'VERSION') == '1.1.0' and 'suid=' in new_url:
+                    pdf_resp = self.__get_resp(url=new_url, method='GET', ranges=ranges)
+                else:
+                    # 其它版本或非下载URL保持不变
+                    # 获取cookie
+                    cookie_info = self.cookie_obj.get_cookie()
+                    cookies = cookie_info['cookie']
+                    user = cookie_info['name']
+                    # 获取页面响应
+                    pdf_resp = self.__get_resp(url=new_url, method='GET', cookies=cookies, user=user, ranges=ranges)
                 if not pdf_resp:
-                    logger.error('附件响应失败, url: {}'.format(pdf_dict['url']))
+                    logger.error('附件响应失败, url: {}'.format(new_url))
                     return
                 continue
         else:
@@ -199,7 +210,7 @@ class SpiderMain(BastSpiderMain):
             # len(bytes_container.getvalue())))
             # 更新种子错误信息
             msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()),
-                                                       pdf_resp['data'].headers['Content-Length'])
+                                                       pdf_resp['data'].headers.get('Content-Length', 0))
             logger.warning(msg)
             data_dict = {'url': pdf_dict['relEsse']['url']}
             self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
@@ -231,7 +242,7 @@ class SpiderMain(BastSpiderMain):
         #         # 请求头增加参数
         #         ranges = 'bytes=%d-' % len(bytes_container.getvalue())
         #         # 断点续传
-        #         pdf_resp = self.__get_resp(url=pdf_dict['url'], method='GET', ranges=ranges)
+        #         pdf_resp = self.__get_resp(url=new_url, method='GET', ranges=ranges)
         #         continue
         #
         #     # 判断内容获取是否完整
@@ -246,7 +257,7 @@ class SpiderMain(BastSpiderMain):
         #         # 请求头增加参数
         #         ranges = 'bytes=%d-' % len(bytes_container.getvalue())
         #         # 断点续传
-        #         pdf_resp = self.__get_resp(url=pdf_dict['url'], method='GET', ranges=ranges)
+        #         pdf_resp = self.__get_resp(url=new_url, method='GET', ranges=ranges)
         # else:
         #     LOGGING.info('handle | 获取内容不完整 | use time: {} | length: {}'.
         #                  format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
