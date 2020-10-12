@@ -18,7 +18,7 @@ from multiprocessing.pool import Pool, ThreadPool
 from PyPDF2 import PdfFileReader
 from loguru import logger
 
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 
 from Project.ZheXueSheHuiKeXueQiKan.middleware import download_middleware
 from Project.ZheXueSheHuiKeXueQiKan.service import service
@@ -29,11 +29,11 @@ from Utils import user_pool
 
 logger_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} {process} {thread} {level} - {message}"
 
-# 输出到文件，并按天分隔
+# 输出到指定目录下的log文件，并按天分隔
 logger.add("/opt/Log/SheHuiKeXue/期刊论文_data_{time}.log",
            format=logger_format,
            level="INFO",
-           rotation='19:19',
+           rotation='00:00',
            # compression='zip',
            enqueue=True,
            encoding="utf-8")
@@ -181,7 +181,7 @@ class SpiderMain(BastSpiderMain):
             else:
                 # 获取二进制内容
                 bytes_container.write(pdf_resp['data'].content)
-                logger.info('handle | 获取内容失败 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
+                logger.warning('handle | 获取内容不完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
                                                                                    len(bytes_container.getvalue())))
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
