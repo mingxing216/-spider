@@ -262,7 +262,7 @@ class Dao(object):
 
                 else:
                     if count >= 2:
-                        self.logging.warning('handle | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
+                        self.logging.error('handle | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
                         return False
                     else:
                         count += 1
@@ -316,11 +316,11 @@ class Dao(object):
     # 保存流媒体到hbase
     def __saveMediaToHbase(self, media_url, content, item, type, contype):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
-        # # 二进制图片文件转成base64文件
+        # 二进制图片文件转成base64文件
         content_bs64 = base64.b64encode(content)
         # content_bs64 = content
-        # 解码base64图片文件为二进制文件
-        dbs = base64.b64decode(content_bs64)
+        # # 解码base64图片文件为二进制文件
+        # dbs = base64.b64decode(content_bs64)
         # # 内存中打开图片
         # img = Image.open(BytesIO(content))
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
@@ -333,7 +333,7 @@ class Dao(object):
             'biz_title': item.get('bizTitle'),
             'rel_esse': str(item.get('relEsse')),
             'rel_pics': str(item.get('relPics')),
-            'length': "{}".format(len(dbs)),
+            'length': "{}".format(len(content)),
             'content_type': contype,
             'tag_src': media_url
             # 'naturalHeight': "{}".format(img.height),
@@ -343,11 +343,9 @@ class Dao(object):
         form_data = {
             "ip": "{}".format(self.localIP),
             "wid": "100",
-            'url': media_url,
             "content": "{}".format(content_bs64.decode('utf-8')),
             # "content": "{}".format(content),
             # "content": "{}".format(content_bs64),
-            'type': type,
             "ref": "",
             "item": json.dumps(data_dict, ensure_ascii=False)
         }
@@ -369,7 +367,7 @@ class Dao(object):
 
                 else:
                     if count >= 2:
-                        self.logging.warning('handle | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
+                        self.logging.error('handle | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
                         return False
                     else:
                         count += 1
