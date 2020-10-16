@@ -342,10 +342,12 @@ class Dao(object):
 
         form_data = {
             "ip": "{}".format(self.localIP),
-            "wid": "100",
+            'type': type,
+            'url': media_url,
             "content": "{}".format(content_bs64.decode('utf-8')),
             # "content": "{}".format(content),
             # "content": "{}".format(content_bs64),
+            "wid": "100",
             "ref": "",
             "item": json.dumps(data_dict, ensure_ascii=False)
         }
