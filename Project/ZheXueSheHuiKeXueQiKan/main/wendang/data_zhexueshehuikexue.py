@@ -126,7 +126,8 @@ class SpiderMain(BastSpiderMain):
         # media_resp.encoding = media_resp.apparent_encoding
         # 判断
         # print(pdf_resp['data'].headers['Content-Type'])
-        if 'text' in pdf_resp['data'].headers['Content-Type'] or 'html' in pdf_resp['data'].headers['Content-Type']:
+        if 'text' in pdf_resp['data'].headers.get('Content-Type') or 'html' in pdf_resp['data'].headers.get(
+                'Content-Type'):
             if '请输入验证码' in pdf_resp['data'].text:
                 logger.warning('请重新登录: {}'.format(new_url))
                 # cookie使用次数+50
@@ -181,8 +182,9 @@ class SpiderMain(BastSpiderMain):
             else:
                 # 获取二进制内容
                 bytes_container.write(pdf_resp['data'].content)
-                logger.warning('handle | 获取内容不完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
-                                                                                 len(bytes_container.getvalue())))
+                logger.warning(
+                    'handle | 获取内容不完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
+                                                                          len(bytes_container.getvalue())))
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
                 # 请求头增加参数
@@ -406,6 +408,7 @@ class SpiderMain(BastSpiderMain):
 
         thread_pool.close()
         thread_pool.join()
+
 
 def process_start():
     main = SpiderMain()

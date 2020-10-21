@@ -126,7 +126,7 @@ class SpiderMain(BastSpiderMain):
         # media_resp.encoding = media_resp.apparent_encoding
         # 判断
         # print(pdf_resp['data'].headers['Content-Type'])
-        if 'text' in pdf_resp['data'].headers['Content-Type'] or 'html' in pdf_resp['data'].headers['Content-Type']:
+        if 'text' in pdf_resp['data'].headers.get('Content-Type') or 'html' in pdf_resp['data'].headers.get('Content-Type'):
             if '请输入验证码' in pdf_resp['data'].text:
                 logger.warning('请重新登录: {}'.format(new_url))
                 # cookie使用次数+50
