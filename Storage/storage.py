@@ -27,7 +27,7 @@ from Utils import timeutils
 class Dao(object):
     def __init__(self, logging, mysqlpool_number=0, redispool_number=0):
         self.logging = logging
-        # self.s = requests.Session()
+        self.s = requests.Session()
         # 获取本机IP，存储使用
         while True:
             self.localIP = ProxyUtils.getLocalIP()
@@ -254,7 +254,7 @@ class Dao(object):
         while True:
             start_time = time.time()
             try:
-                resp = requests.post(url=url, headers=headers, data=form_data, timeout=(5, 5)).content.decode('utf-8')
+                resp = self.s.post(url=url, headers=headers, data=form_data, timeout=(5, 5)).content.decode('utf-8')
                 respon = json.loads(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info('handle | Save data to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
@@ -301,7 +301,7 @@ class Dao(object):
         #     except:
         #         return resp
 
-    def saveMediaToHbase(self, media_url, content, item, type, contype):
+    def saveMediaToHbase(self, media_url, content, item, type, contype=None):
         start_time = time.time()
         self.logging.info('开始存储附件')
         ret = self.__saveMediaToHbase(media_url, content, item, type, contype)
@@ -314,7 +314,7 @@ class Dao(object):
         return ret
 
     # 保存流媒体到hbase
-    def __saveMediaToHbase(self, media_url, content, item, type, contype):
+    def __saveMediaToHbase(self, media_url, content, item, type, contype=None):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
         # 二进制图片文件转成base64文件
         content_bs64 = base64.b64encode(content)
@@ -361,7 +361,7 @@ class Dao(object):
         while True:
             start_time = time.time()
             try:
-                resp = requests.post(url=url, headers=headers, data=form_data, timeout=(5, 5)).content.decode('utf-8')
+                resp = self.s.post(url=url, headers=headers, data=form_data, timeout=(5, 5)).content.decode('utf-8')
                 respon = json.loads(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info('handle | Save media to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))

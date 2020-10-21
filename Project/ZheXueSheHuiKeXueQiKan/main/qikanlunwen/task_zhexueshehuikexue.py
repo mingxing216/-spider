@@ -73,7 +73,7 @@ class SpiderMain(BastSpiderMain):
         else:
             return
 
-    def getProfile(self, text, qikanUrl, xuekeleibie, year, issue):
+    def get_profile(self, text, qikanUrl, xuekeleibie, year, issue):
         # 提取期刊详情页种子
         url_list = self.server.getLunWenDetailUrl(text=text, qikanUrl=qikanUrl, xuekeleibie=xuekeleibie, year=year, issue=issue)
         # print(url_list)
@@ -122,7 +122,7 @@ class SpiderMain(BastSpiderMain):
                             continue
 
                         # 获取论文详情url
-                        self.getProfile(text=issue_resp.text, qikanUrl=qikan_url, xuekeleibie=xuekeleibie, year=year, issue=issue.get('issue'))
+                        self.get_profile(text=issue_resp.text, qikanUrl=qikan_url, xuekeleibie=xuekeleibie, year=year, issue=issue.get('issue'))
                         # mysql标记已完成年列表任务
                         self.dao.finishTask(table=config.MYSQL_MAGAZINE, sha=task['sha'])
 

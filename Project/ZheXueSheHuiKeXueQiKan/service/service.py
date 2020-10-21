@@ -21,7 +21,7 @@ class DomResultHolder:
     def __init__(self):
         self.dict = {}
 
-    def get(self, type: object, text: object) -> object:
+    def get(self, type, text):
         if type in self.dict:
             return self.dict[type]
         if type == 'Selector':

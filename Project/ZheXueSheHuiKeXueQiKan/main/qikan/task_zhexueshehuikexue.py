@@ -73,7 +73,7 @@ class SpiderMain(BastSpiderMain):
         else:
             return
 
-    def getTotalJournal(self):
+    def get_total_journal(self):
         '''
         获取期刊名录中所有期刊，并存入mysql数据库
         '''
@@ -109,7 +109,7 @@ class SpiderMain(BastSpiderMain):
                 # 存入数据库
                 self.dao.saveTaskToMysql(table=config.MYSQL_MAGAZINE, memo=url, ws='国家哲学社会科学', es='期刊')
 
-    def getCatalog(self):
+    def get_catalog(self):
         '''
         获取学科分类列表页，并进入队列
         '''
@@ -130,7 +130,7 @@ class SpiderMain(BastSpiderMain):
         # 列表页进入队列
         self.dao.QueueJobTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=catalog_list)
 
-    def getProfile(self, text, xuekeleibie):
+    def get_profile(self, text, xuekeleibie):
         # 提取期刊详情页种子
         url_list = self.server.getQiKanDetailUrl(text=text, xuekeleibie=xuekeleibie)
         # print(url_list)
@@ -181,7 +181,7 @@ class SpiderMain(BastSpiderMain):
                         catalog_text = catalog_resp.text
                         LOGGING.info('已翻到第{}页'.format(i))
                         # 获取详情url
-                        self.getProfile(text=catalog_text, xuekeleibie=xuekefenlei)
+                        self.get_profile(text=catalog_text, xuekeleibie=xuekefenlei)
 
                     else:
                         LOGGING.info('已翻到最后一页')
@@ -211,8 +211,8 @@ class SpiderMain(BastSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        main.getTotalJournal()
-        main.getCatalog()
+        main.get_total_journal()
+        main.get_catalog()
         main.start()
     except:
         LOGGING.error(str(traceback.format_exc()))
