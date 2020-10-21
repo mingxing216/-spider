@@ -16,6 +16,8 @@ import re
 import time
 import ast
 
+from requests.adapters import HTTPAdapter
+
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 from Utils.proxy_pool import ProxyUtils
@@ -28,6 +30,9 @@ class Dao(object):
     def __init__(self, logging, mysqlpool_number=0, redispool_number=0):
         self.logging = logging
         self.s = requests.Session()
+        # self.s.mount('http://', HTTPAdapter(pool_connections=2, pool_maxsize=32))
+        self.s.headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'}
         # 获取本机IP，存储使用
         while True:
             self.localIP = ProxyUtils.getLocalIP()
@@ -245,16 +250,13 @@ class Dao(object):
                      "wid": "python",
                      "ref": "",
                      "item": save_data}
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
-        }
 
         # 重试次数
         count = 0
         while True:
             start_time = time.time()
             try:
-                resp = self.s.post(url=url, headers=headers, data=form_data, timeout=(5, 5)).content.decode('utf-8')
+                resp = self.s.post(url=url, data=form_data, timeout=(30, 30)).content.decode('utf-8')
                 respon = json.loads(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info('handle | Save data to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
@@ -352,16 +354,12 @@ class Dao(object):
             "item": json.dumps(data_dict, ensure_ascii=False)
         }
 
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
-        }
-
         # 重试次数
         count = 0
         while True:
             start_time = time.time()
             try:
-                resp = self.s.post(url=url, headers=headers, data=form_data, timeout=(5, 5)).content.decode('utf-8')
+                resp = self.s.post(url=url, data=form_data, timeout=(30, 30)).content.decode('utf-8')
                 respon = json.loads(resp)
                 if respon['resultCode'] == 0:
                     self.logging.info('handle | Save media to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
