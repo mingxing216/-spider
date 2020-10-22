@@ -15,8 +15,8 @@ import requests
 import re
 import time
 import ast
-
 from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
@@ -30,7 +30,9 @@ class Dao(object):
     def __init__(self, logging, mysqlpool_number=0, redispool_number=0):
         self.logging = logging
         self.s = requests.Session()
-        # self.s.mount('http://', HTTPAdapter(pool_connections=2, pool_maxsize=32))
+        # 连接主机数、最大连接数、最大重试次数
+        self.s.mount('http://', HTTPAdapter(pool_connections=2, pool_maxsize=32, max_retries=Retry(total=2, method_whitelist=frozenset(['GET', 'POST']))))
+        self.s.mount('https://', HTTPAdapter(pool_connections=2, pool_maxsize=32, max_retries=Retry(total=2, method_whitelist=frozenset(['GET', 'POST']))))
         self.s.headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'}
         # 获取本机IP，存储使用
@@ -251,36 +253,22 @@ class Dao(object):
                      "ref": "",
                      "item": save_data}
 
-        # 重试次数
-        count = 0
-        while True:
-            start_time = time.time()
-            try:
-                resp = self.s.post(url=url, data=form_data, timeout=(30, 30)).content.decode('utf-8')
-                respon = json.loads(resp)
-                if respon['resultCode'] == 0:
-                    self.logging.info('handle | Save data to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
-                    return True
+        # 开始存储实体数据
+        start_time = time.time()
+        try:
+            resp = self.s.post(url=url, data=form_data, timeout=(30, 30)).content.decode('utf-8')
+            respon = json.loads(resp)
+            if respon['resultCode'] == 0:
+                self.logging.info('handle | Save data to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
+                return True
 
-                else:
-                    if count >= 2:
-                        self.logging.error('handle | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
-                        return False
-                    else:
-                        count += 1
-                        self.logging.warning('handle | Save data to Hbase again ... | use time: {} | sha: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), resp))
-                        time.sleep(1)
-                        continue
+            else:
+                self.logging.error('handle | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), resp))
+                return False
 
-            except Exception as e:
-                if count >= 2:
-                    self.logging.error('handle | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), e))
-                    return False
-                else:
-                    count += 1
-                    self.logging.warning('handle | Save data to Hbase again ... | use time: {} | sha: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), e))
-                    time.sleep(1)
-                    continue
+        except requests.exceptions.RequestException as e:
+            self.logging.error('handle | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), data.get('sha'), len(b_data), e))
+            return False
 
         # try:
         #     resultCode = json.loads(resp)['resultCode']
@@ -354,37 +342,22 @@ class Dao(object):
             "item": json.dumps(data_dict, ensure_ascii=False)
         }
 
-        # 重试次数
-        count = 0
-        while True:
-            start_time = time.time()
-            try:
-                resp = self.s.post(url=url, data=form_data, timeout=(30, 30)).content.decode('utf-8')
-                respon = json.loads(resp)
-                if respon['resultCode'] == 0:
-                    self.logging.info('handle | Save media to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
-                    return True
+        # 开始存储多媒体数据
+        start_time = time.time()
+        try:
+            resp = self.s.post(url=url, data=form_data, timeout=(30, 30)).content.decode('utf-8')
+            respon = json.loads(resp)
+            if respon['resultCode'] == 0:
+                self.logging.info('handle | Save media to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
+                return True
 
-                else:
-                    if count >= 2:
-                        self.logging.error('handle | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
-                        return False
-                    else:
-                        count += 1
-                        self.logging.warning('handle | Save media to Hbase again ... | use time: {} | sha: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, resp))
-                        time.sleep(1)
-                        continue
+            else:
+                self.logging.error('handle | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], resp))
+                return False
 
-            except Exception as e:
-                if count >= 2:
-                    self.logging.error('handle | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], e))
-                    return False
-                else:
-                    count += 1
-                    # print(e)
-                    self.logging.warning('handle | Save media to Hbase again ... | use time: {} | sha: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, e))
-                    time.sleep(1)
-                    continue
+        except requests.exceptions.RequestException as e:
+            self.logging.error('handle | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, data_dict['length'], e))
+            return False
 
         # try:
         #     resultCode = json.loads(resp)['resultCode']
