@@ -32,7 +32,7 @@ class CookieUtils(object):
     # 随机获取一个cookie
     def get_cookie(self):
         stat = time.time()
-        while True:
+        for _i in range(3):
             try:
                 r = requests.get(settings.GET_COOKIE_API)
                 cookie_info = json.loads(r.text)
@@ -50,11 +50,14 @@ class CookieUtils(object):
                 self.logging.error('用户池cookie获取失败')
                 time.sleep(3)
                 continue
+        else:
+            self.logging.info('handle | 获取cookie失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
+            return
 
     # cookie使用次数加 1
     def inc_cookie(self, username):
         stat = time.time()
-        while True:
+        for _i in range(3):
             try:
                 r = requests.get(settings.INC_COOKIE_API.format(username))
                 num = r.text
@@ -71,11 +74,14 @@ class CookieUtils(object):
                 self.logging.error('Cookie 次数 +1 失败')
                 time.sleep(3)
                 continue
+        else:
+            self.logging.info('handle | Cookie次数 +1 失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
+            return
 
     # cookie使用次数加 50
     def max_cookie(self, username):
         stat = time.time()
-        while True:
+        for _i in range(3):
             try:
                 r = requests.get(settings.MAX_COOKIE_API.format(username))
                 num = r.text
@@ -92,11 +98,14 @@ class CookieUtils(object):
                 self.logging.error('Cookie 次数 +50 失败')
                 time.sleep(3)
                 continue
+        else:
+            self.logging.info('handle | Cookie次数 +50 失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
+            return
 
     # cookie使用次数减 1
     def dec_cookie(self, username):
         stat = time.time()
-        while True:
+        for _i in range(3):
             try:
                 r = requests.get(settings.DEC_COOKIE_API.format(username))
                 num = r.text
@@ -113,6 +122,9 @@ class CookieUtils(object):
                 self.logging.error('Cookie次数 -1 失败')
                 time.sleep(3)
                 continue
+        else:
+            self.logging.info('handle | Cookie次数 -1 失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
+            return
 
 
     # 获取本机内网IP

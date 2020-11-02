@@ -21,7 +21,7 @@ from urllib3 import Retry
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 from Utils.proxy_pool import ProxyUtils
-from Utils import mysqlpool_utils
+from Utils import mysql_pool
 from Utils import redis_pool
 from Utils import timeutils
 
@@ -45,10 +45,10 @@ class Dao(object):
 
         if int(mysqlpool_number) == 0 or int(mysqlpool_number) < 0:
             # 默认创建一个mysql链接
-            self.mysql_client = mysqlpool_utils.MysqlPool(1)
+            self.mysql_client = mysql_pool.MysqlPool(1)
         else:
             # 创建指定个数mysql链接
-            self.mysql_client = mysqlpool_utils.MysqlPool(int(mysqlpool_number))
+            self.mysql_client = mysql_pool.MysqlPool(int(mysqlpool_number))
 
         if int(redispool_number) == 0 or int(redispool_number) < 0:
             # 默认创建一个redis链接

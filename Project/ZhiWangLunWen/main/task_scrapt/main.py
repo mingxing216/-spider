@@ -10,7 +10,7 @@ from multiprocessing import Process
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
-from Utils import mysqlpool_utils
+from Utils import mysql_pool
 from Utils import redis_pool
 from Project.ZhiWangLunWen import config
 
@@ -22,7 +22,7 @@ LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 # 生成任务队列
 def createTask(redis_table, redis_max, redis_min, mysql_table, data_type):
-    mysql_client = mysqlpool_utils.MysqlPool(number=1)
+    mysql_client = mysql_pool.MysqlPool(number=1)
     redis_client = redis_pool.RedisPoolUtils(number=1)
 
     while 1:
