@@ -40,7 +40,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -50,14 +50,14 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR)
+            url_number = self.dao.select_task_number(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR)
             if url_number <= config.MAX_QUEUE_REDIS/10:
                 LOGGING.info('redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS/10)))
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_MAGAZINE, ws='国家哲学社会科学', es='期刊年列表', count=config.MAX_QUEUE_REDIS)
+                new_task_list = self.dao.get_task_list_from_mysql(table=config.MYSQL_MAGAZINE, ws='国家哲学社会科学', es='期刊年列表', count=config.MAX_QUEUE_REDIS)
                 # print(new_task_list)
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR, data=new_task_list)
+                self.dao.queue_tasks_from_mysql_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 

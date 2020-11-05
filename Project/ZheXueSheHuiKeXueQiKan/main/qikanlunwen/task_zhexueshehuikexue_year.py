@@ -48,7 +48,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -76,9 +76,9 @@ class SpiderMain(BastSpiderMain):
     def run(self):
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE,
-                                             count=1,
-                                             lockname=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE_LOCK)
+            category_list = self.dao.get_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE,
+                                                         count=1,
+                                                         lockname=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE_LOCK)
             # print(category_list)
             if category_list:
                 for category in category_list:
@@ -92,20 +92,20 @@ class SpiderMain(BastSpiderMain):
                     if not category_resp:
                         LOGGING.error('期刊详情页响应失败, url: {}'.format(qikan_url))
                         # 队列一条任务
-                        self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, data=task)
+                        self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, data=task)
                         break
                     # 获取期刊年列表
                     year_list = self.server.getYears(text=category_resp.text, xuekeleibie=xuekeleibie, qikanUrl=qikan_url)
                     # print(year_list)
                     # 存储年列表到mysql数据库
                     for year in year_list:
-                        self.dao.saveTaskToMysql(table=config.MYSQL_MAGAZINE, memo=year, ws='国家哲学社会科学', es='期刊年列表')
+                        self.dao.save_task_to_mysql(table=config.MYSQL_MAGAZINE, memo=year, ws='国家哲学社会科学', es='期刊年列表')
                         LOGGING.info('当前已存年列表种子数量: {}'.format(self.num + 1))
 
                     else:
                         LOGGING.info('{}类下所有年期刊列表种子获取完毕'.format(xuekeleibie))
                         # 标记已完成期刊任务
-                        self.dao.finishTask(table=config.MYSQL_MAGAZINE, sha=task['sha'])
+                        self.dao.finish_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=task['sha'])
 
             else:
                 LOGGING.info('队列中已无任务，结束程序')

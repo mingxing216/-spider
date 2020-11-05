@@ -48,7 +48,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -82,14 +82,14 @@ class SpiderMain(BastSpiderMain):
             self.num += 1
             LOGGING.info('当前已抓种子数量: {}'.format(self.num))
             # 存入数据库
-            self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=url, ws='国家哲学社会科学', es='期刊论文')
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=url, ws='国家哲学社会科学', es='期刊论文')
 
     def run(self):
         while 1:
             # 获取任务
-            year_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR,
-                                             count=1,
-                                             lockname=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR_LOCK)
+            year_list = self.dao.get_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR,
+                                                     count=1,
+                                                     lockname=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR_LOCK)
             # print(year_list)
             if year_list:
                 for year in year_list:
@@ -106,7 +106,7 @@ class SpiderMain(BastSpiderMain):
                     if not year_resp:
                         LOGGING.error('{}类下{}年期刊响应失败, url: {}'.format(xuekeleibie, year, year_url))
                         # 队列一条任务
-                        self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR, data=task)
+                        self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR, data=task)
                         break
 
                     # 获取期列表页（年卷期，论文详情列表页）
@@ -118,13 +118,13 @@ class SpiderMain(BastSpiderMain):
                         if not issue_resp:
                             LOGGING.error('{}类下{}年{}期期刊响应失败, url: {}'.format(xuekeleibie, year, issue.get('issue'), issue_url))
                             # 队列一条任务
-                            self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR, data=task)
+                            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_YEAR, data=task)
                             continue
 
                         # 获取论文详情url
                         self.get_profile(text=issue_resp.text, qikanUrl=qikan_url, xuekeleibie=xuekeleibie, year=year, issue=issue.get('issue'))
                         # mysql标记已完成年列表任务
-                        self.dao.finishTask(table=config.MYSQL_MAGAZINE, sha=task['sha'])
+                        self.dao.finish_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=task['sha'])
 
                     else:
                         LOGGING.info('{}类下所有年期刊的论文详情种子获取完毕'.format(xuekeleibie))

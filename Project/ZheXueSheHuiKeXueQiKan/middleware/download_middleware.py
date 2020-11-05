@@ -69,8 +69,6 @@ class Downloader(downloader.BaseDownloader):
                 proxies = {'http': 'http://' + ip,
                            'https': 'https://' + ip}
 
-            # # 设置请求开始时间
-            # start_time = time.time()
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)

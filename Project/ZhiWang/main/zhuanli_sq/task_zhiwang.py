@@ -45,7 +45,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -140,7 +140,7 @@ class SpiderMain(BastSpiderMain):
                 self.num += 1
                 LOGGING.info('当前已抓种子数量: {}'.format(self.num))
                 # 存入数据库
-                self.dao.saveTaskToMysql(table=config.MYSQL_PATENT, memo=url, ws='中国知网', es='发明授权')
+                self.dao.save_task_to_mysql(table=config.MYSQL_PATENT, memo=url, ws='中国知网', es='发明授权')
 
             # 判断是否有下一页
             next_url = self.server.hasNextUrl(resp=next_text)

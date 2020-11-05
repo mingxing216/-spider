@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-
+import base64
 import os
 import sys
 import hashlib
@@ -106,21 +106,37 @@ class SpiderMain(BastSpiderMain):
             paper_sha = task_data.get('sha')
 
             # 获取hbase中全文数据
-            info = self.hbase_obj.get_datas(pdf_sha).decode('utf-8')
-            print(info)
+            info_dict = self.hbase_obj.get_datas(pdf_sha)
 
-            # 检测PDF文件
-            is_value = self.is_valid_pdf_bytes_io(info)
-            if not is_value:
+            if b'm:content' not in info_dict.keys():
                 # 更新全文种子错误信息及状态
-                msg = 'not PDF/url: {}'.format(pdf_url)
+                msg = '全文content字段缺失, url: {}'.format(pdf_url)
                 logger.warning(msg)
-                # data_dict = {'url': paper_url}
-                # self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+                self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+
+            elif not info_dict.get(b'm:content'):
+                # 更新全文种子错误信息及状态
+                msg = '全文content字段无值, url: {}'.format(pdf_url)
+                logger.warning(msg)
+                self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+
             else:
-                # 记录全文正确信息
-                msg = 'is PDF/url: {}'.format(pdf_url)
-                logger.info(msg)
+                info_bs64 = info_dict.get(b'm:content').decode('utf-8')
+                # print(info_bs64)
+                info = base64.b64decode(info_bs64)
+                # print(info)
+
+                # 检测PDF文件
+                is_value = self.is_valid_pdf_bytes_io(info)
+                if not is_value:
+                    # 更新全文种子错误信息及状态
+                    msg = 'not PDF, url: {}'.format(pdf_url)
+                    logger.warning(msg)
+                    self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+                else:
+                    # 记录全文正确信息
+                    msg = 'is PDF, url: {}'.format(pdf_url)
+                    logger.info(msg)
 
         else:
             logger.info('无全文数据')
@@ -135,16 +151,7 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 获取任务
             start_time = time.time()
-            # task = self.dao.get_one_task(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
-            task = '{"url": "http://www.nssd.org/articles/article_detail.aspx?id=12165488", ' \
-                   '"authors": "鲁歌|刘娜", ' \
-                   '"pdfUrl": "http://www.nssd.org/articles/article_down.aspx?id=12165488", ' \
-                   '"id": "12165488", ' \
-                   '"qikanUrl": "http://www.nssd.org/journal/cn/96698B/", ' \
-                   '"xuekeleibie": "文化科学", ' \
-                   '"year": "1992", "issue": "03", ' \
-                   '"sha": "0007c10a1b210642cfa783c6cf67d076570535aa", ' \
-                   '"title": "《金瓶梅》作者是贾梦龙吗？"}'
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
             if task:
                 try:
                     # json数据类型转换
@@ -171,16 +178,15 @@ class SpiderMain(BastSpiderMain):
         #     g_list.append(s)
         # gevent.joinall(g_list)
 
-        self.run()
+        # self.run()
 
-        # # 创建线程池
-        # thread_pool = ThreadPool(processes=config.THREAD_NUM)
-        # for thread_index in range(config.THREAD_NUM):
-        #     thread_pool.apply_async(func=self.run)
-        #
-        # thread_pool.close()
-        # thread_pool.join()
+        # 创建线程池
+        thread_pool = ThreadPool(processes=config.THREAD_NUM)
+        for thread_index in range(config.THREAD_NUM):
+            thread_pool.apply_async(func=self.run)
 
+        thread_pool.close()
+        thread_pool.join()
 
 def process_start():
     main = SpiderMain()
@@ -194,13 +200,13 @@ def process_start():
 if __name__ == '__main__':
     logger.info('======The Start!======')
     begin_time = time.time()
-    process_start()
+    # process_start()
     # 创建多进程
-    # po = Pool(processes=config.PROCESS_NUM)
-    # for _count in range(config.PROCESS_NUM):
-    #     po.apply_async(func=process_start)
-    # po.close()
-    # po.join()
+    po = Pool(processes=config.PROCESS_NUM)
+    for _count in range(config.PROCESS_NUM):
+        po.apply_async(func=process_start)
+    po.close()
+    po.join()
     end_time = time.time()
     logger.info('======The End!======')
     logger.info('====== Time consuming is %.3fs ======' % (end_time - begin_time))

@@ -6,6 +6,7 @@
 import sys
 import os
 import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import re
 import time
@@ -58,38 +59,30 @@ class Downloader(downloader.BaseDownloader):
             }
             # 设置proxy
             proxies = None
+            ip = None
             if self.proxy_type:
-                sta = time.time()
                 ip = self.proxy_obj.get_proxy()
                 proxies = {'http': 'http://' + ip,
                            'https': 'https://' + ip}
-                self.logging.info('handle | 获取代理IP成功 | use time: {}s'.format('%.3f' % (time.time() - sta)))
-
-            # # 设置请求开始时间
-            # start_time = time.time()
 
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
-            self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | method: {}".format(url, '%.3fs' % (time.time() - start_time), down_data['code'], down_data['status'], method))
+            # self.logging.info("handle | request for url: {} | use time: {} | code: {} | status: {} | method: {}".format(url, '%.3fs' % (time.time() - start_time), down_data['code'], down_data['status'], method))
 
             if down_data['code'] == 0:
-                # 设置代理最大权重
-                max_time = time.time()
-                # max = self.proxy_obj.max_proxy(ip)
-                self.logging.info('handle | 设置代理IP最大权重 | use time: {}s'.format('%.3f' % (time.time() - max_time)))
+                # # 设置代理最大权重
+                # self.proxy_obj.max_proxy(ip)
                 # self.logging.info('请求成功: {} | 用时: {}秒'.format(url, '%.2f' %(time.time() - start_time)))
                 return down_data['data']
 
             if down_data['code'] == 1:
-                # 代理权重减1
-                dec_time = time.time()
-                # dec = self.proxy_obj.dec_proxy(ip)
-                self.logging.info('handle | 代理IP权重减1 | use time: {}s'.format('%.3f' % (time.time() - dec_time)))
+                # # 代理权重减1
+                # self.proxy_obj.dec_proxy(ip)
                 if down_data['status'] == 404:
                     return
                 else:
-                    if stat_count >= 5:
+                    if stat_count > 3:
                         return
                     else:
                         stat_count += 1
@@ -97,12 +90,10 @@ class Downloader(downloader.BaseDownloader):
                         continue
 
             if down_data['code'] == 2:
-                # 代理权重减1
-                dec_time = time.time()
-                # dec = self.proxy_obj.dec_proxy(ip)
-                self.logging.info('handle | 代理IP权重减1 | use time: {}s'.format('%.3f' % (time.time() - dec_time)))
+                # # 代理权重减1
+                # self.proxy_obj.dec_proxy(ip)
                 # self.logging.error('请求失败: {} | 错误信息: {} | 用时: {}秒'.format(url, down_data['message'], '%.2f' %(time.time() - start_time)))
-                if err_count >= 5:
+                if err_count > 3:
                     return
                 else:
                     err_count += 1
@@ -123,6 +114,3 @@ class Downloader(downloader.BaseDownloader):
         except:
             self.logging.error('cookie创建异常')
             return None
-
-
-

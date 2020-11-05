@@ -91,7 +91,7 @@ class SpiderMain(BastSpiderMain):
         if not qikanTimeListHtml:
             LOGGING.error('期刊时间列表页获取失败, url: {}'.format(qiKanTimeListUrl))
             # 队列一条任务
-            self.dao.QueueOneTask(key=config.REDIS_QIKAN_CATALOG, data=task)
+            self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
             return
 
         # 获取期刊【年】、【期】列表
@@ -111,7 +111,7 @@ class SpiderMain(BastSpiderMain):
             if not qikanTimeListHtml:
                 LOGGING.error('论文列表页html源码获取失败, url: {}'.format(articleUrl))
                 # 队列一条任务
-                self.dao.QueueOneTask(key=config.REDIS_QIKAN_CATALOG, data=task)
+                self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                 return
 
             # 获取论文种子列表
@@ -122,7 +122,7 @@ class SpiderMain(BastSpiderMain):
                     # 存储种子
                     self.num += 1
                     LOGGING.info('已抓种子数量: {}'.format(self.num))
-                    self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=paper_url, ws='中国知网', es='期刊论文')
+                    self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_url, ws='中国知网', es='期刊论文')
             else:
                 LOGGING.error('论文种子列表获取失败')
         else:
@@ -131,9 +131,9 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_QIKAN_CATALOG,
-                                             count=20,
-                                             lockname=config.REDIS_QIKAN_CATALOG_LOCK)
+            category_list = self.dao.get_task_from_redis(key=config.REDIS_QIKAN_CATALOG,
+                                                         count=20,
+                                                         lockname=config.REDIS_QIKAN_CATALOG_LOCK)
             # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 
@@ -161,14 +161,14 @@ class SpiderMain(BastSpiderMain):
     def queue_task(self):
         while 1:
             # 查询redis队列中任务数量
-            url_number = self.dao.selectTaskNumber(key=config.REDIS_QIKAN_CATALOG)
+            url_number = self.dao.select_task_number(key=config.REDIS_QIKAN_CATALOG)
             if url_number == 0:
                 LOGGING.info('redis已无任务，准备开始队列任务。')
                 # 获取任务
-                new_task_list = self.dao.getNewTaskList(table=config.MYSQL_MAGAZINE, ws='中国知网', es='期刊论文', count=10000)
+                new_task_list = self.dao.get_task_list_from_mysql(table=config.MYSQL_MAGAZINE, ws='中国知网', es='期刊论文', count=10000)
                 # print(new_task_list)
                 # 队列任务
-                self.dao.QueueTask(key=config.REDIS_QIKAN_CATALOG, data=new_task_list)
+                self.dao.queue_tasks_from_mysql_to_redis(key=config.REDIS_QIKAN_CATALOG, data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 

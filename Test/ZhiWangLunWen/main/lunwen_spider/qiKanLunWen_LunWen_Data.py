@@ -42,7 +42,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -244,7 +244,7 @@ class SpiderMain(BastSpiderMain):
         # url = 'http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=KYGL2017S1059&tableName=CJFDLAST2017'
         urldata_qiKanUrl = task['qiKanUrl']
         # 查询当前文章是否被抓取过
-        status = self.dao.getTaskStatus(sha=sha)
+        status = self.dao.get_task_status(sha=sha)
         if status:
             LOGGING.info('当前任务已被抓取过: sha: {} | url: {}'.format(sha, url))
             return
@@ -358,10 +358,10 @@ class SpiderMain(BastSpiderMain):
 
         # 保存媒体url
         for media in save_data['zuTu']:
-            self.dao.saveMediaToMysql(url=media['url'], type='image')
+            self.dao.save_media_to_mysql(url=media['url'], type='image')
 
         # 保存数据
-        self.dao.saveDataToHbase(data=save_data)
+        self.dao.save_data_to_hbase(data=save_data)
 
         # 物理删除任务
         self.dao.deleteUrl(table=config.LUNWEN_URL_TABLE,

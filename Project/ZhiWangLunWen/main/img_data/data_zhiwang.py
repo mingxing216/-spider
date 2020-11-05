@@ -73,23 +73,23 @@ class SpiderMain(BastSpiderMain):
             # self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=task_data, ws='中国知网', es='论文')
 
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_IMG, sha=sha)
             return
         # media_resp.encoding = media_resp.apparent_encoding
         img_content = media_resp.content
         # 存储图片
-        success = self.dao.saveMediaToHbase(media_url=url, content=img_content, item=task_data, type='image')
+        success = self.dao.save_media_to_hbase(media_url=url, content=img_content, item=task_data, type='image')
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_IMG, sha=sha)
+            self.dao.delete_task_from_mysql(table=config.MYSQL_IMG, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_IMG, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_IMG, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZHIWNAG_IMG, count=50, lockname=config.REDIS_ZHIWNAG_IMG_LOCK)
+            task_list = self.dao.get_task_from_redis(key=config.REDIS_ZHIWNAG_IMG, count=50, lockname=config.REDIS_ZHIWNAG_IMG_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

@@ -65,17 +65,17 @@ class SpiderMain(BastSpiderMain):
             # 标题内容调整格式
             img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
+            self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
             return
 
         img_content = media_resp.content
         # 存储图片
-        succ = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
+        succ = self.dao.save_media_to_hbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
         if not succ:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_INSTITUTE, sha=sha)
 
     def handle(self, task, save_data):
         # 数据类型转换
@@ -89,7 +89,7 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('学位授予单位页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_INSTITUTE, sha=sha)
             return
 
         resp.encoding = resp.apparent_encoding
@@ -153,18 +153,18 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('数据获取不完整, 存储失败')
             return
         # 存储数据
-        success = self.dao.saveDataToHbase(data=save_data)
+        success = self.dao.save_data_to_hbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.delete_task_from_mysql(table=config.MYSQL_INSTITUTE, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_INSTITUTE, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_XUEWEI_INSTITUTE, count=30, lockname=config.REDIS_XUEWEI_INSTITUTE_LOCK)
+            task_list = self.dao.get_task_from_redis(key=config.REDIS_XUEWEI_INSTITUTE, count=30, lockname=config.REDIS_XUEWEI_INSTITUTE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

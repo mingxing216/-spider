@@ -131,7 +131,7 @@ class HuiYiLunWen_LunWenTaskDao(storage.Dao):
                                                         mysqlpool_number=mysqlpool_number,
                                                         redispool_number=redispool_number)
 
-    def getTask(self):
+    def get_task_from_redis(self):
         sql = "select * from {} where `type` = '{}' and `del` = '{}'".format(config.MYSQL_QIKAN,
                                                                              config.HUIYILUNWEN_QIKAN_MAIN, 0)
         data_list = self.mysql_client.get_results(sql=sql)
@@ -165,7 +165,7 @@ class QiKanLunWen_LunWenTaskDao(storage.Dao):
                                                         mysqlpool_number=mysqlpool_number,
                                                         redispool_number=redispool_number)
 
-    def getTask(self):
+    def get_task_from_redis(self):
         sql = "select * from {} where `type` = '{}' and `del` = '{}'".format(config.MYSQL_QIKAN,
                                                                              config.QIKANLUNWEN_QIKAN_MAIN, 0)
         data_list = self.mysql_client.get_results(sql=sql)
@@ -244,7 +244,7 @@ class QiKanLunWen_LunWenDataDao(storage.Dao):
         return datas
 
     # 从mysql获取任务
-    def getNewTaskList(self, table, where, count):
+    def get_task_list_from_mysql(self, table, where, count):
         sql = "select * from {} where `type` = '{}' and `del` = '0' limit {}".format(table, where, count)
 
         data_list = self.mysql_client.get_results(sql=sql)
@@ -327,7 +327,7 @@ class HuiYiLunWen_LunWenDataDao(storage.Dao):
         return datas
 
     # 从mysql获取任务
-    def getNewTaskList(self, table, where, count):
+    def get_task_list_from_mysql(self, table, where, count):
         sql = "select * from {} where `type` = '{}' and `del` = '0' limit {}".format(table, where, count)
 
         data_list = self.mysql_client.get_results(sql=sql)
@@ -410,7 +410,7 @@ class XueWeiLunWen_LunWenDataDao(storage.Dao):
         return datas
 
     # 从mysql获取任务
-    def getNewTaskList(self, table, where, count):
+    def get_task_list_from_mysql(self, table, where, count):
         sql = "select * from {} where `type` = '{}' and `del` = '0' limit {}".format(table, where, count)
 
         data_list = self.mysql_client.get_results(sql=sql)
@@ -527,11 +527,11 @@ class ZhiWangLunWen_ZuoZheDataDao(storage.Dao):
     #     return datas
 
     # 查询redis数据库中有多少任务
-    def selectTaskNumber(self, key):
+    def select_task_number(self, key):
         return self.redis_client.scard(key=key)
 
     # 从Mysql获取任务
-    def getNewTaskList(self, table, count):
+    def get_task_list_from_mysql(self, table, count):
         sql = "select * from {} where `del` = '0' limit {}".format(table, count)
 
         data_list = self.mysql_client.get_results(sql=sql)
@@ -545,7 +545,7 @@ class ZhiWangLunWen_ZuoZheDataDao(storage.Dao):
         return data_list
 
     # 队列任务
-    def QueueTask(self, key, data):
+    def queue_tasks_from_mysql_to_redis(self, key, data):
         if data:
             for url_data in data:
                 url = url_data['memo']
@@ -609,11 +609,11 @@ class ZhiWangLunWen_HuiYiDataDao(storage.Dao):
     #     return datas
 
     # 查询redis数据库中有多少任务
-    def selectTaskNumber(self, key):
+    def select_task_number(self, key):
         return self.redis_client.scard(key=key)
 
     # 从Mysql获取任务
-    def getNewTaskList(self, table, where, count):
+    def get_task_list_from_mysql(self, table, where, count):
         sql = "select * from {} where `type` = '{}' and `del` = '0' limit {}".format(table, where, count)
 
         datas = self.mysql_client.get_results(sql=sql)
@@ -627,7 +627,7 @@ class ZhiWangLunWen_HuiYiDataDao(storage.Dao):
         return datas
 
     # 队列任务
-    def QueueTask(self, key, data):
+    def queue_tasks_from_mysql_to_redis(self, key, data):
         if data:
             for url_data in data:
                 url = url_data['memo']
@@ -650,7 +650,7 @@ class ZhiWangLunWen_QiKanDataDao(storage.Dao):
         return datas
 
     # 从Mysql获取任务
-    def getNewTaskList(self, table, where, count):
+    def get_task_list_from_mysql(self, table, where, count):
         sql = "select * from {} where `type` = '{}' and `del` = '0' limit {}".format(table, where, count)
 
         data_list = self.mysql_client.get_results(sql=sql)
@@ -690,7 +690,7 @@ class ZhiWangLunWen_WenJiDataDao(storage.Dao):
     #     return datas
 
     # 从Mysql获取任务
-    def getNewTaskList(self, table, where, count):
+    def get_task_list_from_mysql(self, table, where, count):
         sql = "select * from {} where `type` = '{}' and `del` = '0' limit {}".format(table, where, count)
 
         data_list = self.mysql_client.get_results(sql=sql)

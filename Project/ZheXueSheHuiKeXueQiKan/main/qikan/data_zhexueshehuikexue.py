@@ -47,7 +47,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -79,7 +79,7 @@ class SpiderMain(BastSpiderMain):
 
         img_content = media_resp.content
         # 存储图片
-        sto = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
+        sto = self.dao.save_media_to_hbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
         if sto:
             return True
         else:
@@ -246,8 +246,8 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 获取任务
             start_time = time.time()
-            task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, count=1,
-                                         lockname=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE_LOCK)
+            task_list = self.dao.get_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, count=1,
+                                                     lockname=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE_LOCK)
             # task_list = ['{"s_xuekeleibie": "文化科学", "url": "http://www.nssd.org/journal/cn/71700X/", "sha": "218691f9dda38dd95e04fcfe1252167127cef954"}']
             if task_list:
                 for task in task_list:
@@ -263,31 +263,31 @@ class SpiderMain(BastSpiderMain):
                         if not save_data:
                             LOGGING.info('没有获取数据, 存储失败')
                             # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
+                            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=sha)
                             LOGGING.info(
                                 'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                             continue
                         if 'sha' not in save_data:
                             LOGGING.info('数据获取不完整, 存储失败')
                             # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
+                            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=sha)
                             LOGGING.info(
                                 'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
                             continue
                         LOGGING.info('论文数据开始存储')
                         # 存储数据
-                        success = self.dao.saveDataToHbase(data=save_data)
+                        success = self.dao.save_data_to_hbase(data=save_data)
 
                         if success:
                             LOGGING.info('论文数据存储成功')
                             # 已完成任务
-                            self.dao.finishTask(table=config.MYSQL_MAGAZINE, sha=sha)
+                            self.dao.finish_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=sha)
                             # # 删除任务
                             # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
                         else:
                             LOGGING.info('论文数据存储失败')
                             # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_MAGAZINE, sha=sha)
+                            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=sha)
 
                         LOGGING.info(
                             'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))

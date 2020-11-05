@@ -22,6 +22,7 @@ from io import BytesIO, StringIO
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 from PyPDF2 import PdfFileReader
+from loguru import logger
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 from Log import log
@@ -32,32 +33,29 @@ from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.dao import dao
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui import config
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
-
-log_file_dir = 'ZiRanKeXue'  # LOG日志存放路径
-LOGNAME = '<国家自然科学_论文_data>'  # LOG名
-NAME = '国家自然科学_论文_data'  # 爬虫名
-LOGGING = log.ILog(log_file_dir, LOGNAME)
-
-INSERT_SPIDER_NAME = False  # 爬虫名入库
-INSERT_DATA_NUMBER = False  # 记录抓取数据量
+logger_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} {process} {thread} {level} - {message}"
+# 输出到指定目录下的log文件，并按天分隔
+logger.add("/opt/Log/ZiRanKeXue/论文_data_{time}.log",
+           format=logger_format,
+           level="INFO",
+           rotation='00:00',
+           # compression='zip',
+           enqueue=True,
+           encoding="utf-8")
 
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
+        self.download_middleware = download_middleware.Downloader(logging=logger,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   stream=config.STREAM,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.Server(logging=LOGGING)
-        self.dao = dao.Dao(logging=LOGGING,
+        self.server = service.Server(logging=logger)
+        self.dao = dao.Dao(logging=logger,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
-
-        # 数据库录入爬虫名
-        if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -71,9 +69,9 @@ class SpiderMain(BastSpiderMain):
         for i in range(3):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer, ranges=ranges)
-            if resp and resp.headers['Content-Type'].startswith('text'):
+            if resp and resp.headers.get('Content-Type').startswith('text'):
                 if '请输入验证码' in resp.text:
-                    LOGGING.error('出现验证码: {}'.format(url))
+                    logger.error('出现验证码: {}'.format(url))
                     continue
 
             return resp
@@ -82,7 +80,8 @@ class SpiderMain(BastSpiderMain):
             return
 
     # 检测PDF文件正确性
-    def isValidPDF_BytesIO(self, content):
+    @staticmethod
+    def isValidPDF_BytesIO(content):
         bValid = True
         try:
             reader = PdfFileReader(BytesIO(content))
@@ -97,31 +96,35 @@ class SpiderMain(BastSpiderMain):
     def document(self, pdf_dict):
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
-        LOGGING.info('开始获取内容')
-        start_time = time.time()
         if not pdf_resp:
-            LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
+            logger.error('附件响应失败, url: {}'.format(pdf_dict['url']))
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # # 存储文档种子
             # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
         # media_resp.encoding = media_resp.apparent_encoding
+
+        logger.info('开始获取内容')
+        start_time = time.time()
+
         # 内存中读写
         bytes_container = BytesIO()
         # 断点续爬，重试3次
         for i in range(3):
             # 判断内容获取是否完整
-            if pdf_resp.raw.tell() >= int(pdf_resp.headers['Content-Length']):
+            if pdf_resp.raw.tell() >= int(pdf_resp.headers.get('Content-Length', 0)):
                 # 获取二进制内容
                 bytes_container.write(pdf_resp.content)
-                LOGGING.info('handle | 获取内容完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                logger.info('handle | 获取内容完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
+                                                                                 len(bytes_container.getvalue())))
                 # pdf_content += pdf_resp.content
                 break
             else:
                 # 获取二进制内容
                 bytes_container.write(pdf_resp.content)
-                LOGGING.info('handle | 获取内容失败 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+                logger.info('handle | 获取内容不完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
+                                                                                 len(bytes_container.getvalue())))
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
                 # 请求头增加参数
@@ -129,11 +132,16 @@ class SpiderMain(BastSpiderMain):
                 # 断点续传
                 pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
                 if not pdf_resp:
-                    LOGGING.error('附件响应失败, url: {}'.format(pdf_dict['url']))
+                    logger.error('附件响应失败, url: {}'.format(pdf_dict['url']))
                     return
                 continue
         else:
-            LOGGING.info('handle | 获取内容不完整 | use time: {}s | length: {}'.format('%.3f' % (time.time() - start_time), len(bytes_container.getvalue())))
+            # 更新种子错误信息
+            msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()),
+                                                       pdf_resp['data'].headers.get('Content-Length', 0))
+            logger.warning(msg)
+            data_dict = {'url': pdf_dict['relEsse']['url']}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家自然科学基金委员会', es='论文', msg=msg)
             return
 
         # # 内存中读写
@@ -182,7 +190,7 @@ class SpiderMain(BastSpiderMain):
         pdf_content = bytes_container.getvalue()
         # with open('profile.pdf', 'wb') as f:
         #     f.write(pdf_resp)
-        LOGGING.info('结束获取内容')
+        logger.info('结束获取内容')
 
         # 检测PDF文件
         isValue = self.isValidPDF_BytesIO(pdf_content)
@@ -190,7 +198,7 @@ class SpiderMain(BastSpiderMain):
             return
 
         # 存储文档
-        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document')
+        succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document')
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
@@ -240,19 +248,19 @@ class SpiderMain(BastSpiderMain):
         # 采集脚本版本号
         doc_data['script_version'] = 'V1.3'
 
-        LOGGING.info('文档数据开始存储')
+        logger.info('文档数据开始存储')
         # 保存数据到Hbase
-        sto = self.dao.saveDataToHbase(data=doc_data)
+        sto = self.dao.save_data_to_hbase(data=doc_data)
 
         if sto:
-            LOGGING.info('文档数据存储成功, sha: {}'.format(doc_data['sha']))
+            logger.info('文档数据存储成功, sha: {}'.format(doc_data['sha']))
             return True
         else:
-            LOGGING.error('文档数据存储失败, url: {}'.format(doc_data['url']))
+            logger.error('文档数据存储失败, url: {}'.format(doc_data['url']))
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             # 存储文档种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            self.dao.save_task_to_mysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
 
     def handle(self, task_data, save_data):
         # print(task_data)
@@ -268,10 +276,10 @@ class SpiderMain(BastSpiderMain):
         # 获取详情页
         profile_resp = self.__getResp(url=self.profile_url, method='POST', data=json.dumps(payload))
         if not profile_resp:
-            LOGGING.error('详情页响应失败, url: {}'.format(url))
+            logger.error('详情页响应失败, url: {}'.format(url))
             return
 
-        profile_resp.encoding = profile_resp.apparent_encoding
+        # profile_resp.encoding = profile_resp.apparent_encoding
         try:
             profile_json = profile_resp.json()
             # 获取浏览次数
@@ -439,59 +447,61 @@ class SpiderMain(BastSpiderMain):
         save_data['script_version'] = 'V1.3'
 
     def run(self):
-        #第一次请求的等待时间
+        # 第一次请求的等待时间
         delay_time = time.time()
         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
-        LOGGING.info('handle | download delay | use time: {}s'.format('%.3f' % (time.time() - delay_time)))
+        logger.info('handle | download delay | use time: {}s'.format('%.3f' % (time.time() - delay_time)))
         # 单线程无限循环
         while True:
             # 获取任务
             start_time = time.time()
-            task_list = self.dao.getTask(key=config.REDIS_ZIRANKEXUE_PAPER, count=1,
-                                         lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
+            task_list = self.dao.get_task_from_redis(key=config.REDIS_ZIRANKEXUE_PAPER, count=1,
+                                                     lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
             # task_list = ['{"achievementID": "ZD193973", "authors": "", "chineseTitle": "Semi-Supervised Learning for Neural Machine Translation", "conference": "", "doi": "10.18653/v1/p16-1185", "doiUrl": "https://doi.org/10.18653/v1/p16-1185", "downloadHref": "", "enAbstract": "", "enKeyword": "", "englishTitle": "", "fieldCode": "F011305", "fulltext": "ZD193973", "fundProject": "跨语言社会舆情分析基础理论与关键技术研究", "fundProjectCode": "970061", "fundProjectNo": "61331013", "id": "aa16eaa8-a45c-4994-a42b-9cb80a8fc09d", "journal": "Annual Meeting of the Association for Computational Linguistics", "organization": "中央民族大学", "organizationID": "201617", "outputSubIrSource": "", "pageRange": "", "productType": "3", "publishDate": "2016-08-07", "source": "origin", "supportType": "220", "supportTypeName": "重点项目", "year": "2016-08-07", "zhAbstract": "While end-to-end neural machine translation (NMT) has made remarkable progress recently, NMT systems only rely on parallel corpora for parameter estimation. Since parallel corpora are usually limited in quantity, quality, and coverage, especially for low-resource languages, it is appealing to exploit monolingual corpora to improve NMT. We propose a semisupervised approach for training NMT models on the concatenation of labeled (parallel corpora) and unlabeled (monolingual corpora) data. The central idea is to reconstruct the monolingual corpora using an autoencoder, in which the sourceto-target and target-to-source translation models serve as the encoder and decoder, respectively. Our approach can not only exploit the monolingual corpora of the target language, but also of the source language. Experiments on the Chinese English dataset show that our approach achieves significant improvements over state-of-the-art SMT and NMT systems.", "zhKeyword": "", "fieldName": "信息科学部", "url": "http://ir.nsfc.gov.cn/paperDetail/aa16eaa8-a45c-4994-a42b-9cb80a8fc09d", "pdfUrl": "http://ir.nsfc.gov.cn/paperDownload/ZD193973.pdf", "sha": "00052f292efbd1d1a25728aca9d79f288fc15d86"}']
-            if task_list:
-                for task in task_list:
-                    try:
-                        # 创建数据存储字典
-                        save_data = {}
-                        # json数据类型转换
-                        task_data = json.loads(task)
-                        sha = task_data['sha']
-                        # 获取字段值存入字典并返回sha
-                        self.handle(task_data=task_data, save_data=save_data)
-                        # 保存数据到Hbase
-                        if not save_data:
-                            LOGGING.info('没有获取数据, 存储失败')
-                            # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
-                            LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
-                            continue
-                        if 'sha' not in save_data:
-                            LOGGING.info('数据获取不完整, 存储失败')
-                            # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
-                            LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
-                            continue
-                        LOGGING.info('论文数据开始存储')
-                        # 存储数据
-                        success = self.dao.saveDataToHbase(data=save_data)
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZIRANKEXUE_PAPER)
+            if task:
+                try:
+                    # 创建数据存储字典
+                    save_data = dict()
+                    # json数据类型转换
+                    task_data = json.loads(task)
+                    sha = task_data['sha']
+                    # 获取字段值存入字典并返回sha
+                    self.handle(task_data=task_data, save_data=save_data)
+                    # 保存数据到Hbase
+                    if not save_data:
+                        logger.info('没有获取数据, 存储失败')
+                        # 逻辑删除任务
+                        self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
+                        logger.info(
+                            'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                        continue
+                    if 'sha' not in save_data:
+                        logger.info('数据获取不完整, 存储失败')
+                        # 逻辑删除任务
+                        self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
+                        logger.info(
+                            'handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                        continue
+                    logger.info('论文数据开始存储')
+                    # 存储数据
+                    success = self.dao.save_data_to_hbase(data=save_data)
 
-                        if success:
-                            LOGGING.info('论文数据存储成功')
-                            # 已完成任务
-                            self.dao.finishTask(table=config.MYSQL_TEST, sha=sha)
-                            # # 删除任务
-                            # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
-                        else:
-                            LOGGING.info('论文数据存储失败')
-                            # 逻辑删除任务
-                            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+                    if success:
+                        logger.info('论文数据存储成功')
+                        # 已完成任务
+                        self.dao.finish_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
+                        # # 删除任务
+                        # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
+                    else:
+                        logger.info('论文数据存储失败')
+                        # 逻辑删除任务
+                        self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
 
-                        LOGGING.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
+                    logger.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
 
-                    except:
-                        LOGGING.exception(str(traceback.format_exc()))
+                except:
+                    logger.exception(str(traceback.format_exc()))
             else:
                 time.sleep(1)
                 continue
@@ -516,17 +526,18 @@ class SpiderMain(BastSpiderMain):
         threadpool.close()
         threadpool.join()
 
+
 def process_start():
     main = SpiderMain()
     try:
         main.start()
         # main.run(task="{'id': '207d122a-3a68-41b1-8d8a-f20552f22054', 'xueKeLeiBie': '信息科学部', 'url': 'http://ir.nsfc.gov.cn/paperDetail/207d122a-3a68-41b1-8d8a-f20552f22054'}")
     except:
-        LOGGING.exception(str(traceback.format_exc()))
+        logger.exception(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
-    LOGGING.info('======The Start!======')
+    logger.info('======The Start!======')
     begin_time = time.time()
     # process_start()
 
@@ -536,5 +547,5 @@ if __name__ == '__main__':
     po.close()
     po.join()
     end_time = time.time()
-    LOGGING.info('======The End!======')
-    LOGGING.info('====== Time consuming is %.2fs ======' %(end_time - begin_time))
+    logger.info('======The End!======')
+    logger.info('====== Time consuming is %.2fs ======' % (end_time - begin_time))

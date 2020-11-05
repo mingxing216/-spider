@@ -45,7 +45,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -107,7 +107,7 @@ class SpiderMain(BastSpiderMain):
                 # 获取研究领域分类列表
                 field_list = self.server.getFieldList(resp=industry_text, hangye=hangYe)
                 # 列表页进入队列
-                self.dao.QueueJobTask(key=config.REDIS_YUBO_CATEGORY, data=field_list)
+                self.dao.queue_tasks_to_redis(key=config.REDIS_YUBO_CATEGORY, data=field_list)
         #         # 列表页存入变量
         #         for field in field_list:
         #             self.category.append(field)
@@ -132,7 +132,7 @@ class SpiderMain(BastSpiderMain):
                 self.num += 1
                 LOGGING.info('当前已抓种子数量: {}'.format(self.num))
                 # 存入数据库
-                self.dao.saveTaskToMysql(table=config.MYSQL_REPORT, memo=url, ws='宇博报告大厅', es='行业研究报告')
+                self.dao.save_task_to_mysql(table=config.MYSQL_REPORT, memo=url, ws='宇博报告大厅', es='行业研究报告')
 
             # 判断是否有下一页
             next_url = self.server.hasNextUrl(resp=next_text)
@@ -180,7 +180,7 @@ class SpiderMain(BastSpiderMain):
         if not first_resp:
             LOGGING.error('列表首页响应失败, url: {}'.format(url))
             # 队列一条任务
-            self.dao.QueueOneTask(key=config.REDIS_YUBO_CATEGORY, data=task)
+            self.dao.queue_one_task_to_redis(key=config.REDIS_YUBO_CATEGORY, data=task)
             return
 
         # 获取详情url
@@ -190,9 +190,9 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_YUBO_CATEGORY,
-                                             count=10,
-                                             lockname=config.REDIS_YUBO_CATEGORY_LOCK)
+            category_list = self.dao.get_task_from_redis(key=config.REDIS_YUBO_CATEGORY,
+                                                         count=10,
+                                                         lockname=config.REDIS_YUBO_CATEGORY_LOCK)
             # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 

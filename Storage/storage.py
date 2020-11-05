@@ -58,13 +58,13 @@ class Dao(object):
             self.redis_client = redis_pool.RedisPoolUtils(int(redispool_number))
 
     # 查询redis数据库中有多少任务
-    def selectTaskNumber(self, key):
+    def select_task_number(self, key):
         return self.redis_client.scard(key=key)
 
-    def saveTaskToMysql(self, table, memo, ws, es, msg='NULL'):
+    def save_task_to_mysql(self, table, memo, ws, es, msg='NULL'):
         start_time = time.time()
         self.logging.info('开始存储种子')
-        ret = self.__saveTaskToMysql(table, memo, ws, es, msg)
+        ret = self.__save_task_to_mysql(table, memo, ws, es, msg)
         if ret:
             self.logging.info('handle | 种子存储成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
         else:
@@ -73,7 +73,7 @@ class Dao(object):
         return ret
 
     # 种子任务存入Mysql数据库
-    def __saveTaskToMysql(self, table, memo, ws, es, msg='NULL'):
+    def __save_task_to_mysql(self, table, memo, ws, es, msg='NULL'):
         url = memo['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
         memo['sha'] = sha
@@ -158,8 +158,36 @@ class Dao(object):
                     self.logging.warning('种子更新警告: {}, {}'.format(ctx, e))
                     return False
 
+    # 更新mysql种子状态
+    def update_task_to_mysql(self, table, sha, msg='NULL'):
+        start_time = time.time()
+        self.logging.info('开始更新种子')
+        ret = self.__update_task_to_mysql(table, sha, msg)
+        if ret:
+            self.logging.info('handle | 种子更新成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
+        else:
+            self.logging.info('handle | 种子更新失败 | use time: {}'.format('%.3f' % (time.time() - start_time)))
+        self.logging.info('结束存储种子')
+        return ret
+
+    # 种子任务存入Mysql数据库
+    def __update_task_to_mysql(self, table, sha, msg='NULL'):
+        data = {
+            'del': '0',
+            'msg': msg,
+            'date_created': timeutils.getNowDatetime()
+        }
+        try:
+            self.mysql_client.update(table=table, data=data, where="`sha` = '{}'".format(sha))
+            self.logging.info('已更新种子: {}'.format(sha))
+            return True
+
+        except Exception as e:
+            self.logging.warning('种子更新警告: {}'.format(e))
+            return False
+
     # 从Mysql获取指定一条任务
-    def getOneTask(self, table, sha):
+    def get_one_task_from_mysql(self, table, sha):
         sql = "select * from {} where `del` = '0' and `sha` = '{}'".format(table, sha)
 
         data_list = self.mysql_client.get_results(sql=sql)
@@ -169,8 +197,8 @@ class Dao(object):
         return data_list
 
     # 从Mysql获取任务
-    def getNewTaskList(self, table, ws, es, count):
-        sql = "select * from {} where `del` = '0' and `ws` = '{}' and `es` = '{}' limit {}".format(table, ws, es, count)
+    def get_task_list_from_mysql(self, table, ws, es, count):
+        sql = "select * from {} where `del` = '2' and `ws` = '{}' and `es` = '{}' limit {}".format(table, ws, es, count)
 
         data_list = self.mysql_client.get_results(sql=sql)
 
@@ -185,7 +213,7 @@ class Dao(object):
         return data_list
 
     # 队列种子任务
-    def QueueJobTask(self, key, data):
+    def queue_tasks_to_redis(self, key, data):
         if data:
             for url in data:
                 self.redis_client.sadd(key=key, value=json.dumps(url, ensure_ascii=False))
@@ -195,7 +223,7 @@ class Dao(object):
             return
 
     # 队列一条种子任务
-    def QueueOneTask(self, key, data):
+    def queue_one_task_to_redis(self, key, data):
         if data:
             self.redis_client.sadd(key=key, value=json.dumps(data, ensure_ascii=False))
             self.logging.info('已队列1条种子')
@@ -216,7 +244,7 @@ class Dao(object):
     #         return
 
     # 从mysql队列任务到redis
-    def QueueTask(self, key, data):
+    def queue_tasks_from_mysql_to_redis(self, key, data):
         if data:
             for url_data in data:
                 sha = url_data['sha']
@@ -231,10 +259,10 @@ class Dao(object):
         else:
             return
 
-    def saveDataToHbase(self, data):
+    def save_data_to_hbase(self, data):
         start_time = time.time()
         self.logging.info('开始存储实体')
-        ret = self.__saveDataToHbase(data)
+        ret = self.__save_data_to_hbase(data)
         if ret:
             self.logging.info('handle | 存储实体成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
         else:
@@ -243,7 +271,7 @@ class Dao(object):
         return ret
 
     # 存储数据到Hbase数据库 resultCode
-    def __saveDataToHbase(self, data):
+    def __save_data_to_hbase(self, data):
         save_data = json.dumps(data, ensure_ascii=False)
         # 将待存储数据编码成二进制数据
         b_data = save_data.encode('utf-8')
@@ -291,10 +319,10 @@ class Dao(object):
         #     except:
         #         return resp
 
-    def saveMediaToHbase(self, media_url, content, item, type, contype=None):
+    def save_media_to_hbase(self, media_url, content, item, type, contype=None):
         start_time = time.time()
         self.logging.info('开始存储附件')
-        ret = self.__saveMediaToHbase(media_url, content, item, type, contype)
+        ret = self.__save_media_to_hbase(media_url, content, item, type, contype)
         if ret:
             self.logging.info('handle | 存储附件成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
         else:
@@ -304,7 +332,7 @@ class Dao(object):
         return ret
 
     # 保存流媒体到hbase
-    def __saveMediaToHbase(self, media_url, content, item, type, contype=None):
+    def __save_media_to_hbase(self, media_url, content, item, type, contype=None):
         url = '{}'.format(settings.SpiderMediaSaveUrl)
         # 二进制图片文件转成base64文件
         content_bs64 = base64.b64encode(content)
@@ -380,14 +408,14 @@ class Dao(object):
         # return resp
 
     # TODO 保存数据到mysql，不再使用
-    def saveDataToMysql(self, table, data):
+    def save_data_to_mysql(self, table, data):
         try:
             self.mysql_client.insert_one(table=table, data=data)
         except Exception as e:
             self.logging.warning('保存数据到mysql警告: {}'.format(e))
 
     # TODO 保存媒体文件链接到mysql，不再使用
-    def saveMediaToMysql(self, url, type):
+    def save_media_to_mysql(self, url, type):
         if re.match('http', url):
             assert type == 'image' or type == 'music' or type == 'video' or type == 'file'
             sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
@@ -402,7 +430,7 @@ class Dao(object):
                 self.logging.warning('保存媒体链接到mysql警告: {}'.format(e))
 
     # 数据库记录爬虫名
-    def saveSpiderName(self, name):
+    def save_spider_name(self, name):
         # 查询爬虫是否存在
         sha = hashlib.sha1(name.encode('utf-8')).hexdigest()
         select_sql = "select * from {} where `sha` = '{}'".format(settings.SPIDER_TABLE, sha)
@@ -428,7 +456,7 @@ class Dao(object):
                 print(e)
 
     # 判断任务是否抓取过
-    def getTaskStatus(self, sha):
+    def get_task_status(self, sha):
         sql = "select * from {} where `sha` = '{}'".format(settings.DATA_VOLUME_TOTAL_TABLE, sha)
         status = self.mysql_client.get_results(sql=sql)
         if status:
@@ -438,7 +466,7 @@ class Dao(object):
             return False
 
     # 保存任务
-    def saveTask(self, data, cateid):
+    def save_task(self, data, cateid):
         table = 'ss_task'
         sha = data['sha']
 
@@ -472,35 +500,35 @@ class Dao(object):
             except Exception as e:
                 self.logging.error('uodate data error: {}'.format(e))
 
-    def get_one_task(self, key):
+    def get_one_task_from_redis(self, key):
         start_time = time.time()
-        ret = self._get_one_task(key)
+        ret = self._get_one_task_from_redis(key)
         if ret is not None:
             self.logging.info('handle | 获取 1 条任务 | use time: {}'.format(len(ret), '%.3f' % (time.time() - start_time)))
             return ret
 
     # 从redis队列中获取1条任务
-    def _get_one_task(self, key):
+    def _get_one_task_from_redis(self, key):
         return self.redis_client.queue_spop(key=key)
 
-    def getTask(self, key, count, lockname):
+    def get_task_from_redis(self, key, count, lockname):
         start_time = time.time()
-        ret = self._getTask(key, count, lockname)
+        ret = self._get_task_from_redis(key, count, lockname)
         if len(ret) > 0:
             self.logging.info('handle | 获取 {} 条任务 | use time: {}'.format(len(ret), '%.3f' % (time.time() - start_time)))
             return ret
 
     # 从redis队列中获取任务
-    def _getTask(self, key, count, lockname):
+    def _get_task_from_redis(self, key, count, lockname):
         return self.redis_client.queue_spops(key=key, count=count, lockname=lockname)
 
-    def deleteTask(self, table, sha=None, url=None):
+    def delete_task_from_mysql(self, table, sha=None, url=None):
         start_time = time.time()
-        self.__deleteTask(table, sha, url)
+        self._delete_task_from_mysql(table, sha, url)
         self.logging.info('handle | 删除任务 | use time: {}'.format('%.3f' % (time.time() - start_time)))
 
     # 物理删除mysql中任务
-    def __deleteTask(self, table, sha=None, url=None):
+    def _delete_task_from_mysql(self, table, sha=None, url=None):
         if sha:
             try:
                 sql = "delete from {} where `sha` = '{}' and `del` = '0'".format(table, sha)
@@ -517,13 +545,13 @@ class Dao(object):
             except:
                 self.logging.warning('任务删除异常: {}'.format(url))
 
-    def deleteLogicTask(self, table, sha=None, url=None):
+    def delete_logic_task_from_mysql(self, table, sha=None, url=None):
         start_time = time.time()
-        self.__deleteLogicTask(table, sha, url)
+        self._delete_logic_task_from_mysql(table, sha, url)
         self.logging.info('handle | 逻辑删除任务 | use time: {}'.format('%.3f' % (time.time() - start_time)))
 
     # 逻辑删除mysql中任务
-    def __deleteLogicTask(self, table, sha=None, url=None):
+    def _delete_logic_task_from_mysql(self, table, sha=None, url=None):
         data = {
             'del': '1'
         }
@@ -541,13 +569,13 @@ class Dao(object):
             except:
                 self.logging.warning('任务逻辑删除异常: {}'.format(url))
 
-    def finishTask(self, table, sha=None, url=None):
+    def finish_task_from_mysql(self, table, sha=None, url=None):
         start_time = time.time()
-        self.__finishTask(table, sha, url)
+        self._finish_task_from_mysql(table, sha, url)
         self.logging.info('handle | 任务已完成 | use time: {}'.format('%.3f' % (time.time() - start_time)))
 
     # mysql中已完成任务
-    def __finishTask(self, table, sha=None, url=None):
+    def _finish_task_from_mysql(self, table, sha=None, url=None):
         data = {
             'del': '2'
         }

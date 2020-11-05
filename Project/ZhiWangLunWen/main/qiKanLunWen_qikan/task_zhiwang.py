@@ -130,7 +130,7 @@ class SpiderMain(BastSpiderMain):
                         # print(task)
                         self.num += 1
                         LOGGING.info('已抓种子数量: {}'.format(self.num))
-                        self.dao.saveTaskToMysql(table=config.MYSQL_MAGAZINE, memo=task, ws='中国知网', es='期刊论文')
+                        self.dao.save_task_to_mysql(table=config.MYSQL_MAGAZINE, memo=task, ws='中国知网', es='期刊论文')
 
 def process_start():
     main = SpiderMain()

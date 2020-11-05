@@ -77,7 +77,7 @@ class SpiderMain(BastSpiderMain):
         catalog_list = self.server.getFenLeiDataList(resp=index_text)
         # print(catalog_list)
         # 列表页参数进入队列
-        self.dao.QueueJobTask(key=config.REDIS_XUEWEI_CATEGORY, data=catalog_list)
+        self.dao.queue_tasks_to_redis(key=config.REDIS_XUEWEI_CATEGORY, data=catalog_list)
 
     def run(self, category):
         # 数据类型转换
@@ -96,7 +96,7 @@ class SpiderMain(BastSpiderMain):
                 LOGGING.error('学位授予单位列表第{}页接口响应失败, url: {}'.format(page, self.page_url))
                 # 队列一条任务
                 task['num'] = page
-                self.dao.QueueOneTask(key=config.REDIS_XUEWEI_CATEGORY, data=task)
+                self.dao.queue_one_task_to_redis(key=config.REDIS_XUEWEI_CATEGORY, data=task)
                 return
             catalog_resp.encoding = catalog_resp.apparent_encoding
             catalog_text = catalog_resp.text
@@ -105,22 +105,22 @@ class SpiderMain(BastSpiderMain):
             danwei_url_list = self.server.getDanWeiUrlList(resp=catalog_text, value=para_value[2])
             # print(danwei_url_list)
             # 学位授予单位详情页作为二级分类页进入redis队列
-            self.dao.QueueJobTask(key=config.REDIS_XUEWEI_CATALOG, data=danwei_url_list)
+            self.dao.queue_tasks_to_redis(key=config.REDIS_XUEWEI_CATALOG, data=danwei_url_list)
             for danwei_url in danwei_url_list:
                 # 保存url
                 self.num += 1
                 LOGGING.info('当前已抓学位授予单位种子数量: {}'.format(self.num))
                 # 数据存储
-                self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=danwei_url, ws='中国知网', es='学位论文')
+                self.dao.save_task_to_mysql(table=config.MYSQL_INSTITUTE, memo=danwei_url, ws='中国知网', es='学位论文')
                 # LOGGING.info(danwei_url)
                 # print(danwei_url)
 
     def start(self):
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_XUEWEI_CATEGORY,
-                                             count=50,
-                                             lockname=config.REDIS_XUEWEI_CATEGORY_LOCK)
+            category_list = self.dao.get_task_from_redis(key=config.REDIS_XUEWEI_CATEGORY,
+                                                         count=50,
+                                                         lockname=config.REDIS_XUEWEI_CATEGORY_LOCK)
             # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 

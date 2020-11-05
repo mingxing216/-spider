@@ -135,7 +135,7 @@ class SpiderMain(BastSpiderMain):
                 # 更新种子错误信息
                 msg = '请重新登录'
                 data_dict = {'url': pdf_dict['relEsse']['url']}
-                self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+                self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
                 return
             elif '今日下载数已满' in pdf_resp['data'].text:
                 logger.warning('用户今日下载数已满，暂不提供全文下载! {}'.format(new_url))
@@ -145,7 +145,7 @@ class SpiderMain(BastSpiderMain):
                 # 更新种子错误信息
                 msg = '当前用户今日下载数已满'
                 data_dict = {'url': pdf_dict['relEsse']['url']}
-                self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+                self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
                 return
             elif '下载过于频繁' in pdf_resp['data'].text:
                 logger.warning('当前IP下载过于频繁，暂不提供全文下载! {}, {}'.format(new_url, pdf_resp['proxy_ip']))
@@ -154,7 +154,7 @@ class SpiderMain(BastSpiderMain):
                 # 更新种子错误信息
                 msg = '当前IP下载过于频繁'
                 data_dict = {'url': pdf_dict['relEsse']['url']}
-                self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+                self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
                 return
             else:
                 # 更新种子错误信息
@@ -163,7 +163,7 @@ class SpiderMain(BastSpiderMain):
                 logger.warning(msg)
                 logger.warning(pdf_resp['data'].text)
                 data_dict = {'url': pdf_dict['relEsse']['url']}
-                self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+                self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
                 return
 
         # 内存中读写
@@ -213,7 +213,7 @@ class SpiderMain(BastSpiderMain):
                                                        pdf_resp['data'].headers.get('Content-Length', 0))
             logger.warning(msg)
             data_dict = {'url': pdf_dict['relEsse']['url']}
-            self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
             return
 
         # # 内存中读写
@@ -275,7 +275,7 @@ class SpiderMain(BastSpiderMain):
             # 更新种子错误信息
             msg = 'not PDF'
             data_dict = {'url': pdf_dict['relEsse']['url']}
-            self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
             return
 
         # with open('profile.pdf', 'wb') as f:
@@ -283,8 +283,8 @@ class SpiderMain(BastSpiderMain):
 
         # 存储全文
         content_type = 'application/pdf'
-        succ = self.dao.saveMediaToHbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document',
-                                         contype=content_type)
+        succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document',
+                                            contype=content_type)
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
@@ -339,7 +339,7 @@ class SpiderMain(BastSpiderMain):
 
         logger.info('文档数据开始存储')
         # 保存数据到Hbase
-        sto = self.dao.saveDataToHbase(data=doc_data)
+        sto = self.dao.save_data_to_hbase(data=doc_data)
 
         if sto:
             logger.info('文档数据存储成功, sha: {}'.format(doc_data['sha']))
@@ -500,18 +500,11 @@ class SpiderMain(BastSpiderMain):
             start_time = time.time()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            # task_list = ['{"url": "http://www.nssd.org/articles/article_detail.aspx?
-            # id=12165488", "authors": "鲁歌|刘娜",
-            #    "pdfUrl": "http://www.nssd.org/articles/article_down.aspx?id=12165488",
-            #    "id": "12165488", "qikanUrl": "http://www.nssd.org/journal/cn/96698B/",
-            #    "xuekeleibie": "文化科学", "year": "1992", "issue": "03",
-            #    "sha": "0007c10a1b210642cfa783c6cf67d076570535aa",
-            #    "title": "《金瓶梅》作者是贾梦龙吗？"}']
-            task = self.dao.get_one_task(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
             if task:
                 try:
                     # 创建数据存储字典
-                    save_data = {}
+                    save_data = dict()
                     # json数据类型转换
                     task_data = json.loads(task)
                     sha = task_data['sha']
@@ -521,31 +514,31 @@ class SpiderMain(BastSpiderMain):
                     if not save_data:
                         logger.info('没有获取数据, 存储失败')
                         # 逻辑删除任务
-                        self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+                        self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.info(
                             'handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
                         continue
                     if 'sha' not in save_data:
                         logger.info('数据获取不完整, 存储失败')
                         # 逻辑删除任务
-                        self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+                        self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.info(
                             'handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
                         continue
                     logger.info('论文数据开始存储')
                     # 存储数据
-                    success = self.dao.saveDataToHbase(data=save_data)
+                    success = self.dao.save_data_to_hbase(data=save_data)
 
                     if success:
                         logger.info('论文数据存储成功')
                         # 已完成任务
-                        self.dao.finishTask(table=config.MYSQL_PAPER, sha=sha)
+                        self.dao.finish_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         # # 删除任务
                         # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
                     else:
                         logger.info('论文数据存储失败')
                         # 逻辑删除任务
-                        self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+                        self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
 
                     logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
 

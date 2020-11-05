@@ -47,7 +47,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -82,7 +82,7 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('公告页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PATENT, sha=zhuanli_sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PATENT, sha=zhuanli_sha)
             return
 
         response = resp.text
@@ -142,12 +142,12 @@ class SpiderMain(BastSpiderMain):
                 announce_data['ref'] = ''
 
                 # 保存数据到Hbase
-                sto = self.dao.saveDataToHbase(data=announce_data)
+                sto = self.dao.save_data_to_hbase(data=announce_data)
 
                 if not sto:
                     LOGGING.error('公告数据存储失败, url: {}'.format(url))
                     # 逻辑删除任务
-                    self.dao.deleteLogicTask(table=config.MYSQL_PATENT, sha=zhuanli_sha)
+                    self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PATENT, sha=zhuanli_sha)
                 else:
                     LOGGING.info('公告数据存储成功, sha: {}'.format(sha1))
 
@@ -163,7 +163,7 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PATENT, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PATENT, sha=sha)
             return
 
         response = resp.text
@@ -265,18 +265,18 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('数据获取不完整, 存储失败')
             return
         # 存储数据
-        success = self.dao.saveDataToHbase(data=save_data)
+        success = self.dao.save_data_to_hbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_PATENT, sha=sha)
+            self.dao.delete_task_from_mysql(table=config.MYSQL_PATENT, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PATENT, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PATENT, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_XX_PATENT, count=20, lockname=config.REDIS_XX_PATENT_LOCK)
+            task_list = self.dao.get_task_from_redis(key=config.REDIS_XX_PATENT, count=20, lockname=config.REDIS_XX_PATENT_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

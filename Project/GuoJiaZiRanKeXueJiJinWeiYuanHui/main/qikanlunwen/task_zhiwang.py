@@ -49,7 +49,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -89,7 +89,7 @@ class SpiderMain(BastSpiderMain):
             if not catalog_resp:
                 LOGGING.error('列表页响应失败, url: {}'.format(url))
                 # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+                self.dao.delete_logic_task_from_mysql(table=config.MYSQL_TEST, sha=sha)
                 return
 
             catalog_resp.encoding = catalog_resp.apparent_encoding
@@ -122,7 +122,7 @@ class SpiderMain(BastSpiderMain):
                     LOGGING.info('正确匹配结果, url: {}, title: {}'.format(task.get('url'), task.get('chineseTitle')))
                     # 存储到mysql数据库
                     # task['url'] = data['url']
-                    self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=task, ws='中国知网', es='论文_profile')
+                    self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=task, ws='中国知网', es='论文_profile')
                     break
             else:
                 LOGGING.error('无匹配结果, url: {}, title: {}'.format(task.get('url'), task.get('chineseTitle')))
@@ -182,7 +182,7 @@ class SpiderMain(BastSpiderMain):
         if not result_resp:
             LOGGING.error('会话页响应失败, url: {}'.format(self.result_url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_TEST, sha=sha)
             return
 
         # POST参数
@@ -209,7 +209,7 @@ class SpiderMain(BastSpiderMain):
         if not Search_resp:
             LOGGING.error('会话页响应失败, url: {}'.format(self.SearchHandler_url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_TEST, sha=sha)
             return
 
         # # 获取标题输入url
@@ -230,7 +230,7 @@ class SpiderMain(BastSpiderMain):
         if not catalog_resp:
             LOGGING.error('列表页响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_TEST, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_TEST, sha=sha)
             return
 
         catalog_resp.encoding = catalog_resp.apparent_encoding
@@ -245,9 +245,9 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_ZHIWANG_TEST,
-                                             count=1,
-                                             lockname=config.REDIS_ZHIWANG_TEST_LOCK)
+            category_list = self.dao.get_task_from_redis(key=config.REDIS_ZHIWANG_TEST,
+                                                         count=1,
+                                                         lockname=config.REDIS_ZHIWANG_TEST_LOCK)
             # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 

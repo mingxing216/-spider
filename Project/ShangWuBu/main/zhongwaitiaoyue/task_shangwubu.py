@@ -45,7 +45,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -132,7 +132,7 @@ class SpiderMain(BastSpiderMain):
             # 获取年列表
             year_list = self.server.getYearList(resp=index_text, id=id, year_url=self.year_url, es=es, clazz=clazz, para='签订时间')
             # 列表页进入队列
-            self.dao.QueueJobTask(key=config.REDIS_SHANGWUBU_TIAOYUE, data=year_list)
+            self.dao.queue_tasks_to_redis(key=config.REDIS_SHANGWUBU_TIAOYUE, data=year_list)
             # print(year_list)
             # print(len(year_list))
 
@@ -151,7 +151,7 @@ class SpiderMain(BastSpiderMain):
                 if not next_resp:
                     LOGGING.error('列表页第{}页响应失败, url: {}'.format(i, next_url))
                     task['url'] = next_url
-                    self.dao.QueueOneTask(key=config.REDIS_SHANGWUBU_TIAOYUE, data=task)
+                    self.dao.queue_one_task_to_redis(key=config.REDIS_SHANGWUBU_TIAOYUE, data=task)
                     return
 
                 # 响应成功，添加log日志
@@ -168,7 +168,7 @@ class SpiderMain(BastSpiderMain):
                     self.num += 1
                     LOGGING.info('当前已抓种子数量: {}'.format(self.num))
                     # 存入数据库
-                    self.dao.saveTaskToMysql(table=config.MYSQL_LAW, memo=url, ws='中华人民共和国商务部', es='中外条约')
+                    self.dao.save_task_to_mysql(table=config.MYSQL_LAW, memo=url, ws='中华人民共和国商务部', es='中外条约')
             else:
                 LOGGING.info('已翻到最后一页')
 
@@ -189,7 +189,7 @@ class SpiderMain(BastSpiderMain):
         if not first_resp:
             LOGGING.error('列表首页响应失败, url: {}'.format(url))
             # 队列一条任务
-            self.dao.QueueOneTask(key=config.REDIS_SHANGWUBU_TIAOYUE, data=task)
+            self.dao.queue_one_task_to_redis(key=config.REDIS_SHANGWUBU_TIAOYUE, data=task)
             return
         # 遵循网页原本编码方式
         first_resp.encoding = first_resp.apparent_encoding
@@ -202,16 +202,16 @@ class SpiderMain(BastSpiderMain):
             self.num += 1
             LOGGING.info('当前已抓种子数量: {}'.format(self.num))
             # 存入数据库
-            self.dao.saveTaskToMysql(table=config.MYSQL_LAW, memo=url, ws='中华人民共和国商务部', es='中外条约')
+            self.dao.save_task_to_mysql(table=config.MYSQL_LAW, memo=url, ws='中华人民共和国商务部', es='中外条约')
         # 获取详情url
         self.getProfile(first_text=first_text, task=task, nianfen=nianfen, es=es, clazz=clazz)
 
     def start(self):
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_SHANGWUBU_TIAOYUE,
-                                             count=10,
-                                             lockname=config.REDIS_SHANGWUBU_TIAOYUE_LOCK)
+            category_list = self.dao.get_task_from_redis(key=config.REDIS_SHANGWUBU_TIAOYUE,
+                                                         count=10,
+                                                         lockname=config.REDIS_SHANGWUBU_TIAOYUE_LOCK)
             # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 

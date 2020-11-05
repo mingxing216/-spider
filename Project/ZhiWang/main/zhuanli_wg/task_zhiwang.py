@@ -45,7 +45,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -106,7 +106,7 @@ class SpiderMain(BastSpiderMain):
                 category_list = self.server.getCategoryNumber(resp=first_response)
                 # print(category_list)
                 # 进入队列
-                self.dao.QueueJobTask(key=config.REDIS_WG_CATEGORY, data=category_list)
+                self.dao.queue_tasks_to_redis(key=config.REDIS_WG_CATEGORY, data=category_list)
                 if category_list:
                     for category in category_list:
                         self.category_number.append(category)
@@ -128,7 +128,7 @@ class SpiderMain(BastSpiderMain):
                 self.num += 1
                 LOGGING.info('当前已抓种子数量: {}'.format(self.num))
                 # 存入数据库
-                self.dao.saveTaskToMysql(table=config.MYSQL_PATENT, memo=url, ws='中国知网', es='外观专利')
+                self.dao.save_task_to_mysql(table=config.MYSQL_PATENT, memo=url, ws='中国知网', es='外观专利')
 
             # 判断是否有下一页
             next_url = self.server.hasNextUrl(resp=next_text)
@@ -186,7 +186,7 @@ class SpiderMain(BastSpiderMain):
             self.cookie_dict, self.cookie_str = self.download_middleware.create_cookie()
             if not self.cookie_dict:
                 # 队列一条任务
-                self.dao.QueueOneTask(key=config.REDIS_WG_CATEGORY, data=category)
+                self.dao.queue_one_task_to_redis(key=config.REDIS_WG_CATEGORY, data=category)
                 return
             # 获取时间列表
             time_response = self.download_middleware.getTimeListResp(referer=self.index_url,
@@ -194,7 +194,7 @@ class SpiderMain(BastSpiderMain):
                                                                      cookie=self.cookie_str)
             if time_response is None:
                 # 队列一条任务
-                self.dao.QueueOneTask(key=config.REDIS_WG_CATEGORY, data=category)
+                self.dao.queue_one_task_to_redis(key=config.REDIS_WG_CATEGORY, data=category)
                 return
             # 获年份列表
             year_list = self.server.getYearList(resp=time_response)
@@ -217,7 +217,7 @@ class SpiderMain(BastSpiderMain):
                         # # 最小一级分类号存入列表
                         # self.category_number.append(category)
                         # 队列一条任务
-                        self.dao.QueueOneTask(key=config.REDIS_WG_CATEGORY, data=category)
+                        self.dao.queue_one_task_to_redis(key=config.REDIS_WG_CATEGORY, data=category)
                         return
 
                     # 处理验证码
@@ -261,9 +261,9 @@ class SpiderMain(BastSpiderMain):
 
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_WG_CATEGORY,
-                                         count=1,
-                                         lockname=config.REDIS_WG_CATEGORY_LOCK)
+            category_list = self.dao.get_task_from_redis(key=config.REDIS_WG_CATEGORY,
+                                                         count=1,
+                                                         lockname=config.REDIS_WG_CATEGORY_LOCK)
             # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 

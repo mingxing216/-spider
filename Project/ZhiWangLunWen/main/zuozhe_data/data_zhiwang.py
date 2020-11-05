@@ -74,7 +74,7 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PEOPLE, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PEOPLE, sha=sha)
             return
 
         article_html = resp.text
@@ -117,14 +117,14 @@ class SpiderMain(BastSpiderMain):
                 for jigou in jigouList:
                     jigou['name'] = jigou['name'].replace('"', '\\"').replace("'", "''")
                     jigou['url'] = jigou['url'].replace('"', '\\"').replace("'", "''")
-                    self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
+                    self.dao.save_task_to_mysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
 
             return sha
 
         else:
             LOGGING.error('对不起，未找到相关数据，url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PEOPLE, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PEOPLE, sha=sha)
 
     def run(self, task):
         # 创建数据存储字典
@@ -139,18 +139,18 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('数据获取不完整, 存储失败')
             return
         # 存储数据
-        success = self.dao.saveDataToHbase(data=save_data)
+        success = self.dao.save_data_to_hbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_PEOPLE, sha=sha)
+            self.dao.delete_task_from_mysql(table=config.MYSQL_PEOPLE, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PEOPLE, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PEOPLE, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZHIWANG_PEOPLE, count=50, lockname=config.REDIS_ZHIWANG_PEOPLE_LOCK)
+            task_list = self.dao.get_task_from_redis(key=config.REDIS_ZHIWANG_PEOPLE, count=50, lockname=config.REDIS_ZHIWANG_PEOPLE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

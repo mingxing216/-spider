@@ -47,7 +47,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -68,7 +68,7 @@ class SpiderMain(BastSpiderMain):
         save_data['clazz'] = '专利'
 
         # 存储数据
-        success = self.dao.saveDataToHbase(data=save_data)
+        success = self.dao.save_data_to_hbase(data=save_data)
         if success:
             LOGGING.info('专利数据存储成功, sha: {}'.format(sha))
         else:

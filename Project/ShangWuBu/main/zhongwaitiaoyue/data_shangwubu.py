@@ -47,7 +47,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -84,7 +84,7 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('正文页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_LAW, sha=sha)
             return
 
         resp.encoding = resp.apparent_encoding
@@ -107,7 +107,7 @@ class SpiderMain(BastSpiderMain):
             if not info_resp:
                 LOGGING.error('基本信息页面响应失败, url: {}'.format(info_url))
                 # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
+                self.dao.delete_logic_task_from_mysql(table=config.MYSQL_LAW, sha=sha)
                 return
 
             info_resp.encoding = info_resp.apparent_encoding
@@ -176,18 +176,18 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('数据获取不完整, 存储失败')
             return
         # 存储数据
-        success = self.dao.saveDataToHbase(data=save_data)
+        success = self.dao.save_data_to_hbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_LAW, sha=sha)
+            self.dao.delete_task_from_mysql(table=config.MYSQL_LAW, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_LAW, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_LAW, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_TIAOYUE_LAW, count=10, lockname=config.REDIS_TIAOYUE_LAW_LOCK)
+            task_list = self.dao.get_task_from_redis(key=config.REDIS_TIAOYUE_LAW, count=10, lockname=config.REDIS_TIAOYUE_LAW_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

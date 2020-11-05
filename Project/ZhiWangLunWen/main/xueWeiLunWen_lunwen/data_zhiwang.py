@@ -66,7 +66,7 @@ class SpiderMain(BastSpiderMain):
             # 标题内容调整格式
             img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
+            self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
 
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
@@ -74,14 +74,14 @@ class SpiderMain(BastSpiderMain):
         # media_resp.encoding = media_resp.apparent_encoding
         img_content = media_resp.content
         # 存储图片
-        succ = self.dao.saveMediaToHbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
+        succ = self.dao.save_media_to_hbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
         if not succ:
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             # 标题内容调整格式
             img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
-            self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
+            self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             return
 
     def handle(self, task, save_data):
@@ -99,7 +99,7 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('学位论文详情页响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
             return
 
         resp.encoding = resp.apparent_encoding
@@ -182,7 +182,7 @@ class SpiderMain(BastSpiderMain):
             # 生成ref
             pics['ref'] = ''
             # 保存组图实体到Hbase
-            self.dao.saveDataToHbase(data=pics)
+            self.dao.save_data_to_hbase(data=pics)
 
             # 创建图片任务列表
             img_tasks = []
@@ -197,11 +197,11 @@ class SpiderMain(BastSpiderMain):
                 # img_tasks.append(img_dict)
 
                 # 存储图片种子
-                suc = self.dao.saveTaskToMysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
+                suc = self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
                 if not suc:
                     LOGGING.error('图片种子存储失败, url: {}'.format(img['url']))
                     # 逻辑删除任务
-                    self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+                    self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
 
             # # 创建gevent协程
             # img_list = []
@@ -248,14 +248,14 @@ class SpiderMain(BastSpiderMain):
         # print(people_list)
         if people_list:
             for people in people_list:
-                self.dao.saveTaskToMysql(table=config.MYSQL_PEOPLE, memo=people, ws='中国知网', es='论文')
+                self.dao.save_task_to_mysql(table=config.MYSQL_PEOPLE, memo=people, ws='中国知网', es='论文')
         # 保存机构队列
         if save_data['guanLianQiYeJiGou']:
             jigouList = copy.deepcopy(save_data['guanLianQiYeJiGou'])
             for jigou  in jigouList:
                 jigou['name'] = jigou['name'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
                 jigou['url'] = jigou['url'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-                self.dao.saveTaskToMysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
+                self.dao.save_task_to_mysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
 
         https_url = url.replace('http', 'https')
         https_sha = hashlib.sha1(https_url.encode('utf-8')).hexdigest()
@@ -274,18 +274,18 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('数据获取不完整, 存储失败')
             return
         # 存储数据
-        success = self.dao.saveDataToHbase(data=save_data)
+        success = self.dao.save_data_to_hbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_PAPER, sha=sha)
+            self.dao.delete_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
 
     def start(self):
         while True:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_XUEWEI_PAPER, count=50, lockname=config.REDIS_XUEWEI_PAPER_LOCK)
+            task_list = self.dao.get_task_from_redis(key=config.REDIS_XUEWEI_PAPER, count=50, lockname=config.REDIS_XUEWEI_PAPER_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 

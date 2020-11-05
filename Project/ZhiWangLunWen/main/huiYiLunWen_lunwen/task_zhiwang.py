@@ -75,7 +75,7 @@ class SpiderMain(BastSpiderMain):
             if not lunwen_list_resp:
                 LOGGING.error('论文列表页第{}页响应获取失败，url: {}'.format(page+1, catalog_list_url))
                 # 队列一条任务
-                self.dao.QueueOneTask(key=config.REDIS_HUIYI_CATALOG, data=task)
+                self.dao.queue_one_task_to_redis(key=config.REDIS_HUIYI_CATALOG, data=task)
                 return
             # 处理验证码
             if '请输入验证码' in lunwen_list_resp.text or 'location.href' in lunwen_list_resp.text or len(lunwen_list_resp.text) < 10:
@@ -101,7 +101,7 @@ class SpiderMain(BastSpiderMain):
             # 保存数据
             self.num += 1
             LOGGING.info('已抓种子数量: {}'.format(self.num))
-            self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=lunwen_url_data, ws='中国知网', es='会议论文')
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=lunwen_url_data, ws='中国知网', es='会议论文')
 
     def run(self, category):
         # 数据类型转换
@@ -130,7 +130,7 @@ class SpiderMain(BastSpiderMain):
             if not catalog_resp:
                 LOGGING.error('论文列表页首页响应获取失败，url: {}'.format(catalog_url))
                 # 队列一条任务
-                self.dao.QueueOneTask(key=config.REDIS_HUIYI_CATALOG, data=task)
+                self.dao.queue_one_task_to_redis(key=config.REDIS_HUIYI_CATALOG, data=task)
                 return
             # 处理验证码
             if '请输入验证码' in catalog_resp.text or 'location.href' in catalog_resp.text or len(catalog_resp.text) < 10:
@@ -159,7 +159,7 @@ class SpiderMain(BastSpiderMain):
             # 保存数据
             self.num += 1
             LOGGING.info('已抓种子数量: {}'.format(self.num))
-            self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=lunwen_url_data, ws='中国知网', es='会议论文')
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=lunwen_url_data, ws='中国知网', es='会议论文')
         # 获取列表页总页数
         totalPage = self.server.getPageNumber(resp=catalog_text)
         # print(totalPage)
@@ -174,9 +174,9 @@ class SpiderMain(BastSpiderMain):
     def start(self):
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_HUIYI_CATALOG,
-                                             count=20,
-                                             lockname=config.REDIS_HUIYI_CATALOG_LOCK)
+            category_list = self.dao.get_task_from_redis(key=config.REDIS_HUIYI_CATALOG,
+                                                         count=20,
+                                                         lockname=config.REDIS_HUIYI_CATALOG_LOCK)
             # print(category_list)
             LOGGING.info('获取{}个任务'.format(len(category_list)))
 

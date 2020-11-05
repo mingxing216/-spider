@@ -48,7 +48,7 @@ class BastSpiderMain(object):
 
         # 数据库录入爬虫名
         if INSERT_SPIDER_NAME is True:
-            self.dao.saveSpiderName(name=NAME)
+            self.dao.save_spider_name(name=NAME)
 
 
 class SpiderMain(BastSpiderMain):
@@ -107,7 +107,7 @@ class SpiderMain(BastSpiderMain):
                 self.num += 1
                 LOGGING.info('当前已抓种子数量: {}'.format(self.num))
                 # 存入数据库
-                self.dao.saveTaskToMysql(table=config.MYSQL_MAGAZINE, memo=url, ws='国家哲学社会科学', es='期刊')
+                self.dao.save_task_to_mysql(table=config.MYSQL_MAGAZINE, memo=url, ws='国家哲学社会科学', es='期刊')
 
     def get_catalog(self):
         '''
@@ -128,7 +128,7 @@ class SpiderMain(BastSpiderMain):
         catalog_list = self.server.getCatalogList(text=index_text)
         # print(catalog_list)
         # 列表页进入队列
-        self.dao.QueueJobTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=catalog_list)
+        self.dao.queue_tasks_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=catalog_list)
 
     def get_profile(self, text, xuekeleibie):
         # 提取期刊详情页种子
@@ -139,14 +139,14 @@ class SpiderMain(BastSpiderMain):
             self.num += 1
             LOGGING.info('当前已抓种子数量: {}'.format(self.num))
             # 存入数据库
-            self.dao.saveTaskToMysql(table=config.MYSQL_MAGAZINE, memo=url, ws='国家哲学社会科学', es='期刊')
+            self.dao.save_task_to_mysql(table=config.MYSQL_MAGAZINE, memo=url, ws='国家哲学社会科学', es='期刊')
 
     def run(self):
         while 1:
             # 获取任务
-            category_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG,
-                                             count=1,
-                                             lockname=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG_LOCK)
+            category_list = self.dao.get_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG,
+                                                         count=1,
+                                                         lockname=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG_LOCK)
             # print(category_list)
             if category_list:
                 for category in category_list:
@@ -160,7 +160,7 @@ class SpiderMain(BastSpiderMain):
                     if not catalog_resp:
                         LOGGING.error('期刊列表页首页响应失败, url: {}'.format(qikan_url))
                         # 队列一条任务
-                        self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                        self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
                         break
                     # 获取当前列表总页数
                     total_pages = self.server.getTotalPage(text=catalog_resp.text)
@@ -175,7 +175,7 @@ class SpiderMain(BastSpiderMain):
                             LOGGING.error('第{}页期刊列表页响应失败, url: {}'.format(i, current_url))
                             # 队列一条任务
                             task['url'] = current_url
-                            self.dao.QueueOneTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
                             break
 
                         catalog_text = catalog_resp.text

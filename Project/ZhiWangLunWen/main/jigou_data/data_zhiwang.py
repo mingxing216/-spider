@@ -76,7 +76,7 @@ class SpiderMain(BastSpiderMain):
         if not resp:
             LOGGING.error('机构页面响应失败, url: {}'.format(url))
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_INSTITUTE, sha=sha)
             return
 
         article_html = resp.text
@@ -125,15 +125,15 @@ class SpiderMain(BastSpiderMain):
             if not media_resp:
                 LOGGING.error('图片响应失败, url: {}'.format(img_url))
                 # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+                self.dao.delete_logic_task_from_mysql(table=config.MYSQL_INSTITUTE, sha=sha)
                 return
 
             img_content = media_resp.content
             # 存储图片
-            suc = self.dao.saveMediaToHbase(media_url=img_url, content=img_content, item=img_dict, type='image')
+            suc = self.dao.save_media_to_hbase(media_url=img_url, content=img_content, item=img_dict, type='image')
             if not suc:
                 # 逻辑删除任务
-                self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+                self.dao.delete_logic_task_from_mysql(table=config.MYSQL_INSTITUTE, sha=sha)
 
         # # 记录已抓取任务
         # self.dao.saveComplete(table=config.MYSQL_REMOVAL, sha=sha)
@@ -152,18 +152,18 @@ class SpiderMain(BastSpiderMain):
             LOGGING.info('数据获取不完整, 存储失败')
             return
         # 存储数据
-        success = self.dao.saveDataToHbase(data=save_data)
+        success = self.dao.save_data_to_hbase(data=save_data)
         if success:
             # 删除任务
-            self.dao.deleteTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.delete_task_from_mysql(table=config.MYSQL_INSTITUTE, sha=sha)
         else:
             # 逻辑删除任务
-            self.dao.deleteLogicTask(table=config.MYSQL_INSTITUTE, sha=sha)
+            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_INSTITUTE, sha=sha)
 
     def start(self):
         while 1:
             # 获取任务
-            task_list = self.dao.getTask(key=config.REDIS_ZHIWANG_INSTITUTE, count=50, lockname=config.REDIS_ZHIWANG_INSTITUTE_LOCK)
+            task_list = self.dao.get_task_from_redis(key=config.REDIS_ZHIWANG_INSTITUTE, count=50, lockname=config.REDIS_ZHIWANG_INSTITUTE_LOCK)
             # print(task_list)
             LOGGING.info('获取{}个任务'.format(len(task_list)))
 
