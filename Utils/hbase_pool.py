@@ -12,8 +12,9 @@ sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../")))
 
 
 class HBasePool(object):
-    def __init__(self):
-        # 创建连接，通过参数size来设置连接池中连接的个数
+    def __init__(self, logging=None):
+        self.logging = logging
+        # 创建连接池，通过参数size来设置连接池中连接的个数
         self.pool = happybase.ConnectionPool(size=5, # 连接池中连接个数
                                              host="mm-node5",
                                              # port=9090,
@@ -28,12 +29,16 @@ class HBasePool(object):
 
     # 获取一行数据
     def get_datas(self, row_key):
-        with self.pool.connection() as connection:
-            # print(connection.tables())
-            table = happybase.Table('media:document', connection)
-            # print(table.families())
-            info = table.row(row_key, columns=None, include_timestamp=False)
-            return info
+        try:
+            with self.pool.connection() as connection:
+                # print(connection.tables())
+                table = happybase.Table('media:document', connection)
+                # print(table.families())
+                info = table.row(row_key, columns=None, include_timestamp=False)
+                return info
+
+        except Exception as e:
+            self.logging.error('{} {}'.format(str(e), row_key))
 
 
 if __name__ == '__main__':
