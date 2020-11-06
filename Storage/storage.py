@@ -159,10 +159,10 @@ class Dao(object):
                     return False
 
     # 更新mysql种子状态
-    def update_task_to_mysql(self, table, sha, msg='NULL'):
+    def update_task_to_mysql(self, table, data, sha):
         start_time = time.time()
         self.logging.info('开始更新种子')
-        ret = self.__update_task_to_mysql(table, sha, msg)
+        ret = self.__update_task_to_mysql(table, data, sha)
         if ret:
             self.logging.info('handle | 种子更新成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
         else:
@@ -171,12 +171,8 @@ class Dao(object):
         return ret
 
     # 种子任务存入Mysql数据库
-    def __update_task_to_mysql(self, table, sha, msg='NULL'):
-        data = {
-            'del': '0',
-            'msg': msg,
-            'date_created': timeutils.getNowDatetime()
-        }
+    def __update_task_to_mysql(self, table, data, sha):
+
         try:
             self.mysql_client.update(table=table, data=data, where="`sha` = '{}'".format(sha))
             self.logging.info('已更新种子: {}'.format(sha))

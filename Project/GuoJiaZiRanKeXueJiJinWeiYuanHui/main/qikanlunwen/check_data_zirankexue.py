@@ -25,7 +25,7 @@ from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.service import service
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.dao import dao
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui import config
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
-from Utils import user_pool, hbase_pool
+from Utils import user_pool, hbase_pool, timeutils
 
 logger_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} {process} {thread} {level} - {message}"
 
@@ -111,13 +111,23 @@ class SpiderMain(BastSpiderMain):
                     # 更新全文种子错误信息及状态
                     msg = '全文content字段缺失, url: {}'.format(pdf_url)
                     logger.warning(msg)
-                    self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+                    data = {
+                        'del': '0',
+                        'msg': msg,
+                        'date_created': timeutils.getNowDatetime()
+                    }
+                    self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
                 elif not info_dict.get(b'm:content'):
                     # 更新全文种子错误信息及状态
                     msg = '全文content字段无值, url: {}'.format(pdf_url)
                     logger.warning(msg)
-                    self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+                    data = {
+                        'del': '0',
+                        'msg': msg,
+                        'date_created': timeutils.getNowDatetime()
+                    }
+                    self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
                 else:
                     begin_time = time.time()
@@ -133,16 +143,32 @@ class SpiderMain(BastSpiderMain):
                         # 更新全文种子错误信息及状态
                         msg = 'not PDF, url: {}'.format(pdf_url)
                         logger.warning(msg)
-                        self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+                        data = {
+                            'del': '0',
+                            'msg': msg,
+                            'date_created': timeutils.getNowDatetime()
+                        }
+                        self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
                     else:
                         # 记录全文正确信息
                         msg = 'is PDF, url: {}'.format(pdf_url)
                         logger.info(msg)
+                        data = {
+                            'del': '3',
+                            'msg': msg,
+                            'date_created': timeutils.getNowDatetime()
+                        }
+                        self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
             else:
                 msg = '全文数据获取失败, url: {}'.format(pdf_url)
                 logger.warning(msg)
-                self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+                data = {
+                    'del': '0',
+                    'msg': msg,
+                    'date_created': timeutils.getNowDatetime()
+                }
+                self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
         else:
             logger.info('队列中已无任务')
