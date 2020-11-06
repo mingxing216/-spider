@@ -13,19 +13,16 @@ import requests
 import time
 import traceback
 import re
-from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
-
-# sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
+from multiprocessing.pool import Pool, ThreadPool
 from loguru import logger
 
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../../../../")))
-from Log import log
+# sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../../")))
+
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.middleware import download_middleware
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.service import service
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.dao import dao
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui import config
-from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.main.qikanlunwen import data_zirankexue
 
 logger_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} {process} {thread} {level} - {message}"
 # 输出到指定目录下的log文件，并按天分隔

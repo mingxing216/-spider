@@ -99,7 +99,7 @@ class Dao(object):
                 return True
 
             except Exception as e:
-                self.logging.warning('种子存储警告: {}'.format(ctx))
+                self.logging.warning('种子存储警告: {}, {}'.format(e, ctx))
                 return False
 
         else:
@@ -155,7 +155,7 @@ class Dao(object):
                     return True
 
                 except Exception as e:
-                    self.logging.warning('种子更新警告: {}, {}'.format(ctx, e))
+                    self.logging.warning('种子更新警告: {}, {}'.format(e, ctx))
                     return False
 
     # 更新mysql种子状态
@@ -167,7 +167,7 @@ class Dao(object):
             self.logging.info('handle | 种子更新成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
         else:
             self.logging.info('handle | 种子更新失败 | use time: {}'.format('%.3f' % (time.time() - start_time)))
-        self.logging.info('结束存储种子')
+        self.logging.info('结束更新种子')
         return ret
 
     # 种子任务存入Mysql数据库
@@ -183,7 +183,7 @@ class Dao(object):
             return True
 
         except Exception as e:
-            self.logging.warning('种子更新警告: {}'.format(e))
+            self.logging.warning('种子更新警告: {}, {}'.format(e, sha))
             return False
 
     # 从Mysql获取指定一条任务

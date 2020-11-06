@@ -28,7 +28,6 @@ from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 from Utils import user_pool
 
 logger_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} {process} {thread} {level} - {message}"
-
 # 输出到指定目录下的log文件，并按天分隔
 logger.add("/opt/Log/SheHuiKeXue/期刊论文_data_{time}.log",
            format=logger_format,

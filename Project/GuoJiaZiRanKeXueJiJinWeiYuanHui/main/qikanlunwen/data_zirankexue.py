@@ -19,13 +19,13 @@ from contextlib import closing
 import json
 import threading
 from io import BytesIO, StringIO
-from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
+from multiprocessing.pool import Pool, ThreadPool
 from PyPDF2 import PdfFileReader
 from loguru import logger
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
-from Log import log
+# sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../../")))
+
 from Utils import timeutils
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.middleware import download_middleware
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.service import service

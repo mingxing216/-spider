@@ -7,19 +7,26 @@ import sys
 import os
 import time
 import traceback
-from multiprocessing import Pool
+from multiprocessing.pool import Pool, ThreadPool
+from loguru import logger
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
-from Log import log
+# sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../../")))
+
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.middleware import download_middleware
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.service import service
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.dao import dao
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui import config
 
-log_file_dir = 'ZiRanKeXue'  # LOG日志存放路径
-LOGNAME = '<国家自然科学_论文_queue>'  # LOG名
-NAME = '国家自然科学_论文_queue'  # 爬虫名
-LOGGING = log.ILog(log_file_dir, LOGNAME)
+logger_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} {process} {thread} {level} - {message}"
+# 输出到指定目录下的log文件，并按天分隔
+logger.add("/opt/Log/ZiRanKeXue/论文_queue_{time}.log",
+           format=logger_format,
+           level="INFO",
+           rotation='00:00',
+           # compression='zip',
+           enqueue=True,
+           encoding="utf-8")
 
 INSERT_SPIDER_NAME = False # 爬虫名入库
 INSERT_DATA_NUMBER = False # 记录抓取数据量
@@ -27,14 +34,14 @@ INSERT_DATA_NUMBER = False # 记录抓取数据量
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
+        self.download_middleware = download_middleware.Downloader(logging=logger,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   stream=config.STREAM,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
                                                                   proxy_city=config.CITY)
-        self.server = service.Server(logging=LOGGING)
-        self.dao = dao.Dao(logging=LOGGING,
+        self.server = service.Server(logging=logger)
+        self.dao = dao.Dao(logging=logger,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
 
@@ -52,14 +59,14 @@ class SpiderMain(BastSpiderMain):
             # 查询redis队列中任务数量
             url_number = self.dao.select_task_number(key=config.REDIS_ZIRANKEXUE_PAPER)
             if url_number <= config.MAX_QUEUE_REDIS/10:
-                LOGGING.info('redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS/10)))
+                logger.info('redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS / 10)))
                 # 获取任务
                 new_task_list = self.dao.get_task_list_from_mysql(table=config.MYSQL_PAPER, ws='国家自然科学基金委员会', es='论文', count=config.MAX_QUEUE_REDIS)
                 # print(new_task_list)
                 # 队列任务
                 self.dao.queue_tasks_from_mysql_to_redis(key=config.REDIS_ZIRANKEXUE_PAPER, data=new_task_list)
             else:
-                LOGGING.info('redis剩余{}个任务'.format(url_number))
+                logger.info('redis剩余{}个任务'.format(url_number))
 
             time.sleep(1)
 
@@ -69,11 +76,11 @@ def process_start():
     try:
         main.start()
     except:
-        LOGGING.exception(str(traceback.format_exc()))
+        logger.exception(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
-    LOGGING.info('======The Start!======')
+    logger.info('======The Start!======')
     begin_time = time.time()
     process_start()
     # po = Pool(1)
@@ -82,5 +89,5 @@ if __name__ == '__main__':
     # po.close()
     # po.join()
     end_time = time.time()
-    LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is %.2fs======' %(end_time - begin_time))
+    logger.info('======The End!======')
+    logger.info('======Time consuming is %.2fs======' % (end_time - begin_time))
