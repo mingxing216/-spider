@@ -504,7 +504,7 @@ class Dao(object):
         start_time = time.time()
         ret = self._get_one_task_from_redis(key)
         if ret is not None:
-            self.logging.info('handle | 获取 1 条任务 | use time: {}'.format(len(ret), '%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | 获取 1 条任务 | use time: {}'.format('%.3f' % (time.time() - start_time)))
             return ret
 
     # 从redis队列中获取1条任务

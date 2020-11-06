@@ -120,10 +120,12 @@ class SpiderMain(BastSpiderMain):
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
 
                 else:
+                    begin_time = time.time()
                     info_bs64 = info_dict.get(b'm:content').decode('utf-8')
                     # print(info_bs64)
                     info = base64.b64decode(info_bs64)
                     # print(info)
+                    logger.info('handle | 全文base64转二进制 | use time: {}'.format('%.3f' % (time.time() - begin_time)))
 
                     # 检测PDF文件
                     is_value = self.is_valid_pdf_bytes_io(info)
@@ -167,9 +169,9 @@ class SpiderMain(BastSpiderMain):
 
                 except:
                     logger.exception(str(traceback.format_exc()))
-                    logger.info('handle | task exception | use time: {}'.format('%.3f' % (time.time() - start_time)))
+                    logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
             else:
-                logger.info('handle | no task | use time: {}'.format('%.3f' % (time.time() - start_time)))
+                logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
                 time.sleep(1)
 
     def start(self):
