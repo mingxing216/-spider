@@ -84,10 +84,11 @@ class SpiderMain(BastSpiderMain):
     def isValidPDF_BytesIO(content):
         bValid = True
         try:
-            reader = PdfFileReader(BytesIO(content))
+            reader = PdfFileReader(BytesIO(content), strict=False)
             if reader.getNumPages() < 1:  # 进一步通过页数判断。
                 bValid = False
         except:
+            logger.exception(str(traceback.format_exc()))
             bValid = False
 
         return bValid
