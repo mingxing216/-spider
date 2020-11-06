@@ -30,13 +30,13 @@ class HBasePool(object):
 
     def get_datas(self, row_key):
         start_time = time.time()
-        self.logging.info('开始存储种子')
+        self.logging.info('开始获取全文')
         res = self._get_datas(row_key)
         if res is not None:
             self.logging.info('handle | 全文数据获取成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
         else:
             self.logging.info('handle | 全文数据获取失败 | use time: {}'.format('%.3f' % (time.time() - start_time)))
-        self.logging.info('结束存储种子')
+        self.logging.info('结束获取全文')
 
         return res
 

@@ -92,7 +92,7 @@ class SpiderMain(BastSpiderMain):
             if reader.getNumPages() < 1:  # 进一步通过页数判断。
                 b_valid = False
         except:
-            logger.exception(str(traceback.format_exc()))
+            logger.error(str(traceback.format_exc()))
             b_valid = False
 
         return b_valid
@@ -171,7 +171,7 @@ class SpiderMain(BastSpiderMain):
                     logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
 
                 except:
-                    logger.exception(str(traceback.format_exc()))
+                    logger.error(str(traceback.format_exc()))
                     logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
             else:
                 time.sleep(1)
