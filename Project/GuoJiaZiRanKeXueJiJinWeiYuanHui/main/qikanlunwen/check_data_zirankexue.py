@@ -106,7 +106,7 @@ class SpiderMain(BastSpiderMain):
             # 获取hbase中全文数据
             info_dict = self.hbase_obj.get_datas(pdf_sha)
 
-            if info_dict:
+            if info_dict is not None:
                 if b'm:content' not in info_dict.keys():
                     # 更新全文种子错误信息及状态
                     msg = '全文content字段缺失, url: {}'.format(pdf_url)

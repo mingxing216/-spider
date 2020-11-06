@@ -16,7 +16,7 @@ class HBasePool(object):
     def __init__(self, logging=None):
         self.logging = logging
         # 创建连接池，通过参数size来设置连接池中连接的个数
-        self.pool = happybase.ConnectionPool(size=5, # 连接池中连接个数
+        self.pool = happybase.ConnectionPool(size=32, # 连接池中连接个数
                                              host="mm-node5",
                                              # port=9090,
                                              # timeout=20,

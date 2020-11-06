@@ -45,10 +45,6 @@ class BastSpiderMain(object):
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
 
-        # 数据库录入爬虫名
-        if INSERT_SPIDER_NAME is True:
-            self.dao.save_spider_name(name=NAME)
-
 
 class SpiderMain(BastSpiderMain):
     def __init__(self):
