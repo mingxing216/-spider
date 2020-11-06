@@ -106,38 +106,44 @@ class SpiderMain(BastSpiderMain):
             # 获取hbase中全文数据
             info_dict = self.hbase_obj.get_datas(pdf_sha)
 
-            if b'm:content' not in info_dict.keys():
-                # 更新全文种子错误信息及状态
-                msg = '全文content字段缺失, url: {}'.format(pdf_url)
-                logger.warning(msg)
-                self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
-
-            elif not info_dict.get(b'm:content'):
-                # 更新全文种子错误信息及状态
-                msg = '全文content字段无值, url: {}'.format(pdf_url)
-                logger.warning(msg)
-                self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
-
-            else:
-                info_bs64 = info_dict.get(b'm:content').decode('utf-8')
-                # print(info_bs64)
-                info = base64.b64decode(info_bs64)
-                # print(info)
-
-                # 检测PDF文件
-                is_value = self.is_valid_pdf_bytes_io(info)
-                if not is_value:
+            if info_dict:
+                if b'm:content' not in info_dict.keys():
                     # 更新全文种子错误信息及状态
-                    msg = 'not PDF, url: {}'.format(pdf_url)
+                    msg = '全文content字段缺失, url: {}'.format(pdf_url)
                     logger.warning(msg)
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+
+                elif not info_dict.get(b'm:content'):
+                    # 更新全文种子错误信息及状态
+                    msg = '全文content字段无值, url: {}'.format(pdf_url)
+                    logger.warning(msg)
+                    self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+
                 else:
-                    # 记录全文正确信息
-                    msg = 'is PDF, url: {}'.format(pdf_url)
-                    logger.info(msg)
+                    info_bs64 = info_dict.get(b'm:content').decode('utf-8')
+                    # print(info_bs64)
+                    info = base64.b64decode(info_bs64)
+                    # print(info)
+
+                    # 检测PDF文件
+                    is_value = self.is_valid_pdf_bytes_io(info)
+                    if not is_value:
+                        # 更新全文种子错误信息及状态
+                        msg = 'not PDF, url: {}'.format(pdf_url)
+                        logger.warning(msg)
+                        self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
+                    else:
+                        # 记录全文正确信息
+                        msg = 'is PDF, url: {}'.format(pdf_url)
+                        logger.info(msg)
+
+            else:
+                msg = '全文数据获取失败, url: {}'.format(pdf_url)
+                logger.warning(msg)
+                self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, sha=paper_sha, msg=msg)
 
         else:
-            logger.info('无全文数据')
+            logger.info('队列中已无任务')
 
     def run(self):
         logger.info('线程启动')
