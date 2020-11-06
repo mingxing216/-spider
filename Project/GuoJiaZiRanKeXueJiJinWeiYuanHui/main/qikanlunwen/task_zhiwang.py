@@ -24,7 +24,6 @@ from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.middleware import download_middlewa
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.service import service
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.dao import dao
 from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui import config
-from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.main.qikanlunwen import data_zirankexue
 
 log_file_dir = 'ZiRanKeXue'  # LOG日志存放路径
 LOGNAME = '<搜索知网_论文_task>'  # LOG名

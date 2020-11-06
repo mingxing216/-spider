@@ -22,7 +22,6 @@ from Project.ZheXueSheHuiKeXueQiKan.middleware import download_middleware
 from Project.ZheXueSheHuiKeXueQiKan.service import service
 from Project.ZheXueSheHuiKeXueQiKan.dao import dao
 from Project.ZheXueSheHuiKeXueQiKan import config
-from Project.ZheXueSheHuiKeXueQiKan.main.qikanlunwen import data_zhexueshehuikexue
 
 log_file_dir = 'SheHuiKeXue'  # LOG日志存放路径
 LOGNAME = '<国家哲学社会科学_年列表_task>'  # LOG名
