@@ -53,8 +53,6 @@ class BastSpiderMain(object):
         self.dao = dao.Dao(logging=logger,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
-        # hbase存储对象
-        self.hbase_obj = hbase_pool.HBasePool(logging=logger)
 
 
 class SpiderMain(BastSpiderMain):
@@ -131,7 +129,7 @@ class SpiderMain(BastSpiderMain):
 
                 else:
                     begin_time = time.time()
-                    info_bs64 = info_dict.get('content').decode('utf-8')
+                    info_bs64 = info_dict.get('content')
                     # print(info_bs64)
                     info = base64.b64decode(info_bs64)
                     # print(info)

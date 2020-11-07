@@ -409,11 +409,8 @@ class Dao(object):
         url = settings.GET_HBASE_DATA_URL.format(sha, ss)
         # 开始获取实体数据
         start_time = time.time()
-        # proxies = {'http': 'http://192.168.10.202',
-        #            'https': 'https://192.168.10.202'}
         try:
             resp = self.s.get(url=url, timeout=(10, 30))
-            print(type(resp.text))
             if resp:
                 if resp.status_code == 200:
                     self.logging.info('handle | Get data from Hbase | use time: {} | status: {} | sha: {}'.format('%.3f' %(time.time() - start_time), resp.status_code, sha))
@@ -433,12 +430,8 @@ class Dao(object):
         url = settings.GET_HBASE_MEDIA_URL.format(sha, ss)
         # 开始获取实体数据
         start_time = time.time()
-        # proxies = {'http': 'http://60.195.249.91:25',
-        #            'https': 'https://60.195.249.91:25'}
         try:
             resp = self.s.get(url=url, timeout=(10, 30))
-            print(type(resp.text))
-            print(type(resp.json()))
             if resp:
                 if resp.status_code == 200:
                     self.logging.info('handle | Get media from Hbase | use time: {} | status: {} | sha: {}'.format(

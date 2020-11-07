@@ -106,8 +106,7 @@ class SpiderMain(BastSpiderMain):
 
             # 获取hbase中全文数据
             info_dict = self.dao.get_media_from_hbase(pdf_sha, 'document')
-            print(info_dict)
-            return
+
             if info_dict is not None:
                 if 'content' not in info_dict.keys():
                     # 更新全文种子错误信息及状态
@@ -133,7 +132,7 @@ class SpiderMain(BastSpiderMain):
 
                 else:
                     begin_time = time.time()
-                    info_bs64 = info_dict.get('content').decode('utf-8')
+                    info_bs64 = info_dict.get('content')
                     # print(info_bs64)
                     info = base64.b64decode(info_bs64)
                     # print(info)
