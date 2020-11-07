@@ -28,30 +28,30 @@ class HBasePool(object):
                                              protocol='compact' # 协议
                                             )
 
-    def get_datas(self, row_key):
+    def get_datas(self, row_key_list):
         start_time = time.time()
         self.logging.info('开始获取全文')
-        res = self._get_datas(row_key)
+        res = self._get_datas(row_key_list)
         if res is not None:
-            self.logging.info('handle | 全文获取成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | {}条全文获取成功 | use time: {}'.format(len(row_key_list), '%.3f' % (time.time() - start_time)))
         else:
-            self.logging.info('handle | 全文获取失败 | use time: {}'.format('%.3f' % (time.time() - start_time)))
+            self.logging.info('handle | {}条全文获取失败 | use time: {}'.format(len(row_key_list), '%.3f' % (time.time() - start_time)))
         self.logging.info('结束获取全文')
 
         return res
 
-    # 获取一行数据
-    def _get_datas(self, row_key):
+    # 获取hbase数据
+    def _get_datas(self, row_key_list):
         try:
             with self.pool.connection() as connection:
                 # print(connection.tables())
                 table = happybase.Table('media:document', connection)
                 # print(table.families())
-                info = table.row(row_key, columns=None, include_timestamp=False)
+                info = table.rows(row_key_list, columns=None, include_timestamp=False)
                 return info
 
         except Exception as e:
-            self.logging.error('{} {}'.format(str(e), row_key))
+            self.logging.error('{} {}'.format(str(e), row_key_list))
             return
 
 

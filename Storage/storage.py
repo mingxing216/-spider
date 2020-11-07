@@ -507,7 +507,7 @@ class Dao(object):
     def _get_one_task_from_redis(self, key):
         return self.redis_client.queue_spop(key=key)
 
-    def get_task_from_redis(self, key, count, lockname):
+    def get_task_from_redis(self, key, count, lockname=None):
         start_time = time.time()
         ret = self._get_task_from_redis(key, count, lockname)
         if len(ret) > 0:
@@ -515,7 +515,7 @@ class Dao(object):
             return ret
 
     # 从redis队列中获取任务
-    def _get_task_from_redis(self, key, count, lockname):
+    def _get_task_from_redis(self, key, count, lockname=None):
         return self.redis_client.queue_spops(key=key, count=count, lockname=lockname)
 
     def delete_task_from_mysql(self, table, sha=None, url=None):
