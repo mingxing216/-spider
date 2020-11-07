@@ -271,7 +271,7 @@ class Dao(object):
         save_data = json.dumps(data, ensure_ascii=False)
         # 将待存储数据编码成二进制数据
         b_data = save_data.encode('utf-8')
-        url = '{}'.format(settings.SpiderDataSaveUrl)
+        url = '{}'.format(settings.SAVE_HBASE_DATA_URL)
         form_data = {"ip": "{}".format(self.localIP),
                      "wid": "python",
                      "ref": "",
@@ -329,7 +329,7 @@ class Dao(object):
 
     # 保存流媒体到hbase
     def __save_media_to_hbase(self, media_url, content, item, type, contype=None):
-        url = '{}'.format(settings.SpiderMediaSaveUrl)
+        url = '{}'.format(settings.SAVE_HBASE_MEDIA_URL)
         # 二进制图片文件转成base64文件
         content_bs64 = base64.b64encode(content)
         # content_bs64 = content
@@ -402,6 +402,60 @@ class Dao(object):
         #         return resp
         #
         # return resp
+
+    # 读取Hbase实体数据
+    def get_data_from_hbase(self, sha, ss):
+        # 获取接口
+        url = settings.GET_HBASE_DATA_URL.format(sha, ss)
+        # 开始获取实体数据
+        start_time = time.time()
+        # proxies = {'http': 'http://192.168.10.202',
+        #            'https': 'https://192.168.10.202'}
+        try:
+            resp = self.s.get(url=url, timeout=(10, 30))
+            print(type(resp.text))
+            if resp:
+                if resp.status_code == 200:
+                    self.logging.info('handle | Get data from Hbase | use time: {} | status: {} | sha: {}'.format('%.3f' %(time.time() - start_time), resp.status_code, sha))
+                    return resp.json()
+
+                else:
+                    self.logging.warning('handle | Get data from Hbase | use time: {} | status: {} | sha: {}'.format('%.3f' %(time.time() - start_time), resp.status_code, sha))
+                    return
+
+        except requests.exceptions.RequestException as e:
+            self.logging.error('handle | Get data from Hbase | use time: {} | status: NO | sha: {} | memo: {}'.format('%.3f' %(time.time() - start_time), sha, e))
+            return
+
+    # 读取Hbase多媒体数据
+    def get_media_from_hbase(self, sha, ss):
+        # 获取接口
+        url = settings.GET_HBASE_MEDIA_URL.format(sha, ss)
+        # 开始获取实体数据
+        start_time = time.time()
+        # proxies = {'http': 'http://60.195.249.91:25',
+        #            'https': 'https://60.195.249.91:25'}
+        try:
+            resp = self.s.get(url=url, timeout=(10, 30))
+            print(type(resp.text))
+            print(type(resp.json()))
+            if resp:
+                if resp.status_code == 200:
+                    self.logging.info('handle | Get media from Hbase | use time: {} | status: {} | sha: {}'.format(
+                        '%.3f' % (time.time() - start_time), resp.status_code, sha))
+                    return resp.json()
+
+                else:
+                    self.logging.warning('handle | Get media from Hbase | use time: {} | status: {} | sha: {}'.format(
+                        '%.3f' % (time.time() - start_time), resp.status_code, sha))
+                    return
+
+        except requests.exceptions.RequestException as e:
+            self.logging.error(
+                'handle | Get media from Hbase | use time: {} | status: NO | sha: {} | memo: {}'.format(
+                    '%.3f' % (time.time() - start_time), sha, e))
+            return
+
 
     # TODO 保存数据到mysql，不再使用
     def save_data_to_mysql(self, table, data):

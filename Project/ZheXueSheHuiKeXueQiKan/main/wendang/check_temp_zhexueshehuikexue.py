@@ -120,18 +120,18 @@ class SpiderMain(BastSpiderMain):
                 self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=task_data.get('sha'))
                 continue
 
-        print(pdf_list)
+        # print(pdf_list)
 
         # 创建sha列表
         sha_list = []
         for pdf_data in pdf_list:
             sha = pdf_data['pdf_sha']
             sha_list.append(sha)
-        print(sha_list)
-        print(type(sha_list))
+        # print(sha_list)
+        # print(type(sha_list))
 
         # 获取hbase中全文数据
-        info_list = self.hbase_obj.get_datas(sha_list)
+        info_list = self.hbase_obj.get_datas_from_hbase(sha_list)
 
         if info_list:
             for i in range(len(info_list)):

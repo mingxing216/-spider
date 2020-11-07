@@ -56,8 +56,6 @@ class BastSpiderMain(object):
         self.dao = dao.Dao(logging=logger,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
-        # hbase存储对象
-        self.hbase_obj = hbase_pool.HBasePool(logging=logger)
 
 
 class SpiderMain(BastSpiderMain):
@@ -107,10 +105,11 @@ class SpiderMain(BastSpiderMain):
             paper_sha = task_data.get('sha')
 
             # 获取hbase中全文数据
-            info_dict = self.hbase_obj.get_one_data_from_hbase(pdf_sha)
-
+            info_dict = self.dao.get_media_from_hbase(pdf_sha, 'document')
+            print(info_dict)
+            return
             if info_dict is not None:
-                if b'm:content' not in info_dict.keys():
+                if 'content' not in info_dict.keys():
                     # 更新全文种子错误信息及状态
                     msg = '全文content字段缺失, url: {}'.format(pdf_url)
                     logger.warning(msg)
@@ -121,7 +120,7 @@ class SpiderMain(BastSpiderMain):
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
-                elif not info_dict.get(b'm:content'):
+                elif not info_dict.get('content'):
                     # 更新全文种子错误信息及状态
                     msg = '全文content字段无值, url: {}'.format(pdf_url)
                     logger.warning(msg)
@@ -134,7 +133,7 @@ class SpiderMain(BastSpiderMain):
 
                 else:
                     begin_time = time.time()
-                    info_bs64 = info_dict.get(b'm:content').decode('utf-8')
+                    info_bs64 = info_dict.get('content').decode('utf-8')
                     # print(info_bs64)
                     info = base64.b64decode(info_bs64)
                     # print(info)

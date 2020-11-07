@@ -20,17 +20,17 @@ from loguru import logger
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 
-from Project.ZheXueSheHuiKeXueQiKan.middleware import download_middleware
-from Project.ZheXueSheHuiKeXueQiKan.service import service
-from Project.ZheXueSheHuiKeXueQiKan.dao import dao
-from Project.ZheXueSheHuiKeXueQiKan import config
+from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.middleware import download_middleware
+from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.service import service
+from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.dao import dao
+from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui import config
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 from Utils import user_pool, hbase_pool, timeutils
 
 logger_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} {process} {thread} {level} - {message}"
 
 # 输出到指定目录下的log文件，并按天分隔
-logger.add("/opt/Log/SheHuiKeXue/全文_check_{time}.log",
+logger.add("/opt/Log/ZiRanKeXue/全文_check_{time}.log",
            format=logger_format,
            level="INFO",
            rotation='00:00',
@@ -41,17 +41,14 @@ logger.add("/opt/Log/SheHuiKeXue/全文_check_{time}.log",
 
 class BastSpiderMain(object):
     def __init__(self):
-        # cookie池
-        self.cookie_obj = user_pool.CookieUtils(logging=logger)
         # 下载中间件
         self.download_middleware = download_middleware.Downloader(logging=logger,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   stream=config.STREAM,
                                                                   timeout=config.TIMEOUT,
                                                                   proxy_country=config.COUNTRY,
-                                                                  proxy_city=config.CITY,
-                                                                  cookie_obj=self.cookie_obj)
-        # self.server = service.Server(logging=LOGGING)
+                                                                  proxy_city=config.CITY)
+        self.server = service.Server(logging=logger)
         # 存储
         self.dao = dao.Dao(logging=logger,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
@@ -65,7 +62,7 @@ class SpiderMain(BastSpiderMain):
         super().__init__()
         self.num = 0
 
-    def __get_resp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):
+    def __get_resp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
         """
 
         :type referer: basestring
@@ -73,7 +70,7 @@ class SpiderMain(BastSpiderMain):
         # 发现验证码，请求页面3次
         for _i in range(3):
             resp = self.download_middleware.getResp(url, method, s=s, data=data,
-                                                    cookies=cookies, referer=referer, ranges=ranges, user=user)
+                                                    cookies=cookies, referer=referer, ranges=ranges)
             # if resp and resp.headers['Content-Type'].startswith('text'):
             #     if '请输入验证码' in resp.text:
             #         print('请重新登录')
@@ -102,15 +99,15 @@ class SpiderMain(BastSpiderMain):
         pdf_url = task_data.get('pdfUrl')
         if pdf_url:
             pdf_sha = hashlib.sha1(pdf_url.encode('utf-8')).hexdigest()
-            _id = task_data.get('id')
+            _id = task_data.get('fulltext')
             paper_url = task_data.get('url')
             paper_sha = task_data.get('sha')
 
             # 获取hbase中全文数据
-            info_dict = self.hbase_obj.get_one_data_from_hbase(pdf_sha)
+            info_dict = self.dao.get_media_from_hbase(pdf_sha, 'document')
 
             if info_dict is not None:
-                if b'm:content' not in info_dict.keys():
+                if 'content' not in info_dict.keys():
                     # 更新全文种子错误信息及状态
                     msg = '全文content字段缺失, url: {}'.format(pdf_url)
                     logger.warning(msg)
@@ -121,7 +118,7 @@ class SpiderMain(BastSpiderMain):
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
-                elif not info_dict.get(b'm:content'):
+                elif not info_dict.get('content'):
                     # 更新全文种子错误信息及状态
                     msg = '全文content字段无值, url: {}'.format(pdf_url)
                     logger.warning(msg)
@@ -134,7 +131,7 @@ class SpiderMain(BastSpiderMain):
 
                 else:
                     begin_time = time.time()
-                    info_bs64 = info_dict.get(b'm:content').decode('utf-8')
+                    info_bs64 = info_dict.get('content').decode('utf-8')
                     # print(info_bs64)
                     info = base64.b64decode(info_bs64)
                     # print(info)
@@ -193,7 +190,7 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 获取任务
             start_time = time.time()
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZIRANKEXUE_PAPER)
             if task:
                 try:
                     # json数据类型转换
@@ -208,7 +205,6 @@ class SpiderMain(BastSpiderMain):
                     logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
             else:
                 logger.info('队列中已无任务')
-                return
 
     def start(self):
         # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])

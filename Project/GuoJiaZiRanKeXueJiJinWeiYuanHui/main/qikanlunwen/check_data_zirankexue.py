@@ -104,7 +104,7 @@ class SpiderMain(BastSpiderMain):
             paper_sha = task_data.get('sha')
 
             # 获取hbase中全文数据
-            info_dict = self.hbase_obj.get_datas(pdf_sha)
+            info_dict = self.hbase_obj.get_one_data_from_hbase(pdf_sha)
 
             if info_dict is not None:
                 if b'm:content' not in info_dict.keys():
@@ -171,7 +171,14 @@ class SpiderMain(BastSpiderMain):
                 self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
         else:
-            logger.info('队列中已无任务')
+            msg = '无全文PDF, url: {}'.format(task_data.get('url'))
+            logger.warning(msg)
+            data = {
+                'del': '1',
+                'msg': msg,
+                'date_created': timeutils.getNowDatetime()
+            }
+            self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=task_data.get('sha'))
 
     def run(self):
         logger.info('线程启动')
@@ -197,8 +204,7 @@ class SpiderMain(BastSpiderMain):
                     logger.error(str(traceback.format_exc()))
                     logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
             else:
-                logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
-                time.sleep(1)
+                logger.info('队列中已无任务')
 
     def start(self):
         # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
