@@ -81,17 +81,17 @@ class SpiderMain(BastSpiderMain):
 
     # 检测PDF文件正确性
     @staticmethod
-    def isValidPDF_BytesIO(content):
-        bValid = True
+    def is_valid_pdf_bytes_io(content):
+        b_valid = True
         try:
             reader = PdfFileReader(BytesIO(content), strict=False)
             if reader.getNumPages() < 1:  # 进一步通过页数判断。
-                bValid = False
+                b_valid = False
         except:
-            logger.exception(str(traceback.format_exc()))
-            bValid = False
+            logger.error(str(traceback.format_exc()))
+            b_valid = False
 
-        return bValid
+        return b_valid
 
     # 获取文档实体字段
     def document(self, pdf_dict):
@@ -125,7 +125,7 @@ class SpiderMain(BastSpiderMain):
                 # 获取二进制内容
                 bytes_container.write(pdf_resp.content)
                 logger.info('handle | 获取内容不完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
-                                                                                 len(bytes_container.getvalue())))
+                                                                                  len(bytes_container.getvalue())))
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
                 # 请求头增加参数
@@ -194,12 +194,14 @@ class SpiderMain(BastSpiderMain):
         logger.info('结束获取内容')
 
         # 检测PDF文件
-        isValue = self.isValidPDF_BytesIO(pdf_content)
+        isValue = self.is_valid_pdf_bytes_io(pdf_content)
         if not isValue:
             return
 
         # 存储文档
-        succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document')
+        content_type = 'application/pdf'
+        succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict,
+                                            type='document', contype=content_type)
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
@@ -258,10 +260,9 @@ class SpiderMain(BastSpiderMain):
             return True
         else:
             logger.error('文档数据存储失败, url: {}'.format(doc_data['url']))
-            # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-            # 存储文档种子
-            self.dao.save_task_to_mysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            # # 存储文档种子
+            # self.dao.save_task_to_mysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            return
 
     def handle(self, task_data, save_data):
         # print(task_data)
@@ -456,10 +457,10 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 获取任务
             start_time = time.time()
-            task_list = self.dao.get_task_from_redis(key=config.REDIS_ZIRANKEXUE_PAPER, count=1,
-                                                     lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
+            # task_list = self.dao.get_task_from_redis(key=config.REDIS_ZIRANKEXUE_PAPER, count=1,
+            #                                          lockname=config.REDIS_ZIRANKEXUE_PAPER_LOCK)
             # task_list = ['{"achievementID": "ZD193973", "authors": "", "chineseTitle": "Semi-Supervised Learning for Neural Machine Translation", "conference": "", "doi": "10.18653/v1/p16-1185", "doiUrl": "https://doi.org/10.18653/v1/p16-1185", "downloadHref": "", "enAbstract": "", "enKeyword": "", "englishTitle": "", "fieldCode": "F011305", "fulltext": "ZD193973", "fundProject": "跨语言社会舆情分析基础理论与关键技术研究", "fundProjectCode": "970061", "fundProjectNo": "61331013", "id": "aa16eaa8-a45c-4994-a42b-9cb80a8fc09d", "journal": "Annual Meeting of the Association for Computational Linguistics", "organization": "中央民族大学", "organizationID": "201617", "outputSubIrSource": "", "pageRange": "", "productType": "3", "publishDate": "2016-08-07", "source": "origin", "supportType": "220", "supportTypeName": "重点项目", "year": "2016-08-07", "zhAbstract": "While end-to-end neural machine translation (NMT) has made remarkable progress recently, NMT systems only rely on parallel corpora for parameter estimation. Since parallel corpora are usually limited in quantity, quality, and coverage, especially for low-resource languages, it is appealing to exploit monolingual corpora to improve NMT. We propose a semisupervised approach for training NMT models on the concatenation of labeled (parallel corpora) and unlabeled (monolingual corpora) data. The central idea is to reconstruct the monolingual corpora using an autoencoder, in which the sourceto-target and target-to-source translation models serve as the encoder and decoder, respectively. Our approach can not only exploit the monolingual corpora of the target language, but also of the source language. Experiments on the Chinese English dataset show that our approach achieves significant improvements over state-of-the-art SMT and NMT systems.", "zhKeyword": "", "fieldName": "信息科学部", "url": "http://ir.nsfc.gov.cn/paperDetail/aa16eaa8-a45c-4994-a42b-9cb80a8fc09d", "pdfUrl": "http://ir.nsfc.gov.cn/paperDownload/ZD193973.pdf", "sha": "00052f292efbd1d1a25728aca9d79f288fc15d86"}']
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZIRANKEXUE_PAPER)
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZIRANKEXUE_PAPER_RETRY)
             if task:
                 try:
                     # 创建数据存储字典
@@ -503,9 +504,10 @@ class SpiderMain(BastSpiderMain):
 
                 except:
                     logger.exception(str(traceback.format_exc()))
+                    logger.info('handle | task complete | use time: {}s'.format('%.3f' % (time.time() - start_time)))
             else:
+                logger.info('队列中已无任务')
                 time.sleep(1)
-                continue
 
     def start(self):
         # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])

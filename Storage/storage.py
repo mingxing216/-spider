@@ -194,7 +194,7 @@ class Dao(object):
 
     # 从Mysql获取任务
     def get_task_list_from_mysql(self, table, ws, es, count):
-        sql = "select * from {} where `del` = '2' and `ws` = '{}' and `es` = '{}' limit {}".format(table, ws, es, count)
+        sql = "select * from {} where `del` = '0' and `ws` = '{}' and `es` = '{}' limit {}".format(table, ws, es, count)
 
         data_list = self.mysql_client.get_results(sql=sql)
 
@@ -541,7 +541,7 @@ class Dao(object):
                 return json.dumps({"status": 0, "sha": sha})
 
             except Exception as e:
-                self.logging.error('uodate data error: {}'.format(e))
+                self.logging.error('update data error: {}'.format(e))
 
     def get_one_task_from_redis(self, key):
         start_time = time.time()
@@ -620,7 +620,7 @@ class Dao(object):
     # mysql中已完成任务
     def _finish_task_from_mysql(self, table, sha=None, url=None):
         data = {
-            'del': '2'
+            'del': '4'
         }
         if sha:
             try:

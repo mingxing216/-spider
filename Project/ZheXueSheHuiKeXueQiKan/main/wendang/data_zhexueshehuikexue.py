@@ -117,14 +117,15 @@ class SpiderMain(BastSpiderMain):
             pdf_resp = self.__get_resp(url=new_url, method='GET', cookies=cookies, user=user)
         # self.num += 1
         # print('请求第 {} 篇全文'.format(self.num))
-        logger.info('开始获取内容')
-        start_time = time.time()
         if not pdf_resp:
             logger.error('附件响应失败, url: {}'.format(new_url))
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             return
         # media_resp.encoding = media_resp.apparent_encoding
+
+        logger.info('开始获取内容')
+        start_time = time.time()
         # 判断
         # print(pdf_resp['data'].headers['Content-Type'])
         if 'text' in pdf_resp['data'].headers.get('Content-Type') or 'html' in pdf_resp['data'].headers.get(

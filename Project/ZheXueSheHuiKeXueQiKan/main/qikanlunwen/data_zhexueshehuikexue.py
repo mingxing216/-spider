@@ -92,7 +92,7 @@ class SpiderMain(BastSpiderMain):
             if reader.getNumPages() < 1:  # 进一步通过页数判断。
                 b_valid = False
         except:
-            logger.exception(str(traceback.format_exc()))
+            logger.error(str(traceback.format_exc()))
             b_valid = False
 
         return b_valid
@@ -101,10 +101,10 @@ class SpiderMain(BastSpiderMain):
     def document(self, pdf_dict):
         # 新版本 1.1.0 并下载详情时，使用新URL进行采集
         new_url = pdf_dict['url']
-        if hasattr(config, 'VERSION') and getattr(config, 'VERSION') == '1.1.0' and new_url.startswith(
-                'http://www.nssd.org/articles/article_down.aspx?'):
+        if hasattr(config, 'VERSION') and getattr(config, 'VERSION') == '1.1.0':
             cookie_info = None
-            new_url = 'http://www.nssd.org/articles/article_down.aspx?suid=5db370c4ebe73bb71f23fc9f8bdd68e7&id=' + pdf_dict.get('id')
+            new_url = 'http://www.nssd.org/articles/article_down.aspx?suid=5db370c4ebe73bb71f23fc9f8bdd68e7&id=' + pdf_dict.get(
+                'id')
             pdf_resp = self.__get_resp(url=new_url, method='GET')
         else:
             # 其它版本或非下载URL保持不变
@@ -116,17 +116,19 @@ class SpiderMain(BastSpiderMain):
             pdf_resp = self.__get_resp(url=new_url, method='GET', cookies=cookies, user=user)
         # self.num += 1
         # print('请求第 {} 篇全文'.format(self.num))
-        logger.info('开始获取内容')
-        start_time = time.time()
         if not pdf_resp:
             logger.error('附件响应失败, url: {}'.format(new_url))
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             return
         # media_resp.encoding = media_resp.apparent_encoding
+
+        logger.info('开始获取内容')
+        start_time = time.time()
         # 判断
         # print(pdf_resp['data'].headers['Content-Type'])
-        if 'text' in pdf_resp['data'].headers.get('Content-Type') or 'html' in pdf_resp['data'].headers.get('Content-Type'):
+        if 'text' in pdf_resp['data'].headers.get('Content-Type') or 'html' in pdf_resp['data'].headers.get(
+                'Content-Type'):
             if '请输入验证码' in pdf_resp['data'].text:
                 logger.warning('请重新登录: {}'.format(new_url))
                 # cookie使用次数+50
@@ -149,8 +151,8 @@ class SpiderMain(BastSpiderMain):
                 return
             elif '下载过于频繁' in pdf_resp['data'].text:
                 logger.warning('当前IP下载过于频繁，暂不提供全文下载! {}, {}'.format(new_url, pdf_resp['proxy_ip']))
-                # proxy权重减10
-                self.download_middleware.proxy_obj.dec_max_proxy(pdf_resp['proxy_ip'])
+                # # proxy权重减10
+                # self.download_middleware.proxy_obj.dec_max_proxy(pdf_resp['proxy_ip'])
                 # 更新种子错误信息
                 msg = '当前IP下载过于频繁'
                 data_dict = {'url': pdf_dict['relEsse']['url']}
@@ -181,8 +183,9 @@ class SpiderMain(BastSpiderMain):
             else:
                 # 获取二进制内容
                 bytes_container.write(pdf_resp['data'].content)
-                logger.warning('handle | 获取内容不完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
-                                                                                 len(bytes_container.getvalue())))
+                logger.warning(
+                    'handle | 获取内容不完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
+                                                                          len(bytes_container.getvalue())))
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
                 # 请求头增加参数
@@ -283,8 +286,8 @@ class SpiderMain(BastSpiderMain):
 
         # 存储全文
         content_type = 'application/pdf'
-        succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict, type='document',
-                                            contype=content_type)
+        succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict,
+                                            type='document', contype=content_type)
         if not succ:
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
@@ -355,83 +358,81 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task_data, save_data):
         # print(task_data)
         url = task_data.get('url')
-        _id = re.findall(r"id=(.*)?&?", url)[0]
+        _id = task_data.get('id')
         # print(id)
         key = 'nssd.org|' + _id
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
-        # xueKeLeiBie = task_data.get('xuekeleibie')
+        xueKeLeiBie = task_data.get('xuekeleibie')
 
+        # 获取详情页
+        profile_resp = self.__get_resp(url=url, method='GET')
+        if not profile_resp:
+            logger.error('详情页响应失败, url: {}'.format(url))
+            return
+
+        profile_text = profile_resp['data'].text
+
+        # ========================== 获取实体 ============================
         server = service.Server(logging=logger)
-
-        # # 获取详情页
-        # profile_resp = self.__getResp(url=url, method='GET')
-        # if not profile_resp:
-        #     LOGGING.error('详情页响应失败, url: {}'.format(url))
-        #     return
-        #
-        # profile_text = profile_resp.text
-        #
-        # # ========================== 获取实体 ============================
-        # server = service.Server(logging=LOGGING)
-        # # 获取标题
-        # save_data['title'] = server.getPaperTitle(profile_text)
+        # 获取标题
+        save_data['title'] = server.getPaperTitle(profile_text)
         # # 存入mysql数据库
         # data_dict = {'url': url, 'title': save_data['title']}
-        # self.dao.saveTaskToMysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文')
-        # # 获取摘要
-        # save_data['abstract'] = {}
-        # save_data['abstract']['text'] = server.getPaperAbstract(profile_text)
-        # if save_data['abstract']['text']:
-        #     hasChinese = server.hasChinese(save_data['abstract']['text'])
-        #     if hasChinese:
-        #         save_data['abstract']['lang'] = "zh"
-        #     else:
-        #         save_data['abstract']['lang'] = "en"
-        # else:
-        #     save_data['abstract']['lang'] = ""
-        # # 获取作者
-        # save_data['author'] = task_data.get('authors')
-        # # 获取作者单位
-        # save_data['author_affiliation'] = server.getAuthorAffiliation(profile_text)
-        # # 获取作者单位
-        # save_data['journal_information'] = {}
-        # save_data['journal_information']['name'] = server.getJournalName(profile_text)
-        # save_data['journal_information']['year'] = task_data.get('year')
-        # save_data['journal_information']['issue'] = task_data.get('issue')
-        # save_data['journal_information']['start_page'] = server.getStartPage(profile_text)
-        # save_data['journal_information']['end_page'] = server.getEndPage(profile_text)
-        # save_data['journal_information']['total_page'] = server.getTotalPages(profile_text)
-        # # 获取关键词
-        # save_data['keyword'] = {}
-        # save_data['keyword']['text'] = server.getFieldValues(profile_text, '关 键 词')
-        # if save_data['keyword']['text']:
-        #     if server.hasChinese(save_data['keyword']['text']):
-        #         save_data['keyword']['lang'] = "zh"
-        #     else:
-        #         save_data['keyword']['lang'] = "en"
-        # else:
-        #     save_data['keyword']['lang'] = ""
-        # # 获取项目基金
-        # save_data['funders'] = server.getFunders(profile_text)
-        # # 分类号
-        # save_data['classification_code'] = {}
-        # save_data['classification_code']['code'] = server.getFieldValues(profile_text, '分 类 号')
-        # if save_data['classification_code']['code']:
-        #     save_data['classification_code']['type'] = "中图分类号"
-        # else:
-        #     save_data['classification_code']['type'] = ""
-        # # 下载次数
-        # save_data['downloads'] = server.getCount(profile_text, '下载次数')
-        # # 在线阅读
-        # save_data['online_reading'] = server.getCount(profile_text, '在线阅读')
-        # # 学科分类
-        # save_data['subject_classification_name'] = xueKeLeiBie
-        # # 关联期刊
-        # qikan_url = task_data.get('qikanUrl')
-        # qikan_id = re.findall(r"cn/(\w+)/?", qikan_url)[0]
-        # qikan_key = 'nssd.org|' + qikan_id
-        # qikan_sha = hashlib.sha1(qikan_key.encode('utf-8')).hexdigest()
-        # save_data['rela_journal'] = server.rela_journal(qikan_url, qikan_key, qikan_sha)
+        # self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文')
+        # 获取摘要
+        save_data['abstract'] = {}
+        save_data['abstract']['text'] = server.getPaperAbstract(profile_text)
+        if save_data['abstract']['text']:
+            hasChinese = server.hasChinese(save_data['abstract']['text'])
+            if hasChinese:
+                save_data['abstract']['lang'] = "zh"
+            else:
+                save_data['abstract']['lang'] = "en"
+        else:
+            save_data['abstract']['lang'] = ""
+        # 获取作者
+        save_data['author'] = task_data.get('authors')
+        # 获取作者单位
+        save_data['author_affiliation'] = server.getAuthorAffiliation(profile_text)
+        # 获取作者单位
+        save_data['journal_information'] = {}
+        save_data['journal_information']['name'] = server.getJournalName(profile_text)
+        save_data['journal_information']['year'] = task_data.get('year')
+        save_data['journal_information']['issue'] = task_data.get('issue')
+        save_data['journal_information']['start_page'] = server.getStartPage(profile_text)
+        save_data['journal_information']['end_page'] = server.getEndPage(profile_text)
+        save_data['journal_information']['total_page'] = server.getTotalPages(profile_text)
+        # 获取关键词
+        save_data['keyword'] = {}
+        save_data['keyword']['text'] = server.getFieldValues(profile_text, '关 键 词')
+        if save_data['keyword']['text']:
+            if server.hasChinese(save_data['keyword']['text']):
+                save_data['keyword']['lang'] = "zh"
+            else:
+                save_data['keyword']['lang'] = "en"
+        else:
+            save_data['keyword']['lang'] = ""
+        # 获取项目基金
+        save_data['funders'] = server.getFunders(profile_text)
+        # 分类号
+        save_data['classification_code'] = {}
+        save_data['classification_code']['code'] = server.getFieldValues(profile_text, '分 类 号')
+        if save_data['classification_code']['code']:
+            save_data['classification_code']['type'] = "中图分类号"
+        else:
+            save_data['classification_code']['type'] = ""
+        # 下载次数
+        save_data['downloads'] = server.getCount(profile_text, '下载次数')
+        # 在线阅读
+        save_data['online_reading'] = server.getCount(profile_text, '在线阅读')
+        # 学科分类
+        save_data['subject_classification_name'] = xueKeLeiBie
+        # 关联期刊
+        qikan_url = task_data.get('qikanUrl')
+        qikan_id = re.findall(r"cn/(\w+)/?", qikan_url)[0]
+        qikan_key = 'nssd.org|' + qikan_id
+        qikan_sha = hashlib.sha1(qikan_key.encode('utf-8')).hexdigest()
+        save_data['rela_journal'] = server.rela_journal(qikan_url, qikan_key, qikan_sha)
         # 获取关联文档
         pdf_url = task_data.get('pdfUrl')
         if pdf_url:
@@ -443,8 +444,8 @@ class SpiderMain(BastSpiderMain):
             pdf_dict = dict()
             pdf_dict['url'] = doc_url
             pdf_dict['key'] = doc_key
-            pdf_dict['id'] = task_data.get('id')
-            pdf_dict['bizTitle'] = task_data.get('title')
+            pdf_dict['id'] = _id
+            pdf_dict['bizTitle'] = save_data['title']
             pdf_dict['relEsse'] = server.rela_paper(url, key, sha)
             pdf_dict['relPics'] = save_data['rela_document']
 
@@ -500,7 +501,7 @@ class SpiderMain(BastSpiderMain):
             start_time = time.time()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_RETRY)
             if task:
                 try:
                     # 创建数据存储字典
@@ -546,8 +547,8 @@ class SpiderMain(BastSpiderMain):
                     logger.exception(str(traceback.format_exc()))
                     logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
             else:
+                logger.info('队列中已无任务')
                 time.sleep(1)
-                logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
 
     def start(self):
         # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
