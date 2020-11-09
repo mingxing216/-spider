@@ -105,7 +105,18 @@ class SpiderMain(BastSpiderMain):
             info_dict = self.dao.get_media_from_hbase(pdf_sha, 'document')
 
             if info_dict is not None:
-                if 'content' not in info_dict.keys():
+                if 'pk' not in info_dict.keys():
+                    # 更新全文种子错误信息及状态
+                    msg = '无全文数据, url: {}'.format(pdf_url)
+                    logger.warning(msg)
+                    data = {
+                        'del': '0',
+                        'msg': msg,
+                        'date_created': timeutils.getNowDatetime()
+                    }
+                    self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
+
+                elif 'content' not in info_dict.keys():
                     # 更新全文种子错误信息及状态
                     msg = '全文content字段缺失, url: {}'.format(pdf_url)
                     logger.warning(msg)

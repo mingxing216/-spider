@@ -205,6 +205,7 @@ class SpiderMain(BastSpiderMain):
                     logger.info('handle | task complete | use time: {}'.format('%.3f' % (time.time() - start_time)))
             else:
                 logger.info('队列中已无任务')
+                time.sleep(1)
 
     def start(self):
         # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
