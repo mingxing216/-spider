@@ -198,7 +198,13 @@ class SpiderMain(BastSpiderMain):
         if not isValue:
             return
 
-        # 存储文档
+        # 第一次存储文档
+        con = 'ABC'.encode('utf-8')
+        suc = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=con, item=pdf_dict, type='document')
+        if not suc:
+            return
+
+        # 存储真正文档
         content_type = 'application/pdf'
         succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict,
                                             type='document', contype=content_type)
