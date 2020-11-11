@@ -139,7 +139,7 @@ class SpiderMain(BastSpiderMain):
         else:
             # 更新种子错误信息
             msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()),
-                                                       pdf_resp['data'].headers.get('Content-Length', 0))
+                                                       pdf_resp.headers.get('Content-Length', 0))
             logger.warning(msg)
             data_dict = {'url': pdf_dict['relEsse']['url']}
             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家自然科学基金委员会', es='论文', msg=msg)
@@ -449,6 +449,7 @@ class SpiderMain(BastSpiderMain):
         save_data['script_version'] = 'V1.3'
 
     def run(self):
+        logger.info('线程启动')
         # 第一次请求的等待时间
         delay_time = time.time()
         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))

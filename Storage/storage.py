@@ -431,7 +431,7 @@ class Dao(object):
         # 开始获取实体数据
         start_time = time.time()
         try:
-            resp = self.s.get(url=url, timeout=(10, 30))
+            resp = self.s.get(url=url, timeout=(10, 300))
             if resp:
                 if resp.status_code == 200:
                     self.logging.info('handle | Get media from Hbase | use time: {} | status: {} | sha: {}'.format(
