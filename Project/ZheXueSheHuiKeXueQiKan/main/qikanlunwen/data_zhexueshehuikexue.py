@@ -116,10 +116,22 @@ class SpiderMain(BastSpiderMain):
             pdf_resp = self.__get_resp(url=new_url, method='GET', cookies=cookies, user=user)
         # self.num += 1
         # print('请求第 {} 篇全文'.format(self.num))
-        if not pdf_resp:
-            logger.error('附件响应失败, url: {}'.format(new_url))
+        if not pdf_resp['data']:
+            msg = '附件响应失败, url: {} msg: {}'.format(new_url, pdf_resp['message'])
+            logger.error(msg)
+            data_dict = {'url': pdf_dict['relEsse']['url']}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
+            # # 存储文档种子
+            # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+            return
+
+        if pdf_resp['status'] not in [200, 206]:
+            msg = '附件响应状态码错误, status: {} url: {}'.format(pdf_resp['status'], new_url)
+            logger.error(msg)
+            data_dict = {'url': pdf_dict['relEsse']['url']}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
             return
         # media_resp.encoding = media_resp.apparent_encoding
 
@@ -203,7 +215,7 @@ class SpiderMain(BastSpiderMain):
                     user = cookie_info['name']
                     # 获取页面响应
                     pdf_resp = self.__get_resp(url=new_url, method='GET', cookies=cookies, user=user, ranges=ranges)
-                if not pdf_resp:
+                if not pdf_resp['data']:
                     logger.error('附件响应失败, url: {}'.format(new_url))
                     return
                 continue
@@ -372,8 +384,18 @@ class SpiderMain(BastSpiderMain):
 
         # 获取详情页
         profile_resp = self.__get_resp(url=url, method='GET')
-        if not profile_resp:
-            logger.error('详情页响应失败, url: {}'.format(url))
+        if not profile_resp['data']:
+            msg = '详情页响应失败, url: {} msg: {}'.format(url, profile_resp['message'])
+            logger.error(msg)
+            data_dict = {'url': url}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+            return
+
+        if profile_resp['status'] not in [200, 206]:
+            msg = '详情页响应状态码错误, status: {} url: {}'.format(profile_resp['status'], url)
+            logger.error(msg)
+            data_dict = {'url': url}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
             return
 
         profile_text = profile_resp['data'].text

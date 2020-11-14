@@ -69,8 +69,8 @@ class SpiderMain(BastSpiderMain):
         for i in range(3):
             resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer, ranges=ranges)
-            if resp and resp.headers.get('Content-Type').startswith('text'):
-                if '请输入验证码' in resp.text:
+            if resp and resp['data'].headers.get('Content-Type').startswith('text'):
+                if '请输入验证码' in resp['data'].text:
                     logger.error('出现验证码: {}'.format(url))
                     continue
 
@@ -97,13 +97,24 @@ class SpiderMain(BastSpiderMain):
     def document(self, pdf_dict):
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
-        if not pdf_resp:
-            logger.error('附件响应失败, url: {}'.format(pdf_dict['url']))
+        if not pdf_resp['data']:
+            msg = '附件响应失败, url: {} msg: {}'.format(pdf_dict['url'], pdf_resp['message'])
+            logger.error(msg)
+            data_dict = {'url': pdf_dict['relEsse']['url']}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家自然科学基金委员会', es='论文', msg=msg)
             # # 标题内容调整格式
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # # 存储文档种子
             # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
+
+        if pdf_resp['status'] not in [200, 206]:
+            msg = '附件响应状态码错误, status: {} url: {}'.format(pdf_resp['status'], pdf_dict['url'])
+            logger.error(msg)
+            data_dict = {'url': pdf_dict['relEsse']['url']}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家自然科学基金委员会', es='论文', msg=msg)
+            return
+
         # media_resp.encoding = media_resp.apparent_encoding
 
         logger.info('开始获取内容')
@@ -114,16 +125,16 @@ class SpiderMain(BastSpiderMain):
         # 断点续爬，重试3次
         for i in range(3):
             # 判断内容获取是否完整
-            if pdf_resp.raw.tell() >= int(pdf_resp.headers.get('Content-Length', 0)):
+            if pdf_resp['data'].raw.tell() >= int(pdf_resp['data'].headers.get('Content-Length', 0)):
                 # 获取二进制内容
-                bytes_container.write(pdf_resp.content)
+                bytes_container.write(pdf_resp['data'].content)
                 logger.info('handle | 获取内容完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
                                                                                  len(bytes_container.getvalue())))
                 # pdf_content += pdf_resp.content
                 break
             else:
                 # 获取二进制内容
-                bytes_container.write(pdf_resp.content)
+                bytes_container.write(pdf_resp['data'].content)
                 logger.info('handle | 获取内容不完整 | use time: {} | length: {}'.format('%.3f' % (time.time() - start_time),
                                                                                   len(bytes_container.getvalue())))
                 # # 存储文档种子
@@ -132,14 +143,14 @@ class SpiderMain(BastSpiderMain):
                 ranges = 'bytes=%d-' % len(bytes_container.getvalue())
                 # 断点续传
                 pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET', ranges=ranges)
-                if not pdf_resp:
+                if not pdf_resp['data']:
                     logger.error('附件响应失败, url: {}'.format(pdf_dict['url']))
                     return
                 continue
         else:
             # 更新种子错误信息
             msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()),
-                                                       pdf_resp.headers.get('Content-Length', 0))
+                                                       pdf_resp['data'].headers.get('Content-Length', 0))
             logger.warning(msg)
             data_dict = {'url': pdf_dict['relEsse']['url']}
             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家自然科学基金委员会', es='论文', msg=msg)
@@ -283,13 +294,23 @@ class SpiderMain(BastSpiderMain):
 
         # 获取详情页
         profile_resp = self.__getResp(url=self.profile_url, method='POST', data=json.dumps(payload))
-        if not profile_resp:
-            logger.error('详情页响应失败, url: {}'.format(url))
+        if not profile_resp['data']:
+            msg = '详情页响应失败, url: {} msg: {}'.format(url, profile_resp['message'])
+            logger.error(msg)
+            data_dict = {'url': url}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家自然科学基金委员会', es='论文', msg=msg)
+            return
+
+        if profile_resp['status'] not in [200, 206]:
+            msg = '详情页响应状态码错误, status: {} url: {}'.format(profile_resp['status'], url)
+            logger.error(msg)
+            data_dict = {'url': url}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家自然科学基金委员会', es='论文', msg=msg)
             return
 
         # profile_resp.encoding = profile_resp.apparent_encoding
         try:
-            profile_json = profile_resp.json()
+            profile_json = profile_resp['data'].json()
             # 获取浏览次数
             browseCount = profile_json['data'][0].get('browseCount')
             # 获取下载次数

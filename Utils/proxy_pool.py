@@ -126,7 +126,7 @@ class ProxyUtils(object):
                 time.sleep(3)
                 continue
         else:
-            self.logging.info('handle | 设置代理IP最大权重失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
+            self.logging.info('handle | 设置代理IP最大权重失败 | use time: {}'.format('%.3f' % (time.time() - max_time)))
             return
 
     # 代理权重减1
@@ -150,7 +150,7 @@ class ProxyUtils(object):
                 time.sleep(3)
                 continue
         else:
-            self.logging.info('handle | 代理IP权重 -1 失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
+            self.logging.info('handle | 代理IP权重 -1 失败 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
             return
 
     # 代理权重减10
@@ -174,7 +174,7 @@ class ProxyUtils(object):
                 time.sleep(3)
                 continue
         else:
-            self.logging.info('handle | 代理IP权重 -10 失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
+            self.logging.info('handle | 代理IP权重 -10 失败 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
             return
 
     # 获取代理
