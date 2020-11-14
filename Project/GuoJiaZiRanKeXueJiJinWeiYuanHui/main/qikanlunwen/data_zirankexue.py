@@ -80,8 +80,8 @@ class SpiderMain(BastSpiderMain):
             return
 
     # 检测PDF文件正确性
-    @staticmethod
-    def is_valid_pdf_bytes_io(content):
+    # @staticmethod
+    def is_valid_pdf_bytes_io(self, content, url, parent_url):
         b_valid = True
         try:
             reader = PdfFileReader(BytesIO(content), strict=False)
@@ -89,6 +89,11 @@ class SpiderMain(BastSpiderMain):
                 b_valid = False
         except:
             logger.error(str(traceback.format_exc()))
+            msg = '检测PDF文件出错, url: {}'.format(url)
+            logger.error(msg)
+            data_dict = {'url': parent_url}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家自然科学基金委员会', es='论文', msg=msg)
+
             b_valid = False
 
         return b_valid
@@ -205,7 +210,7 @@ class SpiderMain(BastSpiderMain):
         logger.info('结束获取内容')
 
         # 检测PDF文件
-        isValue = self.is_valid_pdf_bytes_io(pdf_content)
+        isValue = self.is_valid_pdf_bytes_io(pdf_content, pdf_dict['url'], pdf_dict['relEsse']['url'])
         if not isValue:
             return
 
