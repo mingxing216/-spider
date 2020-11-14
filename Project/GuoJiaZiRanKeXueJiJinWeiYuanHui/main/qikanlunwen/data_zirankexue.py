@@ -97,7 +97,7 @@ class SpiderMain(BastSpiderMain):
     def document(self, pdf_dict):
         # 获取页面响应
         pdf_resp = self.__getResp(url=pdf_dict['url'], method='GET')
-        if not pdf_resp['data']:
+        if pdf_resp['code'] == 2:
             msg = '附件响应失败, url: {} msg: {}'.format(pdf_dict['url'], pdf_resp['message'])
             logger.error(msg)
             data_dict = {'url': pdf_dict['relEsse']['url']}
@@ -108,7 +108,7 @@ class SpiderMain(BastSpiderMain):
             # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
             return
 
-        if pdf_resp['status'] not in [200, 206]:
+        if pdf_resp['code'] == 1:
             msg = '附件响应状态码错误, status: {} url: {}'.format(pdf_resp['status'], pdf_dict['url'])
             logger.error(msg)
             data_dict = {'url': pdf_dict['relEsse']['url']}
@@ -294,14 +294,14 @@ class SpiderMain(BastSpiderMain):
 
         # 获取详情页
         profile_resp = self.__getResp(url=self.profile_url, method='POST', data=json.dumps(payload))
-        if not profile_resp['data']:
+        if profile_resp['code'] == 2:
             msg = '详情页响应失败, url: {} msg: {}'.format(url, profile_resp['message'])
             logger.error(msg)
             data_dict = {'url': url}
             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家自然科学基金委员会', es='论文', msg=msg)
             return
 
-        if profile_resp['status'] not in [200, 206]:
+        if profile_resp['code'] == 1:
             msg = '详情页响应状态码错误, status: {} url: {}'.format(profile_resp['status'], url)
             logger.error(msg)
             data_dict = {'url': url}
