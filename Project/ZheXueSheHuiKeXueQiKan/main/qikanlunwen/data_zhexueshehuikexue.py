@@ -143,6 +143,13 @@ class SpiderMain(BastSpiderMain):
         start_time = time.time()
         # 判断
         # print(pdf_resp['data'].headers['Content-Type'])
+        if int(pdf_resp['data'].headers.get('Content-Length', 0)) < 100:
+            msg = '全文不存在, url: {}'.format(new_url)
+            logger.warning(msg)
+            data_dict = {'url': pdf_dict['relEsse']['url']}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+            return
+
         if 'text' in pdf_resp['data'].headers.get('Content-Type') or 'html' in pdf_resp['data'].headers.get(
                 'Content-Type'):
             if '请输入验证码' in pdf_resp['data'].text:

@@ -110,7 +110,7 @@ class SpiderMain(BastSpiderMain):
                     msg = '无全文数据, url: {}'.format(pdf_url)
                     logger.warning(msg)
                     data = {
-                        'del': '0',
+                        'del': '2',
                         'msg': msg,
                         'date_created': timeutils.getNowDatetime()
                     }
@@ -163,7 +163,7 @@ class SpiderMain(BastSpiderMain):
                         msg = 'is PDF, url: {}'.format(pdf_url)
                         logger.info(msg)
                         data = {
-                            'del': '3',
+                            'del': '5',
                             'msg': msg,
                             'date_created': timeutils.getNowDatetime()
                         }
@@ -183,7 +183,7 @@ class SpiderMain(BastSpiderMain):
             msg = '无全文PDF, url: {}'.format(task_data.get('url'))
             logger.warning(msg)
             data = {
-                'del': '1',
+                'del': '2',
                 'msg': msg,
                 'date_created': timeutils.getNowDatetime()
             }

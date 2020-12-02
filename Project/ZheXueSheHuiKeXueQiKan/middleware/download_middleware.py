@@ -89,7 +89,7 @@ class Downloader(downloader.BaseDownloader):
                     return down_data
                 else:
                     if stat_count > 3:
-                        return
+                        return down_data
                     else:
                         stat_count += 1
                         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
