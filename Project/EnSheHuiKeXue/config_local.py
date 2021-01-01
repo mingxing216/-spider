@@ -20,6 +20,9 @@ MAX_QUEUE_REDIS = 2000  # redis最大队列数量
 REDIS_ZHEXUESHEHUIKEXUE_CATALOG = 'zhexueshehuikexue_catalog'  # Redis分类任务表
 REDIS_ZHEXUESHEHUIKEXUE_CATALOG_LOCK = 'zhexueshehuikexue_catalog_lock'  # Redis分类分布式锁名
 
+REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG = 'zhexueshehuikexue_page_catalog'  # Redis分类任务表
+REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG_LOCK = 'zhexueshehuikexue_page_catalog_lock'  # Redis分类分布式锁名
+
 MYSQL_MAGAZINE = 'job_magazine'  # Mysql期刊任务表
 REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE = 'zhexueshehuikexue_magazine'  # Redis期刊任务表
 REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE_LOCK = 'zhexueshehuikexue_magazine_lock'  # Redis期刊分布式锁名

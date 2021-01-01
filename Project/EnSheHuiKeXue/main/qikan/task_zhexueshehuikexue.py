@@ -111,14 +111,14 @@ class SpiderMain(BaseSpiderMain):
                 if not paper_resp:
                     logger.error('downloader | 论文列表页首页响应失败, url: {}'.format(paper_catalog_url))
                     # 队列一条任务
-                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
                     return
 
                 # 获取论文列表总页数
                 paper_pages = self.server.get_paper_total_page(text=paper_resp.text)
                 task['totalPage'] = paper_pages
                 # 队列一条任务
-                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
 
             else:
                 logger.info('task | 队列中已无任务，结束程序 | use time: {}'.format(self.timer.use_time()))
@@ -144,14 +144,14 @@ class SpiderMain(BaseSpiderMain):
                     logger.error('downloader | 论文第 {} 页列表页响应失败, url: {}'.format(next_num, catalog_url))
                     # 队列一条任务
                     task['currentUrl'] = catalog_url
-                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
                     return
                 # 处理验证码
                 next_resp = self.captcha_processor.process(next_resp)
                 if next_resp is None:
                     # 队列一条任务
                     task['currentUrl'] = catalog_url
-                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
                     return
                 next_text = next_resp.text
                 # 响应成功，添加log日志
@@ -174,7 +174,7 @@ class SpiderMain(BaseSpiderMain):
         self.timer.start()
         while 1:
             # 获取任务
-            category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG)
+            category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG)
             print(category)
             if category:
                 # 数据类型转换
