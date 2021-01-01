@@ -1,5 +1,6 @@
-# -*-coding:utf-8-*-
+# -*- coding:utf-8 -*-
 import random
+
 
 def get_ua():
     first_num = random.randint(55, 62)
@@ -14,7 +15,6 @@ def get_ua():
     ua = ' '.join(['Mozilla/5.0', random.choice(os_type), 'AppleWebKit/537.36',
                    '(KHTML, like Gecko)', chrome_version, 'Safari/537.36']
                   )
-
 
     # ua = ''
     # if client == 'computer':
@@ -41,4 +41,3 @@ def get_ua():
     #     ua = random.choice(ua_list)
 
     return ua
-

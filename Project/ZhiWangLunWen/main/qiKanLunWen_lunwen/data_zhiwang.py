@@ -141,7 +141,7 @@ class SpiderMain(BastSpiderMain):
         # 获取时间
         shijian = self.server.getYear(article_html)
         if shijian:
-            save_data['shiJian'] = timeutils.getDateTimeRecord(shijian)
+            save_data['shiJian'] = timeutils.get_date_time_record(shijian)
         else:
             save_data['shiJian'] = ''
         # 学科类别

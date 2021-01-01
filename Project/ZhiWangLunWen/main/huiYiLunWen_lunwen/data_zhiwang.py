@@ -121,7 +121,7 @@ class SpiderMain(BastSpiderMain):
         # 获取时间
         shijian = self.server.getMoreFields(article_html, '时间')
         if shijian:
-            save_data['shiJian'] = timeutils.getDateTimeRecord(shijian)
+            save_data['shiJian'] = timeutils.get_date_time_record(shijian)
         else:
             save_data['shiJian'] = ''
         # 获取中图分类号

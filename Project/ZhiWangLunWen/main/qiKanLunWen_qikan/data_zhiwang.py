@@ -134,7 +134,7 @@ class SpiderMain(BastSpiderMain):
         save_data['youFaDaiHao'] = self.server.getData(response, '邮发代号')
         # 获取创刊时间
         shijian = self.server.getData(response, '创刊时间')
-        save_data['chuangKanShiJian'] = timeutils.getDateTimeRecord(shijian)
+        save_data['chuangKanShiJian'] = timeutils.get_date_time_record(shijian)
         # 获取专辑名称
         save_data['zhuanJiMingCheng'] = self.server.getMoreData(response, '专辑名称')
         # 获取专题名称

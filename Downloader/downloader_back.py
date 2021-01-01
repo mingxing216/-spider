@@ -97,7 +97,7 @@ class Downloader(object):
         self.retry = retry
         self.proxy_type = proxy_type
         self.update_proxy_frequency = update_proxy_frequency
-        self.proxy_obj = proxy_pool.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country)
+        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging, mode=proxy_type, country=proxy_country)
 
     @_error
     def get(self, url: object, headers: object, cookies: object, timeout: object, proxies: object) -> object:

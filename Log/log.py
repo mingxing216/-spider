@@ -27,9 +27,9 @@ class ILog(object):
         :param dirname: 文件夹名字
         '''
         dir_path = str(os.path.dirname(__file__) + os.sep + "../../../../../opt/") + 'Log/' + dirname
-        status = dir_utils.hasDir(dir_path)
+        status = dir_utils.has_dir(dir_path)
         if status is False:
-            dir_utils.createDir(dir_path)
+            dir_utils.mk_dir(dir_path)
 
     def __init__(self, file_dir, name):
         self.file_dir = file_dir
@@ -38,7 +38,7 @@ class ILog(object):
 
         self.haveLogDir(file_dir)
         # 获取当前日期
-        now_date = timeutils.getNowDate()
+        now_date = timeutils.get_now_date()
         # 添加handler
         if not self.logger.handlers:
             filename = os.path.dirname(__file__) + os.sep + "../../../../../opt/Log/{}/{}_{}.log".format(self.file_dir, self.name, now_date)

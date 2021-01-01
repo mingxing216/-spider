@@ -103,6 +103,7 @@ class SpiderMain(BastSpiderMain):
 
             # 获取hbase中全文数据
             info_dict = self.dao.get_media_from_hbase(pdf_sha, 'document')
+            info_str = json.dumps(info_dict)
 
             if info_dict is not None:
                 if 'pk' not in info_dict.keys():
@@ -112,7 +113,7 @@ class SpiderMain(BastSpiderMain):
                     data = {
                         'del': '2',
                         'msg': msg,
-                        'date_created': timeutils.getNowDatetime()
+                        'date_created': timeutils.get_now_datetime()
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -123,7 +124,7 @@ class SpiderMain(BastSpiderMain):
                     data = {
                         'del': '0',
                         'msg': msg,
-                        'date_created': timeutils.getNowDatetime()
+                        'date_created': timeutils.get_now_datetime()
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -134,7 +135,7 @@ class SpiderMain(BastSpiderMain):
                     data = {
                         'del': '0',
                         'msg': msg,
-                        'date_created': timeutils.getNowDatetime()
+                        'date_created': timeutils.get_now_datetime()
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -142,12 +143,16 @@ class SpiderMain(BastSpiderMain):
                     begin_time = time.time()
                     info_bs64 = info_dict.get('content')
                     # print(info_bs64)
-                    info = base64.b64decode(info_bs64)
+                    info = base64.b64decode(info_bs64).decode('utf-8', errors='ignore')
                     # print(info)
                     logger.info('handle | 全文base64转二进制 | use time: {}'.format('%.3f' % (time.time() - begin_time)))
 
                     # 检测PDF文件
                     is_value = self.is_valid_pdf_bytes_io(info)
+
+                    # # 判断是否以PDF开头
+                    # is_value = 'PDF' in info[:20] or 'pdf' in info[:20]
+
                     if not is_value:
                         # 更新全文种子错误信息及状态
                         msg = 'not PDF, url: {}'.format(pdf_url)
@@ -155,7 +160,7 @@ class SpiderMain(BastSpiderMain):
                         data = {
                             'del': '0',
                             'msg': msg,
-                            'date_created': timeutils.getNowDatetime()
+                            'date_created': timeutils.get_now_datetime()
                         }
                         self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
                     else:
@@ -165,7 +170,7 @@ class SpiderMain(BastSpiderMain):
                         data = {
                             'del': '5',
                             'msg': msg,
-                            'date_created': timeutils.getNowDatetime()
+                            'date_created': timeutils.get_now_datetime()
                         }
                         self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -175,7 +180,7 @@ class SpiderMain(BastSpiderMain):
                 data = {
                     'del': '0',
                     'msg': msg,
-                    'date_created': timeutils.getNowDatetime()
+                    'date_created': timeutils.get_now_datetime()
                 }
                 self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -185,7 +190,7 @@ class SpiderMain(BastSpiderMain):
             data = {
                 'del': '2',
                 'msg': msg,
-                'date_created': timeutils.getNowDatetime()
+                'date_created': timeutils.get_now_datetime()
             }
             self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=task_data.get('sha'))
 

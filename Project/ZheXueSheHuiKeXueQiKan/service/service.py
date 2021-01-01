@@ -37,7 +37,7 @@ class DomResultHolder:
 
 
 class Server(object):
-    def __init__(self, logging):
+    def __init__(self, logging: object) -> object:
         self.logging = logging
         self.dom_holder = DomResultHolder()
 

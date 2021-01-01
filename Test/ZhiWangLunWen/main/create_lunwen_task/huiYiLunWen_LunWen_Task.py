@@ -152,7 +152,7 @@ class SpiderMain(BastSpiderMain):
                 self.dao.saveHuiYiUrlData(table=config.LUNWEN_URL_TABLE,
                                           data=save_data,
                                           data_type='huiyi',
-                                          create_at=timeutils.getNowDatetime())
+                                          create_at=timeutils.get_now_datetime())
 
 
 def process_start1():

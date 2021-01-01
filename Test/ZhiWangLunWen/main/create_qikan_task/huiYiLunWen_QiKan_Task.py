@@ -139,7 +139,7 @@ class SpiderMain(BastSpiderMain):
             for url_data in url_list:
                 table = config.QIKAN_URL_TABLE
                 data_type = 'huiyi'
-                create_at = timeutils.getNowDatetime()
+                create_at = timeutils.get_now_datetime()
                 # 保存论文集url到mysql
                 self.dao.saveLunWenJiUrl(table=table, url_data=url_data, data_type=data_type, create_at=create_at)
 

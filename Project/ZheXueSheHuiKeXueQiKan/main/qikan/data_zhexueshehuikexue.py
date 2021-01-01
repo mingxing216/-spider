@@ -145,7 +145,7 @@ class SpiderMain(BastSpiderMain):
         shi_jian = server.getOneValue(profile_text, '创刊时间')
         if shi_jian:
             try:
-                save_data['starting_time'] = timeutils.getDateTimeRecord(shi_jian)
+                save_data['starting_time'] = timeutils.get_date_time_record(shi_jian)
             except:
                 save_data['starting_time'] = shi_jian
         else:

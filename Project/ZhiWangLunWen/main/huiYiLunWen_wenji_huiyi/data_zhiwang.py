@@ -94,7 +94,7 @@ class SpiderMain(BastSpiderMain):
         juBanShiJian = self.server.getField(html, '会议时间')
         if juBanShiJian:
             try:
-                meeting_data['juBanShiJian'] = timeutils.getDateTimeRecord(juBanShiJian)
+                meeting_data['juBanShiJian'] = timeutils.get_date_time_record(juBanShiJian)
             except:
                 meeting_data['juBanShiJian'] = juBanShiJian
         else:
@@ -166,7 +166,7 @@ class SpiderMain(BastSpiderMain):
         chuBanShiJian = self.server.getField(article_html, '出版日期')
         if chuBanShiJian:
             try:
-                save_data['chuBanShiJian'] = timeutils.getDateTimeRecord(chuBanShiJian)
+                save_data['chuBanShiJian'] = timeutils.get_date_time_record(chuBanShiJian)
             except:
                 save_data['chuBanShiJian'] = chuBanShiJian
         else:

@@ -374,7 +374,7 @@ class SpiderMain(BastSpiderMain):
         shiJian = task_data.get('publishDate')
         if shiJian:
             try:
-                save_data['date'] = timeutils.getDateTimeRecord(shiJian)
+                save_data['date'] = timeutils.get_date_time_record(shiJian)
 
             except:
                 save_data['date'] = shiJian
@@ -419,7 +419,7 @@ class SpiderMain(BastSpiderMain):
         # 项目代码
         save_data['funders']['project_code'] = task_data.get('fundProjectCode')
         # 获取研究机构
-        save_data['orgnization_name'] = task_data.get('organization')
+        save_data['organization_name'] = task_data.get('organization')
         # 获取点击量
         save_data['online_reading'] = browseCount
         # 获取下载次数

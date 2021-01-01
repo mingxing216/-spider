@@ -43,7 +43,7 @@ class QiKanLunWen_QiKanTaskDao(storage.Dao):
                     'sha': sha,
                     'memo': str(new_memo).replace('\'', '"'),
                     'type': config.QIKANLUNWEN_QIKAN_MAIN,
-                    'create_at': timeutils.getNowDatetime(),
+                    'create_at': timeutils.get_now_datetime(),
                 }
                 self.mysql_client.update(table=config.MYSQL_QIKAN, data=data, where="`sha` = '{}'".format(sha))
 
@@ -52,7 +52,7 @@ class QiKanLunWen_QiKanTaskDao(storage.Dao):
                 'sha': sha,
                 'memo': str(new_memo).replace('\'', '"'),
                 'type': config.QIKANLUNWEN_QIKAN_MAIN,
-                'create_at': timeutils.getNowDatetime(),
+                'create_at': timeutils.get_now_datetime(),
             }
             try:
                 self.mysql_client.insert_one(table=config.MYSQL_QIKAN, data=data)
@@ -83,7 +83,7 @@ class HuiYiLunWen_QiKanTaskDao(storage.Dao):
                 'sha': sha,
                 'memo': str(memo).replace('\'', '"'),
                 'type': config.HUIYILUNWEN_QIKAN_MAIN,
-                'create_at': timeutils.getNowDatetime(),
+                'create_at': timeutils.get_now_datetime(),
             }
             try:
                 self.mysql_client.insert_one(table=config.MYSQL_QIKAN, data=data)
@@ -114,7 +114,7 @@ class XueWeiLunWen_QiKanTaskDao(storage.Dao):
                 'sha': sha,
                 'memo': str(memo).replace('\'', '"'),
                 'type': config.XUEWEILUNWEN_QIKAN_MAIN,
-                'create_at': timeutils.getNowDatetime(),
+                'create_at': timeutils.get_now_datetime(),
             }
             try:
                 self.mysql_client.insert_one(table=config.MYSQL_QIKAN, data=data)
@@ -147,7 +147,7 @@ class HuiYiLunWen_LunWenTaskDao(storage.Dao):
                 'sha': sha,
                 'memo': str(memo).replace('\'', '"'),
                 'type': config.HUIYILUNWEN_LUNWEN_MAIN,
-                'create_at': timeutils.getNowDatetime(),
+                'create_at': timeutils.get_now_datetime(),
             }
             try:
                 self.mysql_client.insert_one(table=config.MYSQL_LUNWEN, data=data)
@@ -183,7 +183,7 @@ class QiKanLunWen_LunWenTaskDao(storage.Dao):
                 'sha': sha,
                 'memo': str(memo).replace('\'', '"'),
                 'type': config.QIKANLUNWEN_LUNWEN_MAIN,
-                'create_at': timeutils.getNowDatetime(),
+                'create_at': timeutils.get_now_datetime(),
             }
             try:
                 self.mysql_client.insert_one(table=config.MYSQL_LUNWEN, data=data)
@@ -219,7 +219,7 @@ class XueWeiLunWen_LunWenTaskDao(storage.Dao):
                 'sha': sha,
                 'memo': str(memo).replace('\'', '"'),
                 'type': config.XUEWEILUNWEN_LUNWEN_MAIN,
-                'create_at': timeutils.getNowDatetime(),
+                'create_at': timeutils.get_now_datetime(),
             }
             try:
                 self.mysql_client.insert_one(table=config.MYSQL_LUNWEN, data=data)
@@ -280,7 +280,7 @@ class QiKanLunWen_LunWenDataDao(storage.Dao):
                     'sha': sha,
                     'memo': str(memo).replace('\'', '"'),
                     'type': '中国知网',
-                    'create_at': timeutils.getNowDatetime(),
+                    'create_at': timeutils.get_now_datetime(),
                 }
                 try:
                     self.mysql_client.insert_one(table=config.MYSQL_ZUOZHE, data=data)
@@ -302,7 +302,7 @@ class QiKanLunWen_LunWenDataDao(storage.Dao):
                     'sha': sha,
                     'memo': str(memo).replace('\'', '"'),
                     'type': '中国知网',
-                    'create_at': timeutils.getNowDatetime(),
+                    'create_at': timeutils.get_now_datetime(),
                 }
                 try:
                     self.mysql_client.insert_one(table=config.MYSQL_JIGOU, data=data)
@@ -363,7 +363,7 @@ class HuiYiLunWen_LunWenDataDao(storage.Dao):
                     'sha': sha,
                     'memo': str(memo).replace('\'', '"'),
                     'type': '中国知网',
-                    'create_at': timeutils.getNowDatetime(),
+                    'create_at': timeutils.get_now_datetime(),
                 }
                 try:
                     self.mysql_client.insert_one(table=config.MYSQL_ZUOZHE, data=data)
@@ -385,7 +385,7 @@ class HuiYiLunWen_LunWenDataDao(storage.Dao):
                     'sha': sha,
                     'memo': str(memo).replace('\'', '"'),
                     'type': '中国知网',
-                    'create_at': timeutils.getNowDatetime(),
+                    'create_at': timeutils.get_now_datetime(),
                 }
                 try:
                     self.mysql_client.insert_one(table=config.MYSQL_JIGOU, data=data)
@@ -428,7 +428,7 @@ class XueWeiLunWen_LunWenDataDao(storage.Dao):
                     'sha': sha,
                     'memo': str(memo).replace('\'', '"'),
                     'type': '中国知网',
-                    'create_at': timeutils.getNowDatetime(),
+                    'create_at': timeutils.get_now_datetime(),
                 }
                 try:
                     self.mysql_client.insert_one(table=config.MYSQL_ZUOZHE, data=data)
@@ -450,7 +450,7 @@ class XueWeiLunWen_LunWenDataDao(storage.Dao):
                     'sha': sha,
                     'memo': str(memo).replace('\'', '"'),
                     'type': '中国知网',
-                    'create_at': timeutils.getNowDatetime(),
+                    'create_at': timeutils.get_now_datetime(),
                 }
                 try:
                     self.mysql_client.insert_one(table=config.MYSQL_JIGOU, data=data)
@@ -584,7 +584,7 @@ class ZhiWangLunWen_ZuoZheDataDao(storage.Dao):
                 'sha': sha,
                 'memo': str(memo).replace('\'', '"'),
                 'type': '中国知网',
-                'create_at': timeutils.getNowDatetime(),
+                'create_at': timeutils.get_now_datetime(),
             }
             try:
                 self.mysql_client.insert_one(table=config.MYSQL_JIGOU, data=data)

@@ -117,7 +117,7 @@ class SpiderMain(BastSpiderMain):
                     data = {
                         'del': '0',
                         'msg': msg,
-                        'date_created': timeutils.getNowDatetime()
+                        'date_created': timeutils.get_now_datetime()
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -128,7 +128,7 @@ class SpiderMain(BastSpiderMain):
                     data = {
                         'del': '0',
                         'msg': msg,
-                        'date_created': timeutils.getNowDatetime()
+                        'date_created': timeutils.get_now_datetime()
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -139,7 +139,7 @@ class SpiderMain(BastSpiderMain):
                     data = {
                         'del': '0',
                         'msg': msg,
-                        'date_created': timeutils.getNowDatetime()
+                        'date_created': timeutils.get_now_datetime()
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -160,7 +160,7 @@ class SpiderMain(BastSpiderMain):
                         data = {
                             'del': '0',
                             'msg': msg,
-                            'date_created': timeutils.getNowDatetime()
+                            'date_created': timeutils.get_now_datetime()
                         }
                         self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
                     else:
@@ -170,7 +170,7 @@ class SpiderMain(BastSpiderMain):
                         data = {
                             'del': '3',
                             'msg': msg,
-                            'date_created': timeutils.getNowDatetime()
+                            'date_created': timeutils.get_now_datetime()
                         }
                         self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -180,7 +180,7 @@ class SpiderMain(BastSpiderMain):
                 data = {
                     'del': '0',
                     'msg': msg,
-                    'date_created': timeutils.getNowDatetime()
+                    'date_created': timeutils.get_now_datetime()
                 }
                 self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -190,7 +190,7 @@ class SpiderMain(BastSpiderMain):
             data = {
                 'del': '1',
                 'msg': msg,
-                'date_created': timeutils.getNowDatetime()
+                'date_created': timeutils.get_now_datetime()
             }
             self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=task_data.get('sha'))
 

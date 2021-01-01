@@ -13,17 +13,17 @@ import requests
 import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from Downloader import downloader
+from Downloader import downloader_bofore
 from Utils import user_agent_u
 from Utils import proxy_pool
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
-class Downloader(downloader.BaseDownloader):
+class Downloader(downloader_bofore.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type):
         super(Downloader, self).__init__(logging=logging, timeout=timeout)
         self.proxy_type = proxy_type
-        self.proxy_obj = proxy_pool.ProxyUtils(logging=logging, type=proxy_type)
+        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging, mode=proxy_type)
 
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 响应状态码错误重试次数
@@ -166,12 +166,12 @@ class Downloader(downloader.BaseDownloader):
 
         self.getResp(s=s, url=url, method='POST', data=data)
 
-class QiKanLunWen_QiKanTaskDownloader(downloader.BaseDownloader):
+class QiKanLunWen_QiKanTaskDownloader(downloader_bofore.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country, proxy_city):
         super(QiKanLunWen_QiKanTaskDownloader, self).__init__(logging=logging,
                                                               timeout=timeout)
         self.proxy_type = proxy_type
-        self.proxy_obj = proxy_pool.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
+        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging, mode=proxy_type, country=proxy_country, city=proxy_city)
 
     # 检查验证码
     def __judge_verify(self, param):
@@ -222,7 +222,7 @@ class QiKanLunWen_QiKanTaskDownloader(downloader.BaseDownloader):
         return self.__judge_verify(param=param)
 
 
-class QiKanLunWen_LunWenTaskDownloader(downloader.BaseDownloader):
+class QiKanLunWen_LunWenTaskDownloader(downloader_bofore.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country):
         super(QiKanLunWen_LunWenTaskDownloader, self).__init__(logging=logging,
                                                                timeout=timeout,
@@ -258,7 +258,7 @@ class QiKanLunWen_LunWenTaskDownloader(downloader.BaseDownloader):
         return self.__judge_verify(param=param)
 
 
-class QiKanLunWen_LunWenDataDownloader(downloader.BaseDownloader):
+class QiKanLunWen_LunWenDataDownloader(downloader_bofore.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country):
         super(QiKanLunWen_LunWenDataDownloader, self).__init__(logging=logging,
                                                                timeout=timeout,
@@ -297,7 +297,7 @@ class QiKanLunWen_LunWenDataDownloader(downloader.BaseDownloader):
         return self.__judge_verify(param=param)
 
 
-class ZhiWangLunWen_QiKanDataDownloader(downloader.BaseDownloader):
+class ZhiWangLunWen_QiKanDataDownloader(downloader_bofore.BaseDownloader):
     def __init__(self, logging, timeout, proxy_type, proxy_country):
         super(ZhiWangLunWen_QiKanDataDownloader, self).__init__(logging=logging,
                                                                 timeout=timeout,

@@ -13,16 +13,16 @@ import requests
 import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from Downloader import downloader
+from Downloader import downloader_bofore
 from Utils import user_agent_u, proxy_pool, user_pool
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
-class Downloader(downloader.BaseDownloader):
+class Downloader(downloader_bofore.BaseDownloader):
     def __init__(self, logging, stream, timeout, proxy_type, proxy_country, proxy_city, cookie_obj=None):
         super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_type = proxy_type
-        self.proxy_obj = proxy_pool.ProxyUtils(logging=logging, type=proxy_type, country=proxy_country, city=proxy_city)
+        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging, mode=proxy_type, country=proxy_country, city=proxy_city)
         self.cookie_obj = cookie_obj
 
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):

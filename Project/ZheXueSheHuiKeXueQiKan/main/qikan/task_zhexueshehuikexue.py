@@ -1,28 +1,26 @@
 # -*-coding:utf-8-*-
 
-'''
+"""
 
-'''
+"""
+import json
+import os
+import re
 # import gevent
 # from gevent import monkey
 # monkey.patch_all()
 import sys
-import os
-import json
-import requests
 import time
 import traceback
-import re
-from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
+
 from Log import log
 from Project.ZheXueSheHuiKeXueQiKan.middleware import download_middleware
 from Project.ZheXueSheHuiKeXueQiKan.service import service
 from Project.ZheXueSheHuiKeXueQiKan.dao import dao
 from Project.ZheXueSheHuiKeXueQiKan import config
-from Project.ZheXueSheHuiKeXueQiKan.main.qikanlunwen import data_zhexueshehuikexue
 
 log_file_dir = 'SheHuiKeXue'  # LOG日志存放路径
 LOGNAME = '<国家哲学社会科学_期刊_task>'  # LOG名
@@ -74,9 +72,9 @@ class SpiderMain(BastSpiderMain):
             return
 
     def get_total_journal(self):
-        '''
+        """
         获取期刊名录中所有期刊，并存入mysql数据库
-        '''
+        """
         total_resp = self.__getResp(url=self.total_url, method='GET')
         if not total_resp:
             LOGGING.error('入口页面响应获取失败, url: {}'.format(self.total_url))
@@ -90,7 +88,7 @@ class SpiderMain(BastSpiderMain):
         journal_pages = self.server.getTotalPage(text=total_text)
         # print(journal_pages)
         # 期刊名录列表页翻页
-        for i in range(1, int(journal_pages)+1):
+        for i in range(1, int(journal_pages) + 1):
             url = self.total_url + '?p={}'.format(i)
             # 请求响应
             journal_resp = self.__getResp(url=url, method='GET')
@@ -110,9 +108,9 @@ class SpiderMain(BastSpiderMain):
                 self.dao.save_task_to_mysql(table=config.MYSQL_MAGAZINE, memo=url, ws='国家哲学社会科学', es='期刊')
 
     def get_catalog(self):
-        '''
+        """
         获取学科分类列表页，并进入队列
-        '''
+        """
         # 访问入口页
         # self.s = requests.session()
         index_resp = self.__getResp(url=self.index_url, method='GET')
@@ -167,7 +165,7 @@ class SpiderMain(BastSpiderMain):
                     # print(total_pages)
 
                     # 遍历期刊列表页，获取详情页url
-                    for i in range(1, int(total_pages)+1):
+                    for i in range(1, int(total_pages) + 1):
                         current_url = re.sub(r"\?p=\d+", "?p={}".format(i), qikan_url)
                         # 获取列表页
                         catalog_resp = self.__getResp(url=current_url, method='GET')
@@ -208,13 +206,14 @@ class SpiderMain(BastSpiderMain):
         threadpool.close()
         threadpool.join()
 
+
 def process_start():
     main = SpiderMain()
     try:
         main.get_total_journal()
         main.get_catalog()
         main.start()
-    except:
+    except Exception:
         LOGGING.error(str(traceback.format_exc()))
 
 
@@ -224,4 +223,4 @@ if __name__ == '__main__':
     process_start()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is %.2fs======' %(end_time - begin_time))
+    LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))

@@ -6,10 +6,10 @@ from email.mime.text import MIMEText
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 
-from Log import log
+from Log import logging
 from Utils import timeutils
 
-logger = log.ILog('Send_ERR_Email')
+logger = logging.Logger('Send_ERR_Email', '错误邮件')
 
 
 class Send_Mail(object):

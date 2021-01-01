@@ -126,7 +126,7 @@ class SpiderMain(BastSpiderMain):
                             'column_name': column_name
                         }
                         # 保存数据
-                        self.dao.saveData(table=config.QIKAN_URL_TABLE, sha=sha, memo=data, create_at=timeutils.getNowDatetime())
+                        self.dao.saveData(table=config.QIKAN_URL_TABLE, sha=sha, memo=data, create_at=timeutils.get_now_datetime())
 
 
 def process_start():

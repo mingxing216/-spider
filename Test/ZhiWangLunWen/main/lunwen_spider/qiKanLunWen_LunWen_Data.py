@@ -350,11 +350,11 @@ class SpiderMain(BastSpiderMain):
         # 保存人物队列
         self.dao.saveRenWuToMysql(table=config.ZUOZHE_URL_TABLE,
                                   memo_list=save_data['guanLianRenWu'],
-                                  create_at=timeutils.getNowDatetime())
+                                  create_at=timeutils.get_now_datetime())
         # 保存机构队列
         self.dao.saveJiGouToMysql(table=config.JIGOU_URL_TABLE,
                                   memo_list=save_data['guanLianQiYeJiGou'],
-                                  create_at=timeutils.getNowDatetime())
+                                  create_at=timeutils.get_now_datetime())
 
         # 保存媒体url
         for media in save_data['zuTu']:

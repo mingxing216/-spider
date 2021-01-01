@@ -28,23 +28,23 @@ class RClient(object):
             'User-Agent': 'ben',
         }
 
-    def rk_create(self, im, im_type, timeout=60):
+    def rk_create(self, img, img_type, timeout=60):
         params = {
-            'typeid': im_type,
+            'typeid': img_type,
             'timeout': timeout,
         }
         params.update(self.base_params)
-        files = {'image': ('a.jpg', im)}
-        r = requests.post('http://api.ruokuai.com/create.json', data=params, files=files, headers=self.headers)
-        return r.json()
+        files = {'image': ('a.jpg', img)}
+        resp = requests.post('http://api.ruokuai.com/create.json', data=params, files=files, headers=self.headers)
+        return resp.json()
 
     def rk_report_error(self, im_id):
         params = {
             'id': im_id,
         }
         params.update(self.base_params)
-        r = requests.post('http://api.ruokuai.com/reporterror.json', data=params, headers=self.headers)
-        return r.json()
+        resp = requests.post('http://api.ruokuai.com/reporterror.json', data=params, headers=self.headers)
+        return resp.json()
 
 
 if __name__ == '__main__':

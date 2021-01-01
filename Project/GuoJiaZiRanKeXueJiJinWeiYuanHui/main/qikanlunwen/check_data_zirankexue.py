@@ -106,6 +106,19 @@ class SpiderMain(BastSpiderMain):
             # 获取hbase中全文数据
             info_dict = self.hbase_obj.get_one_data_from_hbase(pdf_sha)
 
+            # # 删除hbase中全文数据
+            # rst = self.hbase_obj.delete_one_data_from_hbase(pdf_sha)
+            # if rst:
+            #     # 更新全文种子信息及状态
+            #     msg = '删除错误全文数据, url: {}'.format(pdf_url)
+            #     logger.warning(msg)
+            #     data = {
+            #         'del': '2',
+            #         'msg': msg,
+            #         'date_created': timeutils.getNowDatetime()
+            #     }
+            #     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
+
             if info_dict is not None:
                 if b'o:pk' not in info_dict.keys():
                     # 更新全文种子错误信息及状态
@@ -114,7 +127,7 @@ class SpiderMain(BastSpiderMain):
                     data = {
                         'del': '0',
                         'msg': msg,
-                        'date_created': timeutils.getNowDatetime()
+                        'date_created': timeutils.get_now_datetime()
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -125,7 +138,7 @@ class SpiderMain(BastSpiderMain):
                     data = {
                         'del': '0',
                         'msg': msg,
-                        'date_created': timeutils.getNowDatetime()
+                        'date_created': timeutils.get_now_datetime()
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -136,7 +149,7 @@ class SpiderMain(BastSpiderMain):
                     data = {
                         'del': '0',
                         'msg': msg,
-                        'date_created': timeutils.getNowDatetime()
+                        'date_created': timeutils.get_now_datetime()
                     }
                     self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -157,7 +170,7 @@ class SpiderMain(BastSpiderMain):
                         data = {
                             'del': '0',
                             'msg': msg,
-                            'date_created': timeutils.getNowDatetime()
+                            'date_created': timeutils.get_now_datetime()
                         }
                         self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
                     else:
@@ -167,7 +180,7 @@ class SpiderMain(BastSpiderMain):
                         data = {
                             'del': '3',
                             'msg': msg,
-                            'date_created': timeutils.getNowDatetime()
+                            'date_created': timeutils.get_now_datetime()
                         }
                         self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -177,7 +190,7 @@ class SpiderMain(BastSpiderMain):
                 data = {
                     'del': '0',
                     'msg': msg,
-                    'date_created': timeutils.getNowDatetime()
+                    'date_created': timeutils.get_now_datetime()
                 }
                 self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=paper_sha)
 
@@ -187,7 +200,7 @@ class SpiderMain(BastSpiderMain):
             data = {
                 'del': '1',
                 'msg': msg,
-                'date_created': timeutils.getNowDatetime()
+                'date_created': timeutils.get_now_datetime()
             }
             self.dao.update_task_to_mysql(table=config.MYSQL_PAPER, data=data, sha=task_data.get('sha'))
 
@@ -201,7 +214,8 @@ class SpiderMain(BastSpiderMain):
         while True:
             # 获取任务
             start_time = time.time()
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZIRANKEXUE_PAPER)
+            # task = self.dao.get_one_task_from_redis(key=config.REDIS_ZIRANKEXUE_PAPER)
+            task = '{"achievementID": "ZD1251400", "authors": "", "chineseTitle": "Heat conduction in nanoporous silicon thin films by Monte Carlo simulations", "conference": "", "doi": "", "doiUrl": "", "downloadHref": "", "enAbstract": "", "enKeyword": "", "englishTitle": "Heat conduction in nanoporous silicon thin films by Monte Carlo simulations", "fieldCode": "E0603", "fulltext": "ZD1251400", "fundProject": "热质理论的关键科学问题", "fundProjectCode": "1099253", "fundProjectNo": "51356001", "id": "4e1d6115-987a-4b09-8822-001d1f684ea5", "journal": "The 11th Asian Thermophysical Properties Conference (ATPC 2016)", "organization": "清华大学", "organizationID": "201260", "outputSubIrSource": "", "pageRange": "", "productType": "3", "publishDate": "2016-1-1", "source": "origin", "supportType": "649", "supportTypeName": "专项基金项目", "year": "2016-1-1", "zhAbstract": "", "zhKeyword": "", "fieldName": "工程与材料科学部", "url": "http://ir.nsfc.gov.cn/paperDetail/4e1d6115-987a-4b09-8822-001d1f684ea5", "pdfUrl": "http://ir.nsfc.gov.cn/paperDownload/ZD1251400.pdf", "sha": "01f861f5085ac018e58ffa0558b0a0f1e83e9049"}'
             if task:
                 try:
                     # json数据类型转换
@@ -228,15 +242,15 @@ class SpiderMain(BastSpiderMain):
         #     g_list.append(s)
         # gevent.joinall(g_list)
 
-        # self.run()
+        self.run()
 
-        # 创建线程池
-        thread_pool = ThreadPool(processes=config.THREAD_NUM)
-        for thread_index in range(config.THREAD_NUM):
-            thread_pool.apply_async(func=self.run)
-
-        thread_pool.close()
-        thread_pool.join()
+        # # 创建线程池
+        # thread_pool = ThreadPool(processes=config.THREAD_NUM)
+        # for thread_index in range(config.THREAD_NUM):
+        #     thread_pool.apply_async(func=self.run)
+        #
+        # thread_pool.close()
+        # thread_pool.join()
 
 def process_start():
     main = SpiderMain()
@@ -246,17 +260,16 @@ def process_start():
     except:
         logger.exception(str(traceback.format_exc()))
 
-
 if __name__ == '__main__':
     logger.info('======The Start!======')
     begin_time = time.time()
-    # process_start()
+    process_start()
     # 创建多进程
-    po = Pool(processes=config.PROCESS_NUM)
-    for _count in range(config.PROCESS_NUM):
-        po.apply_async(func=process_start)
-    po.close()
-    po.join()
+    # po = Pool(processes=config.PROCESS_NUM)
+    # for _count in range(config.PROCESS_NUM):
+    #     po.apply_async(func=process_start)
+    # po.close()
+    # po.join()
     end_time = time.time()
     logger.info('======The End!======')
     logger.info('====== Time consuming is %.3fs ======' % (end_time - begin_time))

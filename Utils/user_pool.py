@@ -1,20 +1,19 @@
-# -*-coding:utf-8-*-
-'''
+# -*- coding:utf-8 -*-
+
+"""
 简介：本文件是框架内部功能文件，除框架开发人员，任何人不可对本文件代码进行任何形式的更改。
      主要负责提供用户池代理增、删、改、查操作接口
 开发人：采集部-张明星
 更新人：
 开发时间：2020年09月16日
 更新时间：
-'''
-
+"""
 
 import os
 import sys
 import json
 import requests
 import socket
-import re
 import time
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
@@ -24,9 +23,9 @@ import settings
 # cookie池操作类
 class CookieUtils(object):
     def __init__(self, logging=None):
-        '''
+        """
         :param logging: log对象，实例化参数
-        '''
+        """
         self.logging = logging
 
     # 随机获取一个cookie
@@ -126,9 +125,9 @@ class CookieUtils(object):
             self.logging.info('handle | Cookie次数 -1 失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
             return
 
-
     # 获取本机内网IP
-    def getLocalIP(self):
+    @property
+    def get_local_ip(self):
         global s
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 import re
 from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
+from multiprocessing.pool import ThreadPool
 import requests
 
 from Utils import user_agent_u

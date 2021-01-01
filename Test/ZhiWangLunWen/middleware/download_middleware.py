@@ -7,11 +7,11 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-from Downloader import downloader
+from Downloader import downloader_bofore
 from Utils import user_agent_u
 
 
-class Downloader(downloader.BaseDownloaderMiddleware):
+class Downloader(downloader_bofore.BaseDownloaderMiddleware):
     def __init__(self, logging, timeout, proxy_type, proxy_country):
         super(Downloader, self).__init__(logging=logging,
                                          timeout=timeout,

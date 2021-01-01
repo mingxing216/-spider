@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 本文件负责翻译
 需要翻译功能， 直接导入本文件， 对应调用功能函数即可
 部分函数需要传参
-'''
+"""
 
 import requests
 import re
@@ -20,25 +20,26 @@ headers = {
 
 
 def getLanguageType(content):
-    '''
+    """
     检测输入内容的语种
     :param content: 你是我的小呀小苹果
     :return: {'error': 0, 'msg': 'success', 'lan': 'zh'}
     :error: {'error': -1, 'msg': 'length not ok'}
-    '''
+    """
     data = {'query': content}
     resp = requests.post(url=testing_url, data=data, headers=headers).text
 
     return eval(resp)
 
+
 def _translate(fromlanguage, tolanguage, content):
-    '''
+    """
     翻译
     :param fromlanguage: 来源语种
     :param tolanguage: 目标语种
     :param content: 翻译内容
     :return: json
-    '''
+    """
     data = {
         'from': fromlanguage,
         'to': tolanguage,
@@ -48,12 +49,13 @@ def _translate(fromlanguage, tolanguage, content):
 
     return eval(resp)
 
+
 def toEn(content):
-    '''
+    """
     翻译成英文
     :param content: 要翻译的内容
     :return: 翻译成功的内容
-    '''
+    """
     try:
         # 检测输入内容语种
         language_type = getLanguageType(content)['lan']
@@ -71,12 +73,13 @@ def toEn(content):
 
         return content
 
+
 def toZh(content):
-    '''
+    """
     翻译成中文
     :param content: 要翻译的内容
     :return: 翻译成功的内容
-    '''
+    """
     try:
         # 检测输入内容语种
         language_type = getLanguageType(content)['lan']
@@ -93,6 +96,3 @@ def toZh(content):
     except Exception:
 
         return content
-
-
-

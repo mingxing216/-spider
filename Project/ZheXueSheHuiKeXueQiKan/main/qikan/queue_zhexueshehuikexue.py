@@ -1,8 +1,8 @@
 # -*-coding:utf-8-*-
 
-'''
+"""
 
-'''
+"""
 import sys
 import os
 import time
@@ -21,8 +21,8 @@ LOGNAME = '<国家哲学社会科学_期刊_queue>'  # LOG名
 NAME = '国家哲学社会科学_期刊_queue'  # 爬虫名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
-INSERT_SPIDER_NAME = False # 爬虫名入库
-INSERT_DATA_NUMBER = False # 记录抓取数据量
+INSERT_SPIDER_NAME = False  # 爬虫名入库
+INSERT_DATA_NUMBER = False  # 记录抓取数据量
 
 
 class BastSpiderMain(object):
@@ -51,13 +51,15 @@ class SpiderMain(BastSpiderMain):
         while 1:
             # 查询redis队列中任务数量
             url_number = self.dao.select_task_number(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE)
-            if url_number <= config.MAX_QUEUE_REDIS/10:
-                LOGGING.info('redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS/10)))
+            if url_number <= config.MAX_QUEUE_REDIS / 10:
+                LOGGING.info('redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS / 10)))
                 # 获取任务
-                new_task_list = self.dao.get_task_list_from_mysql(table=config.MYSQL_MAGAZINE, ws='国家哲学社会科学', es='期刊', count=config.MAX_QUEUE_REDIS)
+                new_task_list = self.dao.get_task_list_from_mysql(table=config.MYSQL_MAGAZINE, ws='国家哲学社会科学', es='期刊',
+                                                                  count=config.MAX_QUEUE_REDIS)
                 # print(new_task_list)
                 # 队列任务
-                self.dao.queue_tasks_from_mysql_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE, data=new_task_list)
+                self.dao.queue_tasks_from_mysql_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE,
+                                                         data=new_task_list)
             else:
                 LOGGING.info('redis剩余{}个任务'.format(url_number))
 
@@ -83,4 +85,4 @@ if __name__ == '__main__':
     # po.join()
     end_time = time.time()
     LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is %.2fs======' %(end_time - begin_time))
+    LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))

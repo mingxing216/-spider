@@ -1,4 +1,4 @@
-#-*-coding:utf-8-*-
+# -*- coding:utf-8 -*-
 import base64
 import json
 from io import BytesIO
@@ -7,7 +7,7 @@ import requests
 from PIL import Image
 
 
-class VerificationCode:
+class VerificationCode(object):
     def __init__(self, session, _uname, _passwd, headers=None, proxies=None, debug=False):
         self.user_name = _uname
         self.password = _passwd
@@ -42,10 +42,10 @@ class VerificationCode:
         if result['success']:
             return {'result': True, 'data': result["data"]}
         else:
-            self.reportError(result["data"]["id"])
+            self.report_error(result["data"]["id"])
             return {'result': False, 'message': result["message"]}
 
-    def reportError(self, id):
+    def report_error(self, id):
         data = {"id": id}
         result = json.loads(requests.post("http://api.ttshitu.com/reporterror.json", json=data).text)
         print(result)
@@ -53,4 +53,3 @@ class VerificationCode:
             return "报错成功"
         else:
             return result["message"]
-

@@ -155,7 +155,7 @@ class SpiderMain(BastSpiderMain):
                     self.dao.saveLunWenUrlData(table=config.LUNWEN_URL_TABLE,
                                                data=article_url,
                                                data_type='qikan',
-                                               create_at=timeutils.getNowDatetime())
+                                               create_at=timeutils.get_now_datetime())
 
 
 def process_start1():

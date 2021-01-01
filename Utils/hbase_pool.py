@@ -8,9 +8,6 @@ import os
 import time
 import happybase
 
-# sys.path.append(os.path.dirname(__file__) + os.sep + "../")
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../")))
-
 
 class HBasePool(object):
     def __init__(self, logging=None):
@@ -82,8 +79,34 @@ class HBasePool(object):
             self.logging.error('{} {}'.format(str(e), row_key_list))
             return
 
+    def delete_one_data_from_hbase(self, row_key):
+        start_time = time.time()
+        self.logging.info('开始删除全文')
+        res = self._delete_one_data_from_hbase(row_key)
+        if res:
+            self.logging.info('handle | 全文删除成功 | use time: {}'.format('%.3f' % (time.time() - start_time)))
+        else:
+            self.logging.info('handle | 全文删除失败 | use time: {}'.format('%.3f' % (time.time() - start_time)))
+
+        self.logging.info('结束删除全文')
+
+        return res
+
+    # 删除hbase数据
+    def _delete_one_data_from_hbase(self, row_key):
+        try:
+            with self.pool.connection() as connection:
+                # print(connection.tables())
+                table = happybase.Table('media:document', connection)
+                # 删除一整行数据
+                table.delete(row_key)
+                return True
+
+        except Exception as e:
+            self.logging.error('{} {}'.format(str(e), row_key))
+            return False
+
 
 if __name__ == '__main__':
     hb = HBasePool()
     hb.get_one_data_from_hbase('ef4c10c09147242b65750a77c2b8d28d8a579147')
-
