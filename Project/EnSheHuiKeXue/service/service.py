@@ -825,25 +825,28 @@ class CaptchaProcessor(object):
         return resp
 
     def process(self, resp):
-        retry_count = 5
+        retry_count = 500
         captcha_page = self.is_captcha_page(resp)
         for i in range(retry_count):
             if captcha_page:
-                self.captcha_timer.start()
-                # 获取验证码及相关参数
-                form_data = self.server.get_captcha(resp.text)
-                image_url = self.server.get_img_url(resp.text)
-                img_content = self.downloader.get_resp(url=image_url, method='GET', s=self.session).content
-                code = self.recognize_code.image_data(img_content, show=False, length=4, invalid_charset="^0-9^A-Z^a-z")
-                form_data['iCode'] = code
-                self.logger.info('process | 一次验证码处理完成 | use time: {}'.format(self.captcha_timer.use_time()))
-                # 带验证码访问
-                self.request_timer.start()
-                real_url = resp.url
-                resp = self.downloader.get_resp(url=real_url, method='POST', data=form_data, s=self.session)
-                captcha_page = self.is_captcha_page(resp)
-                self.recognize_code.report(img_content, code, not captcha_page)
-                self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), resp.url))
+                try:
+                    self.captcha_timer.start()
+                    # 获取验证码及相关参数
+                    form_data = self.server.get_captcha(resp.text)
+                    image_url = self.server.get_img_url(resp.text)
+                    img_content = self.downloader.get_resp(url=image_url, method='GET', s=self.session).content
+                    code = self.recognize_code.image_data(img_content, show=False, length=4, invalid_charset="^0-9^A-Z^a-z")
+                    form_data['iCode'] = code
+                    self.logger.info('process | 一次验证码处理完成 | use time: {}'.format(self.captcha_timer.use_time()))
+                    # 带验证码访问
+                    self.request_timer.start()
+                    real_url = resp.url
+                    resp = self.downloader.get_resp(url=real_url, method='POST', data=form_data, s=self.session)
+                    captcha_page = self.is_captcha_page(resp)
+                    self.recognize_code.report(img_content, code, not captcha_page)
+                    self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), resp.url))
+                except Exception:
+                    return
             else:
                 self.logger.info('process end | 请求成功总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(), resp.url, i))
                 return resp

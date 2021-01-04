@@ -4,12 +4,13 @@
 识别图片上的验证码
 """
 import base64
-
 from PIL import Image
 from io import BytesIO
 import platform
 import pytesseract
 import re
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class RecognizeCode(object):
