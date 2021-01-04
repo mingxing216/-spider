@@ -302,7 +302,8 @@ class Server(object):
         return False
 
     # 语种识别
-    def get_lang(self, text):
+    @staticmethod
+    def get_lang(text):
         return langid.classify(text)[0]
 
     # 标题

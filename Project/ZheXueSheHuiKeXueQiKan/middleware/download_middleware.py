@@ -66,8 +66,11 @@ class Downloader(downloader_bofore.BaseDownloader):
             ip = None
             if self.proxy_type:
                 ip = self.proxy_obj.get_proxy()
-                proxies = {'http': 'http://' + ip,
-                           'https': 'https://' + ip}
+                if ip:
+                    proxies = {'http': 'http://' + ip,
+                               'https': 'https://' + ip}
+                else:
+                    return
 
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
