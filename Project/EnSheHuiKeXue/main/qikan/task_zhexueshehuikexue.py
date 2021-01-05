@@ -19,7 +19,7 @@ from multiprocessing.pool import Pool, ThreadPool
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 
 from Log import logging
-from Utils import timer
+from Utils import timers
 from Project.EnSheHuiKeXue.service.service import CaptchaProcessor
 from Project.EnSheHuiKeXue.middleware import download_middleware
 from Project.EnSheHuiKeXue.service import service
@@ -50,7 +50,7 @@ class BaseSpiderMain(object):
 class SpiderMain(BaseSpiderMain):
     def __init__(self):
         super().__init__()
-        self.timer = timer.Timer()
+        self.timer = timers.Timer()
         # 入口页url
         self.index_url = 'http://103.247.176.188/Journal.aspx'
         # 获取下一层分类url

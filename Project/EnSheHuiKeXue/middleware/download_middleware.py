@@ -14,7 +14,7 @@ import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
-from Utils import user_agent_u, proxy_pool, user_pool, timer
+from Utils import user_agent_u, proxy_pool, user_pool, timers
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
@@ -24,17 +24,17 @@ class Downloader(downloader.BaseDownloader):
         self.proxy_type = proxy_type
         self.proxy_obj = proxy_pool.ProxyUtils(logger=logging, mode=proxy_type, country=proxy_country, city=proxy_city)
         self.cookie_obj = cookie_obj
-        self.timer = timer.Timer()
+        self.timer = timers.Timer()
 
     def get_resp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):
-        self.logger.debug('downloader start')
+        self.logger.info('downloader start')
         self.timer.start()
         ret = self._get_resp(url, method, s, data, cookies, referer, ranges, user)
         if ret:
-            self.logger.info('downloader | 下载成功 | use time: {}'.format(self.timer.use_time()))
+            self.logger.info('downloader end | 下载成功 | use time: {}'.format(self.timer.use_time()))
         else:
-            self.logger.info('downloader | 下载失败 | use time: {}'.format(self.timer.use_time()))
-        self.logger.debug('downloader end')
+            self.logger.info('downloader end | 下载失败 | use time: {}'.format(self.timer.use_time()))
+            return
 
         return ret['data']
 

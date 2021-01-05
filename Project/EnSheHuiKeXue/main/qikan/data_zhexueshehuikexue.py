@@ -20,7 +20,7 @@ from Project.EnSheHuiKeXue import config
 from Project.EnSheHuiKeXue.dao import dao
 from Project.EnSheHuiKeXue.middleware import download_middleware
 from Project.EnSheHuiKeXue.service import service
-from Utils import timeutils, timer
+from Utils import timeutils, timers
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 LOG_FILE_DIR = 'EnSheHuiKeXue'  # LOG日志存放路径
@@ -45,24 +45,8 @@ class BaseSpiderMain(object):
 class SpiderMain(BaseSpiderMain):
     def __init__(self):
         super().__init__()
-        self.timer = timer.Timer()
+        self.timer = timers.Timer()
         self.profile_url = 'http://ir.nsfc.gov.cn/baseQuery/data/paperInfo'
-
-    # 存储图片
-    def img(self, img_dict):
-        # 获取图片响应
-        media_resp = self.download.get_resp(url=img_dict['url'], method='GET')
-        if not media_resp:
-            logger.error('图片响应失败, url: {}'.format(img_dict['url']))
-            return
-
-        img_content = media_resp.content
-        # 存储图片
-        sto = self.dao.save_media_to_hbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
-        if sto:
-            return True
-        else:
-            return
 
     def handle(self, task_data, save_data):
         # print(task_data)
@@ -160,7 +144,7 @@ class SpiderMain(BaseSpiderMain):
         save_data['script_version'] = 'V1.3'
 
     def run(self):
-        task_timer = timer.Timer()
+        task_timer = timers.Timer()
         logger.info('thread | start')
         # 第一次请求的等待时间
         self.timer.start()

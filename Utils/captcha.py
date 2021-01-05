@@ -3,6 +3,7 @@
 """
 识别图片上的验证码
 """
+
 import base64
 from PIL import Image
 from io import BytesIO
@@ -15,6 +16,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class RecognizeCode(object):
     def __init__(self, logger):
+
         self.total = 0
         self.succ_count = 0
         self.failed_count = 0

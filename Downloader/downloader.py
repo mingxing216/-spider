@@ -4,7 +4,7 @@
 下载器
 """
 
-from Utils.timer import Timer
+from Utils.timers import Timer
 import requests
 from requests.exceptions import ConnectionError
 from requests.exceptions import ConnectTimeout

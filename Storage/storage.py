@@ -21,7 +21,7 @@ from urllib3 import Retry
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 from Utils.proxy_pool import ProxyUtils
-from Utils import mysql_pool, timer
+from Utils import mysql_pool, timers
 from Utils import redis_pool
 from Utils import timeutils
 
@@ -29,7 +29,7 @@ from Utils import timeutils
 class Dao(object):
     def __init__(self, logging, mysqlpool_number=0, redispool_number=0):
         self.logging = logging
-        self.timer = timer.Timer()
+        self.timer = timers.Timer()
         self.s = requests.Session()
         # 连接主机数、最大连接数、最大重试次数
         self.s.mount('http://', HTTPAdapter(pool_connections=2, pool_maxsize=32,
@@ -283,7 +283,7 @@ class Dao(object):
                      "item": save_data}
 
         # 开始存储实体数据
-        data_start = timer.Timer()
+        data_start = timers.Timer()
         data_start.start()
         try:
             resp = self.s.post(url=url, data=form_data, timeout=(30, 30)).content.decode('utf-8')
@@ -378,7 +378,7 @@ class Dao(object):
         }
 
         # 开始存储多媒体数据
-        media_start = timer.Timer()
+        media_start = timers.Timer()
         media_start.start()
         try:
             resp = self.s.post(url=url, data=form_data, timeout=(30, 30)).content.decode('utf-8')

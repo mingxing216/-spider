@@ -15,7 +15,7 @@ from lxml import etree
 from lxml.html import fromstring, tostring
 from scrapy import Selector
 
-from Utils import timer
+from Utils import timers
 from Utils.captcha import RecognizeCode
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
@@ -317,32 +317,6 @@ class Server(object):
 
         return title
 
-    # 英文标题
-    def getParallelTitle(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            title = selector.xpath("//h1/following-sibling::em[1]/text()").extract_first().strip()
-
-        except Exception:
-            title = ""
-
-        return title
-
-    # 封面图片
-    def getCover(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            src = selector.xpath("//div[@class='cover']/img/@src").extract_first().strip()
-            if src.startswith('http'):
-                imgUrl = src
-            else:
-                imgUrl = 'http://image.nssd.org' + src
-
-        except Exception:
-            imgUrl = ""
-
-        return imgUrl
-
     # 字段值通用获取
     def get_normal_value(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
@@ -396,242 +370,12 @@ class Server(object):
 
         return website
 
-    # 简介
-    def get_abstract(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            if selector.xpath("//p[strong[contains(text(), '简　　介')]]/span[@name='all']"):
-                abstract = selector.xpath("//p[strong[contains(text(), '简　　介')]]/span[@name='all']/text()").extract_first().strip()
-            else:
-                abstract = selector.xpath("//p[strong[contains(text(), '简　　介')]]/text()").extract_first().strip()
-
-        except Exception:
-            abstract = ""
-
-        return abstract
-
-    # 主管单位/社长
-    def getOneValue(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            value = selector.xpath("//p[strong[contains(text(), '{}')]]/text()".format(para)).extract_first().strip()
-
-        except Exception:
-            value = ""
-
-        return value
-
-    # 主办单位
-    def getMoreValues(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            values = re.sub(r"[;；]", "|", selector.xpath("//p[strong[contains(text(), '{}')]]/text()".format(para)).extract_first().strip())
-
-        except Exception:
-            values = ""
-
-        return values
-
-    # 期刊变更
-    def getHistory(self, text, para):
-        soup = self.dom_holder.get(mode='BeautifulSoup', text=text)
-        # selector = Selector(text=text)
-        try:
-            value = soup.select("p:contains({})".format(para))[0].get_text()
-            # value = selector.xpath("//p[strong[contains(text(), '{}')]]".format(para)).extract()
-            history = ''.join(value).replace('期刊变更：', '')
-
-        except Exception:
-            history = ""
-
-        return history
-
-    # 电话
-    def getTelephone(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            telephone = re.sub(r"\s+", "|", selector.xpath("//p[strong[contains(text(), '电　　话')]]/text()").extract_first().strip())
-
-        except Exception:
-            telephone = ""
-
-        return telephone
-
-    # 电子邮件/期刊网址
-    def getHref(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            href = selector.xpath("//p[strong[contains(text(), '{}')]]/a/@href".format(para)).extract_first().strip()
-
-        except Exception:
-            href = ""
-
-        return href
-
-    # 期刊荣誉
-    def getHonors(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            honors_list = selector.xpath("//div[@class='coreinfo']/text()").extract()
-            honors = ''.join(honors_list).strip()
-
-        except Exception:
-            honors = ""
-
-        return honors
-
-    # 被收录数据库
-    def getDatabases(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            li_list = selector.xpath("//div[@id='qkintro']/ul/li/text()").extract()
-            databases = '|'.join(li_list)
-
-        except Exception:
-            databases = ""
-
-        return databases
-
-    # 学术评价url
-    def getEvaluateUrl(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            href = selector.xpath("//span[@class='qkpj']/a/@href").extract_first().strip()
-            if href.startswith('http'):
-                evaluateUrl = href
-            else:
-                evaluateUrl = 'http://www.nssd.org' + href
-
-        except Exception:
-            evaluateUrl = ""
-
-        return evaluateUrl
-
-    # 学术评价
-    def getEvaluate(self, text):
-        return_data = []
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            tr_list = selector.xpath("//table[@class='t_list']//tr[position()>1]")
-            for tr in tr_list:
-                data_dict = {}
-                # 年
-                try:
-                    year = tr.xpath("./td[1]//text()").extract_first().strip()
-                    pattern_value = re.search(r"\d+", year)
-                    if pattern_value:
-                        data_dict['year'] = year
-                    else:
-                        data_dict['year'] = ""
-                except:
-                    data_dict['year'] = ""
-                # 发文量
-                try:
-                    published_volume = tr.xpath("./td[2]//text()").extract_first().strip()
-                    pattern_value = re.search(r"\d+", published_volume)
-                    if pattern_value:
-                        data_dict['published_volume'] = published_volume
-                    else:
-                        data_dict['published_volume'] = ""
-                except:
-                    data_dict['published_volume'] = ""
-                # 被引次数
-                try:
-                    journal_cites = tr.xpath("./td[3]//text()").extract_first().strip()
-                    pattern_value = re.search(r"\d+", journal_cites)
-                    if pattern_value:
-                        data_dict['journal_cites'] = journal_cites
-                    else:
-                        data_dict['journal_cites'] = ""
-                except:
-                    data_dict['journal_cites'] = ""
-                # 影响因子
-                try:
-                    influence_factor = tr.xpath("./td[4]//text()").extract_first().strip()
-                    pattern_value = re.search(r"\d+", influence_factor)
-                    if pattern_value:
-                        data_dict['influence_factor'] = influence_factor
-                    else:
-                        data_dict['influence_factor'] = ""
-                except:
-                    data_dict['influence_factor'] = ""
-                # 立即指数
-                try:
-                    immediacy_index = tr.xpath("./td[5]//text()").extract_first().strip()
-                    pattern_value = re.search(r"\d+", immediacy_index)
-                    if pattern_value:
-                        data_dict['immediacy_index'] = immediacy_index
-                    else:
-                        data_dict['immediacy_index'] = ""
-                except:
-                    data_dict['immediacy_index'] = ""
-                # 被引半衰期
-                try:
-                    cited_half_life = tr.xpath("./td[6]//text()").extract_first().strip()
-                    pattern_value = re.search(r"\d+", cited_half_life)
-                    if pattern_value:
-                        data_dict['cited_half_life'] = cited_half_life
-                    else:
-                        data_dict['cited_half_life'] = ""
-                except:
-                    data_dict['cited_half_life'] = ""
-                # 引用半衰期
-                try:
-                    citing_half_life = tr.xpath("./td[7]//text()").extract_first().strip()
-                    pattern_value = re.search(r"\d+", citing_half_life)
-                    if pattern_value:
-                        data_dict['citing_half_life'] = citing_half_life
-                    else:
-                        data_dict['citing_half_life'] = ""
-                except:
-                    data_dict['citing_half_life'] = ""
-                # 期刊他引率
-                try:
-                    cited_rate = tr.xpath("./td[8]//text()").extract_first().strip()
-                    pattern_value = re.search(r"\d+", cited_rate)
-                    if pattern_value:
-                        data_dict['cited_rate'] = cited_rate
-                    else:
-                        data_dict['cited_rate'] = ""
-                except:
-                    data_dict['cited_rate'] = ""
-                # 平均引文率
-                try:
-                    mean_citing_rate = tr.xpath("./td[9]//text()").extract_first().strip()
-                    pattern_value = re.search(r"\d+", mean_citing_rate)
-                    if pattern_value:
-                        data_dict['mean_citing_rate'] = mean_citing_rate
-                    else:
-                        data_dict['mean_citing_rate'] = ""
-                except:
-                    data_dict['mean_citing_rate'] = ""
-
-                return_data.append(data_dict)
-
-        except Exception:
-            return return_data
-
-        return return_data
-
-    # 关联期刊
-    def rela_journal(self, url, key, sha):
-        e = {}
-        try:
-            e['url'] = url
-            e['key'] = key
-            e['sha'] = sha
-            e['ss'] = '期刊'
-        except Exception:
-            return e
-
-        return e
-
     # ====== 论文实体
     # 标题
-    def getPaperTitle(self, text):
+    def get_paper_title(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            title = selector.xpath("//h1/span/text()").extract_first().strip()
+            title = selector.xpath("//h1/text()").extract_first().strip()
 
         except Exception:
             title = ""
@@ -772,6 +516,19 @@ class Server(object):
 
         return labelObj
 
+    # 关联期刊
+    def rela_journal(self, url, key, sha):
+        e = {}
+        try:
+            e['url'] = url
+            e['key'] = key
+            e['sha'] = sha
+            e['ss'] = '期刊'
+        except Exception:
+            return e
+
+        return e
+
     # 关联文档
     def rela_document(self, url, key, sha):
         e = {}
@@ -806,9 +563,9 @@ class CaptchaProcessor(object):
         self.session = session
         self.logger = logger
         self.recognize_code = RecognizeCode(self.logger)
-        self.captcha_timer = timer.Timer()
-        self.total_timer = timer.Timer()
-        self.request_timer = timer.Timer()
+        self.captcha_timer = timers.Timer()
+        self.total_timer = timers.Timer()
+        self.request_timer = timers.Timer()
 
     def is_captcha_page(self, resp):
         if len(resp.content) > 2048:
