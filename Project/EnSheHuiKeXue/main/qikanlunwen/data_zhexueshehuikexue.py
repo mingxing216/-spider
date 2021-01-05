@@ -239,17 +239,12 @@ class SpiderMain(BastSpiderMain):
             return
 
         profile_text = profile_resp.text
-        with open('profile.html', 'w') as f:
-            f.write(profile_text)
+        # with open('profile.html', 'w') as f:
+        #     f.write(profile_text)
 
         #
         # ========================== 获取实体 ============================
-        # title
-        # source_url
-        # author
-        # issn {'print': '', 'electronic': ''}
         # journal_information {'name': '', 'year': '', 'volume': '', 'issue': '', 'start_page': '', 'end_page': '', 'total_page': ''}
-        # doi
         # language
         # publisher
         # abstract [{'text': '', 'lang': ''}, {'text': '', 'lang': ''}]
@@ -261,7 +256,36 @@ class SpiderMain(BastSpiderMain):
         # 获取标题
         save_data['title'] = self.server.get_paper_title(profile_text)
         # 获取作者
-        save_data['author'] = task_data.get('authors')
+        save_data['author'] = self.server.get_more_value(profile_text, '作者')
+        # ISSN
+        save_data['issn'] = {}
+        print_issn = self.server.get_normal_value(profile_text, '印刷版ISSN')
+        electronic_issn = self.server.get_normal_value(profile_text, '电子版ISSN')
+        if print_issn:
+            save_data['issn']['print'] = print_issn
+        if electronic_issn:
+            save_data['issn']['electronic'] = electronic_issn
+        # DOI
+        save_data['doi'] = {}
+        doi = self.server.get_normal_value(profile_text, 'DOI')
+        doi_url = self.server.get_normal_value(profile_text, '全文链接')
+        if doi:
+            save_data['doi']['doi'] = doi
+            save_data['doi']['doi_url'] = doi_url
+        else:
+            # 全文链接
+            save_data['source_url'] = doi_url
+
+        # 获取期刊信息
+        save_data['journal_information'] = {}
+        save_data['journal_information']['name'] = self.server.getJournalName(profile_text)
+        save_data['journal_information']['year'] = task_data.get('year')
+        save_data['journal_information']['volume'] = task_data.get('volume')
+        save_data['journal_information']['issue'] = task_data.get('issue')
+        save_data['journal_information']['start_page'] = self.server.getStartPage(profile_text)
+        save_data['journal_information']['end_page'] = self.server.getEndPage(profile_text)
+        save_data['journal_information']['total_page'] = self.server.getTotalPages(profile_text)
+
         # 获取摘要
         save_data['abstract'] = {}
         save_data['abstract']['text'] = self.server.getPaperAbstract(profile_text)
@@ -276,14 +300,7 @@ class SpiderMain(BastSpiderMain):
 
         # 获取作者单位
         save_data['author_affiliation'] = self.server.getAuthorAffiliation(profile_text)
-        # 获取作者单位
-        save_data['journal_information'] = {}
-        save_data['journal_information']['name'] =self. server.getJournalName(profile_text)
-        save_data['journal_information']['year'] = task_data.get('year')
-        save_data['journal_information']['issue'] = task_data.get('issue')
-        save_data['journal_information']['start_page'] = self.server.getStartPage(profile_text)
-        save_data['journal_information']['end_page'] = self.server.getEndPage(profile_text)
-        save_data['journal_information']['total_page'] = self.server.getTotalPages(profile_text)
+
         # 获取关键词
         save_data['keyword'] = {}
         save_data['keyword']['text'] = self.server.getFieldValues(profile_text, '关 键 词')
@@ -385,7 +402,8 @@ class SpiderMain(BastSpiderMain):
             task_timer.start()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            # task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            task = '{"url": "http://103.247.176.188/View.aspx?id=181612373", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=181612373", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=138560", "sha": "0becc1c68892a344f00e262771d533c847c0dfd3"}'
             if task:
                 try:
                     # 创建数据存储字典

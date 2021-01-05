@@ -340,6 +340,18 @@ class Server(object):
 
         return multi_avlue
 
+    # 字段多值获取
+    def get_more_value(self, text, para):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/text()".format(para)).extract()
+            multi_avlue = '|'.join(field_value)
+
+        except Exception:
+            multi_avlue = ""
+
+        return multi_avlue
+
     # 中图分类
     def get_classification_value(self, text, para):
         classi_list = []

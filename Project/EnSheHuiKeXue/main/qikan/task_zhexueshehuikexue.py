@@ -147,7 +147,11 @@ class SpiderMain(BaseSpiderMain):
             self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
             return
 
-        next_num = int(int(re.findall(r"\d+$", current_url)[0])/10 + 1)
+        try:
+            next_num = int(int(re.findall(r"\d+$", current_url)[0])/10 + 1)
+        except Exception:
+            next_num = 1
+
         catalog_url = current_url
         while True:
             if catalog_url:
@@ -225,7 +229,7 @@ class SpiderMain(BaseSpiderMain):
         while 1:
             # 获取任务
             category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG)
-            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2267338%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=67338", "totalPage": "634", "currentUrl": "http://103.247.176.188/Search.aspx?qx=&ob=dd&start=490"}'
+            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2267338%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=67338", "totalPage": "634", "currentUrl": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2267338%22&ob=dd"}'
             # print(category)
             if category:
                 # 数据类型转换
@@ -269,8 +273,8 @@ def process_start():
     # self.run()
 
     # 创建线程池
-    threadpool = ThreadPool(processes=4)
-    for j in range(4):
+    threadpool = ThreadPool(processes=1)
+    for j in range(1):
         threadpool.apply_async(func=start)
 
     threadpool.close()
@@ -281,8 +285,8 @@ if __name__ == '__main__':
     logger.info('======The Start!======')
     begin_time = time.time()
     # process_start()
-    po = Pool(processes=2)
-    for i in range(2):
+    po = Pool(processes=1)
+    for i in range(1):
         po.apply_async(func=process_start)
     po.close()
     po.join()
