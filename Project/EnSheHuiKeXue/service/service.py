@@ -579,7 +579,7 @@ class CaptchaProcessor(object):
         self.total_timer.start()
         self.request_timer.start()
         resp = self.downloader.get_resp(url=url, method=method, s=s)
-        self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), resp.url))
+        self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), url))
         return resp
 
     def process(self, resp):

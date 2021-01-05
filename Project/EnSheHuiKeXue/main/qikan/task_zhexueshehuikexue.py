@@ -15,7 +15,6 @@ import traceback
 import re
 from multiprocessing.pool import Pool, ThreadPool
 
-# sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 
 from Log import logging
@@ -133,8 +132,59 @@ class SpiderMain(BaseSpiderMain):
             # 存入数据库
             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_url, ws='英文哲学社会科学', es='期刊论文')
 
+    def get_current_catalog(self, first_url, journal_url, current_url, task):
+        """论文列表当前页翻页"""
+        next_resp = self.captcha_processor.process_first_request(url=first_url, method='GET', s=self.s)
+        if not next_resp:
+            logger.error('downloader | 论文第 1 页列表页响应失败, url: {}'.format(first_url))
+            # 队列一条任务
+            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
+            return
+        # 处理验证码
+        next_resp = self.captcha_processor.process(next_resp)
+        if next_resp is None:
+            # 队列一条任务
+            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
+            return
+
+        next_num = int(int(re.findall(r"\d+$", current_url)[0])/10 + 1)
+        catalog_url = current_url
+        while True:
+            if catalog_url:
+                # 请求论文列表页
+                next_resp = self.captcha_processor.process_first_request(url=catalog_url, method='GET', s=self.s)
+                if not next_resp:
+                    logger.error('downloader | 论文第 {} 页列表页响应失败, url: {}'.format(next_num, catalog_url))
+                    # 队列一条任务
+                    task['currentUrl'] = catalog_url
+                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
+                    return
+                # 处理验证码
+                next_resp = self.captcha_processor.process(next_resp)
+                if next_resp is None:
+                    # 队列一条任务
+                    task['currentUrl'] = catalog_url
+                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
+                    return
+                next_text = next_resp.text
+                # 响应成功，添加log日志
+                logger.info('downloader | 已翻到第{}页'.format(next_num))
+                # 获取论文详情种子、全文种子
+                paper_url_list = self.server.get_paper_list(next_text, journal_url)
+                # 详情种子存储
+                if paper_url_list:
+                    self.get_profile(paper_url_list)
+                # 获取下一页
+                catalog_url = self.server.get_next_page(next_text)
+                # 翻页计数
+                next_num += 1
+
+            else:
+                logger.info('downloader | 已翻到最后一页')
+                return
+
     def get_paper_catalog(self, catalog_url, journal_url, task):
-        """论文类列表页翻页"""
+        """论文列表页翻页"""
         next_num = 1
         while True:
             if catalog_url:
@@ -175,15 +225,21 @@ class SpiderMain(BaseSpiderMain):
         while 1:
             # 获取任务
             category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG)
-            print(category)
+            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2267338%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=67338", "totalPage": "634", "currentUrl": "http://103.247.176.188/Search.aspx?qx=&ob=dd&start=490"}'
+            # print(category)
             if category:
                 # 数据类型转换
                 task = json.loads(category)
                 # print(task)
                 paper_catalog_url = task['url']
                 journal_url = task['journalUrl']
-                # 列表页翻页，获取并存储详情种子
-                self.get_paper_catalog(paper_catalog_url, journal_url, task)
+                current_url = task.get('currentUrl')
+                if current_url:
+                    # 从当前页开始翻页，获取并存储详情种子
+                    self.get_current_catalog(paper_catalog_url, journal_url, current_url, task)
+                else:
+                    # 列表页翻页，获取并存储详情种子
+                    self.get_paper_catalog(paper_catalog_url, journal_url, task)
 
             else:
                 logger.info('task | 队列中已无任务，结束程序 | use time: {}'.format(self.timer.use_time()))
@@ -193,9 +249,9 @@ class SpiderMain(BaseSpiderMain):
 def start():
     main = SpiderMain()
     try:
-        main.get_journal_profile()
-        main.paper_total_page()
-        # main.run()
+        # main.get_journal_profile()
+        # main.paper_total_page()
+        main.run()
     except Exception:
         logger.error(str(traceback.format_exc()))
 
@@ -213,8 +269,8 @@ def process_start():
     # self.run()
 
     # 创建线程池
-    threadpool = ThreadPool(processes=1)
-    for i in range(1):
+    threadpool = ThreadPool(processes=4)
+    for j in range(4):
         threadpool.apply_async(func=start)
 
     threadpool.close()
@@ -225,8 +281,8 @@ if __name__ == '__main__':
     logger.info('======The Start!======')
     begin_time = time.time()
     # process_start()
-    po = Pool(processes=1)
-    for i in range(1):
+    po = Pool(processes=2)
+    for i in range(2):
         po.apply_async(func=process_start)
     po.close()
     po.join()

@@ -82,13 +82,19 @@ class SpiderMain(BastSpiderMain):
         pdf_url = pdf_dict['url']
         # 获取页面响应
         pdf_resp = self.captcha_processor.process_first_request(url=pdf_url, method='GET', s=self.s)
-        if not pdf_resp:
-            logger.error('document | 论文详情页响应失败, url: {}'.format(pdf_resp))
-            return
 
         # 处理验证码
         pdf_resp = self.captcha_processor.process(pdf_resp)
         if pdf_resp is None:
+            return
+
+        if 'text' in pdf_resp.headers.get('Content-Type') or 'html' in pdf_resp.headers.get('Content-Type'):
+            # 更新种子错误信息
+            msg = 'url: {} Status: {} Content-Type error: {}'.format(pdf_url, pdf_resp.status_code,
+                                                                         pdf_resp.headers['Content-Type'])
+            logger.warning('document | failed, {} | url: {}'.format(msg, pdf_url))
+            data_dict = {'url': pdf_dict['relEsse']['url']}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
             return
 
         # 内存中读写
@@ -144,9 +150,6 @@ class SpiderMain(BastSpiderMain):
             data_dict = {'url': pdf_dict['relEsse']['url']}
             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
             return
-
-        # with open('profile.pdf', 'wb') as f:
-        #     f.write(pdf_content)
 
         # 存储全文
         content_type = 'application/pdf'
@@ -229,10 +232,6 @@ class SpiderMain(BastSpiderMain):
 
         # 获取详情页
         profile_resp = self.captcha_processor.process_first_request(url=url, method='GET', s=self.s)
-        if not profile_resp:
-            msg = 'handle | 详情页响应失败, url: {}'.format(url)
-            logger.error(msg)
-            return
 
         # 处理验证码
         profile_resp = self.captcha_processor.process(profile_resp)

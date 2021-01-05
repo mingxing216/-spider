@@ -30,12 +30,21 @@ class Downloader(downloader.BaseDownloader):
         self.logger.info('downloader start')
         self.timer.start()
         ret = self._get_resp(url, method, s, data, cookies, referer, ranges, user)
-        if ret:
-            self.logger.info('downloader end | 下载成功 | use time: {}'.format(self.timer.use_time()))
-        else:
+        if not ret:
             self.logger.info('downloader end | 下载失败 | use time: {}'.format(self.timer.use_time()))
             return
 
+        if ret['code'] == 2:
+            msg = 'downloader end | 下载失败, 页面响应失败, msg: {} | use time: {}'.format(ret['message'], self.timer.use_time())
+            self.logger.error(msg)
+            return
+
+        if ret['code'] == 1:
+            msg = 'downloader end | 下载失败, 页面响应状态码错误, status: {} | use time: {}'.format(ret['status'], self.timer.use_time())
+            self.logger.error(msg)
+            return
+
+        self.logger.info('downloader end | 下载成功 | use time: {}'.format(self.timer.use_time()))
         return ret['data']
 
     def _get_resp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):
