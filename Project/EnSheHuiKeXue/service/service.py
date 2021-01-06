@@ -352,6 +352,17 @@ class Server(object):
 
         return multi_avlue
 
+    # 全文链接
+    def get_full_link(self, text, para):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            link = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/@href".format(para)).extract_first().strip()
+
+        except Exception:
+            link = ""
+
+        return link
+
     # 中图分类
     def get_classification_value(self, text, para):
         classi_list = []

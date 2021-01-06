@@ -87,7 +87,7 @@ class ProxyUtils(object):
         stat = time.time()
         for _i in range(3):
             try:
-                r = requests.get(settings.GET_PROXY_API)
+                r = requests.get(url=settings.GET_PROXY_API, timeout=10)
                 ip = r.text
                 # print(proxy)
                 if ip:
@@ -99,11 +99,11 @@ class ProxyUtils(object):
                     continue
 
             except Exception:
-                self.logger.error('proxy | 代理池代理获取失败')
+                self.logger.exception('proxy | 代理池代理获取失败')
                 time.sleep(3)
                 continue
         else:
-            self.logger.info('proxy | 获取代理IP失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
+            self.logger.error('proxy | 获取代理IP失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
             return
 
     # 设置代理最大权重
@@ -111,7 +111,7 @@ class ProxyUtils(object):
         max_time = time.time()
         for _i in range(3):
             try:
-                r = requests.get(settings.MAX_PROXY_API.format(ip))
+                r = requests.get(url=settings.MAX_PROXY_API.format(ip), timeout=10)
                 num = r.text
                 # print(proxy)
                 if num:
@@ -123,11 +123,11 @@ class ProxyUtils(object):
                     continue
 
             except Exception:
-                self.logger.error('proxy | 代理最大权重设置失败')
+                self.logger.exception('proxy | 代理最大权重设置失败')
                 time.sleep(3)
                 continue
         else:
-            self.logger.info('proxy | 设置代理IP最大权重失败 | use time: {}'.format('%.3f' % (time.time() - max_time)))
+            self.logger.error('proxy | 设置代理IP最大权重失败 | use time: {}'.format('%.3f' % (time.time() - max_time)))
             return
 
     # 代理权重减1
@@ -135,7 +135,7 @@ class ProxyUtils(object):
         dec_time = time.time()
         for _i in range(3):
             try:
-                r = requests.get(settings.DEC_PROXY_API.format(ip))
+                r = requests.get(url=settings.DEC_PROXY_API.format(ip), timeout=10)
                 num = r.text
                 # print(proxy)
                 if num:
@@ -147,11 +147,11 @@ class ProxyUtils(object):
                     continue
 
             except Exception:
-                self.logger.error('proxy | 代理权重 -1 失败')
+                self.logger.exception('proxy | 代理权重 -1 失败')
                 time.sleep(3)
                 continue
         else:
-            self.logger.info('proxy | 代理IP权重 -1 失败 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
+            self.logger.error('proxy | 代理IP权重 -1 失败 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
             return
 
     # 代理权重减10
@@ -159,7 +159,7 @@ class ProxyUtils(object):
         dec_time = time.time()
         for _i in range(3):
             try:
-                r = requests.get(settings.DEC_MAX_PROXY_API.format(ip))
+                r = requests.get(url=settings.DEC_MAX_PROXY_API.format(ip), timeout=10)
                 num = r.text
                 # print(proxy)
                 if num:
@@ -171,11 +171,11 @@ class ProxyUtils(object):
                     continue
 
             except Exception:
-                self.logger.error('proxy | 代理权重 -10 失败')
+                self.logger.exception('proxy | 代理权重 -10 失败')
                 time.sleep(3)
                 continue
         else:
-            self.logger.info('proxy | 代理IP权重 -10 失败 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
+            self.logger.error('proxy | 代理IP权重 -10 失败 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
             return
 
     # 获取代理

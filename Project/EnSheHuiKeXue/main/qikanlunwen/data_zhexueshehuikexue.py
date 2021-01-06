@@ -268,7 +268,7 @@ class SpiderMain(BastSpiderMain):
         # DOI
         save_data['doi'] = {}
         doi = self.server.get_normal_value(profile_text, 'DOI')
-        doi_url = self.server.get_normal_value(profile_text, '全文链接')
+        doi_url = self.server.get_full_link(profile_text, '全文链接')
         if doi:
             save_data['doi']['doi'] = doi
             save_data['doi']['doi_url'] = doi_url
@@ -278,13 +278,16 @@ class SpiderMain(BastSpiderMain):
 
         # 获取期刊信息
         save_data['journal_information'] = {}
-        save_data['journal_information']['name'] = self.server.getJournalName(profile_text)
-        save_data['journal_information']['year'] = task_data.get('year')
-        save_data['journal_information']['volume'] = task_data.get('volume')
-        save_data['journal_information']['issue'] = task_data.get('issue')
-        save_data['journal_information']['start_page'] = self.server.getStartPage(profile_text)
-        save_data['journal_information']['end_page'] = self.server.getEndPage(profile_text)
-        save_data['journal_information']['total_page'] = self.server.getTotalPages(profile_text)
+        save_data['journal_information']['name'] = self.server.get_normal_value(profile_text, '期刊名称')
+        save_data['journal_information']['year'] = self.server.get_normal_value(profile_text, '出版年度')
+        save_data['journal_information']['volume'] = self.server.get_normal_value(profile_text, '卷号')
+        save_data['journal_information']['issue'] = self.server.get_normal_value(profile_text, '期号')
+        pages = self.server.get_normal_value(profile_text, '页码')
+        if '-' in pages:
+            save_data['journal_information']['start_page'] = re.findall(r"(.*)-", pages)[0]
+            save_data['journal_information']['end_page'] = re.findall(r"-(.*)", pages)[0]
+        else:
+            save_data['journal_information']['total_page'] = pages
 
         # 获取摘要
         save_data['abstract'] = {}
