@@ -21,7 +21,7 @@ def _error(func):
             else:
                 return {'code': 1, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
-        except ConnectTimeout or ReadTimeout as e:
+        except (ConnectTimeout, ReadTimeout) as e:
             return {'code': 2, 'data': None, 'status': None, 'message': e}
 
         except ConnectionError as e:

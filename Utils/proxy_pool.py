@@ -98,8 +98,8 @@ class ProxyUtils(object):
                     time.sleep(3)
                     continue
 
-            except Exception:
-                self.logger.exception('proxy | 代理池代理获取失败')
+            except Exception as e:
+                self.logger.error('proxy | 代理池代理获取失败 | {}'.format(e))
                 time.sleep(3)
                 continue
         else:
@@ -122,8 +122,8 @@ class ProxyUtils(object):
                     time.sleep(3)
                     continue
 
-            except Exception:
-                self.logger.exception('proxy | 代理最大权重设置失败')
+            except Exception as e:
+                self.logger.error('proxy | 代理最大权重设置失败 | {}'.format(e))
                 time.sleep(3)
                 continue
         else:
@@ -146,8 +146,8 @@ class ProxyUtils(object):
                     time.sleep(3)
                     continue
 
-            except Exception:
-                self.logger.exception('proxy | 代理权重 -1 失败')
+            except Exception as e:
+                self.logger.error('proxy | 代理权重 -1 失败 | {}'.format(e))
                 time.sleep(3)
                 continue
         else:
@@ -170,8 +170,8 @@ class ProxyUtils(object):
                     time.sleep(3)
                     continue
 
-            except Exception:
-                self.logger.exception('proxy | 代理权重 -10 失败')
+            except Exception as e:
+                self.logger.error('proxy | 代理权重 -10 失败 | {}'.format(e))
                 time.sleep(3)
                 continue
         else:
