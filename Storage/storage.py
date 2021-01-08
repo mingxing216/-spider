@@ -71,7 +71,7 @@ class Dao(object):
         if ret:
             self.logging.info('mysql end | 种子存储成功 | use time: {}'.format(self.timer.use_time()))
         else:
-            self.logging.info('mysql end | 种子存储失败 | use time: {}'.format(self.timer.use_time()))
+            self.logging.error('mysql end | 种子存储失败 | use time: {}'.format(self.timer.use_time()))
         return ret
 
     # 种子任务存入Mysql数据库
@@ -168,7 +168,7 @@ class Dao(object):
         if ret:
             self.logging.info('mysql end | 种子更新成功 | use time: {}'.format(self.timer.use_time()))
         else:
-            self.logging.info('mysql end | 种子更新失败 | use time: {}'.format(self.timer.use_time()))
+            self.logging.error('mysql end | 种子更新失败 | use time: {}'.format(self.timer.use_time()))
         return ret
 
     # 种子任务存入Mysql数据库
@@ -268,7 +268,7 @@ class Dao(object):
         if ret:
             self.logging.info('storage end | 存储实体成功 {} | use time: {} | sha: {} | url: {}'.format(ss_type, self.timer.use_time(), sha, url))
         else:
-            self.logging.info('storage end | 存储实体失败 {} | use time: {} | sha: {} | url: {}'.format(ss_type, self.timer.use_time(), sha, url))
+            self.logging.error('storage end | 存储实体失败 {} | use time: {} | sha: {} | url: {}'.format(ss_type, self.timer.use_time(), sha, url))
         return ret
 
     # 存储数据到Hbase数据库 resultCode
@@ -334,7 +334,7 @@ class Dao(object):
         if ret:
             self.logging.info('storage end | 存储附件成功 {} | use time: {}'.format(type, self.timer.use_time()))
         else:
-            self.logging.info('storage end | 存储附件失败 {} | use time: {}'.format(type, self.timer.use_time()))
+            self.logging.error('storage end | 存储附件失败 {} | use time: {}'.format(type, self.timer.use_time()))
 
         return ret
 

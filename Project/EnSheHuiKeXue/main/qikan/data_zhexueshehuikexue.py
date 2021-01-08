@@ -196,7 +196,7 @@ class SpiderMain(BaseSpiderMain):
                 continue
 
 
-def process_start():
+def start():
     main = SpiderMain()
     try:
         main.run()
@@ -204,7 +204,7 @@ def process_start():
         logger.exception(str(traceback.format_exc()))
 
 
-def start():
+def process_start():
     # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
     # # 创建gevent协程
@@ -218,8 +218,8 @@ def start():
 
     # 创建线程池
     threadpool = ThreadPool(processes=config.THREAD_NUM)
-    for i in range(config.THREAD_NUM):
-        threadpool.apply_async(func=process_start)
+    for j in range(config.THREAD_NUM):
+        threadpool.apply_async(func=start)
 
     threadpool.close()
     threadpool.join()

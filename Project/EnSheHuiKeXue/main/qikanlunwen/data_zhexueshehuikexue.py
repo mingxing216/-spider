@@ -65,7 +65,6 @@ class SpiderMain(BastSpiderMain):
             if reader.getNumPages() < 1:  # 进一步通过页数判断。
                 b_valid = False
         except:
-            logger.error(str(traceback.format_exc()))
             msg = '检测PDF文件出错, url: {}'.format(url)
             logger.error(msg)
             data_dict = {'url': parent_url}
@@ -159,7 +158,6 @@ class SpiderMain(BastSpiderMain):
             # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # # 存储文档种子
             # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-            logger.error('document | failed save_media_to_hbase | url: {}'.format(pdf_url))
             return
 
         # 文档数据存储字典
@@ -211,14 +209,12 @@ class SpiderMain(BastSpiderMain):
         sto = self.dao.save_data_to_hbase(data=doc_data, ss_type=doc_data['ss'], sha=doc_data['sha'], url=doc_data['url'])
 
         if sto:
-            logger.info('document | success, url: {}'.format(pdf_url))
             return True
         else:
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             # # 存储文档种子
             # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家社会哲学科学', es='期刊论文')
-            logger.error('document | failed, url: {}'.format(pdf_url))
             return False
 
     def handle(self, task_data, save_data):
@@ -439,34 +435,34 @@ class SpiderMain(BastSpiderMain):
                 logger.info(self.captcha_processor.recognize_code.show_report())
                 time.sleep(1)
 
-    def start(self):
-        # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
 
-        # # 创建gevent协程
-        # g_list = []
-        # for i in range(8):
-        #     s = gevent.spawn(self.run)
-        #     g_list.append(s)
-        # gevent.joinall(g_list)
-
-        # self.run()
-
-        # 创建线程池
-        thread_pool = ThreadPool(processes=config.THREAD_NUM)
-        for thread_index in range(config.THREAD_NUM):
-            thread_pool.apply_async(func=self.run)
-
-        thread_pool.close()
-        thread_pool.join()
+def start():
+    main = SpiderMain()
+    try:
+        main.run()
+    except:
+        logger.exception(str(traceback.format_exc()))
 
 
 def process_start():
-    main = SpiderMain()
-    try:
-        main.start()
-        # main.run(task="{'id': '207d122a-3a68-41b1-8d8a-f20552f22054', 'xueKeLeiBie': '信息科学部', 'url': 'http://ir.nsfc.gov.cn/paperDetail/207d122a-3a68-41b1-8d8a-f20552f22054'}")
-    except:
-        logger.exception(str(traceback.format_exc()))
+    # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
+
+    # # 创建gevent协程
+    # g_list = []
+    # for i in range(8):
+    #     s = gevent.spawn(self.run)
+    #     g_list.append(s)
+    # gevent.joinall(g_list)
+
+    # self.run()
+
+    # 创建线程池
+    threadpool = ThreadPool(processes=config.THREAD_NUM)
+    for i in range(config.THREAD_NUM):
+        threadpool.apply_async(func=start)
+
+    threadpool.close()
+    threadpool.join()
 
 
 if __name__ == '__main__':
