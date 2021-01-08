@@ -55,7 +55,6 @@ class SpiderMain(BastSpiderMain):
         self.timer = timers.Timer()
         self.s = requests.Session()
         self.captcha_processor = CaptchaProcessor(self.server, self.download, self.s, logger)
-        self.num = 0
 
     # 检测PDF文件正确性
     # @staticmethod
@@ -120,7 +119,7 @@ class SpiderMain(BastSpiderMain):
                 # 请求头增加参数
                 ranges = 'bytes=%d-' % len(bytes_container.getvalue())
                 # 断点续传
-                pdf_resp = self.download.get_resp(url=pdf_url, method='GET', ranges=ranges, s=self.s)
+                pdf_resp = self.captcha_processor.process_first_request(url=pdf_url, method='GET', ranges=ranges, s=self.s)
                 if not pdf_resp:
                     logger.error('document | 附件响应失败, url: {}'.format(pdf_url))
                     return
@@ -194,7 +193,7 @@ class SpiderMain(BastSpiderMain):
         # 生成clazz ——层级关系
         doc_data['clazz'] = '文档_论文文档'
         # 生成biz ——项目
-        doc_data['biz'] = '文献大数据_英文论文'
+        doc_data['biz'] = '文献大数据_论文'
         # 生成ref
         doc_data['ref'] = ''
         # 采集责任人
@@ -244,27 +243,13 @@ class SpiderMain(BastSpiderMain):
 
         #
         # ========================== 获取实体 ============================
-        # journal_information {'name': '', 'year': '', 'volume': '', 'issue': '', 'start_page': '', 'end_page': '', 'total_page': ''}
-        # language
-        # publisher
-        # abstract [{'text': '', 'lang': ''}, {'text': '', 'lang': ''}]
-        # keyword {'lang': '', 'text': ''}
-        # author_affiliation
-        # rela_journal
-        # rela_document
-
         # 获取标题
         save_data['title'] = self.server.get_paper_title(profile_text)
         # 获取作者
         save_data['author'] = self.server.get_more_value(profile_text, '作者')
         # ISSN
-        save_data['issn'] = {}
-        print_issn = self.server.get_normal_value(profile_text, '印刷版ISSN')
-        electronic_issn = self.server.get_normal_value(profile_text, '电子版ISSN')
-        if print_issn:
-            save_data['issn']['print'] = print_issn
-        if electronic_issn:
-            save_data['issn']['electronic'] = electronic_issn
+        save_data['issn'] = self.server.get_normal_value(profile_text, '印刷版ISSN')
+        save_data['e_issn'] = self.server.get_normal_value(profile_text, '电子版ISSN')
         # DOI
         save_data['doi'] = {}
         doi = self.server.get_normal_value(profile_text, 'DOI')
@@ -272,10 +257,10 @@ class SpiderMain(BastSpiderMain):
         if doi:
             save_data['doi']['doi'] = doi
             save_data['doi']['doi_url'] = doi_url
+            save_data['source_url'] = ""
         else:
             # 全文链接
             save_data['source_url'] = doi_url
-
         # 获取期刊信息
         save_data['journal_information'] = {}
         save_data['journal_information']['name'] = self.server.get_normal_value(profile_text, '期刊名称')
@@ -283,54 +268,57 @@ class SpiderMain(BastSpiderMain):
         save_data['journal_information']['volume'] = self.server.get_normal_value(profile_text, '卷号')
         save_data['journal_information']['issue'] = self.server.get_normal_value(profile_text, '期号')
         pages = self.server.get_normal_value(profile_text, '页码')
-        if '-' in pages:
-            save_data['journal_information']['start_page'] = re.findall(r"(.*)-", pages)[0]
-            save_data['journal_information']['end_page'] = re.findall(r"-(.*)", pages)[0]
+        if pages:
+            if '-' in pages:
+                save_data['journal_information']['start_page'] = re.findall(r"(.*)-", pages)[0]
+                save_data['journal_information']['end_page'] = re.findall(r"-(.*)", pages)[0]
+                save_data['journal_information']['total_page'] = ""
+            else:
+                save_data['journal_information']['start_page'] = ""
+                save_data['journal_information']['end_page'] = ""
+                save_data['journal_information']['total_page'] = pages
         else:
-            save_data['journal_information']['total_page'] = pages
-
+            save_data['journal_information']['start_page'] = ""
+            save_data['journal_information']['end_page'] = ""
+            save_data['journal_information']['total_page'] = ""
+        # 语种
+        save_data['language'] = self.server.get_normal_value(profile_text, '语种')
+        # 出版社
+        save_data['publisher'] = self.server.get_normal_value(profile_text, '出版社')
         # 获取摘要
-        save_data['abstract'] = {}
-        save_data['abstract']['text'] = self.server.getPaperAbstract(profile_text)
-        if save_data['abstract']['text']:
-            hasChinese = self.server.hasChinese(save_data['abstract']['text'])
-            if hasChinese:
-                save_data['abstract']['lang'] = "zh"
-            else:
-                save_data['abstract']['lang'] = "en"
-        else:
-            save_data['abstract']['lang'] = ""
-
-        # 获取作者单位
-        save_data['author_affiliation'] = self.server.getAuthorAffiliation(profile_text)
-
+        save_data['abstract'] = []
+        abstract_text = self.server.get_abstract_value(profile_text, '摘要')
+        if abstract_text:
+            abstract = {}
+            abstract['text'] = abstract_text
+            abstract['lang'] = self.server.get_lang(abstract['text'])
+            save_data['abstract'].append(abstract)
+        en_abstract_text = self.server.get_normal_value(profile_text, '英文摘要')
+        if en_abstract_text:
+            en_abstract = {}
+            en_abstract['text'] = en_abstract_text
+            en_abstract['lang'] = self.server.get_lang(en_abstract['text'])
+            save_data['abstract'].append(en_abstract)
         # 获取关键词
-        save_data['keyword'] = {}
-        save_data['keyword']['text'] = self.server.getFieldValues(profile_text, '关 键 词')
-        if save_data['keyword']['text']:
-            if self.server.hasChinese(save_data['keyword']['text']):
-                save_data['keyword']['lang'] = "zh"
-            else:
-                save_data['keyword']['lang'] = "en"
-        else:
-            save_data['keyword']['lang'] = ""
-        # 获取项目基金
-        save_data['funders'] = self.server.getFunders(profile_text)
-        # 分类号
-        save_data['classification_code'] = {}
-        save_data['classification_code']['code'] = self.server.getFieldValues(profile_text, '分 类 号')
-        if save_data['classification_code']['code']:
-            save_data['classification_code']['type'] = "中图分类号"
-        else:
-            save_data['classification_code']['type'] = ""
-        # 下载次数
-        save_data['downloads'] = self.server.getCount(profile_text, '下载次数')
-        # 在线阅读
-        save_data['online_reading'] = self.server.getCount(profile_text, '在线阅读')
+        save_data['keyword'] = []
+        keyword_text = self.server.get_keyword_value(profile_text, '关键词')
+        if keyword_text:
+            keyword = {}
+            keyword['text'] = keyword_text
+            keyword['lang'] = self.server.get_lang(keyword['text'])
+            save_data['keyword'].append(keyword)
+        en_keyword_text = self.server.get_en_keyword_value(profile_text, '英文关键词')
+        if en_keyword_text:
+            en_keyword = {}
+            en_keyword['text'] = en_keyword_text
+            en_keyword['lang'] = self.server.get_lang(en_keyword['text'])
+            save_data['keyword'].append(en_keyword)
+        # 获取作者单位
+        save_data['author_affiliation'] = self.server.get_author_affiliation(profile_text, '作者单位')
         # 关联期刊
-        qikan_url = task_data.get('qikanUrl')
-        qikan_id = re.findall(r"cn/(\w+)/?", qikan_url)[0]
-        qikan_key = 'nssd.org|' + qikan_id
+        qikan_url = task_data.get('journalUrl')
+        qikan_id = re.findall(r"id=(\w+)$", qikan_url)[0]
+        qikan_key = '哲学社会科学外文OA资源数据库|' + qikan_id
         qikan_sha = hashlib.sha1(qikan_key.encode('utf-8')).hexdigest()
         save_data['rela_journal'] = self.server.rela_journal(qikan_url, qikan_key, qikan_sha)
         # 获取关联文档
@@ -405,8 +393,8 @@ class SpiderMain(BastSpiderMain):
             task_timer.start()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            # task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
-            task = '{"url": "http://103.247.176.188/View.aspx?id=181612373", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=181612373", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=138560", "sha": "0becc1c68892a344f00e262771d533c847c0dfd3"}'
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            # task = '{"url": "http://103.247.176.188/View.aspx?id=233888847", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=233888847", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=135985", "sha": "f08ed313eb3e6d54c127e824264e2348159e8ead"}'
             if task:
                 try:
                     # 创建数据存储字典

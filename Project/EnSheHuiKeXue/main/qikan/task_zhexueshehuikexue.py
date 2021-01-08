@@ -99,7 +99,6 @@ class SpiderMain(BaseSpiderMain):
         while 1:
             # 获取任务
             category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG)
-            print(category)
             if category:
                 # 数据类型转换
                 task = json.loads(category)

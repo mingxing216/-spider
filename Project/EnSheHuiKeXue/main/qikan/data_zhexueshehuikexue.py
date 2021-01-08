@@ -85,13 +85,8 @@ class SpiderMain(BaseSpiderMain):
             zh_abstract['lang'] = server.get_lang(zh_abstract['text'])
             save_data['abstract'].append(zh_abstract)
         # ISSN
-        save_data['issn'] = {}
-        print_issn = server.get_normal_value(profile_text, 'ISSN(Print)')
-        electronic_issn = server.get_normal_value(profile_text, 'ISSN(Electronic)')
-        if print_issn:
-            save_data['issn']['print'] = print_issn
-        if electronic_issn:
-            save_data['issn']['electronic'] = electronic_issn
+        save_data['issn'] = server.get_normal_value(profile_text, 'ISSN(Print)')
+        save_data['e_issn'] = server.get_normal_value(profile_text, 'ISSN(Electronic)')
         # 出版社
         save_data['publisher'] = server.get_multi_value(profile_text, '出版社')
         # 主编
@@ -129,7 +124,7 @@ class SpiderMain(BaseSpiderMain):
         # 生成clazz ——层级关系
         save_data['clazz'] = '期刊_学术期刊'
         # 生成biz ——项目
-        save_data['biz'] = '文献大数据_英文论文'
+        save_data['biz'] = '文献大数据_论文'
         # 生成ref
         save_data['ref'] = ''
         # 采集责任人
@@ -155,8 +150,8 @@ class SpiderMain(BaseSpiderMain):
             # 获取任务
             logger.info('task start')
             task_timer.start()
-            # task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE)
-            task = '{"url": "http://103.247.176.188/ViewJ.aspx?id=87007", "sha": "38feb69bbe48bf5d66f505310fa452d8eb184b65"}'
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE)
+            # task = '{"url": "http://103.247.176.188/ViewJ.aspx?id=81767", "sha": "38feb69bbe48bf5d66f505310fa452d8eb184b65"}'
             if task:
                 try:
                     # 创建数据存储字典

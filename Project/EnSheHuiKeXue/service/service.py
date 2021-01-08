@@ -1,25 +1,14 @@
 # -*-coding:utf-8-*-
 
-import sys
-import os
 import ast
 import re
-import time
-from urllib.parse import quote,unquote
-import requests
 import hashlib
 from bs4 import BeautifulSoup
 from langid import langid
-from pyquery import PyQuery as pq
-from lxml import etree
-from lxml.html import fromstring, tostring
 from scrapy import Selector
 
 from Utils import timers
 from Utils.captcha import RecognizeCode
-
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 
 
 class DomResultHolder(object):
@@ -181,28 +170,6 @@ class Server(object):
         self.clear()
         return img_url
 
-    # 获取学科分类名称及种子
-    def getCatalogList(self, text):
-        return_data = []
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            a_list = selector.xpath("//h2[contains(text(),'学科分类')]/following-sibling::ul[1]/li/a")
-            for a in a_list:
-                a_dict = {}
-                href = a.xpath("./@href").extract_first()
-                para = ast.literal_eval(re.findall(r"showlist(\(.*\))", href)[0])
-                # 请求第一页
-                # a_dict['num'] = 0
-                a_dict['url'] = 'http://www.nssd.org/journal/list.aspx?p=1&t=0&e={}&h={}'.format(quote(para[0]), quote(para[1]))
-                a_dict['s_xuekefenlei'] = a.xpath("./text()").extract_first()
-                return_data.append(a_dict)
-
-        except Exception:
-            return return_data
-
-        return return_data
-
-
 
     # 获取期刊详情种子及附加信息
     def getQiKanDetailUrl(self, text, xuekeleibie):
@@ -328,6 +295,17 @@ class Server(object):
 
         return field_value
 
+    # 摘要获取（区分摘要、英文摘要）
+    def get_abstract_value(self, text, para):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            field_value = selector.xpath("//tr/td[span[contains(text(), '{}') and not(contains(text(), '英文'))]]/following-sibling::td[1]/text()".format(para)).extract_first().strip()
+
+        except Exception:
+            field_value = ""
+
+        return field_value
+
     # 字段多值获取
     def get_multi_value(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
@@ -351,6 +329,40 @@ class Server(object):
             multi_avlue = ""
 
         return multi_avlue
+
+    # 关键词多值获取（关键词）
+    def get_keyword_value(self, text, para):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            keyword = re.sub(r"[\.。;；]$", "", selector.xpath("//tr/td[span[contains(text(), '{}') and not(contains(text(), '英文'))]]/following-sibling::td[1]/text()".format(para)).extract_first().strip())
+            if ';' in keyword or '；' in keyword:
+                keywords = re.sub(r"\s*[;；]\s*", "|", keyword).strip()
+            elif '.' in keyword:
+                keywords = re.sub(r"\s*\.\s*", "|", keyword).strip()
+            else:
+                return keyword
+
+        except Exception:
+            keywords = ""
+
+        return keywords
+
+    # 关键词多值获取（英文关键词）
+    def get_en_keyword_value(self, text, para):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            keyword = re.sub(r"[\.。;；]$", "", selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(para)).extract_first().strip())
+            if ';' in keyword or '；' in keyword:
+                keywords = re.sub(r"\s*[;；]\s*", "|", keyword).strip()
+            elif '.' in keyword:
+                keywords = re.sub(r"\s*\.\s*", "|", keyword).strip()
+            else:
+                return keyword
+
+        except Exception:
+            keywords = ""
+
+        return keywords
 
     # 全文链接
     def get_full_link(self, text, para):
@@ -405,115 +417,17 @@ class Server(object):
 
         return title
 
-    # 摘要
-    def getPaperAbstract(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            abstract = selector.xpath("//p[@id='allAbstrack']/text()").extract_first().strip()
-
-        except Exception:
-            abstract = ""
-
-        return abstract
-
     # 作者单位
-    def getAuthorAffiliation(self, text):
-        unit_list = []
+    def get_author_affiliation(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            affiliation_list = selector.xpath("//p[strong[contains(text(), '作者单位')]]/a/text()").extract()
-            for unit in affiliation_list:
-                uni = re.sub(r"\[\d+\]", "", unit)
-                unit_list.append(uni)
-
-            affiliation = '|'.join(unit_list).strip().strip(',')
+            affiliation_list = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(para)).extract()
+            affiliation = '|'.join(affiliation_list).strip()
 
         except Exception:
             affiliation = ""
 
         return affiliation
-
-    # 期刊名称
-    def getJournalName(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            name = selector.xpath("//p[strong[contains(text(), '期　　刊')]]/a[1]/text()").extract_first().strip()
-
-        except Exception:
-            name = ""
-
-        return name
-
-    # 起始页
-    def getStartPage(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            journal = selector.xpath("//p[strong[contains(text(), '期　　刊')]]/text()").extract()
-            start_page = re.findall(r"期(.*?)-", ''.join(journal).strip())[0]
-
-        except Exception:
-            start_page = ""
-
-        return start_page
-
-    # 结束页
-    def getEndPage(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            journal = selector.xpath("//p[strong[contains(text(), '期　　刊')]]/text()").extract()
-            end_page = re.findall(r"-(.*?)[,，]?共", ''.join(journal).strip())[0]
-
-        except Exception:
-            end_page = ""
-
-        return end_page
-
-    # 总页数
-    def getTotalPages(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            journal = selector.xpath("//p[strong[contains(text(), '期　　刊')]]/text()").extract()
-            total_page = re.findall(r"共(\d+)页", ''.join(journal).strip())[0]
-
-        except Exception:
-            total_page = ""
-
-        return total_page
-
-    # 关键词/分类号
-    def getFieldValues(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            values = selector.xpath("//p[strong[contains(text(), '{}')]]/a/text()".format(para)).extract()
-            value = '|'.join(values)
-
-        except Exception:
-            value = ""
-
-        return value
-
-    # 项目基金
-    def getFunders(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            funders = selector.xpath("//p[strong[contains(text(), '基金项目')]]/text()").extract()
-            funder = re.sub(r"[;；]", "|", ''.join(funders).strip())
-
-        except Exception:
-            funder = ""
-
-        return funder
-
-    # 次数
-    def getCount(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            count = selector.xpath("//strong[contains(text(), '{}')]/following-sibling::span[1]/text()".format(para)).extract_first().strip()
-
-        except Exception:
-            count = ""
-
-        return count
 
     # =========== 文档实体 =============
     # 获取文档
@@ -597,16 +511,16 @@ class CaptchaProcessor(object):
             return True
         return False
 
-    def process_first_request(self, url, method, s):
+    def process_first_request(self, url, method, s, ranges=None):
         self.logger.info('process start | 请求开始 | url: {}'.format(url))
         self.total_timer.start()
         self.request_timer.start()
-        resp = self.downloader.get_resp(url=url, method=method, s=s)
+        resp = self.downloader.get_resp(url=url, method=method, s=s, ranges=ranges)
         self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), url))
         return resp
 
     def process(self, resp):
-        retry_count = 500
+        retry_count = 50
         captcha_page = self.is_captcha_page(resp)
         for i in range(retry_count):
             if captcha_page:
@@ -629,7 +543,7 @@ class CaptchaProcessor(object):
                 except Exception:
                     return
             else:
-                self.logger.info('process end | 请求成功总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(), resp.url, i))
+                self.logger.info('process end | 请求成功总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(), resp.url, i+1))
                 return resp
 
         self.logger.error('process end | 验证码识别失败总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(), resp.url, retry_count))

@@ -9,7 +9,7 @@ class Logger(object):
         # 输出到指定目录下的log文件，并按天分隔
         logger.add("/opt/Log/%s/%s_{time}.log" % (file_dir, log_name),
                    format=logger_format,
-                   level="DEBUG",
+                   level="INFO",
                    rotation='00:00',
                    # compression='zip',
                    enqueue=True,
