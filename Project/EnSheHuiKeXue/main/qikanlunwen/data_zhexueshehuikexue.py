@@ -69,7 +69,7 @@ class SpiderMain(BastSpiderMain):
             msg = '检测PDF文件出错, url: {}'.format(url)
             logger.error(msg)
             data_dict = {'url': parent_url}
-            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
             b_valid = False
 
         return b_valid
@@ -93,7 +93,7 @@ class SpiderMain(BastSpiderMain):
                                                                          pdf_resp.headers['Content-Type'])
             logger.warning('document | failed, {} | url: {}'.format(msg, pdf_url))
             data_dict = {'url': pdf_dict['relEsse']['url']}
-            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
             return
 
         # 内存中读写
@@ -147,7 +147,7 @@ class SpiderMain(BastSpiderMain):
             msg = 'not PDF'
             logger.error('document | failed, {}, url: {}'.format(msg, pdf_url))
             data_dict = {'url': pdf_dict['relEsse']['url']}
-            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='国家哲学社会科学', es='期刊论文', msg=msg)
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
             return
 
         # 存储全文

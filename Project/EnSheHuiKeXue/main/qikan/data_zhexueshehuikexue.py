@@ -46,7 +46,6 @@ class SpiderMain(BaseSpiderMain):
     def __init__(self):
         super().__init__()
         self.timer = timers.Timer()
-        self.profile_url = 'http://ir.nsfc.gov.cn/baseQuery/data/paperInfo'
 
     def handle(self, task_data, save_data):
         # print(task_data)
