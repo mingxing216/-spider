@@ -69,7 +69,7 @@ class SpiderMain(BastSpiderMain):
             logger.error(msg)
             data_dict = {'url': parent_url}
             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
-            b_valid = False
+            return
 
         return b_valid
 
@@ -145,6 +145,9 @@ class SpiderMain(BastSpiderMain):
 
         # 检测PDF文件
         is_value = self.is_valid_pdf_bytes_io(pdf_content, pdf_url, pdf_dict['relEsse']['url'])
+        if is_value is None:
+            return
+
         if not is_value:
             # 更新种子错误信息
             msg = 'not PDF'
@@ -212,14 +215,8 @@ class SpiderMain(BastSpiderMain):
         # 保存数据到Hbase
         sto = self.dao.save_data_to_hbase(data=doc_data, ss_type=doc_data['ss'], sha=doc_data['sha'], url=doc_data['url'])
 
-        if sto:
-            return True
-        else:
-            # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
-            # # 存储文档种子
-            # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家社会哲学科学', es='期刊论文')
-            return False
+        if not sto:
+            return
 
     def handle(self, task_data, save_data):
         # print(task_data)
