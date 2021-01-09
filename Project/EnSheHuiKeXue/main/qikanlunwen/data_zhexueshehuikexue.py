@@ -80,7 +80,8 @@ class SpiderMain(BastSpiderMain):
         pdf_url = pdf_dict['url']
         # 获取页面响应
         pdf_resp = self.captcha_processor.process_first_request(url=pdf_url, method='GET', s=self.s)
-
+        if pdf_resp is None:
+            return
         # 处理验证码
         pdf_resp = self.captcha_processor.process(pdf_resp)
         if pdf_resp is None:
@@ -111,7 +112,7 @@ class SpiderMain(BastSpiderMain):
                 # 获取二进制内容
                 bytes_container.write(pdf_resp.content)
                 logger.warning(
-                    'document | 获取内容不完整 | use time: {} | length: {}'.format(self.timer.use_time(),
+                    'document | 获取内容不完整, 断点续爬 | use time: {} | length: {}'.format(self.timer.use_time(),
                                                                           len(bytes_container.getvalue())))
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
@@ -119,8 +120,11 @@ class SpiderMain(BastSpiderMain):
                 ranges = 'bytes=%d-' % len(bytes_container.getvalue())
                 # 断点续传
                 pdf_resp = self.captcha_processor.process_first_request(url=pdf_url, method='GET', ranges=ranges, s=self.s)
-                if not pdf_resp:
-                    logger.error('document | 附件响应失败, url: {}'.format(pdf_url))
+                if pdf_resp is None:
+                    return
+                # 处理验证码
+                pdf_resp = self.captcha_processor.process(pdf_resp)
+                if pdf_resp is None:
                     return
                 continue
         else:
@@ -130,7 +134,7 @@ class SpiderMain(BastSpiderMain):
             # 更新种子错误信息
             msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()),
                                                        pdf_resp.headers.get('Content-Length', 0))
-            logger.warning('document | failed, {} | url: {}'.format(msg, pdf_url))
+            logger.error('document | failed, {} | url: {}'.format(msg, pdf_url))
             data_dict = {'url': pdf_dict['relEsse']['url']}
             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
             return
@@ -218,7 +222,7 @@ class SpiderMain(BastSpiderMain):
             return False
 
     def handle(self, task_data, save_data):
-        print(task_data)
+        # print(task_data)
         url = task_data.get('url')
         _id = re.findall(r"id=(\w+)$", url)[0]
         # print(id)
@@ -227,7 +231,8 @@ class SpiderMain(BastSpiderMain):
 
         # 获取详情页
         profile_resp = self.captcha_processor.process_first_request(url=url, method='GET', s=self.s)
-
+        if profile_resp is None:
+            return
         # 处理验证码
         profile_resp = self.captcha_processor.process(profile_resp)
         if profile_resp is None:
@@ -237,7 +242,6 @@ class SpiderMain(BastSpiderMain):
         # with open('profile.html', 'w') as f:
         #     f.write(profile_text)
 
-        #
         # ========================== 获取实体 ============================
         # 获取标题
         save_data['title'] = self.server.get_paper_title(profile_text)
