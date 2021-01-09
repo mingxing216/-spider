@@ -6,6 +6,7 @@
 
 from Utils.timers import Timer
 import requests
+from requests import adapters
 from requests.exceptions import ConnectionError
 from requests.exceptions import ConnectTimeout
 from requests.exceptions import ReadTimeout
@@ -43,7 +44,7 @@ class BaseDownloader(object):
     @_error
     def get(self, url, session=None, headers=None, data=None, proxies=None, cookies=None):
         if session:
-            requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
+            adapters.DEFAULT_RETRIES = 5  # 增加重连次数
             session.keep_alive = False  # 关闭多余连接
             r = session.get(url=url, headers=headers, params=data, cookies=cookies, proxies=proxies,
                             stream=self.stream, timeout=self.timeout)
@@ -56,7 +57,7 @@ class BaseDownloader(object):
     @_error
     def post(self, url, session=None, headers=None, data=None, proxies=None, cookies=None):
         if session:
-            requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
+            adapters.DEFAULT_RETRIES = 5  # 增加重连次数
             # s = requests.session()
             session.keep_alive = False  # 关闭多余连接
             r = session.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies,
