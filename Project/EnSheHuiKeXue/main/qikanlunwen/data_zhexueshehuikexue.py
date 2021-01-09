@@ -215,7 +215,9 @@ class SpiderMain(BastSpiderMain):
         # 保存数据到Hbase
         sto = self.dao.save_data_to_hbase(data=doc_data, ss_type=doc_data['ss'], sha=doc_data['sha'], url=doc_data['url'])
 
-        if not sto:
+        if sto:
+            return True
+        else:
             return
 
     def handle(self, task_data, save_data):
@@ -459,7 +461,7 @@ def process_start():
 
     # 创建线程池
     threadpool = ThreadPool(processes=config.THREAD_NUM)
-    for i in range(config.THREAD_NUM):
+    for _j in range(config.THREAD_NUM):
         threadpool.apply_async(func=start)
 
     threadpool.close()
@@ -472,7 +474,7 @@ if __name__ == '__main__':
     # process_start()
     # 创建多进程
     po = Pool(processes=config.PROCESS_NUM)
-    for _count in range(config.PROCESS_NUM):
+    for _i in range(config.PROCESS_NUM):
         po.apply_async(func=process_start)
     po.close()
     po.join()
