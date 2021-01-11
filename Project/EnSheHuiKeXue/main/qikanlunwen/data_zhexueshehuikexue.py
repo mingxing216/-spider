@@ -14,7 +14,7 @@ import traceback
 import requests
 # from contextlib import closing
 from io import BytesIO
-from multiprocessing.pool import Pool, ThreadPool
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from PyPDF2 import PdfFileReader
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
@@ -460,24 +460,21 @@ def process_start():
     # self.run()
 
     # 创建线程池
-    threadpool = ThreadPool(processes=config.THREAD_NUM)
-    for _j in range(config.THREAD_NUM):
-        threadpool.apply_async(func=start)
-
-    threadpool.close()
-    threadpool.join()
+    tpool = ThreadPoolExecutor(max_workers=config.THREAD_NUM)
+    for i in range(config.THREAD_NUM):
+        tpool.submit(start)
+    tpool.shutdown(wait=True)
 
 
 if __name__ == '__main__':
     logger.info('====== The Start! ======')
     begin_time = time.time()
     # process_start()
-    # 创建多进程
-    po = Pool(processes=config.PROCESS_NUM)
-    for _i in range(config.PROCESS_NUM):
-        po.apply_async(func=process_start)
-    po.close()
-    po.join()
+    # 创建进程池
+    ppool = ProcessPoolExecutor(max_workers=config.PROCESS_NUM)
+    for i in range(config.PROCESS_NUM):
+        ppool.submit(process_start)
+    ppool.shutdown(wait=True)
     end_time = time.time()
     logger.info('====== The End! ======')
     logger.info('====== Time consuming is %.3fs ======' % (end_time - begin_time))
