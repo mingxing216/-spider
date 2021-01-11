@@ -5,11 +5,7 @@ redis连接池操作
 """
 
 import redis
-import sys
-import os
-import json
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 from Utils import timeutils
 

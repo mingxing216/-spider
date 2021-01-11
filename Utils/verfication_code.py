@@ -45,8 +45,9 @@ class VerificationCode(object):
             self.report_error(result["data"]["id"])
             return {'result': False, 'message': result["message"]}
 
-    def report_error(self, id):
-        data = {"id": id}
+    @staticmethod
+    def report_error(id_num):
+        data = {"id": id_num}
         result = json.loads(requests.post("http://api.ttshitu.com/reporterror.json", json=data).text)
         print(result)
         if result['success']:

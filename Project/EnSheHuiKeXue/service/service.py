@@ -499,7 +499,8 @@ class CaptchaProcessor(object):
         self.downloader = downloader
         self.session = session
         self.logger = logger
-        self.recognize_code = RecognizeCode(self.logger)
+        self.recognize_timer = timers.Timer()
+        self.recognize_code = RecognizeCode(self.logger, self.recognize_timer)
         self.captcha_timer = timers.Timer()
         self.total_timer = timers.Timer()
         self.request_timer = timers.Timer()

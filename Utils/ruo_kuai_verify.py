@@ -1,11 +1,8 @@
 # -*- coding: cp936 -*-
-import sys
-import os
+
 import requests
 from hashlib import md5
 
-
-sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 
 

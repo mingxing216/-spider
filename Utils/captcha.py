@@ -15,28 +15,26 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class RecognizeCode(object):
-    def __init__(self, logger):
-
+    def __init__(self, logger, timer):
         self.total = 0
         self.succ_count = 0
         self.failed_count = 0
         self.logger = logger
+        self.timer = timer
 
-    @staticmethod
-    def image_stream(image_stream, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
-        return RecognizeCode.image_obj(Image.open(image_stream), show, length, invalid_charset, need_pretreat, lang)
+    def image_stream(self, image_stream, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
+        return self.image_obj(Image.open(image_stream), show, length, invalid_charset, need_pretreat, lang)
 
-    @staticmethod
-    def image_file(file_name, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
+    def image_file(self, file_name, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
         with open(file_name, 'rb') as file:
-            return RecognizeCode.image_stream(file, show, length, invalid_charset, need_pretreat, lang)
+            return self.image_stream(file, show, length, invalid_charset, need_pretreat, lang)
 
-    @staticmethod
-    def image_data(image_data, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
-        return RecognizeCode.image_stream(BytesIO(image_data), show, length, invalid_charset, need_pretreat, lang)
+    def image_data(self, image_data, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
+        self.logger.debug('captcha start | 开始处理验证码')
+        self.timer.start()
+        return self.image_stream(BytesIO(image_data), show, length, invalid_charset, need_pretreat, lang)
 
-    @staticmethod
-    def image_obj(image, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
+    def image_obj(self, image, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
         if show:
             image.show()
         if need_pretreat:
@@ -60,9 +58,9 @@ class RecognizeCode(object):
         if os_system == 'Windows':
             pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files (x86)\Tesseract-OCR\tesseract.exe"
         elif os_system == 'Linux':
-            pytesseract.pytesseract.tesseract_cmd = "tesseract"
+            pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"
         elif os_system == 'Darwin':
-            pytesseract.pytesseract.tesseract_cmd = r"/usr/local/bin/tesseract"
+            pytesseract.pytesseract.tesseract_cmd = "/usr/local/bin/tesseract"
         else:
             raise EnvironmentError("Unsupported platform {}".format(os_system))
         verify_code = pytesseract.image_to_string(image_bi, lang=lang, config='--psm 7')
@@ -72,6 +70,8 @@ class RecognizeCode(object):
             verify_code = cop.sub('', verify_code)  # 将string1中匹配到的字符替换成空字符
         if length:
             verify_code = verify_code[0:length]
+
+        self.logger.info('captcha end | 结束处理验证码 | use time: {}'.format(self.timer.use_time()))
 
         return verify_code
 

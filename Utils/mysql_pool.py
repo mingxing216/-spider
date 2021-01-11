@@ -3,12 +3,9 @@
 mysql连接池操作
 '''
 
-import sys
-import os
 import pymysql
 from DBUtils.PooledDB import PooledDB
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 
 

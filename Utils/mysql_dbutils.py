@@ -4,10 +4,6 @@
 '''
 
 import pymysql
-import sys
-import os
-
-sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 
 import settings
 

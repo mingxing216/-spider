@@ -3,8 +3,6 @@
 HBase连接池操作
 '''
 
-import sys
-import os
 import time
 import happybase
 

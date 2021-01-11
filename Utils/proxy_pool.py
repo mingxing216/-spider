@@ -9,15 +9,12 @@
 """
 
 
-import os
-import sys
 import json
 import requests
 import socket
 import re
 import time
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
 
 

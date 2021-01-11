@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
+
 import smtplib
-import sys
-import os
 from email.mime.text import MIMEText
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../")
-
 from Log import logging
-from Utils import timeutils
 
 logger = logging.Logger('Send_ERR_Email', '错误邮件')
 
