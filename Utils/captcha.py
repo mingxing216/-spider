@@ -11,16 +11,19 @@ import platform
 import pytesseract
 import re
 from PIL import ImageFile
+
+from Utils import timers
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class RecognizeCode(object):
-    def __init__(self, logger, timer):
+    def __init__(self, logger):
         self.total = 0
         self.succ_count = 0
         self.failed_count = 0
         self.logger = logger
-        self.timer = timer
+        self.timer = timers.Timer()
 
     def image_stream(self, image_stream, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
         return self.image_obj(Image.open(image_stream), show, length, invalid_charset, need_pretreat, lang)
@@ -30,7 +33,7 @@ class RecognizeCode(object):
             return self.image_stream(file, show, length, invalid_charset, need_pretreat, lang)
 
     def image_data(self, image_data, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
-        self.logger.debug('captcha start | 开始处理验证码')
+        self.logger.info('captcha start | 开始处理验证码')
         self.timer.start()
         return self.image_stream(BytesIO(image_data), show, length, invalid_charset, need_pretreat, lang)
 

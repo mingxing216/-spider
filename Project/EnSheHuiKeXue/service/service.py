@@ -9,6 +9,7 @@ from scrapy import Selector
 
 from Utils import timers
 from Utils.captcha import RecognizeCode
+from Utils.verfication_code import VerificationCode
 
 
 class DomResultHolder(object):
@@ -499,8 +500,8 @@ class CaptchaProcessor(object):
         self.downloader = downloader
         self.session = session
         self.logger = logger
-        self.recognize_timer = timers.Timer()
-        self.recognize_code = RecognizeCode(self.logger, self.recognize_timer)
+        self.recognize_code = RecognizeCode(self.logger)
+        self.verfication_code = VerificationCode('mingxing123', 'qazwsx123', self.logger)
         self.captcha_timer = timers.Timer()
         self.total_timer = timers.Timer()
         self.request_timer = timers.Timer()
@@ -531,18 +532,23 @@ class CaptchaProcessor(object):
                     form_data = self.server.get_captcha(resp.text)
                     image_url = self.server.get_img_url(resp.text)
                     img_content = self.downloader.get_resp(url=image_url, method='GET', s=self.session).content
-                    # 获取线程锁
-                    gLock.acquire()
-                    code = self.recognize_code.image_data(img_content, show=False, length=4, invalid_charset="^0-9^A-Z^a-z")
-                    # 解锁
-                    gLock.release()
+                    data_dict = self.verfication_code.get_code_from_img_content(img_content)
+                    code = data_dict['result']
+                    # # 获取线程锁
+                    # gLock.acquire()
+                    # code = self.recognize_code.image_data(img_content, show=False, length=4, invalid_charset="^0-9^A-Z^a-z")
+                    # # 解锁
+                    # gLock.release()
                     form_data['iCode'] = code
                     self.logger.info('process | 一次验证码处理完成 | use time: {}'.format(self.captcha_timer.use_time()))
                     # 带验证码访问
                     self.request_timer.start()
                     real_url = resp.url
                     resp = self.downloader.get_resp(url=real_url, method='POST', data=form_data, s=self.session)
+                    # 判断是否还有验证码
                     captcha_page = self.is_captcha_page(resp)
+                    if captcha_page:
+                        self.verfication_code.report_error(data_dict['id'])
                     self.recognize_code.report(img_content, code, not captcha_page)
                     self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), resp.url))
                 except Exception:
