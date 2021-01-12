@@ -32,7 +32,6 @@ from Project.EnSheHuiKeXue.service.service import CaptchaProcessor
 LOG_FILE_DIR = 'EnSheHuiKeXue'  # LOG日志存放路径
 LOG_NAME = '英文论文_data'  # LOG名
 logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
-gLock = threading.Lock()
 
 
 class BastSpiderMain(object):
@@ -380,7 +379,7 @@ class SpiderMain(BastSpiderMain):
         # 采集脚本版本号
         save_data['script_version'] = 'V1.3'
 
-    def run(self):
+    def run(self, gLock):
         logger.info('thread start')
         task_timer = timers.Timer()
         # 第一次请求的等待时间
@@ -389,7 +388,6 @@ class SpiderMain(BastSpiderMain):
         logger.info('thread | wait download delay time | use time: {}'.format(self.timer.use_time()))
         # 单线程无限循环
         while True:
-            gLock.acquire()
             # 获取任务
             logger.info('task start')
             task_timer.start()
@@ -398,6 +396,7 @@ class SpiderMain(BastSpiderMain):
             task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
             # task = '{"url": "http://103.247.176.188/View.aspx?id=233888847", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=233888847", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=135985", "sha": "f08ed313eb3e6d54c127e824264e2348159e8ead"}'
             if task:
+                gLock.acquire()
                 try:
                     # 创建数据存储字典
                     save_data = dict()
@@ -443,15 +442,14 @@ class SpiderMain(BastSpiderMain):
             else:
                 logger.info('task | 队列中已无任务')
                 logger.info(self.captcha_processor.recognize_code.show_report())
-                gLock.release()
 
                 return
 
 
-def start():
+def start(gLock):
     main = SpiderMain()
     try:
-        main.run()
+        main.run(gLock)
     except:
         logger.exception(str(traceback.format_exc()))
 
@@ -467,11 +465,12 @@ def process_start():
     # gevent.joinall(g_list)
 
     # self.run()
-
+    # 线程锁
+    gLock = threading.Lock()
     # 创建线程池
     tpool = ThreadPoolExecutor(max_workers=config.THREAD_NUM)
     for i in range(config.THREAD_NUM):
-        tpool.submit(start)
+        tpool.submit(start, gLock)
     tpool.shutdown(wait=True)
 
 
