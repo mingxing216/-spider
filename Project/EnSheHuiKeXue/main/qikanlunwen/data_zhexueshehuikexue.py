@@ -75,7 +75,7 @@ class SpiderMain(BastSpiderMain):
         return b_valid
 
     # 获取文档实体字段
-    def document(self, pdf_dict):
+    def document(self, pdf_dict, gLock):
         logger.debug('document | 开始获取内容')
         self.timer.start()
         pdf_url = pdf_dict['url']
@@ -84,7 +84,7 @@ class SpiderMain(BastSpiderMain):
         if pdf_resp is None:
             return
         # 处理验证码
-        pdf_resp = self.captcha_processor.process(pdf_resp)
+        pdf_resp = self.captcha_processor.process(pdf_resp, gLock)
         if pdf_resp is None:
             return
 
@@ -124,7 +124,7 @@ class SpiderMain(BastSpiderMain):
                 if pdf_resp is None:
                     return
                 # 处理验证码
-                pdf_resp = self.captcha_processor.process(pdf_resp)
+                pdf_resp = self.captcha_processor.process(pdf_resp, gLock)
                 if pdf_resp is None:
                     return
                 continue
@@ -221,7 +221,7 @@ class SpiderMain(BastSpiderMain):
         else:
             return
 
-    def handle(self, task_data, save_data):
+    def handle(self, task_data, save_data, gLock):
         # print(task_data)
         url = task_data.get('url')
         _id = re.findall(r"id=(\w+)$", url)[0]
@@ -234,7 +234,7 @@ class SpiderMain(BastSpiderMain):
         if profile_resp is None:
             return
         # 处理验证码
-        profile_resp = self.captcha_processor.process(profile_resp)
+        profile_resp = self.captcha_processor.process(profile_resp, gLock)
         if profile_resp is None:
             return
 
@@ -340,7 +340,7 @@ class SpiderMain(BastSpiderMain):
             # 删除响应数据缓存
             self.server.clear()
             # 存储文档实体及文档本身
-            suc = self.document(pdf_dict=pdf_dict)
+            suc = self.document(pdf_dict=pdf_dict, gLock=gLock)
             if not suc:
                 return
 
@@ -396,7 +396,6 @@ class SpiderMain(BastSpiderMain):
             task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
             # task = '{"url": "http://103.247.176.188/View.aspx?id=233888847", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=233888847", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=135985", "sha": "f08ed313eb3e6d54c127e824264e2348159e8ead"}'
             if task:
-                gLock.acquire()
                 try:
                     # 创建数据存储字典
                     save_data = dict()
@@ -404,21 +403,19 @@ class SpiderMain(BastSpiderMain):
                     task_data = json.loads(task)
                     sha = task_data['sha']
                     # 获取字段值存入字典并返回sha
-                    self.handle(task_data=task_data, save_data=save_data)
+                    self.handle(task_data=task_data, save_data=save_data, gLock=gLock)
                     # 保存数据到Hbase
                     if not save_data:
                         # 逻辑删除任务
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.error(
                             'task end | task failed | use time: {} | No data.'.format(task_timer.use_time()))
-                        gLock.release()
                         continue
                     if 'sha' not in save_data:
                         # 逻辑删除任务
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.error(
                             'task end | task failed | use time: {} | Data Incomplete.'.format(task_timer.use_time()))
-                        gLock.release()
                         continue
                     # 存储数据
                     success = self.dao.save_data_to_hbase(data=save_data, ss_type=save_data['ss'], sha=save_data['sha'], url=save_data['url'])
@@ -433,12 +430,10 @@ class SpiderMain(BastSpiderMain):
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
 
                     logger.info('task end | task success | use time: {}'.format(task_timer.use_time()))
-                    gLock.release()
 
                 except:
                     logger.exception(str(traceback.format_exc()))
                     logger.error('task end | task failed | use time: {}'.format(task_timer.use_time()))
-                    gLock.release()
             else:
                 logger.info('task | 队列中已无任务')
                 logger.info(self.captcha_processor.recognize_code.show_report())

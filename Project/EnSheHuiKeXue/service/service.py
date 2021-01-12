@@ -520,7 +520,7 @@ class CaptchaProcessor(object):
         self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), url))
         return resp
 
-    def process(self, resp):
+    def process(self, resp, gLock):
         retry_count = 50
         captcha_page = self.is_captcha_page(resp)
         for i in range(retry_count):
@@ -531,7 +531,11 @@ class CaptchaProcessor(object):
                     form_data = self.server.get_captcha(resp.text)
                     image_url = self.server.get_img_url(resp.text)
                     img_content = self.downloader.get_resp(url=image_url, method='GET', s=self.session).content
+                    # 获取线程锁
+                    gLock.acquire()
                     code = self.recognize_code.image_data(img_content, show=False, length=4, invalid_charset="^0-9^A-Z^a-z")
+                    # 解锁
+                    gLock.release()
                     form_data['iCode'] = code
                     self.logger.info('process | 一次验证码处理完成 | use time: {}'.format(self.captcha_timer.use_time()))
                     # 带验证码访问
