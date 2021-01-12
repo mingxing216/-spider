@@ -13,6 +13,7 @@ import time
 import traceback
 import requests
 # from contextlib import closing
+import threading
 from io import BytesIO
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from PyPDF2 import PdfFileReader
@@ -31,6 +32,7 @@ from Project.EnSheHuiKeXue.service.service import CaptchaProcessor
 LOG_FILE_DIR = 'EnSheHuiKeXue'  # LOG日志存放路径
 LOG_NAME = '英文论文_data'  # LOG名
 logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
+gLock = threading.Lock()
 
 
 class BastSpiderMain(object):
@@ -387,6 +389,7 @@ class SpiderMain(BastSpiderMain):
         logger.info('thread | wait download delay time | use time: {}'.format(self.timer.use_time()))
         # 单线程无限循环
         while True:
+            gLock.acquire()
             # 获取任务
             logger.info('task start')
             task_timer.start()
@@ -409,12 +412,14 @@ class SpiderMain(BastSpiderMain):
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.error(
                             'task end | task failed | use time: {} | No data.'.format(task_timer.use_time()))
+                        gLock.release()
                         continue
                     if 'sha' not in save_data:
                         # 逻辑删除任务
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.error(
                             'task end | task failed | use time: {} | Data Incomplete.'.format(task_timer.use_time()))
+                        gLock.release()
                         continue
                     # 存储数据
                     success = self.dao.save_data_to_hbase(data=save_data, ss_type=save_data['ss'], sha=save_data['sha'], url=save_data['url'])
@@ -429,14 +434,18 @@ class SpiderMain(BastSpiderMain):
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
 
                     logger.info('task end | task success | use time: {}'.format(task_timer.use_time()))
+                    gLock.release()
 
                 except:
                     logger.exception(str(traceback.format_exc()))
                     logger.error('task end | task failed | use time: {}'.format(task_timer.use_time()))
+                    gLock.release()
             else:
                 logger.info('task | 队列中已无任务')
                 logger.info(self.captcha_processor.recognize_code.show_report())
-                time.sleep(1)
+                gLock.release()
+
+                return
 
 
 def start():
