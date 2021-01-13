@@ -75,10 +75,12 @@ class Server(object):
             for a in div_list:
                 journal_dict = {}
                 paper_dict = {}
-                journal_dict['url'] = 'http://103.247.176.188/' + a.xpath("./a[@class='btnnoimg']/@href").extract_first()
+                journal_dict['url'] = 'http://103.247.176.188/' + a.xpath(
+                    "./a[@class='btnnoimg']/@href").extract_first()
                 journal_data_list.append(journal_dict)
 
-                paper_dict['url'] = 'http://103.247.176.188/' + a.xpath("./a[@class='btnnoimg2']/@href").extract_first() + '&ob=dd'
+                paper_dict['url'] = 'http://103.247.176.188/' + a.xpath(
+                    "./a[@class='btnnoimg2']/@href").extract_first() + '&ob=dd'
                 paper_dict['journalUrl'] = journal_dict['url']
                 paper_catalog_list.append(paper_dict)
 
@@ -111,11 +113,13 @@ class Server(object):
             for a in div_list:
                 paper_dict = {}
                 if a.xpath("./a[@class='btnnoimg']"):
-                    paper_dict['url'] = 'http://103.247.176.188/' + a.xpath("./a[@class='btnnoimg']/@href").extract_first()
+                    paper_dict['url'] = 'http://103.247.176.188/' + a.xpath(
+                        "./a[@class='btnnoimg']/@href").extract_first()
                 else:
                     continue
                 if a.xpath("./a[@class='btnnoimg2']"):
-                    paper_dict['pdfUrl'] = 'http://103.247.176.188/' + a.xpath("./a[@class='btnnoimg2']/@href").extract_first()
+                    paper_dict['pdfUrl'] = 'http://103.247.176.188/' + a.xpath(
+                        "./a[@class='btnnoimg2']/@href").extract_first()
                 else:
                     paper_dict['pdfUrl'] = ''
                 paper_dict['journalUrl'] = journal_url
@@ -170,7 +174,6 @@ class Server(object):
 
         self.clear()
         return img_url
-
 
     # 获取期刊详情种子及附加信息
     def getQiKanDetailUrl(self, text, xuekeleibie):
@@ -289,7 +292,8 @@ class Server(object):
     def get_normal_value(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(para)).extract_first().strip()
+            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(
+                para)).extract_first().strip()
 
         except Exception:
             field_value = ""
@@ -300,7 +304,9 @@ class Server(object):
     def get_abstract_value(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            field_value = selector.xpath("//tr/td[span[contains(text(), '{}') and not(contains(text(), '英文'))]]/following-sibling::td[1]/text()".format(para)).extract_first().strip()
+            field_value = selector.xpath(
+                "//tr/td[span[contains(text(), '{}') and not(contains(text(), '英文'))]]/following-sibling::td[1]/text()".format(
+                    para)).extract_first().strip()
 
         except Exception:
             field_value = ""
@@ -311,7 +317,8 @@ class Server(object):
     def get_multi_value(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(para)).extract_first().strip()
+            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(
+                para)).extract_first().strip()
             multi_avlue = re.sub(r"\s*[,，]\s*", "|", field_value)
 
         except Exception:
@@ -323,7 +330,8 @@ class Server(object):
     def get_more_value(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/text()".format(para)).extract()
+            field_value = selector.xpath(
+                "//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/text()".format(para)).extract()
             multi_avlue = '|'.join(field_value)
 
         except Exception:
@@ -335,7 +343,9 @@ class Server(object):
     def get_keyword_value(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            keyword = re.sub(r"[\.。;；]$", "", selector.xpath("//tr/td[span[contains(text(), '{}') and not(contains(text(), '英文'))]]/following-sibling::td[1]/text()".format(para)).extract_first().strip())
+            keyword = re.sub(r"[\.。;；]$", "", selector.xpath(
+                "//tr/td[span[contains(text(), '{}') and not(contains(text(), '英文'))]]/following-sibling::td[1]/text()".format(
+                    para)).extract_first().strip())
             if ';' in keyword or '；' in keyword:
                 keywords = re.sub(r"\s*[;；]\s*", "|", keyword).strip()
             elif '.' in keyword:
@@ -352,7 +362,9 @@ class Server(object):
     def get_en_keyword_value(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            keyword = re.sub(r"[\.。;；]$", "", selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(para)).extract_first().strip())
+            keyword = re.sub(r"[\.。;；]$", "", selector.xpath(
+                "//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(
+                    para)).extract_first().strip())
             if ';' in keyword or '；' in keyword:
                 keywords = re.sub(r"\s*[;；]\s*", "|", keyword).strip()
             elif '.' in keyword:
@@ -369,7 +381,8 @@ class Server(object):
     def get_full_link(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            link = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/@href".format(para)).extract_first().strip()
+            link = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/@href".format(
+                para)).extract_first().strip()
 
         except Exception:
             link = ""
@@ -381,7 +394,8 @@ class Server(object):
         classi_list = []
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(para)).extract_first().strip()
+            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(
+                para)).extract_first().strip()
             value_list = re.split(r"[,，]", field_value)
             for value in value_list:
                 classi_dict = {
@@ -399,7 +413,8 @@ class Server(object):
     def get_journal_website(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            website = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/@href".format(para)).extract_first().strip()
+            website = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/@href".format(
+                para)).extract_first().strip()
 
         except Exception:
             website = ""
@@ -422,7 +437,8 @@ class Server(object):
     def get_author_affiliation(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            affiliation_list = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(para)).extract()
+            affiliation_list = selector.xpath(
+                "//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(para)).extract()
             affiliation = '|'.join(affiliation_list).strip()
 
         except Exception:
@@ -501,7 +517,7 @@ class CaptchaProcessor(object):
         self.session = session
         self.logger = logger
         self.recognize_code = RecognizeCode(self.logger)
-        self.verfication_code = VerificationCode('mingxing123', 'qazwsx123', self.logger)
+        # self.verfication_code = VerificationCode('mingxing123', 'qazwsx123', self.logger)
         self.captcha_timer = timers.Timer()
         self.total_timer = timers.Timer()
         self.request_timer = timers.Timer()
@@ -521,7 +537,7 @@ class CaptchaProcessor(object):
         self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), url))
         return resp
 
-    def process(self, resp, gLock):
+    def process(self, resp):
         retry_count = 50
         captcha_page = self.is_captcha_page(resp)
         for i in range(retry_count):
@@ -534,11 +550,8 @@ class CaptchaProcessor(object):
                     img_content = self.downloader.get_resp(url=image_url, method='GET', s=self.session).content
                     # data_dict = self.verfication_code.get_code_from_img_content(img_content)
                     # code = data_dict['result']
-                    # # 获取线程锁
-                    # gLock.acquire()
-                    code = self.recognize_code.image_data(img_content, show=False, length=4, invalid_charset="^0-9^A-Z^a-z")
-                    # # 解锁
-                    # gLock.release()
+                    code = self.recognize_code.image_data(img_content, show=False, length=4,
+                                                          invalid_charset="^0-9^A-Z^a-z")
                     form_data['iCode'] = code
                     self.logger.info('process | 一次验证码处理完成 | use time: {}'.format(self.captcha_timer.use_time()))
                     # 带验证码访问
@@ -547,16 +560,22 @@ class CaptchaProcessor(object):
                     resp = self.downloader.get_resp(url=real_url, method='POST', data=form_data, s=self.session)
                     # 判断是否还有验证码
                     captcha_page = self.is_captcha_page(resp)
-                    if captcha_page:
-                        self.verfication_code.report_error(data_dict['id'])
+                    # if captcha_page:
+                    #     self.logger.info('captcha | 验证码错误')
+                        # self.verfication_code.report_error(data_dict['id'])
                     self.recognize_code.report(img_content, code, not captcha_page)
-                    self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), resp.url))
+                    self.logger.info(
+                        'process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), resp.url))
                 except Exception:
                     return
             else:
-                self.logger.info('process end | 请求成功总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(), resp.url, i))
+                self.logger.info(
+                    'process end | 请求成功总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(),
+                                                                                        resp.url, i))
                 return resp
 
-        self.logger.error('process end | 验证码识别失败总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(), resp.url, retry_count))
+        self.logger.error(
+            'process end | 验证码识别失败总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(),
+                                                                                   resp.url, retry_count))
 
         return

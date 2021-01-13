@@ -12,7 +12,6 @@ import time
 import requests
 import random
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
 from Utils import user_agent_u, proxy_pool, user_pool, timers
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY

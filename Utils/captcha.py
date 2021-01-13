@@ -37,7 +37,8 @@ class RecognizeCode(object):
     def image_data(self, image_data, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
         self.logger.info('captcha start | 开始处理验证码')
         self.timer.start()
-        return self.image_stream(BytesIO(image_data), show, length, invalid_charset, need_pretreat, lang)
+        with BytesIO(image_data) as content:
+            return self.image_stream(content, show, length, invalid_charset, need_pretreat, lang)
 
     def image_obj(self, image, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
         if show:

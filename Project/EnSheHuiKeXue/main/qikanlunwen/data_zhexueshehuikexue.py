@@ -75,7 +75,7 @@ class SpiderMain(BastSpiderMain):
         return b_valid
 
     # 获取文档实体字段
-    def document(self, pdf_dict, gLock):
+    def document(self, pdf_dict):
         logger.debug('document | 开始获取内容')
         self.timer.start()
         pdf_url = pdf_dict['url']
@@ -84,7 +84,7 @@ class SpiderMain(BastSpiderMain):
         if pdf_resp is None:
             return
         # 处理验证码
-        pdf_resp = self.captcha_processor.process(pdf_resp, gLock)
+        pdf_resp = self.captcha_processor.process(pdf_resp)
         if pdf_resp is None:
             return
 
@@ -124,7 +124,7 @@ class SpiderMain(BastSpiderMain):
                 if pdf_resp is None:
                     return
                 # 处理验证码
-                pdf_resp = self.captcha_processor.process(pdf_resp, gLock)
+                pdf_resp = self.captcha_processor.process(pdf_resp)
                 if pdf_resp is None:
                     return
                 continue
@@ -221,7 +221,7 @@ class SpiderMain(BastSpiderMain):
         else:
             return
 
-    def handle(self, task_data, save_data, gLock):
+    def handle(self, task_data, save_data):
         # print(task_data)
         url = task_data.get('url')
         _id = re.findall(r"id=(\w+)$", url)[0]
@@ -234,7 +234,7 @@ class SpiderMain(BastSpiderMain):
         if profile_resp is None:
             return
         # 处理验证码
-        profile_resp = self.captcha_processor.process(profile_resp, gLock)
+        profile_resp = self.captcha_processor.process(profile_resp)
         if profile_resp is None:
             return
 
@@ -340,7 +340,7 @@ class SpiderMain(BastSpiderMain):
             # 删除响应数据缓存
             self.server.clear()
             # 存储文档实体及文档本身
-            suc = self.document(pdf_dict=pdf_dict, gLock=gLock)
+            suc = self.document(pdf_dict=pdf_dict)
             if not suc:
                 return
 
@@ -379,7 +379,7 @@ class SpiderMain(BastSpiderMain):
         # 采集脚本版本号
         save_data['script_version'] = 'V1.3'
 
-    def run(self, gLock):
+    def run(self):
         logger.info('thread start')
         task_timer = timers.Timer()
         # 第一次请求的等待时间
@@ -403,7 +403,7 @@ class SpiderMain(BastSpiderMain):
                     task_data = json.loads(task)
                     sha = task_data['sha']
                     # 获取字段值存入字典并返回sha
-                    self.handle(task_data=task_data, save_data=save_data, gLock=gLock)
+                    self.handle(task_data=task_data, save_data=save_data)
                     # 保存数据到Hbase
                     if not save_data:
                         # 逻辑删除任务
@@ -441,10 +441,10 @@ class SpiderMain(BastSpiderMain):
                 return
 
 
-def start(gLock):
+def start():
     main = SpiderMain()
     try:
-        main.run(gLock)
+        main.run()
     except:
         logger.exception(str(traceback.format_exc()))
 
@@ -460,12 +460,11 @@ def process_start():
     # gevent.joinall(g_list)
 
     # self.run()
-    # 线程锁
-    gLock = threading.Lock()
+
     # 创建线程池
     tpool = ThreadPoolExecutor(max_workers=config.THREAD_NUM)
     for i in range(config.THREAD_NUM):
-        tpool.submit(start, gLock)
+        tpool.submit(start)
     tpool.shutdown(wait=True)
 
 
