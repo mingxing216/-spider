@@ -532,11 +532,11 @@ class CaptchaProcessor(object):
                     form_data = self.server.get_captcha(resp.text)
                     image_url = self.server.get_img_url(resp.text)
                     img_content = self.downloader.get_resp(url=image_url, method='GET', s=self.session).content
-                    data_dict = self.verfication_code.get_code_from_img_content(img_content)
-                    code = data_dict['result']
+                    # data_dict = self.verfication_code.get_code_from_img_content(img_content)
+                    # code = data_dict['result']
                     # # 获取线程锁
                     # gLock.acquire()
-                    # code = self.recognize_code.image_data(img_content, show=False, length=4, invalid_charset="^0-9^A-Z^a-z")
+                    code = self.recognize_code.image_data(img_content, show=False, length=4, invalid_charset="^0-9^A-Z^a-z")
                     # # 解锁
                     # gLock.release()
                     form_data['iCode'] = code

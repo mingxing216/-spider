@@ -18,7 +18,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class RecognizeCode(object):
-    def __init__(self, logger):
+    def __init__(self, logger=None):
         self.total = 0
         self.succ_count = 0
         self.failed_count = 0
@@ -29,6 +29,8 @@ class RecognizeCode(object):
         return self.image_obj(Image.open(image_stream), show, length, invalid_charset, need_pretreat, lang)
 
     def image_file(self, file_name, show=False, length=4, invalid_charset='', need_pretreat=True, lang='num'):
+        self.logger.info('captcha start | 开始处理验证码')
+        self.timer.start()
         with open(file_name, 'rb') as file:
             return self.image_stream(file, show, length, invalid_charset, need_pretreat, lang)
 

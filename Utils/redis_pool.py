@@ -73,22 +73,22 @@ def _redisLock(func):
 
 class RedisPoolUtils(object):
     def __init__(self, number):
-        self.REDIS_HOST = settings.REDIS_HOST
-        self.REDIS_PORT = settings.REDIS_PORT
-        self.REDIS_PASSWORD = settings.REDIS_PASSWORD
-        self.REDIS_POOL_MAX_NUMBER = number
+        self.redis_host = settings.REDIS_HOST
+        self.redis_port = settings.REDIS_PORT
+        self.redis_password = settings.REDIS_PASSWORD
+        self.redis_pool_max_number = number
+        self.pool = redis.ConnectionPool(host=self.redis_host, port=self.redis_port, password=self.redis_password,
+                                         max_connections=self.redis_pool_max_number)
 
-        def createRedisPool():
-            """
-            创建redis连接池
-            :return: redis对象
-            """
-            pool = redis.ConnectionPool(host=self.REDIS_HOST, port=self.REDIS_PORT, password=self.REDIS_PASSWORD,
-                                        max_connections=self.REDIS_POOL_MAX_NUMBER)
-            redis_client = redis.StrictRedis(connection_pool=pool)
-            return redis_client
+    @property
+    def conn(self):
+        if not hasattr(self, '_conn'):
+            self.getConnection()
 
-        self.redis_client = createRedisPool()
+        return self._conn
+
+    def getConnection(self):
+        self._conn = redis.StrictRedis(connection_pool=self.pool)
 
     # 获取并删除一个set元素【分布式】
     # @_redisLock
@@ -98,7 +98,7 @@ class RedisPoolUtils(object):
         注意： 必须设置lockname， 本函数基于分布式， lockname是用来设置redis锁的。不设置会出问题， 名字根据自己喜好起
         :return:元素
         """
-        value = self.redis_client.spop(kwargs['key'])
+        value = self.conn.spop(kwargs['key'])
         if value:
             value = value.decode('utf-8')
             return value
@@ -119,7 +119,7 @@ class RedisPoolUtils(object):
         except:
             count = 1
         for i in range(count):
-            re_value = self.redis_client.spop(kwargs['key'])
+            re_value = self.conn.spop(kwargs['key'])
             if re_value:
                 re_value = re_value.decode('utf-8')
                 return_data.append(re_value)
@@ -135,10 +135,10 @@ class RedisPoolUtils(object):
         :param value: 值
         :return: True/False
         """
-        status = self.redis_client.set(key, value)
+        status = self.conn.set(key, value)
 
         if over_time:
-            self.redis_client.expire(key, over_time)
+            self.conn.expire(key, over_time)
 
         return status
 
@@ -148,7 +148,7 @@ class RedisPoolUtils(object):
         :param key: 键
         :return: 值
         """
-        re_value = self.redis_client.get(key)
+        re_value = self.conn.get(key)
 
         return re_value.decode('utf-8')
 
@@ -159,7 +159,7 @@ class RedisPoolUtils(object):
         :param over_time: 有效期【秒】
         :return: Ture/False
         """
-        status = self.redis_client.expire(key, over_time)
+        status = self.conn.expire(key, over_time)
 
         return status
 
@@ -169,7 +169,7 @@ class RedisPoolUtils(object):
         :param key: 键
         :return: 成功数|失败0
         """
-        status = self.redis_client.delete(key)
+        status = self.conn.delete(key)
 
         return status
 
@@ -182,7 +182,7 @@ class RedisPoolUtils(object):
         :return: 查询出的列表
         """
         return_data = []
-        datas = self.redis_client.lrange(key, start, end)
+        datas = self.conn.lrange(key, start, end)
         for re_value in datas:
             re_value = re_value.decode('utf-8')
             return_data.append(re_value)
@@ -194,7 +194,7 @@ class RedisPoolUtils(object):
         :param key: 列表名
         :param value: 值
         """
-        len_list = self.redis_client.lpush(key, value)
+        len_list = self.conn.lpush(key, value)
 
         return len_list  # 列表中的元素数量
 
@@ -206,7 +206,7 @@ class RedisPoolUtils(object):
         :param value: value
         :return: 删除成功数
         """
-        status = self.redis_client.lrem(name=key, count=count, value=value)
+        status = self.conn.lrem(name=key, count=count, value=value)
 
         return status
 
@@ -216,7 +216,7 @@ class RedisPoolUtils(object):
         :param key: 集合名
         :return: 元素数量
         """
-        proxy_number = self.redis_client.scard(key)
+        proxy_number = self.conn.scard(key)
 
         return proxy_number
 
@@ -227,7 +227,7 @@ class RedisPoolUtils(object):
         :param value: 元素
         :return: 当前元素数量
         """
-        ok_number = self.redis_client.sadd(key, value)
+        ok_number = self.conn.sadd(key, value)
 
         return ok_number  # 插入成功数量
 
@@ -238,7 +238,7 @@ class RedisPoolUtils(object):
         :param num: 获取数量
         :return: 元素列表
         """
-        re_value = self.redis_client.srandmember(key, num)
+        re_value = self.conn.srandmember(key, num)
         data_list = []
         for proxy_b in re_value:
             proxy = proxy_b.decode('utf8')
@@ -253,7 +253,7 @@ class RedisPoolUtils(object):
         :param value: 元素
         :return: 成功数
         """
-        status = self.redis_client.srem(key, value)
+        status = self.conn.srem(key, value)
 
         return status
 
@@ -265,7 +265,7 @@ class RedisPoolUtils(object):
         :return: True | False
         """
 
-        return self.redis_client.sismember(key, value)
+        return self.conn.sismember(key, value)
 
     # 查询集合内所有元素
     def smembers(self, key):
@@ -275,7 +275,7 @@ class RedisPoolUtils(object):
         :return: 值
         """
         return_data = []
-        datas = self.redis_client.smembers(key)
+        datas = self.conn.smembers(key)
         for re_value in datas:
             re_value = re_value.decode('utf-8')
             return_data.append(re_value)
@@ -285,5 +285,6 @@ class RedisPoolUtils(object):
 
 if __name__ == '__main__':
     obj = RedisPoolUtils(5)
-    data = obj.smembers(key='demo')
+    record = obj.sadd('demo', '2021年了')
+    data = obj.smembers('demo')
     print(data)
