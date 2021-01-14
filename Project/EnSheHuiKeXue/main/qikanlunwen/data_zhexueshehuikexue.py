@@ -62,12 +62,13 @@ class SpiderMain(BastSpiderMain):
     def is_valid_pdf_bytes_io(self, content, url, parent_url):
         b_valid = True
         try:
+            logger.info('document | 开始检测PDF文件')
             reader = PdfFileReader(BytesIO(content), strict=False)
             if reader.getNumPages() < 1:  # 进一步通过页数判断。
                 b_valid = False
         except:
             msg = '检测PDF文件出错, url: {}'.format(url)
-            logger.error(msg)
+            logger.error('document | {}'.format(msg))
             data_dict = {'url': parent_url}
             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
             return
@@ -184,6 +185,7 @@ class SpiderMain(BastSpiderMain):
         self.server.clear()
 
         # ===================公共字段
+        logger.info('resolve start | 文档实体开始解析')
         # url
         doc_data['url'] = pdf_dict['url']
         # 生成key
@@ -212,6 +214,7 @@ class SpiderMain(BastSpiderMain):
         doc_data['metadata_version'] = 'V1.1'
         # 采集脚本版本号
         doc_data['script_version'] = 'V1.3'
+        logger.info('resolve end | 文档实体解析完成')
 
         # 保存数据到Hbase
         sto = self.dao.save_data_to_hbase(data=doc_data, ss_type=doc_data['ss'], sha=doc_data['sha'], url=doc_data['url'])
@@ -243,6 +246,7 @@ class SpiderMain(BastSpiderMain):
         #     f.write(profile_text)
 
         # ========================== 获取实体 ============================
+        logger.info('resolve start | 论文实体开始解析')
         # 获取标题
         save_data['title'] = self.server.get_paper_title(profile_text)
         # 获取作者
@@ -339,6 +343,7 @@ class SpiderMain(BastSpiderMain):
 
             # 删除响应数据缓存
             self.server.clear()
+            logger.info('resolve end | 论文实体解析完成')
             # 存储文档实体及文档本身
             suc = self.document(pdf_dict=pdf_dict)
             if not suc:

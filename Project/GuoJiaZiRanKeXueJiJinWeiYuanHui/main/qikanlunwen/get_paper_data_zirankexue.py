@@ -59,8 +59,8 @@ class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
         self.num = 0
-        self.f = open('nscp_test_data.txt', 'a+')
-        self.f_fulltext = open('nscp_fulltext_data.txt', 'a+')
+        self.f = open('/Users/master/Desktop/nscp_test_data.txt', 'a+')
+        self.f_fulltext = open('/Users/master/Desktop/nscp_fulltext_data.txt', 'a+')
 
     def __get_resp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None):
         """

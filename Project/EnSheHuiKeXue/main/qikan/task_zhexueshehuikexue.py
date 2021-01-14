@@ -94,33 +94,35 @@ class SpiderMain(BaseSpiderMain):
                 # 论文列表页进入队列
                 self.dao.queue_tasks_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=paper_list)
 
-    def paper_total_page(self):
-        self.timer.start()
-        while 1:
-            # 获取任务
-            category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG)
-            if category:
-                # 数据类型转换
-                task = json.loads(category)
-                # print(task)
-                paper_catalog_url = task['url']
+    def get_page_count(self, first_url, task):
+        """获取论文列表页总页数"""
+        paper_resp = self.captcha_processor.process_first_request(url=first_url, method='GET', s=self.s)
+        if not paper_resp:
+            logger.error('downloader | 论文第 1 页列表页响应失败, url: {}'.format(first_url))
+            # 队列一条任务
+            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+            return
+        # 处理验证码
+        paper_resp = self.captcha_processor.process(paper_resp)
+        if paper_resp is None:
+            # 队列一条任务
+            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+            return
 
-                paper_resp = self.download.get_resp(url=paper_catalog_url, method='GET', s=self.s)
-                if not paper_resp:
-                    logger.error('downloader | 论文列表页首页响应失败, url: {}'.format(paper_catalog_url))
-                    # 队列一条任务
-                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
-                    return
+        # 获取论文列表总页数
+        page_counts = self.server.get_paper_total_page(text=paper_resp.text)
 
-                # 获取论文列表总页数
-                paper_pages = self.server.get_paper_total_page(text=paper_resp.text)
-                task['totalPage'] = paper_pages
-                # 队列一条任务
-                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
+        return page_counts
 
-            else:
-                logger.info('task | 队列中已无任务，结束程序 | use time: {}'.format(self.timer.use_time()))
-                return
+    @staticmethod
+    def get_all_pages(start_page, end_page):
+        """获取论文列表页所有url"""
+        all_pages = []
+        for count in range(start_page, end_page + 1):
+            page = 'http://103.247.176.188/Search.aspx?qx=&ob=dd&start={}'.format((count - 1) * 10)
+            all_pages.append(page)
+
+        return all_pages
 
     def get_profile(self, url_list):
         """论文详情种子存入mysql数据库"""
@@ -133,102 +135,99 @@ class SpiderMain(BaseSpiderMain):
 
     def get_current_catalog(self, first_url, journal_url, current_url, task):
         """论文列表当前页翻页"""
-        next_resp = self.captcha_processor.process_first_request(url=first_url, method='GET', s=self.s)
-        if not next_resp:
-            logger.error('downloader | 论文第 1 页列表页响应失败, url: {}'.format(first_url))
-            # 队列一条任务
-            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
-            return
-        # 处理验证码
-        next_resp = self.captcha_processor.process(next_resp)
-        if next_resp is None:
-            # 队列一条任务
-            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
-            return
+        # 获取列表总页数
+        end_page = self.get_page_count(first_url, task)
 
         try:
-            next_num = int(int(re.findall(r"\d+$", current_url)[0])/10 + 1)
+            start_page = int(int(re.findall(r"\d+$", current_url)[0])/10 + 1)
         except Exception:
-            next_num = 1
+            start_page = 1
 
-        catalog_url = current_url
-        while True:
-            if catalog_url:
-                # 请求论文列表页
-                next_resp = self.captcha_processor.process_first_request(url=catalog_url, method='GET', s=self.s)
-                if not next_resp:
-                    logger.error('downloader | 论文第 {} 页列表页响应失败, url: {}'.format(next_num, catalog_url))
-                    # 队列一条任务
-                    task['currentUrl'] = catalog_url
-                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
-                    return
-                # 处理验证码
-                next_resp = self.captcha_processor.process(next_resp)
-                if next_resp is None:
-                    # 队列一条任务
-                    task['currentUrl'] = catalog_url
-                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
-                    return
-                next_text = next_resp.text
-                # 响应成功，添加log日志
-                logger.info('downloader | 已翻到第{}页'.format(next_num))
-                # 获取论文详情种子、全文种子
-                paper_url_list = self.server.get_paper_list(next_text, journal_url)
-                # 详情种子存储
-                if paper_url_list:
-                    self.get_profile(paper_url_list)
-                # 获取下一页
-                catalog_url = self.server.get_next_page(next_text)
-                # 翻页计数
-                next_num += 1
+        all_pages = self.get_all_pages(start_page, end_page)
 
-            else:
-                logger.info('downloader | 已翻到最后一页')
+        next_num = start_page
+        for page_url in all_pages:
+            # 请求论文列表页
+            next_resp = self.captcha_processor.process_first_request(url=page_url, method='GET', s=self.s)
+            if not next_resp:
+                logger.error('downloader | 论文第 {} 页列表页响应失败, url: {}'.format(next_num, page_url))
+                # 队列一条任务
+                task['currentUrl'] = page_url
+                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
                 return
+            # 处理验证码
+            next_resp = self.captcha_processor.process(next_resp)
+            if next_resp is None:
+                # 队列一条任务
+                task['currentUrl'] = page_url
+                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                return
+            next_text = next_resp.text
+            # 响应成功，添加log日志
+            logger.info('downloader | 已翻到第{}页'.format(next_num))
+            # 获取论文详情种子、全文种子
+            paper_url_list = self.server.get_paper_list(next_text, journal_url)
+            # 详情种子存储
+            if paper_url_list:
+                self.get_profile(paper_url_list)
+
+            # 翻页计数
+            next_num += 1
+
+        else:
+            logger.info('downloader | 已翻到最后一页')
+            return
 
     def get_paper_catalog(self, catalog_url, journal_url, task):
         """论文列表页翻页"""
-        next_num = 1
-        while True:
-            if catalog_url:
-                # 请求论文列表页
-                next_resp = self.captcha_processor.process_first_request(url=catalog_url, method='GET', s=self.s)
-                if not next_resp:
-                    logger.error('downloader | 论文第 {} 页列表页响应失败, url: {}'.format(next_num, catalog_url))
-                    # 队列一条任务
-                    task['currentUrl'] = catalog_url
-                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
-                    return
-                # 处理验证码
-                next_resp = self.captcha_processor.process(next_resp)
-                if next_resp is None:
-                    # 队列一条任务
-                    task['currentUrl'] = catalog_url
-                    self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG, data=task)
-                    return
-                next_text = next_resp.text
-                # 响应成功，添加log日志
-                logger.info('downloader | 已翻到第{}页'.format(next_num))
-                # 获取论文详情种子、全文种子
-                paper_url_list = self.server.get_paper_list(next_text, journal_url)
-                # 详情种子存储
-                if paper_url_list:
-                    self.get_profile(paper_url_list)
-                # 获取下一页
-                catalog_url = self.server.get_next_page(next_text)
-                # 翻页计数
-                next_num += 1
+        # 获取列表总页数
+        end_page = self.get_page_count(catalog_url, task)
+        if end_page is None:
+            return
 
-            else:
-                logger.info('downloader | 已翻到最后一页')
+        start_page = 1
+
+        all_pages = self.get_all_pages(start_page, end_page)
+
+        next_num = start_page
+        for page_url in all_pages:
+            # 请求论文列表页
+            next_resp = self.captcha_processor.process_first_request(url=page_url, method='GET', s=self.s)
+            if not next_resp:
+                logger.error('downloader | 论文第 {} 页列表页响应失败, url: {}'.format(next_num, page_url))
+                # 队列一条任务
+                task['currentUrl'] = page_url
+                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
                 return
+            # 处理验证码
+            next_resp = self.captcha_processor.process(next_resp)
+            if next_resp is None:
+                # 队列一条任务
+                task['currentUrl'] = page_url
+                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                return
+            next_text = next_resp.text
+            # 响应成功，添加log日志
+            logger.info('downloader | 已翻到第{}页'.format(next_num))
+            # 获取论文详情种子、全文种子
+            paper_url_list = self.server.get_paper_list(next_text, journal_url)
+            # 详情种子存储
+            if paper_url_list:
+                self.get_profile(paper_url_list)
+
+            # 翻页计数
+            next_num += 1
+
+        else:
+            logger.info('downloader | 已翻到最后一页')
+            return
 
     def run(self):
         self.timer.start()
         while 1:
             # 获取任务
-            category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAGE_CATALOG)
-            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2267338%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=67338", "totalPage": "634", "currentUrl": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2267338%22&ob=dd"}'
+            category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG)
+            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2267338%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=67338", "totalPage": "634", "currentUrl": "http://103.247.176.188/Search.aspx?qx=&ob=dd&start=300"}'
             # print(category)
             if category:
                 # 数据类型转换

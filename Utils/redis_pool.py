@@ -83,11 +83,11 @@ class RedisPoolUtils(object):
     @property
     def conn(self):
         if not hasattr(self, '_conn'):
-            self.getConnection()
+            self.get_connection()
 
         return self._conn
 
-    def getConnection(self):
+    def get_connection(self):
         self._conn = redis.StrictRedis(connection_pool=self.pool)
 
     # 获取并删除一个set元素【分布式】

@@ -95,11 +95,12 @@ class Server(object):
     def get_paper_total_page(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            total_page = selector.xpath("//div[@class='term-title']//td/b/text()").extract_first()
+            total_data = selector.xpath("//div[@class='term-title']//td/b/text()").extract_first()
+            total_page = int(total_data)//10 + 1 if int(total_data) % 10 else int(total_data)//10
 
         except Exception:
+            total_page = 1
             self.clear()
-            return 1
 
         self.clear()
         return total_page
@@ -543,6 +544,7 @@ class CaptchaProcessor(object):
         for i in range(retry_count):
             if captcha_page:
                 try:
+                    self.logger.info('process | 出现验证码')
                     self.captcha_timer.start()
                     # 获取验证码及相关参数
                     form_data = self.server.get_captcha(resp.text)
