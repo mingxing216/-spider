@@ -15,8 +15,13 @@ from Utils.verfication_code import VerificationCode
 class DomResultHolder(object):
     def __init__(self):
         self.dict = {}
+        self.text = None
 
     def get(self, mode, text):
+        if text != self.text:
+            self.dict.clear()
+            self.text = text
+
         if mode in self.dict:
             return self.dict[mode]
 
@@ -30,17 +35,11 @@ class DomResultHolder(object):
 
         raise NotImplementedError
 
-    def clear(self):
-        self.dict.clear()
-
 
 class Server(object):
     def __init__(self, logging):
         self.logger = logging
         self.dom_holder = DomResultHolder()
-
-    def clear(self):
-        self.dom_holder.clear()
 
     # ---------------------
     # task script
@@ -59,10 +58,8 @@ class Server(object):
             total_page = re.findall(r"\d+/(\d+)", span)[0]
 
         except Exception:
-            self.clear()
             return 1
 
-        self.clear()
         return total_page
 
     # 获取期刊详情种子及附加信息
@@ -85,10 +82,8 @@ class Server(object):
                 paper_catalog_list.append(paper_dict)
 
         except Exception:
-            self.clear()
             return journal_data_list, paper_catalog_list
 
-        self.clear()
         return journal_data_list, paper_catalog_list
 
     # 获取论文列表页总页数
@@ -100,9 +95,7 @@ class Server(object):
 
         except Exception:
             total_page = 1
-            self.clear()
 
-        self.clear()
         return total_page
 
     # 获取论文详情及全文种子
@@ -127,10 +120,8 @@ class Server(object):
                 paper_data_list.append(paper_dict)
 
         except Exception:
-            self.clear()
             return paper_data_list
 
-        self.clear()
         return paper_data_list
 
     # 获取下一页
@@ -141,10 +132,8 @@ class Server(object):
             next_url = 'http://103.247.176.188/' + next_a
 
         except Exception:
-            self.clear()
             next_url = None
 
-        self.clear()
         return next_url
 
     # 获取验证码参数
@@ -157,10 +146,8 @@ class Server(object):
             captcha_data['btnOk'] = selector.xpath("//*[@id='btnOk']/@value").extract_first()
 
         except Exception:
-            self.clear()
             return captcha_data
 
-        self.clear()
         return captcha_data
 
     # 获取图片url
@@ -170,101 +157,15 @@ class Server(object):
             img_url = 'http://103.247.176.188/' + selector.xpath("//img[@id='imgCode1']/@src").extract_first()
 
         except Exception:
-            self.clear()
             return ''
 
-        self.clear()
         return img_url
-
-    # 获取期刊详情种子及附加信息
-    def getQiKanDetailUrl(self, text, xuekeleibie):
-        return_data = []
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            href_list = selector.xpath("//ul[@class='cover_list']/li/a[@class='name']/@href").extract()
-            for href in href_list:
-                data_dict = {}
-                data_dict['s_xuekeleibie'] = xuekeleibie
-                data_dict['url'] = 'http://www.nssd.org' + href
-                return_data.append(data_dict)
-
-        except Exception:
-            return return_data
-
-        return return_data
-
-    # 获取期刊年列表
-    def getYears(self, text, xuekeleibie, qikanUrl):
-        return_data = []
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            a_list = selector.xpath("//div[@id='qkyearslist']/ul/li/a")
-            for a in a_list:
-                data_dict = {}
-                data_dict['url'] = 'http://www.nssd.org' + a.xpath("./@href").extract_first().strip()
-                data_dict['year'] = a.xpath("./text()").extract_first().strip().replace('年', '')
-                data_dict['xuekeleibie'] = xuekeleibie
-                data_dict['qikanUrl'] = qikanUrl
-
-                return_data.append(data_dict)
-                # yield data_dict
-
-        except Exception:
-            return return_data
-
-        return return_data
-
-    # 获取期号列表
-    def getIssues(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            a_list = selector.xpath("//div[@id='numlist']/ul/li/a")
-            for a in a_list:
-                data_dict = {'url': 'http://www.nssd.org' + a.xpath("./@href").extract_first().strip(),
-                             'issue': re.findall(r"年(.*)期", a.xpath("./text()").extract_first().strip())[0]}
-
-                yield data_dict
-
-        except Exception:
-            return
-
-    # 获取期论文刊详情种子及附加信息
-    def getLunWenDetailUrl(self, text, qikanUrl, xuekeleibie, year, issue):
-        return_data = []
-        selector = Selector(text=text)
-        try:
-            tr_list = selector.xpath("//table[@class='t_list']//tr[position()>1]")
-            for tr in tr_list:
-                data_dict = {}
-                try:
-                    data_dict['url'] = 'http://www.nssd.org' + tr.xpath("./td[1]/a/@href").extract_first().strip()
-                except:
-                    continue
-                try:
-                    data_dict['authors'] = re.sub(r"[;；]", "|", tr.xpath("./td[2]/text()").extract_first().strip())
-                except:
-                    data_dict['authors'] = ''
-                try:
-                    data_dict['pdfUrl'] = 'http://www.nssd.org' + tr.xpath("./td[3]/a/@href").extract_first().strip()
-                except:
-                    data_dict['pdfUrl'] = ''
-                data_dict['id'] = re.findall(r"id=(.*)?&?", data_dict['url'])[0]
-                data_dict['qikanUrl'] = qikanUrl
-                data_dict['xuekeleibie'] = xuekeleibie
-                data_dict['year'] = year
-                data_dict['issue'] = issue
-                return_data.append(data_dict)
-
-        except Exception:
-            return return_data
-
-        return return_data
 
     # ---------------------
     # data script
     # ---------------------
 
-    # ====== 期刊实体
+    # ====== 期刊、论文、文档实体
     # 是否包含中文（判断语种）
     def hasChinese(self, data):
         for ch in data:

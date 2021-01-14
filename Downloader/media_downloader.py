@@ -51,7 +51,7 @@ class BaseDownloader(object):
 
         if method.upper() == 'GET':
             if session:
-                requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
+                # requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
                 # s = requests.session()
                 session.keep_alive = False  # 关闭多余连接
                 # start_time = float(time.time())
@@ -70,7 +70,7 @@ class BaseDownloader(object):
 
         if method.upper() == 'POST':
             if session:
-                requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
+                # requests.adapters.DEFAULT_RETRIES = 5  # 增加重连次数
                 # s = requests.session()
                 session.keep_alive = False  # 关闭多余连接
                 r = session.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies, timeout=self.timeout)

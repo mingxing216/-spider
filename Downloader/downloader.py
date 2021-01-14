@@ -13,9 +13,9 @@ from requests.exceptions import ReadTimeout
 
 
 def _error(func):
-    def wrapper(*args, **kwargs):
+    def wrapper(self, *args, **kwargs):
         try:
-            data = func(*args, **kwargs)
+            data = func(self, *args, **kwargs)
             if data.status_code in [200, 206]:
                 return {'code': 0, 'data': data, 'status': data.status_code, 'message': 'OK'}
 
@@ -45,21 +45,21 @@ class BaseDownloader(object):
     def get(self, url, session=None, headers=None, data=None, proxies=None, cookies=None):
         self.logger.info('downloader | GET 请求')
         if session is not None:
-            adapters.DEFAULT_RETRIES = 5  # 增加重连次数
+            # adapters.DEFAULT_RETRIES = 5  # 增加重连次数
             session.keep_alive = False  # 关闭多余连接
             r = session.get(url=url, headers=headers, params=data, cookies=cookies, proxies=proxies,
                             stream=self.stream, timeout=self.timeout)
         else:
             r = requests.get(url=url, headers=headers, params=data, cookies=cookies, proxies=proxies,
                              stream=self.stream, timeout=self.timeout)
-
+        r.close()
         return r
 
     @_error
     def post(self, url, session=None, headers=None, data=None, proxies=None, cookies=None):
         self.logger.info('downloader | POST 请求')
         if session is not None:
-            adapters.DEFAULT_RETRIES = 5  # 增加重连次数
+            # adapters.DEFAULT_RETRIES = 5  # 增加重连次数
             # s = requests.session()
             session.keep_alive = False  # 关闭多余连接
             r = session.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies,
@@ -67,7 +67,7 @@ class BaseDownloader(object):
         else:
             r = requests.post(url=url, headers=headers, data=data, proxies=proxies, cookies=cookies,
                               stream=self.stream, timeout=self.timeout)
-
+        r.close()
         return r
 
     def begin(self, url, session=None, headers=None, data=None, proxies=None, cookies=None, method='GET'):
@@ -83,7 +83,7 @@ class BaseDownloader(object):
             resp_data = self.post(url=url, session=session, headers=headers, data=data,
                                   cookies=cookies, proxies=proxies)
         else:
-            self.logger.error('request method error: {}'.format(method))
+            self.logger.error('downloader | request method error: {}'.format(method))
             return
 
         if resp_data['code'] == 0 or resp_data['code'] == 1:

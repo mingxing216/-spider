@@ -34,7 +34,7 @@ LOG_NAME = '英文论文_data'  # LOG名
 logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 
 
-class BastSpiderMain(object):
+class BaseSpiderMain(object):
     def __init__(self):
         # 下载中间件
         self.download = download_middleware.Downloader(logging=logger,
@@ -50,7 +50,7 @@ class BastSpiderMain(object):
                            redispool_number=config.REDIS_POOL_NUMBER)
 
 
-class SpiderMain(BastSpiderMain):
+class SpiderMain(BaseSpiderMain):
     def __init__(self):
         super().__init__()
         self.timer = timers.Timer()
@@ -181,8 +181,6 @@ class SpiderMain(BastSpiderMain):
         doc_data['source_website'] = ""
         # 关联论文
         doc_data['rela_paper'] = pdf_dict['relEsse']
-
-        self.server.clear()
 
         # ===================公共字段
         logger.info('resolve start | 文档实体开始解析')
@@ -341,8 +339,6 @@ class SpiderMain(BastSpiderMain):
             pdf_dict['relEsse'] = self.server.rela_paper(url, key, sha)
             pdf_dict['relPics'] = save_data['rela_document']
 
-            # 删除响应数据缓存
-            self.server.clear()
             logger.info('resolve end | 论文实体解析完成')
             # 存储文档实体及文档本身
             suc = self.document(pdf_dict=pdf_dict)
@@ -350,8 +346,6 @@ class SpiderMain(BastSpiderMain):
                 return
 
         else:
-            # 删除响应数据缓存
-            self.server.clear()
             save_data['rela_document'] = {}
 
         # ======================公共字段

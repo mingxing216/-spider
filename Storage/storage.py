@@ -48,10 +48,10 @@ class Dao(object):
 
         if int(mysqlpool_number) == 0 or int(mysqlpool_number) < 0:
             # 默认创建一个mysql链接
-            self.mysql_client = mysql_pool.MysqlPool(1)
+            self.mysql_client = mysql_pool.MysqlPool(1, logger=logging)
         else:
             # 创建指定个数mysql链接
-            self.mysql_client = mysql_pool.MysqlPool(int(mysqlpool_number))
+            self.mysql_client = mysql_pool.MysqlPool(int(mysqlpool_number), logger=logging)
 
         if int(redispool_number) == 0 or int(redispool_number) < 0:
             # 默认创建一个redis链接

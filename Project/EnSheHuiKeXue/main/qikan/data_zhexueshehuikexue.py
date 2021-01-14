@@ -105,8 +105,6 @@ class SpiderMain(BaseSpiderMain):
         # 期刊网址
         save_data['journal_website'] = server.get_journal_website(profile_text, '期刊网址')
 
-        server.clear()
-
         # ======================公共字段
         # url
         save_data['url'] = url

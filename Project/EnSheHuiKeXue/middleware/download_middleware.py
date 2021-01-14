@@ -52,6 +52,7 @@ class Downloader(downloader.BaseDownloader):
         # 请求异常重试次数
         err_count = 0
         while 1:
+            self.logger.info('downloaer | 添加请求头')
             # 设置请求头
             headers = {
                 # 'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -70,6 +71,7 @@ class Downloader(downloader.BaseDownloader):
             if self.cookie_obj is not None and user is not None:
                 self.cookie_obj.inc_cookie(user)
 
+            self.logger.info('downloaer | 添加代理')
             # 设置proxy
             proxies = None
             ip = None
@@ -84,6 +86,10 @@ class Downloader(downloader.BaseDownloader):
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
+
+            self.logger.info('downloaer | 返回结果做处理')
+            if down_data is None:
+                return
 
             # 返回值中添加IP信息
             down_data['proxy_ip'] = ip
