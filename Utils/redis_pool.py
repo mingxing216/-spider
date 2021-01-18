@@ -27,41 +27,41 @@ def _redisLock(func):
             # 生成锁时间【当前时间戳 + 锁有效时间】
             lock_time_out = now + EXPIRY
             # 设置redis锁
-            lock_status = self.redis_client.setnx(lockname, lock_time_out)
+            lock_status = self.conn.setnx(lockname, lock_time_out)
             # 如果返回1， 代表抢锁成功
             if lock_status == 1:
                 lock_data = func(self, *args, **kwargs)
                 # 获取当前时间戳
                 now = timeutils.get_current_second()
                 # 获取当前redis设置的锁时间戳
-                now_redis_lock = self.redis_client.get(lockname)
+                now_redis_lock = self.conn.get(lockname)
                 if now_redis_lock:
                     # 如果当前时间戳小于锁设置时间， 解锁
                     if int(now) < int(now_redis_lock):
-                        self.redis_client.delete(lockname)
+                        self.conn.delete(lockname)
 
                     return lock_data
             # 如果返回0， 代表抢锁失败
             if lock_status == 0:
                 # 获取redis中锁的过期时间
-                redis_lock_out = self.redis_client.get(lockname)
+                redis_lock_out = self.conn.get(lockname)
                 # 判断这个锁是否已超时, 如果当前时间大于锁时间， 说明锁已超时
                 if redis_lock_out:
                     if now > int(redis_lock_out):
                         # 生成锁时间【当前时间戳 + 锁有效时间】
                         lock_time_out = now + EXPIRY
                         # 抢锁
-                        old_lock_time = self.redis_client.getset(lockname, lock_time_out)
+                        old_lock_time = self.conn.getset(lockname, lock_time_out)
                         # 判断抢锁后返回的时间是否与之前获取的锁过期时间相等， 相等说明抢锁成功
                         if int(old_lock_time) == int(redis_lock_out):
                             lock_data = func(self, *args, **kwargs)
                             # 获取当前时间戳
                             now = timeutils.get_current_second()
                             # 获取当前redis设置的锁时间戳
-                            now_redis_lock = self.redis_client.get(lockname)
+                            now_redis_lock = self._conn.get(lockname)
                             # 如果当前时间戳小于锁设置时间， 解锁
                             if int(now) < int(now_redis_lock):
-                                self.redis_client.delete(lockname)
+                                self.conn.delete(lockname)
 
                             return lock_data
                         else:
@@ -78,7 +78,7 @@ class RedisPoolUtils(object):
         self.redis_password = settings.REDIS_PASSWORD
         self.redis_pool_max_number = number
         self.pool = redis.ConnectionPool(host=self.redis_host, port=self.redis_port, password=self.redis_password,
-                                         max_connections=self.redis_pool_max_number)
+                                         max_connections=self.redis_pool_max_number, decode_responses=True)
 
     @property
     def conn(self):
@@ -88,7 +88,7 @@ class RedisPoolUtils(object):
         return self._conn
 
     def get_connection(self):
-        self._conn = redis.StrictRedis(connection_pool=self.pool)
+        self._conn = redis.Redis(connection_pool=self.pool)
 
     # 获取并删除一个set元素【分布式】
     # @_redisLock
@@ -100,10 +100,7 @@ class RedisPoolUtils(object):
         """
         value = self.conn.spop(kwargs['key'])
         if value:
-            value = value.decode('utf-8')
             return value
-
-        return None
 
     # 获取并删除多个set元素【分布式】
     # @_redisLock
@@ -121,7 +118,6 @@ class RedisPoolUtils(object):
         for i in range(count):
             re_value = self.conn.spop(kwargs['key'])
             if re_value:
-                re_value = re_value.decode('utf-8')
                 return_data.append(re_value)
             else:
                 continue
@@ -150,7 +146,7 @@ class RedisPoolUtils(object):
         """
         re_value = self.conn.get(key)
 
-        return re_value.decode('utf-8')
+        return re_value
 
     # 设置key过期时间
     def setUpOvertime(self, key, over_time):
@@ -184,7 +180,6 @@ class RedisPoolUtils(object):
         return_data = []
         datas = self.conn.lrange(key, start, end)
         for re_value in datas:
-            re_value = re_value.decode('utf-8')
             return_data.append(re_value)
         return return_data
 
@@ -238,11 +233,11 @@ class RedisPoolUtils(object):
         :param num: 获取数量
         :return: 元素列表
         """
-        re_value = self.conn.srandmember(key, num)
+
         data_list = []
-        for proxy_b in re_value:
-            proxy = proxy_b.decode('utf8')
-            data_list.append(proxy)
+        re_value = self.conn.srandmember(key, num)
+        for re_value in re_value:
+            data_list.append(re_value)
 
         return data_list
 
@@ -277,7 +272,6 @@ class RedisPoolUtils(object):
         return_data = []
         datas = self.conn.smembers(key)
         for re_value in datas:
-            re_value = re_value.decode('utf-8')
             return_data.append(re_value)
 
         return return_data

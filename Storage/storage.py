@@ -300,7 +300,7 @@ class Dao(object):
                         data_start.use_time(), data.get('sha'), len(b_data), resp))
                 return False
 
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             self.logging.error(
                 'storage | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
                     data_start.use_time(), data.get('sha'), len(b_data), e))
@@ -395,7 +395,7 @@ class Dao(object):
                         media_start.use_time(), sha, data_dict['length'], resp))
                 return False
 
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             self.logging.error(
                 'storage | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
                     media_start.use_time(), sha, data_dict['length'], e))
@@ -563,16 +563,16 @@ class Dao(object):
             except Exception as e:
                 self.logging.error('update data error: {}'.format(e))
 
-    def get_one_task_from_redis(self, key):
+    def get_one_task_from_redis(self, key, lockname=None):
         self.timer.start()
-        ret = self._get_one_task_from_redis(key)
+        ret = self._get_one_task_from_redis(key, lockname)
         if ret is not None:
             self.logging.info('task | 获取 1 条任务 | use time: {}'.format(self.timer.use_time()))
             return ret
 
     # 从redis队列中获取1条任务
-    def _get_one_task_from_redis(self, key):
-        return self.redis_client.queue_spop(key=key)
+    def _get_one_task_from_redis(self, key, lockname=None):
+        return self.redis_client.queue_spop(key=key, lockname=lockname)
 
     def get_task_from_redis(self, key, count, lockname=None):
         self.timer.start()

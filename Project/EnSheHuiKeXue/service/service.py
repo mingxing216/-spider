@@ -3,9 +3,9 @@
 import ast
 import re
 import hashlib
-from bs4 import BeautifulSoup
-from langid import langid
+import langid
 from scrapy import Selector
+from bs4 import BeautifulSoup
 
 from Utils import timers
 from Utils.captcha import RecognizeCode
@@ -440,7 +440,7 @@ class CaptchaProcessor(object):
         return resp
 
     def process(self, resp):
-        retry_count = 50
+        retry_count = 10
         captcha_page = self.is_captcha_page(resp)
         for i in range(retry_count):
             if captcha_page:
@@ -461,6 +461,12 @@ class CaptchaProcessor(object):
                     self.request_timer.start()
                     real_url = resp.url
                     resp = self.downloader.get_resp(url=real_url, method='POST', data=form_data, s=self.session)
+                    if resp is None:
+                        self.logger.error(
+                            'process end | 验证码识别失败总时间 | use time: {} | url: {} | count: {}'.format(
+                                self.total_timer.use_time(),
+                                real_url, i+1))
+                        return
                     # 判断是否还有验证码
                     captcha_page = self.is_captcha_page(resp)
                     # if captcha_page:
@@ -470,6 +476,10 @@ class CaptchaProcessor(object):
                     self.logger.info(
                         'process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), resp.url))
                 except Exception:
+                    self.logger.error(
+                        'process end | 验证码识别失败总时间 | use time: {} | url: {} | count: {}'.format(
+                            self.total_timer.use_time(),
+                            resp.url, i))
                     return
             else:
                 self.logger.info(

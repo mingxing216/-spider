@@ -4,8 +4,6 @@ import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import requests
 
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
-
 from Log import logging
 from Utils import user_agent_u
 from Utils.captcha import RecognizeCode

@@ -43,7 +43,7 @@ class BaseDownloader(object):
 
     @_error
     def get(self, url, session=None, headers=None, data=None, proxies=None, cookies=None):
-        self.logger.info('downloader | GET 请求')
+        self.logger.debug('downloader | GET 请求')
         if session is not None:
             # adapters.DEFAULT_RETRIES = 5  # 增加重连次数
             session.keep_alive = False  # 关闭多余连接
@@ -57,7 +57,7 @@ class BaseDownloader(object):
 
     @_error
     def post(self, url, session=None, headers=None, data=None, proxies=None, cookies=None):
-        self.logger.info('downloader | POST 请求')
+        self.logger.debug('downloader | POST 请求')
         if session is not None:
             # adapters.DEFAULT_RETRIES = 5  # 增加重连次数
             # s = requests.session()
@@ -72,7 +72,6 @@ class BaseDownloader(object):
 
     def begin(self, url, session=None, headers=None, data=None, proxies=None, cookies=None, method='GET'):
         assert method.upper() == 'GET' or method.upper() == 'POST'
-        self.logger.info('downloader | 真正开始请求')
         self.timer.start()
         if method.upper() == 'GET':
             resp_data = self.get(url=url, session=session, headers=headers, data=data,

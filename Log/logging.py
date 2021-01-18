@@ -11,6 +11,7 @@ class Logger(object):
                    format=logger_format,
                    level="INFO",
                    rotation='00:00',
+                   retention='30 days',
                    # compression='zip',
                    enqueue=True,
                    encoding="utf-8")

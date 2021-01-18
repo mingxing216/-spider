@@ -13,7 +13,6 @@ import time
 import traceback
 import requests
 # from contextlib import closing
-import threading
 from io import BytesIO
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from PyPDF2 import PdfFileReader
@@ -53,6 +52,7 @@ class BaseSpiderMain(object):
 class SpiderMain(BaseSpiderMain):
     def __init__(self):
         super().__init__()
+        self.lang_api = 'http://localhost:9008/detect'
         self.timer = timers.Timer()
         self.s = requests.Session()
         self.captcha_processor = CaptchaProcessor(self.server, self.download, self.s, logger)
@@ -62,7 +62,6 @@ class SpiderMain(BaseSpiderMain):
     def is_valid_pdf_bytes_io(self, content, url, parent_url):
         b_valid = True
         try:
-            logger.info('document | 开始检测PDF文件')
             reader = PdfFileReader(BytesIO(content), strict=False)
             if reader.getNumPages() < 1:  # 进一步通过页数判断。
                 b_valid = False
@@ -183,7 +182,6 @@ class SpiderMain(BaseSpiderMain):
         doc_data['rela_paper'] = pdf_dict['relEsse']
 
         # ===================公共字段
-        logger.info('resolve start | 文档实体开始解析')
         # url
         doc_data['url'] = pdf_dict['url']
         # 生成key
@@ -212,7 +210,6 @@ class SpiderMain(BaseSpiderMain):
         doc_data['metadata_version'] = 'V1.1'
         # 采集脚本版本号
         doc_data['script_version'] = 'V1.3'
-        logger.info('resolve end | 文档实体解析完成')
 
         # 保存数据到Hbase
         sto = self.dao.save_data_to_hbase(data=doc_data, ss_type=doc_data['ss'], sha=doc_data['sha'], url=doc_data['url'])
@@ -244,7 +241,6 @@ class SpiderMain(BaseSpiderMain):
         #     f.write(profile_text)
 
         # ========================== 获取实体 ============================
-        logger.info('resolve start | 论文实体开始解析')
         # 获取标题
         save_data['title'] = self.server.get_paper_title(profile_text)
         # 获取作者
@@ -293,13 +289,25 @@ class SpiderMain(BaseSpiderMain):
         if abstract_text:
             abstract = {}
             abstract['text'] = abstract_text
-            abstract['lang'] = self.server.get_lang(abstract['text'])
+            form_data = {'q': abstract['text']}
+            try:
+                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
+                lang = lang_resp.json().get('responseData').get('language')
+            except:
+                return
+            abstract['lang'] = lang
             save_data['abstract'].append(abstract)
         en_abstract_text = self.server.get_normal_value(profile_text, '英文摘要')
         if en_abstract_text:
             en_abstract = {}
             en_abstract['text'] = en_abstract_text
-            en_abstract['lang'] = self.server.get_lang(en_abstract['text'])
+            form_data = {'q': en_abstract['text']}
+            try:
+                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
+                lang = lang_resp.json().get('responseData').get('language')
+            except:
+                return
+            en_abstract['lang'] = lang
             save_data['abstract'].append(en_abstract)
         # 获取关键词
         save_data['keyword'] = []
@@ -307,13 +315,25 @@ class SpiderMain(BaseSpiderMain):
         if keyword_text:
             keyword = {}
             keyword['text'] = keyword_text
-            keyword['lang'] = self.server.get_lang(keyword['text'])
+            form_data = {'q': keyword['text']}
+            try:
+                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
+                lang = lang_resp.json().get('responseData').get('language')
+            except:
+                return
+            keyword['lang'] = lang
             save_data['keyword'].append(keyword)
         en_keyword_text = self.server.get_en_keyword_value(profile_text, '英文关键词')
         if en_keyword_text:
             en_keyword = {}
             en_keyword['text'] = en_keyword_text
-            en_keyword['lang'] = self.server.get_lang(en_keyword['text'])
+            form_data = {'q': en_keyword['text']}
+            try:
+                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
+                lang = lang_resp.json().get('responseData').get('language')
+            except:
+                return
+            en_keyword['lang'] = lang
             save_data['keyword'].append(en_keyword)
         # 获取作者单位
         save_data['author_affiliation'] = self.server.get_author_affiliation(profile_text, '作者单位')
@@ -339,7 +359,6 @@ class SpiderMain(BaseSpiderMain):
             pdf_dict['relEsse'] = self.server.rela_paper(url, key, sha)
             pdf_dict['relPics'] = save_data['rela_document']
 
-            logger.info('resolve end | 论文实体解析完成')
             # 存储文档实体及文档本身
             suc = self.document(pdf_dict=pdf_dict)
             if not suc:
@@ -379,12 +398,12 @@ class SpiderMain(BaseSpiderMain):
         save_data['script_version'] = 'V1.3'
 
     def run(self):
-        logger.info('thread start')
+        logger.debug('thread start')
         task_timer = timers.Timer()
         # 第一次请求的等待时间
         self.timer.start()
         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
-        logger.info('thread | wait download delay time | use time: {}'.format(self.timer.use_time()))
+        logger.debug('thread | wait download delay time | use time: {}'.format(self.timer.use_time()))
         # 单线程无限循环
         while True:
             # 获取任务

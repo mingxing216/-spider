@@ -1,0 +1,41 @@
+# -*- coding:utf-8 -*-
+import os
+import random
+import sys
+import threading
+import time
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+import requests
+
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
+
+from Log import logging
+from Utils import user_agent_u
+from Utils.captcha import RecognizeCode
+
+LOG_FILE_DIR = 'Test'  # LOG日志存放路径
+LOG_NAME = 'log_data'  # LOG名
+logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
+
+
+def run():
+    s = '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'
+    while True:
+        logger.info('thread id: {} {}'.format(threading.currentThread().ident, s[0:random.randint(20, 500)]))
+        time.sleep(0.001)
+
+
+def process_start():
+    # 创建线程池
+    tpool = ThreadPoolExecutor(max_workers=256)
+    for i in range(256):
+        tpool.submit(run)
+    tpool.shutdown(wait=True)
+
+
+if __name__ == '__main__':
+    # 创建进程池
+    ppool = ProcessPoolExecutor(max_workers=1)
+    for i in range(1):
+        ppool.submit(process_start)
+    ppool.shutdown(wait=True)
