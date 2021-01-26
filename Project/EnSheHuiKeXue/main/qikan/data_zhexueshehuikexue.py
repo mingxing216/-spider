@@ -31,12 +31,10 @@ logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 class BaseSpiderMain(object):
     def __init__(self):
         self.download = download_middleware.Downloader(logging=logger,
-                                                       proxy_type=config.PROXY_TYPE,
+                                                       proxy_enabled=config.PROXY_ENABLED,
                                                        stream=config.STREAM,
-                                                       timeout=config.TIMEOUT,
-                                                       proxy_country=config.COUNTRY,
-                                                       proxy_city=config.CITY)
-        # self.server = service.Server(logging=LOGGING)
+                                                       timeout=config.TIMEOUT)
+        self.server = service.Server(logging=logger)
         self.dao = dao.Dao(logging=logger,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
@@ -64,46 +62,43 @@ class SpiderMain(BaseSpiderMain):
         profile_text = profile_resp.text
 
         # ========================== 获取期刊实体 ============================
-
-        server = service.Server(logging=logger)
-
         # 获取标题
-        save_data['title'] = server.get_journal_title(profile_text)
+        save_data['title'] = self.server.get_journal_title(profile_text)
         # 获取简介
         save_data['abstract'] = []
-        en_abstract_text = server.get_normal_value(profile_text, '期刊简介')
+        en_abstract_text = self.server.get_normal_value(profile_text, '期刊简介')
         if en_abstract_text:
             en_abstract = {}
             en_abstract['text'] = en_abstract_text
-            en_abstract['lang'] = server.get_lang(en_abstract['text'])
+            en_abstract['lang'] = self.server.get_lang(en_abstract['text'])
             save_data['abstract'].append(en_abstract)
-        zh_abstract_text = server.get_normal_value(profile_text, '中文简介')
+        zh_abstract_text = self.server.get_normal_value(profile_text, '中文简介')
         if zh_abstract_text:
             zh_abstract = {}
             zh_abstract['text'] = zh_abstract_text
-            zh_abstract['lang'] = server.get_lang(zh_abstract['text'])
+            zh_abstract['lang'] = self.server.get_lang(zh_abstract['text'])
             save_data['abstract'].append(zh_abstract)
         # ISSN
-        save_data['issn'] = server.get_normal_value(profile_text, 'ISSN(Print)')
-        save_data['e_issn'] = server.get_normal_value(profile_text, 'ISSN(Electronic)')
+        save_data['issn'] = self.server.get_normal_value(profile_text, 'ISSN(Print)')
+        save_data['e_issn'] = self.server.get_normal_value(profile_text, 'ISSN(Electronic)')
         # 出版社
-        save_data['publisher'] = server.get_multi_value(profile_text, '出版社')
+        save_data['publisher'] = self.server.get_multi_value(profile_text, '出版社')
         # 主编
-        save_data['chief_editor'] = server.get_normal_value(profile_text, '主编')
+        save_data['chief_editor'] = self.server.get_normal_value(profile_text, '主编')
         # 出版国
-        save_data['country_of_publication'] = server.get_normal_value(profile_text, '出版国')
+        save_data['country_of_publication'] = self.server.get_normal_value(profile_text, '出版国')
         # 语种
-        save_data['language'] = server.get_multi_value(profile_text, '语种')
+        save_data['language'] = self.server.get_multi_value(profile_text, '语种')
         # 出版频率
-        save_data['period'] = server.get_normal_value(profile_text, '出版频率')
+        save_data['period'] = self.server.get_normal_value(profile_text, '出版频率')
         # 创刊年
-        save_data['start_year_of_publication'] = server.get_normal_value(profile_text, '创刊年')
+        save_data['start_year_of_publication'] = self.server.get_normal_value(profile_text, '创刊年')
         # 停刊年
-        save_data['stop_year_of_publication'] = server.get_normal_value(profile_text, '停刊年')
+        save_data['stop_year_of_publication'] = self.server.get_normal_value(profile_text, '停刊年')
         # 中图分类
-        save_data['classification_code'] = server.get_classification_value(profile_text, '中图分类')
+        save_data['classification_code'] = self.server.get_classification_value(profile_text, '中图分类')
         # 期刊网址
-        save_data['journal_website'] = server.get_journal_website(profile_text, '期刊网址')
+        save_data['journal_website'] = self.server.get_journal_website(profile_text, '期刊网址')
 
         # ======================公共字段
         # url

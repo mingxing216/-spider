@@ -9,7 +9,7 @@ DOWNLOAD_MIN_DELAY = 0.2
 DOWNLOAD_MAX_DELAY = 0.5
 
 # Mysql
-DB_HOST='60.195.249.105'
+DB_HOST='192.168.10.92'
 DB_PORT=3306
 DB_USER='spider'
 DB_PASS='spider'
@@ -17,7 +17,7 @@ DB_NAME='spider'
 # DB_POOL_NUMBER=10 # 连接池内连接默认数量
 
 # redis
-REDIS_HOST='60.195.249.105'
+REDIS_HOST='192.168.10.92'
 REDIS_PORT=6379
 REDIS_PASSWORD='spider'
 # REDIS_POOL_MAX_NUMBER=10 # redis链接池最大连接数
@@ -37,25 +37,30 @@ OrangeAPI_uid='y3138359'
 OrangeAPI_pwd='3138359'
 Orange_Pid=46808
 
-# ======================================================
+# =================== 存储 ========================
 # hbase存储爬虫输出数据
-SpiderDataSaveUrl='http://hbase.onecooo.com:8090/hbaseserver/dat/saveStructuredData?'
+SAVE_HBASE_DATA_URL='http://192.168.10.187:8090/hbaseserver/dat/saveStructuredData?'
 # hbase存储爬虫输出多媒体文件
-SpiderMediaSaveUrl='http://hbase.onecooo.com:8090/hbaseserver/dat/saveMediaData?'
+SAVE_HBASE_MEDIA_URL='http://192.168.10.187:8090/hbaseserver/dat/saveMediaData?'
+
+# ================== 读取 =====================
+# hbase读取实体数据
+GET_HBASE_DATA_URL = 'http://192.168.10.187:8090/hbaseserver/dat/getStructuredData?sha={}&ss={}'
+# hbase读取多媒体文件
+GET_HBASE_MEDIA_URL = 'http://192.168.10.187:8090/hbaseserver/dat/getMediaData?sha={}&type={}'
 
 # ==================《代理池》==================
-
+# # ADSL获取代理接口
+# GET_PROXY_API = "http://47.104.235.235:8000/random"
 # 获取代理接口
-GET_PROXY_API = "http://localhost:5000/random"
+GET_PROXY_API = "http://192.168.10.93:5000/proxy/get?ws={}&p={}&ut={}"
 # 代理权重设置最大接口
-MAX_PROXY_API = "http://localhost:5000/max?ip={}"
-# 代理权重减1
-DEC_PROXY_API = "http://localhost:5000/decrease?ip={}"
-# 代理权重减10
-DEC_MAX_PROXY_API = "http://localhost:5000/decrease/max?ip={}"
+ADD_PROXY_API = "http://192.168.10.93:5000/proxy/add?ip={}&p={}&rt={}"
+# 代理释放,修改权重接口
+RELEASE_PROXY_API = "http://192.168.10.93:5000/proxy/release?ip={}&result={}"
 
 # ==================《用户cookie池》==================
-# 获取代理接口
+# 获取cookie接口
 GET_COOKIE_API = "http://60.195.249.95:5100/random/min"
 # cookie增加分数接口
 INC_COOKIE_API = "http://60.195.249.95:5100/increase?username={}"
@@ -63,6 +68,7 @@ INC_COOKIE_API = "http://60.195.249.95:5100/increase?username={}"
 MAX_COOKIE_API = "http://60.195.249.95:5100/increase/max?username={}"
 # cookie减少分数接口
 DEC_COOKIE_API = "http://60.195.249.95:5100/decrease?username={}"
+
 
 # # 获取代理接口
 # GET_PROXY_API = "http://proxyserver.onecooo.com:5000/get-proxy"
@@ -84,23 +90,6 @@ DATA_NUMBER_TOTAL_TABLE = 'data_number_total'
 SPIDER_TABLE = 'ss_spider'
 # 任务表
 TASK_TABLE = 'ss_task'
-
-# # ==================《mysql操作接口》====================
-# DB_API_HOST = 'http://60.195.249.95:5002'
-#
-#
-# # mysql数据增加接口
-# DB_INSERT = '{}/mysql-insertData'.format(DB_API_HOST)
-# # mysql数据删除接口
-# DB_DELETE = '{}/mysql-deleteData'.format(DB_API_HOST)
-# # mysql数据更新接口
-# DB_UPDATE = '{}/mysql-updateData'.format(DB_API_HOST)
-# # mysql表查询接口
-# DB_SELECT = '{}/mysql-selectData'.format(DB_API_HOST)
-# # 执行一条sql语句
-# DB_EXECUTE = '{}/mysql-execute'.format(DB_API_HOST)
-# # 任务插入接口
-# DB_INSERT_TASK = '{}/mysql-insertTask'.format(DB_API_HOST)
 
 
 # # oss

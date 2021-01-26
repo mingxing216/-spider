@@ -25,11 +25,9 @@ logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=logger,
-                                                                  proxy_type=config.PROXY_TYPE,
+
                                                                   stream=config.STREAM,
-                                                                  timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY,
-                                                                  proxy_city=config.CITY)
+                                                                  timeout=config.TIMEOUT)
         self.server = service.Server(logging=logger)
         self.dao = dao.Dao(logging=logger,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,

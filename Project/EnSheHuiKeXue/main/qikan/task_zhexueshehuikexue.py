@@ -33,11 +33,9 @@ logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 class BaseSpiderMain(object):
     def __init__(self):
         self.download = download_middleware.Downloader(logging=logger,
-                                                       proxy_type=config.PROXY_TYPE,
+                                                       proxy_enabled=config.PROXY_ENABLED,
                                                        stream=config.STREAM,
-                                                       timeout=config.TIMEOUT,
-                                                       proxy_country=config.COUNTRY,
-                                                       proxy_city=config.CITY)
+                                                       timeout=config.TIMEOUT)
         self.server = service.Server(logging=logger)
         self.dao = dao.Dao(logging=logger,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
@@ -271,8 +269,8 @@ def process_start():
     # self.run()
 
     # 创建线程池
-    threadpool = ThreadPool(processes=1)
-    for j in range(1):
+    threadpool = ThreadPool(processes=4)
+    for j in range(4):
         threadpool.apply_async(func=start)
 
     threadpool.close()
@@ -283,8 +281,8 @@ if __name__ == '__main__':
     logger.info('======The Start!======')
     begin_time = time.time()
     # process_start()
-    po = Pool(processes=1)
-    for i in range(1):
+    po = Pool(processes=2)
+    for i in range(2):
         po.apply_async(func=process_start)
     po.close()
     po.join()

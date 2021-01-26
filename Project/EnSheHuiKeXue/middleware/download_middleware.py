@@ -18,10 +18,10 @@ from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
 class Downloader(downloader.BaseDownloader):
-    def __init__(self, logging, stream, timeout, proxy_type, proxy_country, proxy_city, cookie_obj=None):
+    def __init__(self, logging, stream, timeout, proxy_enabled, cookie_obj=None):
         super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
-        self.proxy_type = proxy_type
-        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging, mode=proxy_type, country=proxy_country, city=proxy_city)
+        self.proxy_enabled = proxy_enabled
+        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging)
         self.cookie_obj = cookie_obj
         self.timer = timers.Timer()
 
@@ -73,13 +73,12 @@ class Downloader(downloader.BaseDownloader):
             # 设置proxy
             proxies = None
             ip = None
-            if self.proxy_type:
+            if self.proxy_enabled:
+                # 获取代理
                 ip = self.proxy_obj.get_proxy()
                 if ip:
                     proxies = {'http': 'http://' + ip,
                                'https': 'https://' + ip}
-                else:
-                    return
 
             # 获取响应
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
@@ -90,19 +89,21 @@ class Downloader(downloader.BaseDownloader):
 
             # 返回值中添加IP信息
             down_data['proxy_ip'] = ip
+            # 释放代理
+            self.proxy_obj.release_proxy(ip, down_data['code'] == 0 or down_data['code'] == 1)
+
             # 判断
             if down_data['code'] == 0:
-                # # 代理权重设最大
-                # self.proxy_obj.max_proxy(ip)
+
                 return down_data
 
             if down_data['code'] == 1:
-                # # 代理权重减1
-                # self.proxy_obj.dec_proxy(ip)
                 if down_data['status'] == 404:
+
                     return down_data
                 else:
                     if stat_count > 3:
+
                        return down_data
                     else:
                         stat_count += 1
@@ -110,9 +111,8 @@ class Downloader(downloader.BaseDownloader):
                         continue
 
             if down_data['code'] == 2:
-                # # 代理权重减1
-                # self.proxy_obj.dec_proxy(ip)
                 if err_count > 3:
+
                     return down_data
                 else:
                     err_count += 1

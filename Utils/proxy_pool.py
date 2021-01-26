@@ -5,7 +5,7 @@
 开发人：采集部-王勇
 开发时间：2019年01月04日
 更新人：采集部-张明星
-更新时间：2020年12月30日
+更新时间：2021年1月26日
 """
 
 
@@ -16,46 +16,48 @@ import re
 import time
 
 import settings
+from Utils.timers import Timer
 
 
-# 代理IP操作类
 class ProxyUtils(object):
-    def __init__(self, logger=None, mode=None, random=0, country=1, city=0):
-        '''
-        :param logger: log对象，实例化参数
-        :param mode: 所需代理IP种类，实例化参数
-        :param random: 是否随机获取
-        :param country: 国家 1：中国大陆
-        :param country: 城市 0: 随机
-        '''
-        assert mode == 'http' or mode == 'https' or mode == 'socks5' or mode == 'adsl' or mode == None
-
+    def __init__(self, logger=None):
         self.logger = logger
-        self.mode = mode
-        self.random = random
-        self.country = country
-        self.city = city
+        self.timer = Timer()
 
+    # 获取代理
+    def proxy_service_request(self, url, msg):
+        self.timer.start()
+        for _i in range(3):
+            try:
+                r = requests.get(url=url, timeout=10)
+                resp = r.text
+                # print(proxy)
+                if resp:
+                    self.logger.info('proxy | {} 成功 | use time: {}'.format(msg, self.timer.use_time()))
+                    return resp
+                else:
+                    self.logger.error('proxy | {} 失败'.format(msg))
+                    time.sleep(3)
+                    continue
 
-    def _del(self, ip):
-        url = '{}?ip={}'.format(settings.DELETE_PROXY_API, ip)
-        try:
-            resp = requests.get(url=url).content.decode('utf-8')
-            data = json.loads(resp)
-            if data['status'] == 0:
-                self.logger.info('proxy | delete proxy {} OK'.format(ip))
-        except:
-            pass
+            except Exception as e:
+                self.logger.error('proxy | {} 失败 | {}'.format(msg, e))
+                time.sleep(3)
+                continue
+        else:
+            self.logger.error('proxy | {} 失败 | use time: {}'.format(msg, self.timer.use_time()))
+            return
 
-    def _update(self, ip):
-        url = '{}?ip={}'.format(settings.UPDATE_PROXY_API, ip)
-        try:
-            resp = requests.get(url=url).content.decode('utf-8')
-            data = json.loads(resp)
-            if data['status'] == 0:
-                self.logger.info('proxy | delete proxy {} OK'.format(ip))
-        except:
-            pass
+    def add_proxy(self, ip, p='http', remain_time=30):
+        return self.proxy_service_request(settings.ADD_PROXY_API.format(ip, p, remain_time), "增加代理 {}".format(ip))
+
+    # 获取代理
+    def get_proxy(self, ws="", protocol="http", using_time=30):
+        return self.proxy_service_request(settings.GET_PROXY_API.format(ws, protocol, using_time), "获取代理")
+
+    # 代理权重减1
+    def release_proxy(self, ip, result):
+        return self.proxy_service_request(settings.RELEASE_PROXY_API.format(ip, result), "释放代理 {}".format(ip))
 
     # 检测代理IP是否是高匿代理， 高匿返回True， 否则返回Fales
     def _jianChaNiMingDu(self, **proxies):
@@ -79,232 +81,31 @@ class ProxyUtils(object):
         else:
             return False
 
-    # 获取代理
-    def get_proxy(self):
-        stat = time.time()
-        for _i in range(3):
-            try:
-                r = requests.get(url=settings.GET_PROXY_API, timeout=10)
-                ip = r.text
-                # print(proxy)
-                if ip:
-                    self.logger.info('proxy | 获取代理IP成功 | use time: {}'.format('%.3f' % (time.time() - stat)))
-                    return ip
-                else:
-                    self.logger.error('proxy | 代理池代理获取失败')
-                    time.sleep(3)
-                    continue
-
-            except Exception as e:
-                self.logger.error('proxy | 代理池代理获取失败 | {}'.format(e))
-                time.sleep(3)
-                continue
-        else:
-            self.logger.error('proxy | 获取代理IP失败 | use time: {}'.format('%.3f' % (time.time() - stat)))
-            return
-
-    # 设置代理最大权重
-    def max_proxy(self, ip):
-        max_time = time.time()
-        for _i in range(3):
-            try:
-                r = requests.get(url=settings.MAX_PROXY_API.format(ip), timeout=10)
-                num = r.text
-                # print(proxy)
-                if num:
-                    self.logger.info('proxy | 设置代理IP最大权重成功 | use time: {}'.format('%.3f' % (time.time() - max_time)))
-                    return num
-                else:
-                    self.logger.error('proxy | 代理最大权重设置失败')
-                    time.sleep(3)
-                    continue
-
-            except Exception as e:
-                self.logger.error('proxy | 代理最大权重设置失败 | {}'.format(e))
-                time.sleep(3)
-                continue
-        else:
-            self.logger.error('proxy | 设置代理IP最大权重失败 | use time: {}'.format('%.3f' % (time.time() - max_time)))
-            return
-
-    # 代理权重减1
-    def dec_proxy(self, ip):
-        dec_time = time.time()
-        for _i in range(3):
-            try:
-                r = requests.get(url=settings.DEC_PROXY_API.format(ip), timeout=10)
-                num = r.text
-                # print(proxy)
-                if num:
-                    self.logger.info('proxy | 代理IP权重 -1 成功 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
-                    return num
-                else:
-                    self.logger.error('proxy | 代理权重 -1 失败')
-                    time.sleep(3)
-                    continue
-
-            except Exception as e:
-                self.logger.error('proxy | 代理权重 -1 失败 | {}'.format(e))
-                time.sleep(3)
-                continue
-        else:
-            self.logger.error('proxy | 代理IP权重 -1 失败 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
-            return
-
-    # 代理权重减10
-    def dec_max_proxy(self, ip):
-        dec_time = time.time()
-        for _i in range(3):
-            try:
-                r = requests.get(url=settings.DEC_MAX_PROXY_API.format(ip), timeout=10)
-                num = r.text
-                # print(proxy)
-                if num:
-                    self.logger.info('proxy | 代理IP权重 -10 成功 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
-                    return num
-                else:
-                    self.logger.error('proxy | 代理权重 -10 失败')
-                    time.sleep(3)
-                    continue
-
-            except Exception as e:
-                self.logger.error('proxy | 代理权重 -10 失败 | {}'.format(e))
-                time.sleep(3)
-                continue
-        else:
-            self.logger.error('proxy | 代理IP权重 -10 失败 | use time: {}'.format('%.3f' % (time.time() - dec_time)))
-            return
-
-    # 获取代理
-    def getProxy(self):
-        for _i in range(3):
-            try:
-                r = requests.get('http://60.195.249.95:5000/random')
-                proxy = r.text
-                # print(proxy)
-                if proxy:
-                    return {'http': 'http://' + proxy,
-                            'https': 'https://' + proxy}
-                else:
-                    self.logger.error('proxy | 代理池代理获取失败')
-                    time.sleep(2)
-                    continue
-
-            except Exception:
-                self.logger.error('proxy | 代理接口请求失败')
-                time.sleep(2)
-                continue
-        else:
-            self.logger.info('proxy | 代理池代理获取失败')
-            return
-
-    # # 获取代理
-    # def getProxy(self):
-    #     while True:
-    #         url = "{}?random={}&country={}&city={}&type={}".format(settings.GET_PROXY_API, self.random,
-    #                                                                self.country, self.city, self.type)
-    #
-    #         try:
-    #             proxy_data = requests.get(url=url).content.decode('utf-8')
-    #         except:
-    #             proxy_data = None
-    #
-    #         if proxy_data:
-    #             data = json.loads(proxy_data)
-    #             if data['status'] == 0:
-    #                 ip = data['ip']
-    #                 port = data['port']
-    #                 proxy_ip = 'https://' + ip + ':' + port
-    #
-    #                 # # 判断是否为高匿代理
-    #                 # allow = self.__jianChaNiMingDu(https=proxy_ip)
-    #                 # print(allow)
-    #                 # if allow:
-    #
-    #                 # 判断协议种类
-    #                 if self.type == 'http':
-    #                     return {'http': 'http://{}:{}'.format(ip, port)}
-    #
-    #                 elif self.type == 'https':
-    #                     return {'https': 'https://{}:{}'.format(ip, port)}
-    #
-    #                 elif self.type == 'socks5':
-    #                     return {'http': 'socks5://{}:{}'.format(ip, port),
-    #                             'https': 'socks5://{}:{}'.format(ip, port)}
-    #
-    #                 elif self.type == 'adsl':
-    #                     # return {'http': 'http://{}:{}'.format(ip, port)}
-    #
-    #                     return {'http': 'http://{}:{}'.format(ip, port),
-    #                             'https': 'https://{}:{}'.format(ip, port)}
-    #
-    #                 else:
-    #                     self.logging.error('status: False | err: type error!!! | from: getProxy')
-    #
-    #                     continue
-    #
-    #                 # else:
-    #                 #     self.logging.error('代理非高匿代理，获取失败')
-    #                 #     continue
-    #
-    #             else:
-    #                 self.logging.error('代理池代理获取失败')
-    #                 time.sleep(5)
-    #
-    #             continue
-    #
-    #         else:
-    #             self.logging.error('代理池代理获取失败')
-    #             time.sleep(5)
-    #             continue
-
-    # 删除代理
-    def delProxy(self, proxies):
-        # 判断协议种类
-        if self.mode == 'http':
-            ip = re.findall(r"http://(.*):", proxies['http'])[0]
-            self._del(ip)
-
-        elif self.mode == 'https':
-            ip = re.findall(r"https://(.*):", proxies['https'])[0]
-            self._del(ip)
-
-        elif self.mode == 'socks5':
-            ip = re.findall(r"socks5://(.*):", proxies['http'])[0]
-            self._del(ip)
-
-        elif self.mode == 'adsl':
-            ip = re.findall(r"http://(.*):", proxies['http'])[0]
-            self._update(ip)
-
-        else:
-            self.logger.error('status: False | err: type error!!! | from: delProxy')
-
     # 获取阿布云动态版代理
-    def getABuYunProxy(self):
-        proxyHost = "http-dyn.abuyun.com"
-        proxyPort = "9020"
+    def get_abuyun_proxy(self):
+        proxy_host = "http-dyn.abuyun.com"
+        proxy_port = "9020"
 
         # 代理隧道验证信息
-        proxyUser = "H1A955UYUR3S8RXD"
-        proxyPass = "6FD2F11DD2337CF0"
+        proxy_user = "H1A955UYUR3S8RXD"
+        proxy_pass = "6FD2F11DD2337CF0"
 
-        proxyMeta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
-            "host": proxyHost,
-            "port": proxyPort,
-            "user": proxyUser,
-            "pass": proxyPass,
+        proxy_meta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
+            "host": proxy_host,
+            "port": proxy_port,
+            "user": proxy_user,
+            "pass": proxy_pass,
         }
 
         proxies = {
-            "http": proxyMeta,
-            "https": proxyMeta,
+            "http": proxy_meta,
+            "https": proxy_meta,
         }
         return proxies
 
     # 获取本机内网IP
     @staticmethod
-    def getLocalIP():
+    def get_local_ip():
         global s
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -317,3 +118,8 @@ class ProxyUtils(object):
         except:
             s.close()
             return None
+
+
+if __name__ == '__main__':
+    proxier = ProxyUtils()
+    print(proxier.get_proxy())
