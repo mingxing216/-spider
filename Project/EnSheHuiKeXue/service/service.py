@@ -301,8 +301,9 @@ class Server(object):
             value_list = re.split(r"[,，]", field_value)
             for value in value_list:
                 classi_dict = {
+                    'name': re.split(r"[:：]", value)[1].strip(),
                     'code': re.split(r"[:：]", value)[0].strip(),
-                    'type': re.split(r"[:：]", value)[1].strip()
+                    'type': '中图分类'
                 }
                 classi_list.append(classi_dict)
 
