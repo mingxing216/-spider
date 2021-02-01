@@ -498,7 +498,7 @@ class CaptchaProcessor(object):
                     self.logger.error(
                         'process end | 验证码识别失败总时间 | use time: {} | url: {} | count: {}'.format(
                             self.total_timer.use_time(),
-                            resp.url, i))
+                            resp.url, i+1))
                     return
             else:
                 self.logger.info(

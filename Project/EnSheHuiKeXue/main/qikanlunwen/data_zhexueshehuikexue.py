@@ -426,8 +426,8 @@ class SpiderMain(BaseSpiderMain):
             task_timer.start()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            # task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
-            task = '{"url": "http://103.247.176.188/View.aspx?id=42843286", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=42843286", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=45058", "sha": "00000f7b94d9f3f6031ecec37d26f3e954850f1d"}'
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            # task = '{"url": "http://103.247.176.188/View.aspx?id=42843286", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=42843286", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=45058", "sha": "00000f7b94d9f3f6031ecec37d26f3e954850f1d"}'
             if task:
                 try:
                     # 创建数据存储字典
