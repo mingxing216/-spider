@@ -373,6 +373,24 @@ class Server(object):
 
         return labelObj
 
+    # 文本格式全文
+    def is_fulltext_page(self, resp):
+        if len(resp.content) < 100 or '未找到全文' in resp.text:
+            return False
+
+        return True
+
+    # 获取全文
+    def get_fulltext(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            full_text = selector.xpath("//div[@id='search_nsfc']").extract_first()
+
+        except Exception:
+            full_text = ""
+
+        return full_text
+
     # 关联期刊
     def rela_journal(self, url, key, sha):
         e = {}

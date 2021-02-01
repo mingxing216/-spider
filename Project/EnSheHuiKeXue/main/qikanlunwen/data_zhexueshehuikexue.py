@@ -87,91 +87,108 @@ class SpiderMain(BaseSpiderMain):
             return
 
         if 'text' in pdf_resp.headers.get('Content-Type') or 'html' in pdf_resp.headers.get('Content-Type'):
-            # 更新种子错误信息
-            msg = 'url: {} Status: {} Content-Type error: {}'.format(pdf_url, pdf_resp.status_code,
-                                                                         pdf_resp.headers['Content-Type'])
-            logger.warning('document | failed, {} | url: {}'.format(msg, pdf_url))
-            data_dict = {'url': pdf_dict['relEsse']['url']}
-            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
-            return
+            if not self.server.is_fulltext_page(pdf_resp):
+                # 更新种子错误信息
+                msg = 'url: {} Status: {} Content-Type error: {}'.format(pdf_url, pdf_resp.status_code,
+                                                                             pdf_resp.headers['Content-Type'])
+                logger.warning('document | failed, {} | url: {}'.format(msg, pdf_url))
+                data_dict = {'url': pdf_dict['relEsse']['url']}
+                self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
+                return
 
-        # 内存中读写
-        bytes_container = BytesIO()
-        # 断点续爬，重试3次
-        for retry_count in range(3):
-            # 判断内容获取是否完整
-            if pdf_resp.raw.tell() >= int(pdf_resp.headers.get('Content-Length', 0)):
-                # 获取二进制内容
-                bytes_container.write(pdf_resp.content)
-                logger.info('document | 获取内容完整 | use time: {} | length: {}'.format(self.timer.use_time(),
-                                                                                 len(bytes_container.getvalue())))
-                # pdf_content += pdf_resp.content
-                break
             else:
-                # 获取二进制内容
-                bytes_container.write(pdf_resp.content)
-                logger.warning(
-                    'document | 获取内容不完整, 断点续爬 | use time: {} | length: {}'.format(self.timer.use_time(),
-                                                                          len(bytes_container.getvalue())))
+                pdf_content = pdf_resp.content
+                pdf_length = len(pdf_content)
+                pdf_text = pdf_resp.text
+                fulltext = self.server.get_fulltext(pdf_text)
+
+                if fulltext:
+                    # 存储全文
+                    content_type = 'text/html'
+                    succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=fulltext, item=pdf_dict,
+                                                        type='document', length=pdf_length, contype=content_type)
+                    if not succ:
+                        return
+
+        else:
+            # 内存中读写
+            bytes_container = BytesIO()
+            # 断点续爬，重试3次
+            for retry_count in range(3):
+                # 判断内容获取是否完整
+                if pdf_resp.raw.tell() >= int(pdf_resp.headers.get('Content-Length', 0)):
+                    # 获取二进制内容
+                    bytes_container.write(pdf_resp.content)
+                    logger.info('document | 获取内容完整 | use time: {} | length: {}'.format(self.timer.use_time(),
+                                                                                     len(bytes_container.getvalue())))
+                    # pdf_content += pdf_resp.content
+                    break
+                else:
+                    # 获取二进制内容
+                    bytes_container.write(pdf_resp.content)
+                    logger.warning(
+                        'document | 获取内容不完整, 断点续爬 | use time: {} | length: {}'.format(self.timer.use_time(),
+                                                                              len(bytes_container.getvalue())))
+                    # # 存储文档种子
+                    # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
+                    # 请求头增加参数
+                    ranges = 'bytes=%d-' % len(bytes_container.getvalue())
+                    # 断点续传
+                    pdf_resp = self.captcha_processor.process_first_request(url=pdf_url, method='GET', ranges=ranges, s=self.s)
+                    if pdf_resp is None:
+                        return
+                    # 处理验证码
+                    pdf_resp = self.captcha_processor.process(pdf_resp)
+                    if pdf_resp is None:
+                        return
+                    continue
+            else:
+                # LOGGING.info('handle | 获取内容不完整 | use time: {} |
+                # length: {}'.format('%.3f' % (time.time() - start_time),
+                # len(bytes_container.getvalue())))
+                # 更新种子错误信息
+                msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()),
+                                                           pdf_resp.headers.get('Content-Length', 0))
+                logger.error('document | failed, {} | url: {}'.format(msg, pdf_url))
+                data_dict = {'url': pdf_dict['relEsse']['url']}
+                self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
+                return
+
+            # 获取二进制内容
+            pdf_content = bytes_container.getvalue()
+            pdf_length = len(pdf_content)
+            logger.debug('document | 结束获取内容')
+
+            # 检测PDF文件
+            is_value = self.is_valid_pdf_bytes_io(pdf_content, pdf_url, pdf_dict['relEsse']['url'])
+            if is_value is None:
+                return
+
+            if not is_value:
+                # 更新种子错误信息
+                msg = 'not PDF'
+                logger.error('document | failed, {}, url: {}'.format(msg, pdf_url))
+                data_dict = {'url': pdf_dict['relEsse']['url']}
+                self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
+                return
+
+            # 存储全文
+            content_type = 'application/pdf'
+            succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict,
+                                                type='document', length=pdf_length, contype=content_type)
+            if not succ:
+                # # 标题内容调整格式
+                # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
                 # # 存储文档种子
                 # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-                # 请求头增加参数
-                ranges = 'bytes=%d-' % len(bytes_container.getvalue())
-                # 断点续传
-                pdf_resp = self.captcha_processor.process_first_request(url=pdf_url, method='GET', ranges=ranges, s=self.s)
-                if pdf_resp is None:
-                    return
-                # 处理验证码
-                pdf_resp = self.captcha_processor.process(pdf_resp)
-                if pdf_resp is None:
-                    return
-                continue
-        else:
-            # LOGGING.info('handle | 获取内容不完整 | use time: {} |
-            # length: {}'.format('%.3f' % (time.time() - start_time),
-            # len(bytes_container.getvalue())))
-            # 更新种子错误信息
-            msg = 'Content-Length error: {}/{}'.format(len(bytes_container.getvalue()),
-                                                       pdf_resp.headers.get('Content-Length', 0))
-            logger.error('document | failed, {} | url: {}'.format(msg, pdf_url))
-            data_dict = {'url': pdf_dict['relEsse']['url']}
-            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
-            return
-
-        # 获取二进制内容
-        pdf_content = bytes_container.getvalue()
-        logger.debug('document | 结束获取内容')
-
-        # 检测PDF文件
-        is_value = self.is_valid_pdf_bytes_io(pdf_content, pdf_url, pdf_dict['relEsse']['url'])
-        if is_value is None:
-            return
-
-        if not is_value:
-            # 更新种子错误信息
-            msg = 'not PDF'
-            logger.error('document | failed, {}, url: {}'.format(msg, pdf_url))
-            data_dict = {'url': pdf_dict['relEsse']['url']}
-            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
-            return
-
-        # 存储全文
-        content_type = 'application/pdf'
-        succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=pdf_content, item=pdf_dict,
-                                            type='document', contype=content_type)
-        if not succ:
-            # # 标题内容调整格式
-            # pdf_dict['bizTitle'] = pdf_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-            # # 存储文档种子
-            # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-            return
+                return
 
         # 文档数据存储字典
         doc_data = dict()
         # 获取标题
         doc_data['title'] = pdf_dict['bizTitle']
         # 文档内容
-        size = len(pdf_content)
+        size = pdf_length
         # size = len(pdf_content)
         doc_data['label_obj'] = self.server.getDocs(pdf_dict, size)
         # 获取来源网站
@@ -409,8 +426,8 @@ class SpiderMain(BaseSpiderMain):
             task_timer.start()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
-            # task = '{"url": "http://103.247.176.188/View.aspx?id=233888847", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=233888847", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=135985", "sha": "f08ed313eb3e6d54c127e824264e2348159e8ead"}'
+            # task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            task = '{"url": "http://103.247.176.188/View.aspx?id=42843286", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=42843286", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=45058", "sha": "00000f7b94d9f3f6031ecec37d26f3e954850f1d"}'
             if task:
                 try:
                     # 创建数据存储字典

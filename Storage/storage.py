@@ -327,10 +327,10 @@ class Dao(object):
         #     except:
         #         return resp
 
-    def save_media_to_hbase(self, media_url, content, item, type, contype=None):
+    def save_media_to_hbase(self, media_url, content, item, type, length, contype=None):
         self.timer.start()
         self.logging.info('storage start | 开始存储附件 {}'.format(type))
-        ret = self.__save_media_to_hbase(media_url, content, item, type, contype)
+        ret = self.__save_media_to_hbase(media_url, content, item, type, length, contype)
         if ret:
             self.logging.info('storage end | 存储附件成功 {} | use time: {}'.format(type, self.timer.use_time()))
         else:
@@ -339,18 +339,10 @@ class Dao(object):
         return ret
 
     # 保存流媒体到hbase
-    def __save_media_to_hbase(self, media_url, content, item, type, contype=None):
+    def __save_media_to_hbase(self, media_url, content, item, type, length, contype=None):
         url = '{}'.format(settings.SAVE_HBASE_MEDIA_URL)
-        # 二进制图片文件转成base64文件
-        content_bs64 = base64.b64encode(content)
-        # content_bs64 = content
-        # # 解码base64图片文件为二进制文件
-        # dbs = base64.b64decode(content_bs64)
-        # # 内存中打开图片
-        # img = Image.open(BytesIO(content))
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
         # sha = int(random.random()*10000000000000000)
-
         data_dict = {
             'pk': sha,
             'type': type,
@@ -358,24 +350,42 @@ class Dao(object):
             'biz_title': item.get('bizTitle'),
             'rel_esse': str(item.get('relEsse')),
             'rel_pics': str(item.get('relPics')),
-            'length': "{}".format(len(content)),
+            'length': length,
             'content_type': contype,
             'tag_src': media_url
             # 'naturalHeight': "{}".format(img.height),
             # 'naturalWidth': "{}".format(img.width)
         }
+        form_data = {}
+        if 'pdf' in contype:
+            # 二进制图片文件转成base64文件
+            content_bs64 = base64.b64encode(content)
+            # content_bs64 = content
+            # # 解码base64图片文件为二进制文件
+            # dbs = base64.b64decode(content_bs64)
+            # # 内存中打开图片
+            # img = Image.open(BytesIO(content))
 
-        form_data = {
-            "ip": "{}".format(self.localIP),
-            'type': type,
-            'url': media_url,
-            "content": "{}".format(content_bs64.decode('utf-8')),
-            # "content": "{}".format(content),
-            # "content": "{}".format(content_bs64),
-            "wid": "100",
-            "ref": "",
-            "item": json.dumps(data_dict, ensure_ascii=False)
-        }
+            form_data = {
+                "ip": "{}".format(self.localIP),
+                'type': type,
+                'url': media_url,
+                "content": "{}".format(content_bs64.decode('utf-8')),
+                "wid": "100",
+                "ref": "",
+                "item": json.dumps(data_dict, ensure_ascii=False)
+            }
+
+        if 'text' in contype:
+            form_data = {
+                "ip": "{}".format(self.localIP),
+                'type': type,
+                'url': media_url,
+                "content": content,
+                "wid": "100",
+                "ref": "",
+                "item": json.dumps(data_dict, ensure_ascii=False)
+            }
 
         # 开始存储多媒体数据
         media_start = timers.Timer()
