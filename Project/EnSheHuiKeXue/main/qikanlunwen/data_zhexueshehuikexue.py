@@ -56,21 +56,29 @@ class SpiderMain(BaseSpiderMain):
         self.captcha_processor = CaptchaProcessor(self.server, self.download, self.s, logger)
 
     # 检测PDF文件正确性
-    # @staticmethod
-    def is_valid_pdf_bytes_io(self, content, url, parent_url):
-        b_valid = True
-        try:
-            reader = PdfFileReader(BytesIO(content), strict=False)
-            if reader.getNumPages() < 1:  # 进一步通过页数判断。
-                b_valid = False
-        except:
-            msg = '检测PDF文件出错, url: {}'.format(url)
-            logger.error('document | {}'.format(msg))
-            data_dict = {'url': parent_url}
-            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
-            return
+    @staticmethod
+    def is_valid_pdf_bytes(bytes):
+        """
+        直接用文件内容判断头尾，
+        参数为pdf文件二进制内容
+        """
+        content = bytes
+        part_begin = content[0:20]
+        if part_begin.find(rb'%PDF-1.') < 0:
+            logger.error('document | not find %PDF-1.')
+            return False
 
-        return b_valid
+        idx = content.rfind(rb'%%EOF')
+        if idx < 0:
+            logger.error('document | not find %%EOF')
+            return False
+
+        part_end = content[(0 if idx - 100 < 0 else idx - 100): idx + 5]
+        if not re.search(rb'startxref\s+\d+\s+%%EOF$', part_end):
+            logger.error('document | not find startxref')
+            return False
+
+        return True
 
     # 获取文档实体字段
     def document(self, pdf_dict):
@@ -102,13 +110,12 @@ class SpiderMain(BaseSpiderMain):
                 pdf_text = pdf_resp.text
                 fulltext = self.server.get_fulltext(pdf_text)
 
-                if fulltext:
-                    # 存储全文
-                    content_type = 'text/html'
-                    succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=fulltext, item=pdf_dict,
-                                                        type='document', length=pdf_length, contype=content_type)
-                    if not succ:
-                        return
+                # 存储全文
+                content_type = 'text/html'
+                succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=fulltext, item=pdf_dict,
+                                                    type='document', length=pdf_length, contype=content_type)
+                if not succ:
+                    return
 
         else:
             # 内存中读写
@@ -127,14 +134,16 @@ class SpiderMain(BaseSpiderMain):
                     # 获取二进制内容
                     bytes_container.write(pdf_resp.content)
                     logger.warning(
-                        'document | 获取内容不完整, 断点续爬 | use time: {} | length: {}'.format(self.timer.use_time(),
+                        'document | 获取内容不完整, 重新下载 | use time: {} | length: {}'.format(self.timer.use_time(),
                                                                               len(bytes_container.getvalue())))
                     # # 存储文档种子
                     # self.dao.saveTaskToMysql(table=config.MYSQL_DOCUMENT, memo=pdf_dict, ws='国家自然科学基金委员会', es='期刊论文')
-                    # 请求头增加参数
-                    ranges = 'bytes=%d-' % len(bytes_container.getvalue())
-                    # 断点续传
-                    pdf_resp = self.captcha_processor.process_first_request(url=pdf_url, method='GET', ranges=ranges, s=self.s)
+                    # # 请求头增加参数
+                    # ranges = 'bytes=%d-' % len(bytes_container.getvalue())
+                    # 清空对象
+                    bytes_container = BytesIO()
+                    # 重新下载
+                    pdf_resp = self.captcha_processor.process_first_request(url=pdf_url, method='GET', s=self.s)
                     if pdf_resp is None:
                         return
                     # 处理验证码
@@ -160,11 +169,8 @@ class SpiderMain(BaseSpiderMain):
             logger.debug('document | 结束获取内容')
 
             # 检测PDF文件
-            is_value = self.is_valid_pdf_bytes_io(pdf_content, pdf_url, pdf_dict['relEsse']['url'])
-            if is_value is None:
-                return
-
-            if not is_value:
+            is_pdf = self.is_valid_pdf_bytes(pdf_content)
+            if not is_pdf:
                 # 更新种子错误信息
                 msg = 'not PDF'
                 logger.error('document | failed, {}, url: {}'.format(msg, pdf_url))
