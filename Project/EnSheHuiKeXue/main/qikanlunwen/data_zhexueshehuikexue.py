@@ -15,7 +15,8 @@ import requests
 # from contextlib import closing
 from io import BytesIO
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from PyPDF2 import PdfFileReader
+from PyPDF4 import PdfFileReader
+from fitz import fitz
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 
@@ -56,29 +57,65 @@ class SpiderMain(BaseSpiderMain):
         self.captcha_processor = CaptchaProcessor(self.server, self.download, self.s, logger)
 
     # 检测PDF文件正确性
-    @staticmethod
-    def is_valid_pdf_bytes(bytes):
-        """
-        直接用文件内容判断头尾，
-        参数为pdf文件二进制内容
-        """
-        content = bytes
-        part_begin = content[0:20]
-        if part_begin.find(rb'%PDF-1.') < 0:
-            logger.error('document | not find %PDF-1.')
-            return False
+    # @staticmethod
+    def is_valid_pdf_bytes(self, content, url, parent_url):
+        b_valid = True
+        try:
+            with fitz.open(stream=BytesIO(content), filetype="pdf") as doc:
+                if not doc.isPDF:
+                    b_valid = False
 
-        idx = content.rfind(rb'%%EOF')
-        if idx < 0:
-            logger.error('document | not find %%EOF')
-            return False
+                if doc.pageCount < 1:
+                    b_valid = False
 
-        part_end = content[(0 if idx - 100 < 0 else idx - 100): idx + 5]
-        if not re.search(rb'startxref\s+\d+\s+%%EOF$', part_end):
-            logger.error('document | not find startxref')
-            return False
+        except Exception:
+            msg = '检测PDF文件出错 url: {}'.format(url)
+            logger.error('document | {}'.format(msg))
+            data_dict = {'url': parent_url}
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
+            return
 
-        return True
+        return b_valid
+
+    # # @staticmethod
+    # def is_valid_pdf_bytes_io(self, content, url, parent_url):
+    #     b_valid = True
+    #     try:
+    #         reader = PdfFileReader(BytesIO(content), strict=False)
+    #         if reader.getNumPages() < 1:  # 进一步通过页数判断。
+    #             b_valid = False
+    #     except:
+    #         msg = '检测PDF文件出错, url: {}'.format(url)
+    #         logger.error('document | {}'.format(msg))
+    #         data_dict = {'url': parent_url}
+    #         self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
+    #         return
+    #
+    #     return b_valid
+
+    # # @staticmethod
+    # def is_valid_pdf_bytes(bytes):
+    #     """
+    #     直接用文件内容判断头尾，
+    #     参数为pdf文件二进制内容
+    #     """
+    #     content = bytes
+    #     part_begin = content[0:20]
+    #     if part_begin.find(rb'%PDF-1.') < 0:
+    #         print('Error: not find %PDF-1.')
+    #         return False
+    #
+    #     idx = content.rfind(rb'%%EOF')
+    #     if idx < 0:
+    #         print('Error: not find %%EOF')
+    #         return False
+    #
+    #     part_end = content[(0 if idx - 100 < 0 else idx - 100): idx + 5]
+    #     if not re.search(rb'startxref\s+\d+\s+%%EOF$', part_end):
+    #         print('Error: not find startxref')
+    #         return False
+    #
+    #     return True
 
     # 获取文档实体字段
     def document(self, pdf_dict):
@@ -169,8 +206,11 @@ class SpiderMain(BaseSpiderMain):
             logger.debug('document | 结束获取内容')
 
             # 检测PDF文件
-            is_pdf = self.is_valid_pdf_bytes(pdf_content)
-            if not is_pdf:
+            is_value = self.is_valid_pdf_bytes(pdf_content, pdf_url, pdf_dict['relEsse']['url'])
+            if is_value is None:
+                return
+
+            if not is_value:
                 # 更新种子错误信息
                 msg = 'not PDF'
                 logger.error('document | failed, {}, url: {}'.format(msg, pdf_url))
@@ -433,7 +473,7 @@ class SpiderMain(BaseSpiderMain):
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
             task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
-            # task = '{"url": "http://103.247.176.188/View.aspx?id=42843286", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=42843286", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=45058", "sha": "00000f7b94d9f3f6031ecec37d26f3e954850f1d"}'
+            # task = '{"url": "http://103.247.176.188/View.aspx?id=81378664", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=81378664", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=23677", "sha": "121f7ce3d5b82baa6b51a1276854971163af399d"}'
             if task:
                 try:
                     # 创建数据存储字典

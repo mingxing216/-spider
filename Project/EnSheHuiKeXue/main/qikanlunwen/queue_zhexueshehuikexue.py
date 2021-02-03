@@ -25,7 +25,7 @@ logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 class BastSpiderMain(object):
     def __init__(self):
         self.download_middleware = download_middleware.Downloader(logging=logger,
-
+                                                                  proxy_enabled=config.PROXY_ENABLED,
                                                                   stream=config.STREAM,
                                                                   timeout=config.TIMEOUT)
         self.server = service.Server(logging=logger)
