@@ -147,6 +147,9 @@ class SpiderMain(BaseSpiderMain):
                 pdf_text = pdf_resp.text
                 fulltext = self.server.get_fulltext(pdf_text)
 
+                if not fulltext:
+                    return
+
                 # 存储全文
                 content_type = 'text/html'
                 succ = self.dao.save_media_to_hbase(media_url=pdf_dict['url'], content=fulltext, item=pdf_dict,
