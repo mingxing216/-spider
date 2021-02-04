@@ -92,6 +92,39 @@ class SpiderMain(BaseSpiderMain):
                 # 论文列表页进入队列
                 self.dao.queue_tasks_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=paper_list)
 
+    def paper_catalog_page(self):
+        self.timer.start()
+        while 1:
+            # 获取任务
+            category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG_TEMP)
+            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2246427%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=46427", "currentUrl": "http://103.247.176.188/Search.aspx?qx=&ob=dd&start=791260"}'
+            if category:
+                # 数据类型转换
+                task = json.loads(category)
+                # print(task)
+                paper_catalog_url = task['url']
+                current_url = task.get('currentUrl')
+
+                end_page = self.get_page_count(paper_catalog_url, task)
+                if current_url:
+                    try:
+                        start_page = int(int(re.findall(r"\d+$", current_url)[0]) / 10 + 1)
+                    except Exception:
+                        start_page = 1
+
+                    for i in range(start_page, int(end_page), 1000):
+                        task['currentUrl'] = 'http://103.247.176.188/Search.aspx?qx=&ob=dd&start={}'.format((i - 1) * 10)
+                        self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+
+                else:
+                    for i in range(1, int(end_page), 1000):
+                        task['currentUrl'] = 'http://103.247.176.188/Search.aspx?qx=&ob=dd&start={}'.format((i - 1) * 10)
+                        self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+
+            else:
+                logger.info('task | 队列中已无任务，结束程序 | use time: {}'.format(self.timer.use_time()))
+                return
+
     def get_page_count(self, first_url, task):
         """获取论文列表页总页数"""
         paper_resp = self.captcha_processor.process_first_request(url=first_url, method='GET', s=self.s)
@@ -116,7 +149,7 @@ class SpiderMain(BaseSpiderMain):
     def get_all_pages(start_page, end_page):
         """获取论文列表页所有url"""
         all_pages = []
-        for count in range(start_page, end_page + 1):
+        for count in range(start_page, end_page):
             page = 'http://103.247.176.188/Search.aspx?qx=&ob=dd&start={}'.format((count - 1) * 10)
             all_pages.append(page)
 
@@ -133,15 +166,13 @@ class SpiderMain(BaseSpiderMain):
 
     def get_current_catalog(self, first_url, journal_url, current_url, task):
         """论文列表当前页翻页"""
-        # 获取列表总页数
-        end_page = self.get_page_count(first_url, task)
-
+        # 访问首页，记住cookie（可获取列表总页数）
+        self.get_page_count(first_url, task)
         try:
             start_page = int(int(re.findall(r"\d+$", current_url)[0])/10 + 1)
         except Exception:
             start_page = 1
-
-        all_pages = self.get_all_pages(start_page, end_page)
+        all_pages = self.get_all_pages(start_page, start_page + 1000)
 
         next_num = start_page
         for page_url in all_pages:
@@ -178,14 +209,10 @@ class SpiderMain(BaseSpiderMain):
 
     def get_paper_catalog(self, catalog_url, journal_url, task):
         """论文列表页翻页"""
-        # 获取列表总页数
-        end_page = self.get_page_count(catalog_url, task)
-        if end_page is None:
-            return
-
+        # 访问首页，记住cookie（可获取列表总页数）
+        self.get_page_count(catalog_url, task)
         start_page = 1
-
-        all_pages = self.get_all_pages(start_page, end_page)
+        all_pages = self.get_all_pages(start_page, start_page + 1000)
 
         next_num = start_page
         for page_url in all_pages:
@@ -225,7 +252,7 @@ class SpiderMain(BaseSpiderMain):
         while 1:
             # 获取任务
             category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG)
-            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2267338%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=67338", "totalPage": "634", "currentUrl": "http://103.247.176.188/Search.aspx?qx=&ob=dd&start=300"}'
+            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2246427%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=46427", "currentUrl": "http://103.247.176.188/Search.aspx?qx=&ob=dd&start=780200"}'
             # print(category)
             if category:
                 # 数据类型转换
@@ -250,8 +277,8 @@ def start():
     main = SpiderMain()
     try:
         # main.get_journal_profile()
-        # main.paper_total_page()
-        main.run()
+        main.paper_catalog_page()
+        # main.run()
     except Exception:
         logger.error(str(traceback.format_exc()))
 
@@ -269,8 +296,8 @@ def process_start():
     # self.run()
 
     # 创建线程池
-    threadpool = ThreadPool(processes=4)
-    for j in range(4):
+    threadpool = ThreadPool(processes=1)
+    for j in range(1):
         threadpool.apply_async(func=start)
 
     threadpool.close()
@@ -281,8 +308,8 @@ if __name__ == '__main__':
     logger.info('======The Start!======')
     begin_time = time.time()
     # process_start()
-    po = Pool(processes=2)
-    for i in range(2):
+    po = Pool(processes=1)
+    for i in range(1):
         po.apply_async(func=process_start)
     po.close()
     po.join()
