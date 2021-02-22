@@ -286,7 +286,10 @@ class SpiderMain(BaseSpiderMain):
     def handle(self, task_data, save_data):
         # print(task_data)
         url = task_data.get('url')
-        _id = re.findall(r"id=(\w+)$", url)[0]
+        try:
+            _id= re.findall(r"id=(\w+)$", url)[0]
+        except:
+            return
         # print(id)
         key = '哲学社会科学外文OA资源数据库|' + _id
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
