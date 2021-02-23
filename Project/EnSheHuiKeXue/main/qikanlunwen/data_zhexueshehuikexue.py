@@ -134,8 +134,7 @@ class SpiderMain(BaseSpiderMain):
         if 'text' in pdf_resp.headers.get('Content-Type') or 'html' in pdf_resp.headers.get('Content-Type'):
             if not self.server.is_fulltext_page(pdf_resp):
                 # 更新种子错误信息
-                msg = 'url: {} Status: {} Content-Type error: {}'.format(pdf_url, pdf_resp.status_code,
-                                                                             pdf_resp.headers['Content-Type'])
+                msg = '未找到全文 Content-Type: {}'.format(pdf_resp.headers['Content-Type'])
                 logger.warning('document | failed, {} | url: {}'.format(msg, pdf_url))
                 data_dict = {'url': pdf_dict['relEsse']['url']}
                 self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
