@@ -17,12 +17,8 @@ from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<期刊论文_期刊_queue>'  # LOG名
-NAME = '期刊论文_期刊_data'  # 爬虫名
+LOGNAME = '期刊_queue'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
-
-INSERT_SPIDER_NAME = False # 爬虫名入库
-INSERT_DATA_NUMBER = False # 记录抓取数据量
 
 
 class BastSpiderMain(object):

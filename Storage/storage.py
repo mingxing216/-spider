@@ -173,7 +173,6 @@ class Dao(object):
 
     # 种子任务存入Mysql数据库
     def __update_task_to_mysql(self, table, data, sha):
-
         try:
             self.mysql_client.update(table=table, data=data, where="`sha` = '{}'".format(sha))
             self.logging.info('mysql | 已更新种子: {}'.format(sha))
@@ -348,8 +347,8 @@ class Dao(object):
             'type': type,
             'url': media_url,
             'biz_title': item.get('bizTitle'),
-            'rel_esse': str(item.get('relEsse')),
-            'rel_pics': str(item.get('relPics')),
+            'rel_esse': json.dumps(item.get('relEsse'), ensure_ascii=False),
+            'rel_pics': json.dumps(item.get('relPics'), ensure_ascii=False),
             'length': length,
             'content_type': contype,
             'tag_src': media_url

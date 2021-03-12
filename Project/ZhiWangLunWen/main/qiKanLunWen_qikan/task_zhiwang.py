@@ -11,24 +11,24 @@ import traceback
 from multiprocessing import Pool
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
-from Log import log
+from Log import logging
 from Project.ZhiWangLunWen.middleware import download_middleware
 from Project.ZhiWangLunWen.service import service
 from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 
-log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<期刊论文_期刊_task>'  # LOG名
-LOGGING = log.ILog(log_file_dir, LOGNAME)
+LOG_FILE_DIR = 'ZhiWangLunWen'  # LOG日志存放路径
+LOG_NAME = '期刊_task'  # LOG名
+logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
+        self.download_middleware = download_middleware.Downloader(logging=logger,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   timeout=config.TIMEOUT)
-        self.server = service.QiKanLunWen_QiKan(logging=LOGGING)
-        self.dao = dao.Dao(logging=LOGGING,
+        self.server = service.QiKanLunWen_QiKan(logging=logger)
+        self.dao = dao.Dao(logging=logger,
                            mysqlpool_number=config.MYSQL_POOL_MAX_NUMBER,
                            redispool_number=config.REDIS_POOL_MAX_NUMBER)
 
@@ -51,18 +51,18 @@ class SpiderMain(BastSpiderMain):
                                                     cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 10:
-                    LOGGING.error('出现验证码')
+                    logger.error('出现验证码')
                     continue
 
             return resp
 
         else:
-            LOGGING.error('页面出现验证码: {}'.format(url))
+            logger.error('页面出现验证码: {}'.format(url))
             return resp
 
     def spider(self, SearchStateJson, page_number):
         for page in range(page_number):
-            LOGGING.info('第{}页'.format(page + 1))
+            logger.info('第{}页'.format(page + 1))
             # 期刊列表页的请求data
             data = self.server.getQiKanLieBiaoPageData(SearchStateJson=SearchStateJson, page=page + 1)
             # 期刊列表页的响应
@@ -70,7 +70,7 @@ class SpiderMain(BastSpiderMain):
                                                 method='POST',
                                                 data=data)
             if not qikan_profile_resp:
-                LOGGING.error('期刊列表页第 {} 页获取失败。data: {}'.format(page + 1, data['data']))
+                logger.error('期刊列表页第 {} 页获取失败。data: {}'.format(page + 1, data['data']))
                 yield None
 
             qikan_profile_text = qikan_profile_resp.text
@@ -88,7 +88,7 @@ class SpiderMain(BastSpiderMain):
             #     f.write(fenlei_resp.text)
 
             if not fenlei_resp:
-                LOGGING.error('分类页源码获取失败， url: {}'.format(fenlei_url))
+                logger.error('分类页源码获取失败， url: {}'.format(fenlei_url))
                 continue
 
             fenlei_text = fenlei_resp.text
@@ -110,7 +110,7 @@ class SpiderMain(BastSpiderMain):
                                                  method='POST',
                                                  data=fenlei_data['data'])
                 if not fenlei_resp:
-                    LOGGING.error('期刊列表首页响应失败， url: {}'.format(fenlei_url))
+                    logger.error('期刊列表首页响应失败， url: {}'.format(fenlei_url))
                     continue
 
                 # with open('first.html', 'w', encoding='utf-8') as f:
@@ -129,7 +129,7 @@ class SpiderMain(BastSpiderMain):
                         task['s_zhongWenHeXinQiKanMuLu'] = heXinQiKan
                         # print(task)
                         self.num += 1
-                        LOGGING.info('已抓种子数量: {}'.format(self.num))
+                        logger.info('已抓种子数量: {}'.format(self.num))
                         self.dao.save_task_to_mysql(table=config.MYSQL_MAGAZINE, memo=task, ws='中国知网', es='期刊论文')
 
 def process_start():
@@ -137,13 +137,13 @@ def process_start():
     try:
         main.start()
     except:
-        LOGGING.error(str(traceback.format_exc()))
+        logger.error(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
-    LOGGING.info('======The Start!======')
+    logger.info('======The Start!======')
     begin_time = time.time()
     process_start()
     end_time = time.time()
-    LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))
+    logger.info('======The End!======')
+    logger.info('======Time consuming is %.2fs======' % (end_time - begin_time))

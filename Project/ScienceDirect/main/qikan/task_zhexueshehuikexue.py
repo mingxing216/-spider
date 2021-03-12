@@ -1,0 +1,335 @@
+# -*-coding:utf-8-*-
+
+"""
+
+"""
+# import gevent
+# from gevent import monkey
+# monkey.patch_all()
+import sys
+import os
+import json
+import requests
+import time
+import traceback
+import re
+from multiprocessing.pool import Pool, ThreadPool
+
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
+
+from Log import logging
+from Utils import timers
+from Project.ScienceDirect.service.service import CaptchaProcessor
+from Project.ScienceDirect.middleware import download_middleware
+from Project.ScienceDirect.service import service
+from Project.ScienceDirect.dao import dao
+from Project.ScienceDirect import config
+
+LOG_FILE_DIR = 'ScienceDirect'  # LOG日志存放路径
+LOG_NAME = '英文期刊_task'  # LOG名
+logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
+
+
+class BaseSpiderMain(object):
+    def __init__(self):
+        self.download = download_middleware.Downloader(logging=logger,
+                                                       proxy_enabled=config.PROXY_ENABLED,
+                                                       stream=config.STREAM,
+                                                       timeout=config.TIMEOUT)
+        self.server = service.Server(logging=logger)
+        self.dao = dao.Dao(logging=logger,
+                           mysqlpool_number=config.MYSQL_POOL_NUMBER,
+                           redispool_number=config.REDIS_POOL_NUMBER)
+        self.s = requests.Session()
+        self.captcha_processor = CaptchaProcessor(self.server, self.download, self.s, logger)
+
+
+class SpiderMain(BaseSpiderMain):
+    def __init__(self):
+        super().__init__()
+        self.timer = timers.Timer()
+        # 入口页url
+        self.index_url = 'https://www.sciencedirect.com/browse/journals-and-books?contentType=JL'
+        # 期刊列表页接口
+        self.catalog_url = 'https://www.sciencedirect.com/browse/journals-and-books?page={}&contentType=JL'
+        # 计数
+        self.num = 0
+
+    def get_journal_profile(self):
+            """
+            获取期刊列表页中所有期刊种子, 存入mysql数据库, 同时存入redis队列
+            """
+            index_resp = self.download.get_resp(url=self.index_url, method='GET')
+            if not index_resp:
+                logger.error('入口页响应失败, url: {}'.format(self.index_url))
+                return
+
+            # with open ('index.html', 'w') as f:
+            #     f.write(index_resp.text)
+
+            index_text = index_resp.text
+            # 获取期刊列表总页数
+            journal_pages = self.server.get_journal_total_page(text=index_text)
+            # print(journal_pages)
+            # 期刊列表页翻页
+            for page in range(1, int(journal_pages) + 1):
+                url = self.catalog_url.format(page)
+                # 请求响应
+                journal_resp = self.download.get_resp(url=url, method='GET')
+                if not journal_resp:
+                    logger.error('downloader | 期刊列表第 {} 页响应失败, url: {}'.format(page, url))
+                    return
+                journal_text = journal_resp.text
+                # 获取期刊详情种子种子
+                journal_list = self.server.get_journal_list(text=journal_text)
+                # 存入mysql数据库
+                for journal_url in journal_list:
+                    # 保存url
+                    self.num += 1
+                    logger.info('number | 当前已抓种子数量: {}'.format(self.num))
+                    # 存入数据库
+                    self.dao.save_task_to_mysql(table=config.MYSQL_MAGAZINE, memo=journal_url, ws='sciencedirect', es='期刊')
+
+                # 期刊详情页进入队列
+                self.dao.queue_tasks_to_redis(key=config.REDIS_SCIENCEDIRECT_MAGAZINE, data=journal_list)
+
+    def paper_catalog_page(self):
+        self.timer.start()
+        while 1:
+            # 获取任务
+            category = self.dao.get_one_task_from_redis(key=config.REDIS_SCIENCEDIRECT_MAGAZINE)
+            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2246427%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=46427", "currentUrl": "http://103.247.176.188/Search.aspx?qx=&ob=dd&start=791260"}'
+            if category:
+                # 数据类型转换
+                task = json.loads(category)
+                print(task)
+                issue_catalog_url = task['url'] + '/issues'
+                # 请求响应
+                issue_catalog_resp = self.download.get_resp(url=issue_catalog_url, method='GET')
+                if not issue_catalog_resp:
+                    logger.error('downloader | 期列表页响应失败, url: {}'.format(issue_catalog_url))
+                    return
+                issue_catalog_text = issue_catalog_resp.text
+
+                # 获取期列表页
+                issues_url_list = self.server.get_issues_catalog(issue_catalog_text)
+                if issues_url_list:
+                    for issue_url in issues_url_list:
+                        # 请求响应
+                        paper_catalog_resp = self.download.get_resp(url=issue_url, method='GET')
+                        if not paper_catalog_resp:
+                            logger.error('downloader | 论文列表页响应失败, url: {}'.format(issue_url))
+                            return
+                        try:
+                            paper_catalog_json = paper_catalog_resp.json()
+                        except Exception:
+                            logger.info('downloader | 论文列表获取接送数据失败')
+                            return
+
+                        paper_list = paper_catalog_json.get('data')
+                        if paper_list:
+                            for paper_memo in paper_list:
+                                paper_url = paper_memo.get('uriLookup')
+                                if paper_url:
+                                    paper_memo['url'] = task['url'] + paper_url
+                                    # 存入数据库
+                                    self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_memo,
+                                                                ws='sciencedirect', es='期刊论文catalog')
+                                    # 期刊论文列表页载入队列
+                                    self.dao.queue_one_task_to_redis(key=config.REDIS_SCIENCEDIRECT_CATALOG, data=paper_memo)
+
+            else:
+                logger.info('task | 队列中已无任务，结束程序 | use time: {}'.format(self.timer.use_time()))
+                return
+
+    def get_page_count(self, first_url, task):
+        """获取论文列表页总页数"""
+        paper_resp = self.captcha_processor.process_first_request(url=first_url, method='GET', s=self.s)
+        if not paper_resp:
+            logger.error('downloader | 论文第 1 页列表页响应失败, url: {}'.format(first_url))
+            # 队列一条任务
+            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+            return
+        # 处理验证码
+        paper_resp = self.captcha_processor.process(paper_resp)
+        if paper_resp is None:
+            # 队列一条任务
+            self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+            return
+
+        # 获取论文列表总页数
+        page_counts = self.server.get_paper_total_page(text=paper_resp.text)
+
+        return page_counts
+
+    @staticmethod
+    def get_all_pages(start_page, end_page):
+        """获取论文列表页所有url"""
+        all_pages = []
+        for count in range(start_page, end_page):
+            page = 'http://103.247.176.188/Search.aspx?qx=&ob=dd&start={}'.format((count - 1) * 10)
+            all_pages.append(page)
+
+        return all_pages
+
+    def get_profile(self, url_list):
+        """论文详情种子存入mysql数据库"""
+        for paper_url in url_list:
+            # 保存url
+            self.num += 1
+            logger.info('number | 当前已抓种子数量: {}'.format(self.num))
+            # 存入数据库
+            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_url, ws='英文哲学社会科学', es='期刊论文')
+
+    def get_current_catalog(self, first_url, journal_url, current_url, task):
+        """论文列表当前页翻页"""
+        # 访问首页，记住cookie（可获取列表总页数）
+        self.get_page_count(first_url, task)
+        try:
+            start_page = int(int(re.findall(r"\d+$", current_url)[0])/10 + 1)
+        except Exception:
+            start_page = 1
+        all_pages = self.get_all_pages(start_page, start_page + 1000)
+
+        next_num = start_page
+        for page_url in all_pages:
+            # 请求论文列表页
+            next_resp = self.captcha_processor.process_first_request(url=page_url, method='GET', s=self.s)
+            if not next_resp:
+                logger.error('downloader | 论文第 {} 页列表页响应失败, url: {}'.format(next_num, page_url))
+                # 队列一条任务
+                task['currentUrl'] = page_url
+                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                return
+            # 处理验证码
+            next_resp = self.captcha_processor.process(next_resp)
+            if next_resp is None:
+                # 队列一条任务
+                task['currentUrl'] = page_url
+                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                return
+            next_text = next_resp.text
+            # 响应成功，添加log日志
+            logger.info('downloader | 已翻到第{}页'.format(next_num))
+            # 获取论文详情种子、全文种子
+            paper_url_list = self.server.get_paper_list(next_text, journal_url)
+            # 详情种子存储
+            if paper_url_list:
+                self.get_profile(paper_url_list)
+
+            # 翻页计数
+            next_num += 1
+
+        else:
+            logger.info('downloader | 已翻到最后一页')
+            return
+
+    def get_paper_catalog(self, catalog_url, journal_url, task):
+        """论文列表页翻页"""
+        # 访问首页，记住cookie（可获取列表总页数）
+        self.get_page_count(catalog_url, task)
+        start_page = 1
+        all_pages = self.get_all_pages(start_page, start_page + 1000)
+
+        next_num = start_page
+        for page_url in all_pages:
+            # 请求论文列表页
+            next_resp = self.captcha_processor.process_first_request(url=page_url, method='GET', s=self.s)
+            if not next_resp:
+                logger.error('downloader | 论文第 {} 页列表页响应失败, url: {}'.format(next_num, page_url))
+                # 队列一条任务
+                task['currentUrl'] = page_url
+                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                return
+            # 处理验证码
+            next_resp = self.captcha_processor.process(next_resp)
+            if next_resp is None:
+                # 队列一条任务
+                task['currentUrl'] = page_url
+                self.dao.queue_one_task_to_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG, data=task)
+                return
+            next_text = next_resp.text
+            # 响应成功，添加log日志
+            logger.info('downloader | 已翻到第{}页'.format(next_num))
+            # 获取论文详情种子、全文种子
+            paper_url_list = self.server.get_paper_list(next_text, journal_url)
+            # 详情种子存储
+            if paper_url_list:
+                self.get_profile(paper_url_list)
+
+            # 翻页计数
+            next_num += 1
+
+        else:
+            logger.info('downloader | 已翻到最后一页')
+            return
+
+    def run(self):
+        self.timer.start()
+        while 1:
+            # 获取任务
+            category = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_CATALOG)
+            # category = '{"url": "http://103.247.176.188/Search.aspx?fd0=JI&kw0=%2246427%22&ob=dd", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=46427", "currentUrl": "http://103.247.176.188/Search.aspx?qx=&ob=dd&start=780200"}'
+            # print(category)
+            if category:
+                # 数据类型转换
+                task = json.loads(category)
+                # print(task)
+                paper_catalog_url = task['url']
+                journal_url = task['journalUrl']
+                current_url = task.get('currentUrl')
+                if current_url:
+                    # 从当前页开始翻页，获取并存储详情种子
+                    self.get_current_catalog(paper_catalog_url, journal_url, current_url, task)
+                else:
+                    # 列表页翻页，获取并存储详情种子
+                    self.get_paper_catalog(paper_catalog_url, journal_url, task)
+
+            else:
+                logger.info('task | 队列中已无任务，结束程序 | use time: {}'.format(self.timer.use_time()))
+                return
+
+
+def start():
+    main = SpiderMain()
+    try:
+        # main.get_journal_profile()
+        main.paper_catalog_page()
+        # main.run()
+    except Exception:
+        logger.error(str(traceback.format_exc()))
+
+    print(main.captcha_processor.recognize_code.show_report())
+
+
+def process_start():
+    # # 创建gevent协程
+    # g_list = []
+    # for category in category_list:
+    #     s = gevent.spawn(self.run, category)
+    #     g_list.append(s)
+    # gevent.joinall(g_list)
+
+    # self.run()
+
+    # 创建线程池
+    threadpool = ThreadPool(processes=1)
+    for j in range(1):
+        threadpool.apply_async(func=start)
+
+    threadpool.close()
+    threadpool.join()
+
+
+if __name__ == '__main__':
+    logger.info('======The Start!======')
+    begin_time = time.time()
+    # process_start()
+    po = Pool(processes=1)
+    for i in range(1):
+        po.apply_async(func=process_start)
+    po.close()
+    po.join()
+    end_time = time.time()
+    logger.info('======The End!======')
+    logger.info('======Time consuming is %.3f======' % (end_time - begin_time))

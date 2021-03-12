@@ -24,7 +24,7 @@ from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 
 log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<期刊论文_期刊_data>'  # LOG名
+LOGNAME = '期刊_data'  # LOG名
 LOGGING = log.ILog(log_file_dir, LOGNAME)
 
 
