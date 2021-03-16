@@ -18,6 +18,7 @@ from scrapy.selector import Selector
 from Utils import timers
 etree = html.etree
 
+
 class DomResultHolder(object):
     def __init__(self):
         self.dict = {}
@@ -407,20 +408,20 @@ class LunWen_Data(Service):
     def get_title(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            title = selector.xpath("//h2[@class='title']/text()").extract_first().strip()
+            title = selector.xpath("//h1/text()").extract_first().strip()
         except Exception:
             title = ''
 
         return title
 
-    def get_zuo_zhe(self, text):
+    def get_author(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            if selector.xpath("//div[@class='author']/span/a"):
-                zuozhe_list = selector.xpath("//div[@class='author']/span/a/text()").extract()
+            if selector.xpath("//h3[@class='author']/span/a"):
+                zuozhe_list = selector.xpath("//h3[@class='author']/span/a/text()").extract()
 
             else:
-                zuozhe_list = selector.xpath("//div[@class='author']/span/text()").extract()
+                zuozhe_list = selector.xpath("//h3[@class='author']/span/text()").extract()
 
             zuozhe = '|'.join(zuozhe_list)
 
@@ -429,13 +430,13 @@ class LunWen_Data(Service):
 
         return zuozhe
 
-    def get_zuo_zhe_dan_wei(self, text):
+    def get_author_affiliation(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            if selector.xpath("//div[@class='orgn']/span/a"):
-                danwei_list = selector.xpath("//div[@class='orgn']/span/a/text()").extract()
+            if selector.xpath("//h3[@class='author']/following-sibling::h3[1]/span/a"):
+                danwei_list = selector.xpath("//h3[@class='author']/following-sibling::h3[1]/span/a/text()").extract()
             else:
-                danwei_list = selector.xpath("//div[@class='orgn']/span/text()").extract()
+                danwei_list = selector.xpath("//h3[@class='author']/following-sibling::h3[1]/span/text()").extract()
 
             danwei = '|'.join(danwei_list)
 
@@ -444,7 +445,7 @@ class LunWen_Data(Service):
 
         return danwei
 
-    def get_zhai_yao(self, text):
+    def get_abstract(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
             zhaiyao = selector.xpath("//span[@id='ChDivSummary']").extract_first()
@@ -2180,7 +2181,7 @@ class QiKanLunWen_LunWen(Service):
             try:
                 year = dl.xpath("./dt/em/text()").extract_first().strip()
                 # 只获取2018-2020年份的期刊论文
-                if int(year) >= 2010:
+                if int(year) >= 2015:
                     stage_list = dl.xpath("./dd/a/text()").extract() # 期列表
                     for stage in stage_list:
                         issue = re.findall(r'No\.(.*)', stage)[0]

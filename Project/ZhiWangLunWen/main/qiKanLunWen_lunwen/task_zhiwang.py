@@ -59,7 +59,7 @@ class SpiderMain(BaseSpiderMain):
                                           cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 10:
-                    logger.error('出现验证码: {}'.format(url))
+                    logger.error('captcha | 出现验证码: {}'.format(url))
                     continue
             return resp
         else:
@@ -94,14 +94,12 @@ class SpiderMain(BaseSpiderMain):
                 # 获取期刊时间列表页html源码
                 qikanTimeListHtml = self._get_resp(url=qiKanTimeListUrl, method='GET')
                 if not qikanTimeListHtml:
-                    logger.error('期刊时间列表页获取失败, url: {}'.format(qiKanTimeListUrl))
+                    logger.error('catalog | 期刊时间列表页获取失败, url: {}'.format(qiKanTimeListUrl))
                     # 队列一条任务
                     self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                     return
 
                 # 获取期刊【年】、【期】列表
-                # qiKanTimeList = self.server.getQiKanTimeList(qikanTimeListHtml)
-                # if qiKanTimeList:
                 # 循环获取指定年、期页文章列表页种子
                 for qikan_year in self.server.get_qi_kan_time_list(qikanTimeListHtml):
                     # 获取文章列表页种子
@@ -113,7 +111,7 @@ class SpiderMain(BaseSpiderMain):
                     # 获取论文列表页html源码
                     article_list_html = self._get_resp(url=articleUrl, method='GET')
                     if not qikanTimeListHtml:
-                        logger.error('论文列表页html源码获取失败, url: {}'.format(articleUrl))
+                        logger.error('catalog | 论文列表页html源码获取失败, url: {}'.format(articleUrl))
                         # 队列一条任务
                         self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                         return
@@ -125,15 +123,15 @@ class SpiderMain(BaseSpiderMain):
                             # print(paper_url)
                             # 存储种子
                             self.num += 1
-                            logger.info('已抓种子数量: {}'.format(self.num))
+                            logger.info('profile | 已抓种子数量: {}'.format(self.num))
                             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_url, ws='中国知网', es='期刊论文')
                     else:
-                        logger.error('论文种子列表获取失败')
+                        logger.error('catalog | 论文种子列表获取失败')
                         # 队列一条任务
                         self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                         continue
                 else:
-                    logger.info('年、期列表获取完毕')
+                    logger.info('catalog | 年、期列表获取完毕')
 
             else:
                 logger.info('task | 队列中已无任务，结束程序 | use time: {}'.format(self.timer.use_time()))
@@ -144,14 +142,14 @@ class SpiderMain(BaseSpiderMain):
             # 查询redis队列中任务数量
             url_number = self.dao.select_task_number(key=config.REDIS_QIKAN_CATALOG)
             if url_number <= config.MAX_QUEUE_REDIS/10:
-                logger.info('redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS / 10)))
+                logger.info('queue | redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS / 10)))
                 # 获取任务
                 new_task_list = self.dao.get_task_list_from_mysql(table=config.MYSQL_MAGAZINE, ws='中国知网', es='期刊', count=15000)
                 # print(new_task_list)
                 # 队列任务
                 self.dao.queue_tasks_from_mysql_to_redis(key=config.REDIS_QIKAN_CATALOG, data=new_task_list)
             else:
-                logger.info('redis剩余{}个任务'.format(url_number))
+                logger.info('queue | redis剩余{}个任务'.format(url_number))
 
             time.sleep(1)
 

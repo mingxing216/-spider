@@ -57,7 +57,7 @@ class SpiderMain(BaseSpiderMain):
                                                     cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 10:
-                    logger.error('出现验证码: {}'.format(url))
+                    logger.error('captcha | 出现验证码: {}'.format(url))
                     continue
             return resp
         else:
@@ -73,7 +73,7 @@ class SpiderMain(BaseSpiderMain):
                                                 method='POST',
                                                 data=data)
             if not qikan_profile_resp:
-                logger.error('期刊列表页第 {} 页获取失败。data: {}'.format(page + 1, data['data']))
+                logger.error('catalog | 期刊列表页第 {} 页获取失败。data: {}'.format(page + 1, data['data']))
                 yield None
 
             qikan_profile_text = qikan_profile_resp.text
@@ -86,7 +86,7 @@ class SpiderMain(BaseSpiderMain):
         navi_resp = self._get_resp(url=navi_url, method='GET')
 
         if not navi_resp:
-            logger.error('分类页源码获取失败， url: {}'.format(navi_url))
+            logger.error('classify | 分类页源码获取失败， url: {}'.format(navi_url))
             return
 
         form_data = {
@@ -104,7 +104,7 @@ class SpiderMain(BaseSpiderMain):
                                          method='POST',
                                          data=form_data)
         if not catalog_resp:
-            logger.error('期刊列表首页响应失败， url: {}'.format(self.search_url))
+            logger.error('catalog | 期刊列表首页响应失败， url: {}'.format(self.search_url))
             return
 
         # with open('catalog.html', 'w', encoding='utf-8') as f:
@@ -121,7 +121,7 @@ class SpiderMain(BaseSpiderMain):
                 # 保存数据
                 # print(task)
                 self.num += 1
-                logger.info('已抓种子数量: {}'.format(self.num))
+                logger.info('profile | 已抓种子数量: {}'.format(self.num))
                 self.dao.save_task_to_mysql(table=config.MYSQL_MAGAZINE, memo=task, ws='中国知网', es='期刊')
 
     def start(self):
@@ -135,7 +135,7 @@ class SpiderMain(BaseSpiderMain):
             #     f.write(fenlei_resp.text)
 
             if not fenlei_resp:
-                logger.error('分类页源码获取失败， url: {}'.format(fenlei_url))
+                logger.error('classify | 分类页源码获取失败， url: {}'.format(fenlei_url))
                 continue
 
             fenlei_text = fenlei_resp.text
@@ -151,7 +151,7 @@ class SpiderMain(BaseSpiderMain):
                                                  method='POST',
                                                  data=fenlei_data['data'])
                 if not fenlei_resp:
-                    logger.error('期刊列表首页响应失败， url: {}'.format(fenlei_url))
+                    logger.error('catalog | 期刊列表首页响应失败， url: {}'.format(fenlei_url))
                     continue
 
                 # with open('first.html', 'w', encoding='utf-8') as f:
@@ -170,7 +170,7 @@ class SpiderMain(BaseSpiderMain):
                         task['s_zhongWenHeXinQiKanMuLu'] = heXinQiKan
                         print(task)
                         self.num += 1
-                        logger.info('已抓种子数量: {}'.format(self.num))
+                        logger.info('profile | 已抓种子数量: {}'.format(self.num))
 
                         self.dao.save_task_to_mysql(table=config.MYSQL_MAGAZINE, memo=task, ws='中国知网', es='期刊')
 
@@ -178,8 +178,8 @@ class SpiderMain(BaseSpiderMain):
 def process_start():
     main = SpiderMain()
     try:
-        # main.all_magazine()
-        main.start()
+        main.all_magazine()
+        # main.start()
     except:
         logger.error(str(traceback.format_exc()))
 

@@ -26,7 +26,7 @@ from Project.ZhiWangLunWen import config
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 LOG_FILE_DIR = 'ZhiWangLunWen'  # LOG日志存放路径
-LOG_NAME = '期刊_task'  # LOG名
+LOG_NAME = '期刊_data'  # LOG名
 logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 
 
@@ -54,7 +54,7 @@ class SpiderMain(BaseSpiderMain):
                                           cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 10:
-                    logger.error('出现验证码: {}'.format(url))
+                    logger.error('captcha | 出现验证码: {}'.format(url))
                     continue
             return resp
         else:
@@ -64,7 +64,7 @@ class SpiderMain(BaseSpiderMain):
         # 获取图片响应
         media_resp = self._get_resp(url=img_dict['url'], method='GET')
         if not media_resp:
-            logger.error('图片响应失败, url: {}'.format(img_dict['url']))
+            logger.error('downloader | 图片响应失败, url: {}'.format(img_dict['url']))
             # 标题内容调整格式
             img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
@@ -106,7 +106,7 @@ class SpiderMain(BaseSpiderMain):
         #     f.write(resp.text)
 
         if not resp:
-            logger.error('页面响应失败, url: {}'.format(url))
+            logger.error('downloader | 页面响应失败, url: {}'.format(url))
             return
 
         response = resp.text
@@ -148,17 +148,17 @@ class SpiderMain(BaseSpiderMain):
         try:
             save_data['chuBanWenXianLiang'] = {'v': re.findall(r'\d+', self.server.get_data(response, '出版文献量'))[0], 'u': '篇'}
         except:
-            save_data['chuBanWenXianLiang'] = ""
+            save_data['chuBanWenXianLiang'] = ''
         # 获取总下载次数
         try:
             save_data['zongXiaZaiCiShu'] = {'v': re.findall(r'\d+', self.server.get_data(response, '总下载次数'))[0], 'u': '次'}
         except:
-            save_data['zongXiaZaiCiShu'] = ""
+            save_data['zongXiaZaiCiShu'] = ''
         # 获取总被引次数
         try:
             save_data['zongBeiYinCiShu'] = {'v': re.findall(r'\d+', self.server.get_data(response, '总被引次数'))[0], 'u': '次'}
         except:
-            save_data['zongBeiYinCiShu'] = ""
+            save_data['zongBeiYinCiShu'] = ''
         # 获取复合影响因子
         save_data['fuHeYingXiangYinZi'] = self.server.get_ying_xiang_yin_zi(response, '复合影响因子')
         # 获取综合影响因子
@@ -170,7 +170,7 @@ class SpiderMain(BaseSpiderMain):
         # 获取期刊荣誉
         save_data['qiKanRongYu'] = self.server.getQiKanRongYu(response)
         # 获取来源分类
-        save_data['laiYuanFenLei'] = ""
+        save_data['laiYuanFenLei'] = ''
         # 获取关联主管单位
         save_data['guanLianZhuGuanDanWei'] = {}
         # 获取关联主办单位
@@ -206,9 +206,9 @@ class SpiderMain(BaseSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '期刊'
         # 生成es ——栏目名称
-        save_data['es'] = '英文期刊'
+        save_data['es'] = '期刊'
         # 生成ws ——目标网站
-        save_data['ws'] = '哲学社会科学外文OA资源数据库'
+        save_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
         save_data['clazz'] = '期刊_学术期刊'
         # 生成biz ——项目
@@ -238,8 +238,8 @@ class SpiderMain(BaseSpiderMain):
             # 获取任务
             logger.info('task start')
             task_timer.start()
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_MAGAZINE)
-            # task = '{"url": "http://103.247.176.188/ViewJ.aspx?id=81767", "sha": "38feb69bbe48bf5d66f505310fa452d8eb184b65"}'
+            # task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_MAGAZINE)
+            task = '{"url": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=HDKJ", "sha": "6fab3a87edaa09065c89d5df8e5242f02dabe2fa", "s_xueKeLeiBie": "基础科学_基础科学综合", "s_zhongWenHeXinQiKanMuLu": ""}'
             if task:
                 try:
                     # 创建数据存储字典

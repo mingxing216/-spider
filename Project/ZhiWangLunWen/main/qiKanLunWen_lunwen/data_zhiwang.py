@@ -3,79 +3,81 @@
 '''
 
 '''
-import gevent
-from gevent import monkey
-monkey.patch_all()
+# import gevent
+# from gevent import monkey
+# monkey.patch_all()
 import sys
 import os
+import re
 import time
+import json
+import random
 import traceback
-import ast
 import copy
 import hashlib
-from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
-sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
-from Log import log
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
+from Log import logging
 from Project.ZhiWangLunWen.middleware import download_middleware
 from Project.ZhiWangLunWen.service import service
 from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
-from Utils import timeutils
+from Utils import timeutils, timers
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
-log_file_dir = 'ZhiWangLunWen'  # LOG日志存放路径
-LOGNAME = '<期刊论文_论文_data>'  # LOG名
-LOGGING = log.ILog(log_file_dir, LOGNAME)
+LOG_FILE_DIR = 'ZhiWangLunWen'  # LOG日志存放路径
+LOG_NAME = '期刊论文_data'  # LOG名
+logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 
 
 class BastSpiderMain(object):
     def __init__(self):
-        self.download_middleware = download_middleware.Downloader(logging=LOGGING,
-                                                                 proxy_type=config.PROXY_TYPE,
-                                                                 timeout=config.TIMEOUT)
-        self.server = service.LunWen_Data(logging=LOGGING)
-        self.dao = dao.Dao(logging=LOGGING,
-                           mysqlpool_number=config.MYSQL_POOL_MAX_NUMBER,
-                           redispool_number=config.REDIS_POOL_MAX_NUMBER)
+        self.download = download_middleware.Downloader(logging=logger,
+                                                       proxy_enabled=config.PROXY_ENABLED,
+                                                       stream=config.STREAM,
+                                                       timeout=config.TIMEOUT)
+        self.server = service.LunWen_Data(logging=logger)
+        self.dao = dao.Dao(logging=logger,
+                           mysqlpool_number=config.MYSQL_POOL_NUMBER,
+                           redispool_number=config.REDIS_POOL_NUMBER)
 
 
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
+        self.lang_api = 'http://localhost:9008/detect'
+        self.timer = timers.Timer()
 
-    def __getResp(self, url, method, s=None, data=None, cookies=None, referer=None):
+    def _get_resp(self, url, method, s=None, data=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
         for i in range(3):
-            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
-                                                    cookies=cookies, referer=referer)
+            resp = self.download.get_resp(s=s, url=url, method=method, data=data,
+                                          cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 10:
+                    logger.error('captcha | 出现验证码: {}'.format(url))
                     continue
-
             return resp
-
         else:
-            LOGGING.error('页面出现验证码: {}'.format(url))
             return
 
-    def imgDownload(self, img_dict, sha):
+    def img_download(self, img_dict):
         # 获取图片响应
-        media_resp = self.__getResp(url=img_dict['url'], method='GET')
+        media_resp = self._get_resp(url=img_dict['url'], method='GET')
         if not media_resp:
-            LOGGING.error('图片响应失败, url: {}'.format(img_dict['url']))
+            logger.error('downloader | 图片响应失败, url: {}'.format(img_dict['url']))
             # 标题内容调整格式
             img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
             # 存储图片种子
             self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
-
-            # # 逻辑删除任务
-            # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
             return
         # media_resp.encoding = media_resp.apparent_encoding
         img_content = media_resp.content
         # 存储图片
-        succ = self.dao.save_media_to_hbase(media_url=img_dict['url'], content=img_content, item=img_dict, type='image')
+        content_type = 'image/jpeg'
+        succ = self.dao.save_media_to_hbase(media_url=img_dict['url'], content=img_content, item=img_dict,
+                                            type='image', contype=content_type)
         if not succ:
             # # 逻辑删除任务
             # self.dao.deleteLogicTask(table=config.MYSQL_PAPER, sha=sha)
@@ -85,35 +87,35 @@ class SpiderMain(BastSpiderMain):
             self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             return
 
-    def handle(self, task, save_data):
-        # 数据类型转换
-        task_data = self.server.get_eval_response(task)
-        # print(task_data)
+    def handle(self, task_data, save_data):
+        print(task_data)
         url = task_data['url']
-        sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
+        try:
+            _id= re.findall(r"filename=(\w+)&", url)[0]
+        except:
+            return
+        # print(id)
+        key = '中国知网|' + _id
+        sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
 
-        # # 查询当前文章是否被抓取过
-        # status = self.dao.getTaskStatus(sha=sha)
-
-        # 获取论文主页html源码
-        resp = self.__getResp(url=url, method='GET')
+        # 获取论文详情页html源码
+        resp = self._get_resp(url=url, method='GET')
         if not resp:
-            LOGGING.error('会议论文详情页响应失败, url: {}'.format(url))
-            # 逻辑删除任务
-            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
+            logger.error('downloader | 论文详情页响应失败, url: {}'.format(url))
             return
 
-        resp.encoding = resp.apparent_encoding
+        # resp.encoding = resp.apparent_encoding
         article_html = resp.text
 
+        # ======================== 期刊论文实体数据 ===========================
         # 获取标题
         save_data['title'] = self.server.get_title(article_html)
         # 获取作者
-        save_data['zuoZhe'] = self.server.get_zuo_zhe(article_html)
+        save_data['author'] = self.server.get_author(article_html)
         # 获取作者单位
-        save_data['zuoZheDanWei'] = self.server.get_zuo_zhe_dan_wei(article_html)
+        save_data['author_affiliation'] = self.server.get_author_affiliation(article_html)
         # 获取摘要
-        save_data['zhaiYao'] = self.server.get_zhai_yao(article_html)
+        save_data['abstract'] = self.server.get_abstract(article_html)
         # 获取关键词
         save_data['guanJianCi'] = self.server.get_more_fields(article_html, '关键词')
         # 获取基金
@@ -127,9 +129,9 @@ class SpiderMain(BastSpiderMain):
         # 期号
         save_data['qiHao'] = self.server.get_qi_hao(article_html)
         # 获取下载
-        save_data['xiaZai'] = task_data.get('xiaZai')
+        save_data['xiaZai'] = task_data.get('xiaZai', '')
         # 获取在线阅读
-        save_data['zaiXianYueDu'] = task_data.get('zaiXianYueDu')
+        save_data['zaiXianYueDu'] = task_data.get('zaiXianYueDu', '')
         # 获取下载次数
         save_data['xiaZaiCiShu'] = self.server.get_xia_zai(article_html)
         # 获取所在页码
@@ -145,11 +147,11 @@ class SpiderMain(BastSpiderMain):
         else:
             save_data['shiJian'] = ''
         # 学科类别
-        save_data['xueKeLeiBie'] = task_data.get('xueKeLeiBie')
+        save_data['xueKeLeiBie'] = task_data.get('xueKeLeiBie', '')
         # 来源分类
         save_data['laiYuanFenLei'] = ''
         # 获取参考文献
-        save_data['guanLianCanKaoWenXian'] = self.server.canKaoWenXian(url=url, download=self.__getResp)
+        save_data['guanLianCanKaoWenXian'] = self.server.canKaoWenXian(url=url, download=self._get_resp)
         # 关联期刊
         save_data['guanLianQiKan'] = self.server.guanLianQiKan(task_data.get('parentUrl'))
         # 关联人物
@@ -160,7 +162,7 @@ class SpiderMain(BastSpiderMain):
         save_data['guanLianWenDang'] = {}
 
         # 获取所有图片链接
-        picDatas = self.server.get_pic_url(resp=article_html, fetch=self.__getResp)
+        picDatas = self.server.get_pic_url(text=article_html, fetch=self._get_resp)
         if picDatas:
             # 获取组图(关联组图)
             save_data['relationPics'] = self.server.rela_pics(url, sha)
@@ -175,12 +177,12 @@ class SpiderMain(BastSpiderMain):
             # url
             pics['url'] = url
             # 生成key
-            pics['key'] = url
+            pics['key'] = key
             # 生成sha
-            pics['sha'] = hashlib.sha1(pics['key'].encode('utf-8')).hexdigest()
+            pics['sha'] = sha
             # 生成ss ——实体
             pics['ss'] = '组图'
-            # 生成es ——栏目名称
+            # es ——栏目名称
             pics['es'] = '期刊论文'
             # 生成ws ——目标网站
             pics['ws'] = '中国知网'
@@ -190,6 +192,17 @@ class SpiderMain(BastSpiderMain):
             pics['biz'] = '文献大数据_论文'
             # 生成ref
             pics['ref'] = ''
+            # 采集责任人
+            pics['creator'] = '张明星'
+            # 更新责任人
+            pics['modified_by'] = ''
+            # 采集服务器集群
+            pics['cluster'] = 'crawler'
+            # 元数据版本号
+            pics['metadata_version'] = 'V2.0'
+            # 采集脚本版本号
+            pics['script_version'] = 'V1.0'
+
             # 保存组图实体到Hbase
             self.dao.save_data_to_hbase(data=pics)
 
@@ -208,37 +221,39 @@ class SpiderMain(BastSpiderMain):
                 # 存储图片种子
                 suc = self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
                 if not suc:
-                    LOGGING.error('图片种子存储失败, url: {}'.format(img['url']))
+                    logger.error('storage | 图片种子存储失败, url: {}'.format(img['url']))
                     # 逻辑删除任务
                     self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
 
             # # 创建gevent协程
             # img_list = []
             # for img_task in img_tasks:
-            #     s = gevent.spawn(self.imgDownload, img_task, sha)
+            #     s = gevent.spawn(self.img_download, img_task, sha)
             #     img_list.append(s)
             # gevent.joinall(img_list)
 
-            # # 创建线程池
-            # threadpool = ThreadPool()
-            # for img_task in img_tasks:
-            #     threadpool.apply_async(func=self.imgDownload, args=(img_task, sha))
-            #
-            # threadpool.close()
-            # threadpool.join()
+            # 创建线程池
+            threadpool = ThreadPool()
+            for img_task in img_tasks:
+                threadpool.apply_async(func=self.img_download, args=(img_task, sha))
+
+            threadpool.close()
+            threadpool.join()
 
         else:
             # 获取组图(关联组图)
             save_data['relationPics'] = {}
 
         # ====================================公共字段
+        # url
+        save_data['url'] = url
         # 生成key
-        save_data['key'] = url
+        save_data['key'] = key
         # 生成sha
         save_data['sha'] = sha
         # 生成ss ——实体
         save_data['ss'] = '论文'
-        # 生成es ——栏目名称
+        # es ——栏目名称
         save_data['es'] = '期刊论文'
         # 生成ws ——目标网站
         save_data['ws'] = '中国知网'
@@ -248,10 +263,18 @@ class SpiderMain(BastSpiderMain):
         save_data['biz'] = '文献大数据_论文'
         # 生成ref
         save_data['ref'] = ''
+        # 采集责任人
+        save_data['creator'] = '张明星'
+        # 更新责任人
+        save_data['modified_by'] = ''
+        # 采集服务器集群
+        save_data['cluster'] = 'crawler'
+        # 元数据版本号
+        save_data['metadata_version'] = 'V2.0'
+        # 采集脚本版本号
+        save_data['script_version'] = 'V1.0'
 
-        # --------------------------
-        # 存储部分
-        # --------------------------
+        # =============== 存储部分 ==================
         # 保存人物队列
         people_list = self.server.getPeople(zuozhe=save_data['guanLianRenWu'], daoshi=save_data.get('guanLianDaoShi'), t=save_data['shiJian'])
         # print(people_list)
@@ -266,83 +289,101 @@ class SpiderMain(BastSpiderMain):
                 jigou['url'] = jigou['url'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
                 self.dao.save_task_to_mysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
 
-        return sha
-
-    def run(self, task):
-        # 创建数据存储字典
-        save_data = {}
-        # 获取字段值存入字典并返回sha
-        sha = self.handle(task=task, save_data=save_data)
-        # 保存数据到Hbase
-        if not save_data:
-            LOGGING.info('没有获取数据, 存储失败')
-            return
-        if 'sha' not in save_data:
-            LOGGING.info('数据获取不完整, 存储失败')
-            return
-        # 存储数据
-        success = self.dao.save_data_to_hbase(data=save_data)
-        if success:
-            # 删除任务
-            self.dao.delete_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
-        else:
-            # 逻辑删除任务
-            self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
-
-    def start(self):
-        while 1:
+    def run(self):
+        logger.debug('thread start')
+        task_timer = timers.Timer()
+        # 第一次请求的等待时间
+        self.timer.start()
+        time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
+        logger.debug('thread | wait download delay time | use time: {}'.format(self.timer.use_time()))
+        # 单线程无限循环
+        while True:
             # 获取任务
-            task_list = self.dao.get_task_from_redis(key=config.REDIS_QIKAN_PAPER, count=50, lockname=config.REDIS_QIKAN_PAPER_LOCK)
-            # print(task_list)
-            LOGGING.info('获取{}个任务'.format(len(task_list)))
+            logger.info('task start')
+            task_timer.start()
+            # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
+            #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
+            # task = '{"url": "http://103.247.176.188/View.aspx?id=81378664", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=81378664", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=23677", "sha": "121f7ce3d5b82baa6b51a1276854971163af399d"}'
+            if task:
+                try:
+                    # 创建数据存储字典
+                    save_data = dict()
+                    # json数据类型转换
+                    task_data = json.loads(task)
+                    sha = task_data['sha']
+                    # 获取字段值存入字典并返回sha
+                    self.handle(task_data=task_data, save_data=save_data)
+                    # 保存数据到Hbase
+                    if not save_data:
+                        # 逻辑删除任务
+                        self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
+                        logger.error(
+                            'task end | task failed | use time: {} | No data.'.format(task_timer.use_time()))
+                        continue
+                    if 'sha' not in save_data:
+                        # 逻辑删除任务
+                        self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
+                        logger.error(
+                            'task end | task failed | use time: {} | Data Incomplete.'.format(task_timer.use_time()))
+                        continue
+                    # 存储数据
+                    success = self.dao.save_data_to_hbase(data=save_data, ss_type=save_data['ss'], sha=save_data['sha'], url=save_data['url'])
 
-            if task_list:
-                # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
+                    if success:
+                        # 已完成任务
+                        self.dao.finish_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
+                        # # 删除任务
+                        # self.dao.deleteTask(table=config.MYSQL_TEST, sha=sha)
+                    else:
+                        # 逻辑删除任务
+                        self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
 
-                # 创建gevent协程
-                g_list = []
-                for task in task_list:
-                    s = gevent.spawn(self.run, task)
-                    g_list.append(s)
-                gevent.joinall(g_list)
+                    logger.info('task end | task success | use time: {}'.format(task_timer.use_time()))
 
-                # # 创建线程池
-                # threadpool = ThreadPool()
-                # for url in task_list:
-                #     threadpool.apply_async(func=self.run, args=(url,))
-                #
-                # threadpool.close()
-                # threadpool.join()
-
-                time.sleep(1)
-
+                except:
+                    logger.exception(str(traceback.format_exc()))
+                    logger.error('task end | task failed | use time: {}'.format(task_timer.use_time()))
             else:
-                time.sleep(2)
-                continue
-                # LOGGING.info('队列中已无任务，结束程序')
-                # return
+                logger.info('task | 队列中已无任务')
+
+
+def start():
+    main = SpiderMain()
+    try:
+        main.run()
+    except:
+        logger.exception(str(traceback.format_exc()))
 
 
 def process_start():
-    main = SpiderMain()
-    try:
-        main.start()
-        # main.run('{"url": "http://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=KYGL2017S1059&dbname=CJFDLAST2017", "xiaZai": "http://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=rqbwtGUZJ7kGEDCwAni8wGOGuEv0N4vz%mmd2BiQ8as210mgQvjcNzI7jHsUpk0WIr%mmd2B0y&tableName=CJFDLAST2017", "zaiXianYueDu": "http://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=KYGL2017S1059&tablename=CJFDLAST2017&filetype=XML;EPUB;", "xueKeLeiBie": "基础科学_基础科学综合", "parentUrl": "http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=KYGL"}')
-    except:
-        LOGGING.error(str(traceback.format_exc()))
+    # gevent.joinall([gevent.spawn(self.run, task) for task in task_list])
+
+    # # 创建gevent协程
+    # g_list = []
+    # for i in range(8):
+    #     s = gevent.spawn(self.run)
+    #     g_list.append(s)
+    # gevent.joinall(g_list)
+
+    # self.run()
+
+    # 创建线程池
+    tpool = ThreadPoolExecutor(max_workers=config.THREAD_NUM)
+    for i in range(config.THREAD_NUM):
+        tpool.submit(start)
+    tpool.shutdown(wait=True)
 
 
 if __name__ == '__main__':
-    LOGGING.info('======The Start!======')
+    logger.info('====== The Start! ======')
     begin_time = time.time()
-    process_start()
-
-    # po = Pool(1)
-    # for i in range(1):
-    #     po.apply_async(func=process_start)
-    # po.close()
-    # po.join()
-
+    # process_start()
+    # 创建进程池
+    ppool = ProcessPoolExecutor(max_workers=config.PROCESS_NUM)
+    for i in range(config.PROCESS_NUM):
+        ppool.submit(process_start)
+    ppool.shutdown(wait=True)
     end_time = time.time()
-    LOGGING.info('======The End!======')
-    LOGGING.info('======Time consuming is %.2fs======' % (end_time - begin_time))
+    logger.info('====== The End! ======')
+    logger.info('====== Time consuming is %.3fs ======' % (end_time - begin_time))

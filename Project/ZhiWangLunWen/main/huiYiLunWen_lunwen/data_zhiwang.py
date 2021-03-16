@@ -109,11 +109,11 @@ class SpiderMain(BastSpiderMain):
         # 获取标题
         save_data['title'] = self.server.get_title(article_html)
         # 获取作者
-        save_data['zuoZhe'] = self.server.get_zuo_zhe(article_html)
+        save_data['zuoZhe'] = self.server.get_author(article_html)
         # 获取作者单位
-        save_data['zuoZheDanWei'] = self.server.get_zuo_zhe_dan_wei(article_html)
+        save_data['zuoZheDanWei'] = self.server.get_author_affiliation(article_html)
         # 获取摘要
-        save_data['zhaiYao'] = self.server.get_zhai_yao(article_html)
+        save_data['zhaiYao'] = self.server.get_abstract(article_html)
         # 获取关键词
         save_data['guanJianCi'] = self.server.get_more_fields(article_html, '关键词')
         # 获取基金
