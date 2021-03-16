@@ -30,7 +30,7 @@ from Utils import user_pool, timers
 from Project.ScienceDirect.service.service import CaptchaProcessor
 
 LOG_FILE_DIR = 'ScienceDirect'  # LOG日志存放路径
-LOG_NAME = '英文论文_data'  # LOG名
+LOG_NAME = '英文期刊论文_data'  # LOG名
 logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 
 

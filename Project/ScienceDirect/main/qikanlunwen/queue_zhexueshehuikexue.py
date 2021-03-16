@@ -19,7 +19,7 @@ from Project.ScienceDirect.dao import dao
 from Project.ScienceDirect import config
 
 LOG_FILE_DIR = 'ScienceDirect'  # LOG日志存放路径
-LOG_NAME = '英文论文_queue'  # LOG名
+LOG_NAME = '英文期刊论文_queue'  # LOG名
 logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 
 class BastSpiderMain(object):

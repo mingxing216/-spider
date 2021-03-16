@@ -57,7 +57,7 @@ class SpiderMain(BastSpiderMain):
         # 发现验证码，请求页面3次
         resp = None
         for i in range(3):
-            resp = self.download_middleware.getResp(s=s, url=url, method=method, data=data,
+            resp = self.download_middleware.get_resp(s=s, url=url, method=method, data=data,
                                                     cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 10:
@@ -100,7 +100,7 @@ class SpiderMain(BastSpiderMain):
         # lunwen_list_resp.encoding = lunwen_list_resp.apparent_encoding
         lunwen_list_text = lunwen_list_resp.text
         # 获取论文队列参数
-        lunwen_url_list = self.server.getProfileUrl(resp=lunwen_list_text, zhuanye=catalog['s_zhuanYe'], parent_url=url)
+        lunwen_url_list = self.server.getProfileUrl(text=lunwen_list_text, zhuanye=catalog['s_zhuanYe'], parent_url=url)
         for lunwen_url_data in lunwen_url_list:
             # 保存数据
             self.num += 1
@@ -140,14 +140,14 @@ class SpiderMain(BastSpiderMain):
         catalog_text = catalog_resp.text
         LOGGING.info('已翻到第一页')
         # 获取论文队列参数
-        lunwen_url_list = self.server.getProfileUrl(resp=catalog_text, zhuanye=catalog['s_zhuanYe'], parent_url=url)
+        lunwen_url_list = self.server.getProfileUrl(text=catalog_text, zhuanye=catalog['s_zhuanYe'], parent_url=url)
         for lunwen_url_data in lunwen_url_list:
             # 保存数据
             self.num += 1
             LOGGING.info('已抓种子数量: {}'.format(self.num))
             self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=lunwen_url_data, ws='中国知网', es='学位论文')
         # 获取列表页总页数
-        totalPage = self.server.getPageNumber(resp=catalog_text)
+        totalPage = self.server.getPageNumber(text=catalog_text)
         # print(totalPage)
         if totalPage > 1:
             for page in range(1, int(totalPage)):
@@ -159,7 +159,7 @@ class SpiderMain(BastSpiderMain):
 
     def run(self, category):
         # 数据类型转换
-        task = self.server.getEvalResponse(category)
+        task = self.server.get_eval_response(category)
         print(task)
         url = task['url']
         value = task.get('value')
@@ -189,7 +189,7 @@ class SpiderMain(BastSpiderMain):
         # zhuanye_resp.encoding = zhuanye_resp.apparent_encoding
         zhuanye_text = zhuanye_resp.text
         # 获取学科专业列表
-        zhuanye_list = self.server.getZhuanYeList(resp=zhuanye_text, value=value)
+        zhuanye_list = self.server.get_zhuan_ye_list(text=zhuanye_text, value=value)
         # print(zhuanye_list)
         # 遍历学科专业列表，获取详情页
         for catalog in zhuanye_list:

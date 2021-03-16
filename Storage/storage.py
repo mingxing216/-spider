@@ -231,18 +231,6 @@ class Dao(object):
         else:
             return
 
-    # # 从mysql队列任务到redis
-    # def QueueTask(self, key, data):
-    #     if data:
-    #         for url_data in data:
-    #             url = url_data['ctx']
-    #             self.redis_client.sadd(key=key, value=url)
-    #
-    #         self.logging.info('已成功向redis队列{}个任务'.format(len(data)))
-    #
-    #     else:
-    #         return
-
     # 从mysql队列任务到redis
     def queue_tasks_from_mysql_to_redis(self, key, data):
         self.timer.start()
@@ -305,28 +293,7 @@ class Dao(object):
                     data_start.use_time(), data.get('sha'), len(b_data), e))
             return False
 
-        # try:
-        #     resultCode = json.loads(resp)['resultCode']
-        # except:
-        #     resultCode = 1
-        #
-        # if resultCode == 0:
-        #     # 记录已存数据
-        #     statistics_data = {
-        #         'sha': data['sha'],
-        #         'memo': str({"url": data['url']}).replace('\'', '"'),
-        #         'create_at': timeutils.getNowDatetime(),
-        #         'data_type': data['es']
-        #     }
-        #
-        #     try:
-        #         self.mysql_client.insert_one(table=settings.DATA_VOLUME_TOTAL_TABLE, data=statistics_data)
-        #         self.mysql_client.insert_one(table=settings.DATA_VOLUME_DAY_TABLE, data=statistics_data)
-        #
-        #     except:
-        #         return resp
-
-    def save_media_to_hbase(self, media_url, content, item, type, length, contype=None):
+    def save_media_to_hbase(self, media_url, content, item, type, length=None, contype=None):
         self.timer.start()
         self.logging.info('storage start | 开始存储附件 {}'.format(type))
         ret = self.__save_media_to_hbase(media_url, content, item, type, length, contype)
@@ -338,10 +305,10 @@ class Dao(object):
         return ret
 
     # 保存流媒体到hbase
-    def __save_media_to_hbase(self, media_url, content, item, type, length, contype=None):
+    def __save_media_to_hbase(self, media_url, content, item, type, length=None, contype=None):
         url = '{}'.format(settings.SAVE_HBASE_MEDIA_URL)
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
-        # sha = int(random.random()*10000000000000000)
+
         data_dict = {
             'pk': sha,
             'type': type,
@@ -349,86 +316,61 @@ class Dao(object):
             'biz_title': item.get('bizTitle'),
             'rel_esse': json.dumps(item.get('relEsse'), ensure_ascii=False),
             'rel_pics': json.dumps(item.get('relPics'), ensure_ascii=False),
-            'length': length,
             'content_type': contype,
-            'tag_src': media_url
-            # 'naturalHeight': "{}".format(img.height),
-            # 'naturalWidth': "{}".format(img.width)
+            'tag_src': media_url,
         }
-        form_data = {}
-        if 'pdf' in contype:
+        store_data = ''
+        # 图片存储
+        if 'image' in contype:
             # 二进制图片文件转成base64文件
             content_bs64 = base64.b64encode(content)
-            # content_bs64 = content
-            # # 解码base64图片文件为二进制文件
-            # dbs = base64.b64decode(content_bs64)
-            # # 内存中打开图片
-            # img = Image.open(BytesIO(content))
-
-            form_data = {
-                "ip": "{}".format(self.localIP),
-                'type': type,
-                'url': media_url,
-                "content": "{}".format(content_bs64.decode('utf-8')),
-                "wid": "100",
-                "ref": "",
-                "item": json.dumps(data_dict, ensure_ascii=False)
-            }
-
+            # 内存中打开图片
+            img = Image.open(BytesIO(content))
+            data_dict['naturalHeight'] = "{}".format(img.height),
+            data_dict['naturalWidth'] = "{}".format(img.width)
+            store_data = "{}".format(content_bs64.decode('utf-8'))
+        # 文档存储
+        if 'pdf' in contype:
+            # 二进制文件转成base64文件
+            content_bs64 = base64.b64encode(content)
+            data_dict['length'] = length
+            store_data = "{}".format(content_bs64.decode('utf-8'))
+        # HTML数据存储
         if 'text' in contype:
-            form_data = {
-                "ip": "{}".format(self.localIP),
-                'type': type,
-                'url': media_url,
-                "content": content,
-                "wid": "100",
-                "ref": "",
-                "item": json.dumps(data_dict, ensure_ascii=False)
-            }
+            store_data = content
 
+        form_data = {
+            "ip": "{}".format(self.localIP),
+            'type': type,
+            'url': media_url,
+            "content": store_data,
+            "wid": "100",
+            "ref": "",
+            "item": json.dumps(data_dict, ensure_ascii=False)
+        }
         # 开始存储多媒体数据
         media_start = timers.Timer()
         media_start.start()
         try:
-            resp = self.s.post(url=url, data=form_data, timeout=(20, 30)).content.decode('utf-8')
+            resp = self.s.post(url=url, data=form_data, timeout=(10, 30)).content.decode('utf-8')
             respon = json.loads(resp)
             if respon['resultCode'] == 0:
                 self.logging.info(
                     'storage | Save media to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format(
-                        media_start.use_time(), sha, data_dict['length'], resp))
+                        media_start.use_time(), sha, data_dict.get('length', ''), resp))
                 return True
 
             else:
                 self.logging.error(
                     'storage | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
-                        media_start.use_time(), sha, data_dict['length'], resp))
+                        media_start.use_time(), sha, data_dict.get('length', ''), resp))
                 return False
 
         except Exception as e:
             self.logging.error(
                 'storage | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
-                    media_start.use_time(), sha, data_dict['length'], e))
+                    media_start.use_time(), sha, data_dict.get('length', ''), e))
             return False
-
-        # try:
-        #     resultCode = json.loads(resp)['resultCode']
-        # except:
-        #     resultCode = 1
-        #
-        # if resultCode == 0:
-        #     # 记录已存数据
-        #     statistics_data = {
-        #         'sha': sha,
-        #         'create_at': timeutils.getNowDatetime(),
-        #         'type': type
-        #     }
-        #     try:
-        #         self.mysql_client.insert_one(table=settings.STATISTICS_TABLE, data=statistics_data)
-        #
-        #     except:
-        #         return resp
-        #
-        # return resp
 
     # 读取Hbase实体数据
     def get_data_from_hbase(self, sha, ss):

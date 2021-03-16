@@ -79,7 +79,7 @@ class SpiderMain(BastSpiderMain):
 
     def handle(self, task, save_data):
         # 数据类型转换
-        task_data = self.server.getEvalResponse(task)
+        task_data = self.server.get_eval_response(task)
         # print(task_data)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
@@ -96,23 +96,23 @@ class SpiderMain(BastSpiderMain):
         article_html = resp.text
         # ========================获取数据==========================
         # 获取标题
-        save_data['title'] = self.server.geTitle(article_html)
+        save_data['title'] = self.server.ge_title(article_html)
         # 获取曾用名
-        save_data['cengYongMing'] = self.server.getField(article_html, '曾用名')
+        save_data['cengYongMing'] = self.server.get_field(article_html, '曾用名')
         # 获取所在地_内容
-        save_data['suoZaiDiNeiRong'] = self.server.getField(article_html, '地域')
+        save_data['suoZaiDiNeiRong'] = self.server.get_field(article_html, '地域')
         # 获取主页(官网地址)
-        save_data['zhuYe'] = self.server.getZhuYe(article_html)
+        save_data['zhuYe'] = self.server.get_zhu_ye(article_html)
         # 获取标识(图片)
-        save_data['biaoShi'] = self.server.getTuPian(article_html)
+        save_data['biaoShi'] = self.server.get_tu_pian(article_html)
         # 获取标签
-        save_data['biaoQian'] = self.server.getBiaoQian(article_html)
+        save_data['biaoQian'] = self.server.get_biao_qian(article_html)
 
         # 保存图片
         if save_data['biaoShi']:
             img_dict = {}
             img_dict['bizTitle'] = save_data['title']
-            img_dict['relEsse'] = self.server.guanLianDanWei(url=url, sha=sha)
+            img_dict['relEsse'] = self.server.guan_lian_dan_wei(url=url, sha=sha)
             img_dict['relPics'] = {}
             img_dict['url'] = save_data['biaoShi']
 

@@ -64,7 +64,7 @@ class SpiderMain(BastSpiderMain):
 
     def getCategory(self):
         # 生成导航栏页面post请求参数
-        index_url_data = self.server.getIndexUrlData()
+        index_url_data = self.server.get_index_url_data()
         # print(index_url_data)
         # 获取地域导航页响应
         index_resp = self.__getResp(url=self.index_url, method='POST', data=index_url_data)
@@ -74,22 +74,22 @@ class SpiderMain(BastSpiderMain):
             return
         index_text = index_resp.text
         # 获取分类参数
-        catalog_list = self.server.getFenLeiDataList(resp=index_text)
+        catalog_list = self.server.get_fen_lei_data_list(resp=index_text)
         # print(catalog_list)
         # 列表页参数进入队列
         self.dao.queue_tasks_to_redis(key=config.REDIS_XUEWEI_CATEGORY, data=catalog_list)
 
     def run(self, category):
         # 数据类型转换
-        task = self.server.getEvalResponse(category)
+        task = self.server.get_eval_response(category)
         para = task['data']
         totalCount = int(task['totalCount'])
         num = int(task['num'])
 
         # 获取总页数
-        page_number = self.server.getPageNumber(totalCount=totalCount)
+        page_number = self.server.get_page_number(totalCount=totalCount)
         for page in range(num, page_number+1):
-            data = self.server.getDanWeiListUrlData(data=para, page=page)
+            data = self.server.get_dan_wei_list_url_data(data=para, page=page)
             # 获取列表页响应
             catalog_resp = self.__getResp(url=self.page_url, method='POST', data=data)
             if not catalog_resp:
@@ -101,8 +101,8 @@ class SpiderMain(BastSpiderMain):
             catalog_resp.encoding = catalog_resp.apparent_encoding
             catalog_text = catalog_resp.text
             # 获取单位url
-            para_value = self.server.getEvalResponse(para)
-            danwei_url_list = self.server.getDanWeiUrlList(resp=catalog_text, value=para_value[2])
+            para_value = self.server.get_eval_response(para)
+            danwei_url_list = self.server.get_dan_wei_url_list(resp=catalog_text, value=para_value[2])
             # print(danwei_url_list)
             # 学位授予单位详情页作为二级分类页进入redis队列
             self.dao.queue_tasks_to_redis(key=config.REDIS_XUEWEI_CATALOG, data=danwei_url_list)

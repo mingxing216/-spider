@@ -87,7 +87,7 @@ class SpiderMain(BastSpiderMain):
 
     def handle(self, task, save_data):
         # 数据类型转换
-        task_data = self.server.getEvalResponse(task)
+        task_data = self.server.get_eval_response(task)
         # print(task_data)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
@@ -107,39 +107,39 @@ class SpiderMain(BastSpiderMain):
         article_html = resp.text
 
         # 获取标题
-        save_data['title'] = self.server.getTitle(article_html)
+        save_data['title'] = self.server.get_title(article_html)
         # 获取作者
-        save_data['zuoZhe'] = self.server.getZuoZhe(article_html)
+        save_data['zuoZhe'] = self.server.get_zuo_zhe(article_html)
         # 获取作者单位
-        save_data['zuoZheDanWei'] = self.server.getZuoZheDanWei(article_html)
+        save_data['zuoZheDanWei'] = self.server.get_zuo_zhe_dan_wei(article_html)
         # 获取摘要
-        save_data['zhaiYao'] = self.server.getZhaiYao(article_html)
+        save_data['zhaiYao'] = self.server.get_zhai_yao(article_html)
         # 获取关键词
-        save_data['guanJianCi'] = self.server.getMoreFields(article_html, '关键词')
+        save_data['guanJianCi'] = self.server.get_more_fields(article_html, '关键词')
         # 获取基金
-        save_data['jiJin'] = self.server.getMoreFields(article_html, '基金')
+        save_data['jiJin'] = self.server.get_more_fields(article_html, '基金')
         # 数字对象标识符
-        save_data['DOI'] = self.server.getMoreFields(article_html, 'DOI')
+        save_data['DOI'] = self.server.get_more_fields(article_html, 'DOI')
         # 获取中图分类号
-        save_data['zhongTuFenLeiHao'] = self.server.getMoreFields(article_html, '分类号')
+        save_data['zhongTuFenLeiHao'] = self.server.get_more_fields(article_html, '分类号')
         # 期刊名称
-        save_data['qiKanMingCheng'] = self.server.getQiKanName(article_html)
+        save_data['qiKanMingCheng'] = self.server.get_qi_kan_name(article_html)
         # 期号
-        save_data['qiHao'] = self.server.getQiHao(article_html)
+        save_data['qiHao'] = self.server.get_qi_hao(article_html)
         # 获取下载
         save_data['xiaZai'] = task_data.get('xiaZai')
         # 获取在线阅读
         save_data['zaiXianYueDu'] = task_data.get('zaiXianYueDu')
         # 获取下载次数
-        save_data['xiaZaiCiShu'] = self.server.getXiaZai(article_html)
+        save_data['xiaZaiCiShu'] = self.server.get_xia_zai(article_html)
         # 获取所在页码
-        save_data['suoZaiYeMa'] = self.server.getSuoZaiYeMa(article_html)
+        save_data['suoZaiYeMa'] = self.server.get_suo_zai_ye_ma(article_html)
         # 获取页数
-        save_data['yeShu'] = self.server.getYeShu(article_html)
+        save_data['yeShu'] = self.server.get_ye_shu(article_html)
         # 获取大小
-        save_data['daXiao'] = self.server.getDaXiao(article_html)
+        save_data['daXiao'] = self.server.get_da_xiao(article_html)
         # 获取时间
-        shijian = self.server.getYear(article_html)
+        shijian = self.server.get_year(article_html)
         if shijian:
             save_data['shiJian'] = timeutils.get_date_time_record(shijian)
         else:
@@ -160,18 +160,18 @@ class SpiderMain(BastSpiderMain):
         save_data['guanLianWenDang'] = {}
 
         # 获取所有图片链接
-        picDatas = self.server.getPicUrl(resp=article_html, fetch=self.__getResp)
+        picDatas = self.server.get_pic_url(resp=article_html, fetch=self.__getResp)
         if picDatas:
             # 获取组图(关联组图)
-            save_data['relationPics'] = self.server.guanLianPics(url, sha)
+            save_data['relationPics'] = self.server.rela_pics(url, sha)
             # 组图实体
             pics = {}
             # 标题
             pics['title'] = save_data['title']
             # 组图内容
-            pics['labelObj'] = self.server.getPics(picDatas)
+            pics['labelObj'] = self.server.get_pics(picDatas)
             # 关联论文
-            pics['picsRelationParent'] = self.server.guanLianLunWen(url, sha)
+            pics['picsRelationParent'] = self.server.rela_paper(url, sha)
             # url
             pics['url'] = url
             # 生成key
@@ -201,8 +201,8 @@ class SpiderMain(BastSpiderMain):
                 img_dict = {}
                 img_dict['url'] = img['url']
                 img_dict['bizTitle'] = img['title']
-                img_dict['relEsse'] = self.server.guanLianLunWen(url, sha)
-                img_dict['relPics'] = self.server.guanLianPics(url, sha)
+                img_dict['relEsse'] = self.server.rela_paper(url, sha)
+                img_dict['relPics'] = self.server.rela_pics(url, sha)
                 # img_tasks.append(img_dict)
 
                 # 存储图片种子

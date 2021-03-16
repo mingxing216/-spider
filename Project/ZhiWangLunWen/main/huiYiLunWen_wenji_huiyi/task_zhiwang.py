@@ -87,7 +87,7 @@ class SpiderMain(BastSpiderMain):
 
     def run(self, category):
         # 数据类型转换
-        task = self.server.getEvalResponse(category)
+        task = self.server.get_eval_response(category)
         para = task['data']
         totalCount = int(task['totalCount'])
         hangye = task['s_hangYe']
