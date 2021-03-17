@@ -551,11 +551,12 @@ class LunWen_Data(Service):
             return return_data
 
     # 关联组图
-    def rela_pics(self, url, sha):
+    def rela_pics(self, url, key, sha):
         # 创建关联对象
         e = {}
         try:
             e['url'] = url
+            e['key'] = key
             e['sha'] = sha
             e['ss'] = '组图'
         except Exception:
@@ -564,11 +565,12 @@ class LunWen_Data(Service):
         return e
 
     # 关联论文
-    def rela_paper(self, url, sha):
+    def rela_paper(self, url, key, sha):
         # 创建关联对象
         e = {}
         try:
             e['url'] = url
+            e['key'] = key
             e['sha'] = sha
             e['ss'] = '论文'
         except Exception:
@@ -587,7 +589,9 @@ class LunWen_Data(Service):
                         picObj = {
                             'url': img['url'],
                             'title': img['title'],
-                            'desc': ""
+                            'desc': "",
+                            'sha': hashlib.sha1(img['url'].encode('utf-8')).hexdigest(),
+                            'ss': 'image'
                         }
                         return_pics.append(picObj)
                 labelObj['picture'] = return_pics
@@ -2147,7 +2151,7 @@ class QiKanLunWen_QiKan(Service):
 
 class QiKanLunWen_LunWen(Service):
     # 生成单个知网期刊的时间列表种子
-    def qi_kan_time_list_url(self, url, timelisturl):
+    def qikan_time_list_url(self, url, timelisturl):
         '''
         :param url: 期刊种子
         :return: 时间列表种子
@@ -2164,12 +2168,12 @@ class QiKanLunWen_LunWen(Service):
         except:
             pykm = re.findall(r'pykm=(\w+)', url)[0]
 
-        qiKanTimeListUrl = timelisturl.format(pcode, pykm)
+        qikan_time_list_url = timelisturl.format(pcode, pykm)
 
-        return qiKanTimeListUrl, pcode, pykm
+        return qikan_time_list_url, pcode, pykm
 
     # 获取期刊【年】、【期】列表
-    def get_qi_kan_time_list(self, resp):
+    def get_qikan_time_list(self, resp):
         '''
         :param html: html源码
         :return: 【年】、【期】列表

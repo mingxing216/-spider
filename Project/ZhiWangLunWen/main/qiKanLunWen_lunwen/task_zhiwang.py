@@ -46,7 +46,7 @@ class SpiderMain(BaseSpiderMain):
         self.timer = timers.Timer()
         self.qiKan_time_url_template = 'https://navi.cnki.net/knavi/JournalDetail/GetJournalYearList?pcode={}&pykm={}&pIdx=0'
         # 初始化论文列表种子模板
-        self.lunLun_url_template = 'https://navi.cnki.net/knavi/JournalDetail/GetArticleList?year={}&issue={}&pykm={}&pageIdx=0&pcode={}'
+        self.lunwen_url_template = 'https://navi.cnki.net/knavi/JournalDetail/GetArticleList?year={}&issue={}&pykm={}&pageIdx=0&pcode={}'
         # 会话
         self.s = requests.Session()
         # 记录存储种子数量
@@ -89,49 +89,56 @@ class SpiderMain(BaseSpiderMain):
                 # self.s.cookies = cookies
 
                 # 生成单个知网期刊的时间列表种子
-                qiKanTimeListUrl, pcode, pykm = self.server.qi_kan_time_list_url(qiKanUrl, self.qiKan_time_url_template)
-                # print(qiKanTimeListUrl, pcode, pykm)
+                qikan_time_list_url, pcode, pykm = self.server.qikan_time_list_url(qiKanUrl, self.qiKan_time_url_template)
+                # print(qikan_time_list_url, pcode, pykm)
                 # 获取期刊时间列表页html源码
-                qikanTimeListHtml = self._get_resp(url=qiKanTimeListUrl, method='GET')
-                if not qikanTimeListHtml:
-                    logger.error('catalog | 期刊时间列表页获取失败, url: {}'.format(qiKanTimeListUrl))
-                    # 队列一条任务
-                    self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
-                    return
-
-                # 获取期刊【年】、【期】列表
-                # 循环获取指定年、期页文章列表页种子
-                for qikan_year in self.server.get_qi_kan_time_list(qikanTimeListHtml):
-                    # 获取文章列表页种子
-                    articleUrl = self.server.get_article_list_url(url=self.lunLun_url_template,
-                                                                  data=qikan_year,
-                                                                  pcode=pcode,
-                                                                  pykm=pykm)
-                    # print(articleUrl)
-                    # 获取论文列表页html源码
-                    article_list_html = self._get_resp(url=articleUrl, method='GET')
+                if qikan_time_list_url:
+                    qikanTimeListHtml = self._get_resp(url=qikan_time_list_url, method='GET')
                     if not qikanTimeListHtml:
-                        logger.error('catalog | 论文列表页html源码获取失败, url: {}'.format(articleUrl))
+                        logger.error('catalog | 期刊时间列表页获取失败, url: {}'.format(qikan_time_list_url))
                         # 队列一条任务
                         self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                         return
 
-                    # 获取论文详情种子列表
-                    article_url_list = self.server.get_article_url_list(article_list_html, qiKanUrl, xueKeLeiBie, qikan_year)
-                    if article_url_list:
-                        for paper_url in article_url_list:
-                            # print(paper_url)
-                            # 存储种子
-                            self.num += 1
-                            logger.info('profile | 已抓种子数量: {}'.format(self.num))
-                            self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_url, ws='中国知网', es='期刊论文')
+                    # 获取期刊【年】、【期】列表
+                    # 循环获取指定年、期页文章列表页种子
+                    for qikan_year in self.server.get_qikan_time_list(qikanTimeListHtml):
+                        # 获取文章列表页种子
+                        article_url = self.server.get_article_list_url(url=self.lunwen_url_template,
+                                                                       data=qikan_year,
+                                                                       pcode=pcode,
+                                                                       pykm=pykm)
+                        # print(article_url)
+                        # 获取论文列表页html源码
+                        if article_url:
+                            article_list_html = self._get_resp(url=article_url, method='GET')
+                            if not article_list_html:
+                                logger.error('catalog | 论文列表页html源码获取失败, url: {}'.format(article_url))
+                                # 队列一条任务
+                                self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                                return
+
+                            # 获取论文详情种子列表
+                            article_url_list = self.server.get_article_url_list(article_list_html, qiKanUrl, xueKeLeiBie, qikan_year)
+                            if article_url_list:
+                                for paper_url in article_url_list:
+                                    # print(paper_url)
+                                    # 存储种子
+                                    self.num += 1
+                                    logger.info('profile | 已抓种子数量: {}'.format(self.num))
+                                    self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_url, ws='中国知网', es='期刊论文')
+                            else:
+                                logger.error('profile | 详情种子获取失败')
+                                # 队列一条任务
+                                self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                                continue
+                        else:
+                            logger.error('catalog | 论文{}年{}期列表页获取失败'.format(qikan_year[0], qikan_year[1]))
+                            # 队列一条任务
+                            self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                            continue
                     else:
-                        logger.error('catalog | 论文种子列表获取失败')
-                        # 队列一条任务
-                        self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
-                        continue
-                else:
-                    logger.info('catalog | 年、期列表获取完毕')
+                        logger.info('catalog | 年、期列表获取完毕')
 
             else:
                 logger.info('task | 队列中已无任务，结束程序 | use time: {}'.format(self.timer.use_time()))
@@ -183,8 +190,8 @@ def process_start():
     # self.run()
 
     # 创建线程池
-    tpool = ThreadPoolExecutor(max_workers=4)
-    for i in range(4):
+    tpool = ThreadPoolExecutor(max_workers=1)
+    for i in range(1):
         tpool.submit(start)
     tpool.shutdown(wait=True)
 
@@ -194,9 +201,9 @@ if __name__ == '__main__':
     begin_time = time.time()
     # process_start()
     # 创建进程池
-    ppool = ProcessPoolExecutor(max_workers=2)
-    ppool.submit(queue_task)
-    for i in range(2):
+    ppool = ProcessPoolExecutor(max_workers=1)
+    # ppool.submit(queue_task)
+    for i in range(1):
         ppool.submit(process_start)
     ppool.shutdown(wait=True)
     end_time = time.time()

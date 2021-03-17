@@ -162,18 +162,18 @@ class SpiderMain(BastSpiderMain):
         save_data['guanLianWenDang'] = {}
 
         # 获取所有图片链接
-        picDatas = self.server.get_pic_url(text=article_html, fetch=self._get_resp)
-        if picDatas:
-            # 获取组图(关联组图)
-            save_data['relationPics'] = self.server.rela_pics(url, sha)
+        pic_datas = self.server.get_pic_url(text=article_html, fetch=self._get_resp)
+        if pic_datas:
+            # 关联组图
+            save_data['rela_pics'] = self.server.rela_pics(url, key, sha)
             # 组图实体
             pics = {}
             # 标题
             pics['title'] = save_data['title']
             # 组图内容
-            pics['labelObj'] = self.server.get_pics(picDatas)
+            pics['label_obj'] = self.server.get_pics(pic_datas)
             # 关联论文
-            pics['picsRelationParent'] = self.server.rela_paper(url, sha)
+            pics['rela_paper'] = self.server.rela_paper(url, key, sha)
             # url
             pics['url'] = url
             # 生成key
@@ -204,13 +204,13 @@ class SpiderMain(BastSpiderMain):
             pics['script_version'] = 'V1.0'
 
             # 保存组图实体到Hbase
-            self.dao.save_data_to_hbase(data=pics)
+            pics_suc = self.dao.save_data_to_hbase(data=pics)
+            if not pics_suc:
+                logger.error('storage | 组图数据存储失败, url: {}'.format(url))
+                return
 
-            # 创建图片任务列表
-            img_tasks = []
-
-            # 下载图片
-            for img in picDatas:
+            # 存储图片种子
+            for img in pic_datas:
                 img_dict = {}
                 img_dict['url'] = img['url']
                 img_dict['bizTitle'] = img['title']
@@ -221,27 +221,10 @@ class SpiderMain(BastSpiderMain):
                 # 存储图片种子
                 suc = self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
                 if not suc:
-                    logger.error('storage | 图片种子存储失败, url: {}'.format(img['url']))
-                    # 逻辑删除任务
-                    self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
-
-            # # 创建gevent协程
-            # img_list = []
-            # for img_task in img_tasks:
-            #     s = gevent.spawn(self.img_download, img_task, sha)
-            #     img_list.append(s)
-            # gevent.joinall(img_list)
-
-            # 创建线程池
-            threadpool = ThreadPool()
-            for img_task in img_tasks:
-                threadpool.apply_async(func=self.img_download, args=(img_task, sha))
-
-            threadpool.close()
-            threadpool.join()
+                    logger.error('seed | 图片种子存储失败, url: {}'.format(img['url']))
 
         else:
-            # 获取组图(关联组图)
+            # 关联组图
             save_data['relationPics'] = {}
 
         # ====================================公共字段
@@ -280,14 +263,17 @@ class SpiderMain(BastSpiderMain):
         # print(people_list)
         if people_list:
             for people in people_list:
-                self.dao.save_task_to_mysql(table=config.MYSQL_PEOPLE, memo=people, ws='中国知网', es='论文')
+                author_suc = self.dao.save_task_to_mysql(table=config.MYSQL_PEOPLE, memo=people, ws='中国知网', es='论文')
+                if not author_suc:
+                    logger.error('seed | 人物种子存储失败, url: {}'.format(people['url']))
+
         # 保存机构队列
         if save_data['guanLianQiYeJiGou']:
             jigouList = copy.deepcopy(save_data['guanLianQiYeJiGou'])
             for jigou in jigouList:
-                jigou['name'] = jigou['name'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-                jigou['url'] = jigou['url'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-                self.dao.save_task_to_mysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
+                jigou_suc = self.dao.save_task_to_mysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
+                if not jigou_suc:
+                    logger.error('seed | 机构种子存储失败, url: {}'.format(jigou['url']))
 
     def run(self):
         logger.debug('thread start')
