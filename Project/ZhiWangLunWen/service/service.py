@@ -9,13 +9,13 @@ import ast
 import json
 import copy
 import hashlib
+import requests
 from bs4 import BeautifulSoup
 from lxml import html
-from lxml.html import fromstring, tostring
-from urllib import parse
 from scrapy.selector import Selector
 
 from Utils import timers
+from settings import LANG_API
 etree = html.etree
 
 
@@ -48,6 +48,7 @@ class Service(object):
     def __init__(self, logging):
         self.logger = logging
         self.dom_holder = DomResultHolder()
+        self.lang_api = LANG_API
 
     # 数据类型转换
     @staticmethod
@@ -2033,7 +2034,8 @@ class QiKanLunWen_QiKan(Service):
 
         return shoulu
 
-    def get_ying_wen_ming_cheng(self, text):
+    def get_parallel_title(self, text):
+        return_data = {}
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
             p_text = selector.xpath("//dd[@class='infobox']/p[not(@class)]/text()").extract_first()
@@ -2041,6 +2043,10 @@ class QiKanLunWen_QiKan(Service):
 
         except:
             data = ''
+
+        if data:
+            return_data['text'] = data
+            return_data['lang'] = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
 
         return data
 
@@ -2152,10 +2158,10 @@ class QiKanLunWen_QiKan(Service):
 class QiKanLunWen_LunWen(Service):
     # 生成单个知网期刊的时间列表种子
     def qikan_time_list_url(self, url, timelisturl):
-        '''
+        """
         :param url: 期刊种子
         :return: 时间列表种子
-        '''
+        """
         # 期刊种子 http://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=SHGJ
         # 时间列表种子 http://navi.cnki.net/knavi/JournalDetail/GetJournalYearList?pcode=CJFD&pykm=SHGJ&pIdx=0
         try:
@@ -2174,10 +2180,11 @@ class QiKanLunWen_LunWen(Service):
 
     # 获取期刊【年】、【期】列表
     def get_qikan_time_list(self, resp):
-        '''
+        """
         :param html: html源码
         :return: 【年】、【期】列表
-        '''
+        """
+        issues_list = []
         text = resp.text
         selector = self.dom_holder.get(mode='Selector', text=text)
         dl_list = selector.xpath("//div[@class='yearissuepage']/dl")
@@ -2189,20 +2196,19 @@ class QiKanLunWen_LunWen(Service):
                     stage_list = dl.xpath("./dd/a/text()").extract() # 期列表
                     for stage in stage_list:
                         issue = re.findall(r'No\.(.*)', stage)[0]
-                        yield year, issue
-
-                else:
-                    continue
+                        issues_list.append((year, issue))
 
             except Exception:
                 continue
 
+        return issues_list
+
     # 获取论文列表页种子
     def get_article_list_url(self, url, data, pcode, pykm):
-        '''
+        """
         :param data: 【年】【期】数据
         :return: 种子列表
-        '''
+        """
         # 论文列表页种子 http://navi.cnki.net/knavi/JournalDetail/GetArticleList?year=2018&issue=Z1&pykm=SHGJ&pageIdx=0&pcode=CJFD
         # return_data = []
         year = data[0]

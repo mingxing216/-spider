@@ -96,10 +96,8 @@ class SpiderMain(BaseSpiderMain):
 
         key = '中国知网|' + _id
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
-        xueKeLeiBie = task_data.get('s_xueKeLeiBie', '')
-        heXinQiKanMuLu = task_data.get('s_zhongWenHeXinQiKanMuLu', '')
 
-        # 获取会议主页html源码
+        # 获取期刊详情页源码
         resp = self._get_resp(url=url, method='GET')
 
         # with open('article.html', 'w', encoding='utf-8') as f:
@@ -116,7 +114,7 @@ class SpiderMain(BaseSpiderMain):
         # 获取核心收录
         save_data['heXinShouLu'] = self.server.get_he_xin_shou_lu(response)
         # 获取外文名称
-        save_data['yingWenMingCheng'] = self.server.get_ying_wen_ming_cheng(response)
+        save_data['parallel_title'] = self.server.get_parallel_title(response)
         # 获取图片
         save_data['biaoShi'] = self.server.get_biao_shi(response)
         # 获取曾用名
@@ -176,9 +174,9 @@ class SpiderMain(BaseSpiderMain):
         # 获取关联主办单位
         save_data['guanLianZhuBanDanWei'] = {}
         # 生成学科类别
-        save_data['xueKeLeiBie'] = xueKeLeiBie
+        save_data['xueKeLeiBie'] = task_data.get('s_xueKeLeiBie', '')
         # 生成核心期刊导航
-        save_data['zhongWenHeXinQiKanMuLu'] = heXinQiKanMuLu
+        save_data['zhongWenHeXinQiKanMuLu'] = task_data.get('s_zhongWenHeXinQiKanMuLu', '')
 
         # 保存图片
         if save_data['biaoShi']:
