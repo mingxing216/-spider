@@ -1,8 +1,8 @@
 # -*-coding:utf-8-*-
 
-'''
+"""
 
-'''
+"""
 # import gevent
 # from gevent import monkey
 # monkey.patch_all()
@@ -12,6 +12,7 @@ import re
 import time
 import json
 import random
+import requests
 import traceback
 import copy
 import hashlib
@@ -24,7 +25,7 @@ from Project.ZhiWangLunWen.service import service
 from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
 from Utils import timeutils, timers
-from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY, LANG_API
 
 LOG_FILE_DIR = 'ZhiWangLunWen'  # LOG日志存放路径
 LOG_NAME = '期刊论文_data'  # LOG名
@@ -46,13 +47,14 @@ class BastSpiderMain(object):
 class SpiderMain(BastSpiderMain):
     def __init__(self):
         super().__init__()
-        self.lang_api = 'http://localhost:9008/detect'
+        self.lang_api = LANG_API
         self.timer = timers.Timer()
+        self.s = requests.Session()
 
-    def _get_resp(self, url, method, s=None, data=None, cookies=None, referer=None):
+    def _get_resp(self, url, method, s=None, data=None, host=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
         for i in range(3):
-            resp = self.download.get_resp(s=s, url=url, method=method, data=data,
+            resp = self.download.get_resp(s=s, url=url, method=method, data=data, host=host,
                                           cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 10:
@@ -90,16 +92,13 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task_data, save_data):
         print(task_data)
         url = task_data['url']
-        try:
-            _id= re.findall(r"filename=(\w+)&", url)[0]
-        except:
-            return
+        _id= self.server.get_id(url)
         # print(id)
         key = '中国知网|' + _id
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
 
         # 获取论文详情页html源码
-        resp = self._get_resp(url=url, method='GET')
+        resp = self._get_resp(url=url, method='GET', s=self.s, host='kns.cnki.net')
         if not resp:
             logger.error('downloader | 论文详情页响应失败, url: {}'.format(url))
             return
@@ -110,56 +109,94 @@ class SpiderMain(BastSpiderMain):
         # ======================== 期刊论文实体数据 ===========================
         # 获取标题
         save_data['title'] = self.server.get_title(article_html)
+        if not save_data['title']:
+            return
         # 获取作者
         save_data['author'] = self.server.get_author(article_html)
         # 获取作者单位
-        save_data['author_affiliation'] = self.server.get_author_affiliation(article_html)
+        save_data['author_affiliation'] = self.server.get_affiliation(article_html)
+        # 获取目录
+        save_data['catalog'] = self.server.get_catalog(article_html)
         # 获取摘要
-        save_data['abstract'] = self.server.get_abstract(article_html)
+        save_data['abstract'] = []
+        abstract = self.server.get_abstract(article_html)
+        if abstract:
+            ab_dict = {}
+            ab_dict['text'] = abstract
+            form_data = {'q': abstract}
+            try:
+                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
+                lang = lang_resp.json().get('responseData').get('language')
+            except:
+                return
+            ab_dict['lang'] = lang
+            save_data['abstract'].append(ab_dict)
         # 获取关键词
-        save_data['guanJianCi'] = self.server.get_more_fields(article_html, '关键词')
+        save_data['keyword'] = []
+        keywords = self.server.get_keyword(article_html)
+        if keywords:
+            kw_dict = {}
+            kw_dict['text'] = keywords
+            form_data = {'q': keywords}
+            try:
+                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
+                lang = lang_resp.json().get('responseData').get('language')
+            except:
+                return
+            kw_dict['lang'] = lang
+            save_data['keyword'].append(kw_dict)
+        # 获取语种
+        form_data = {'q': save_data['title']}
+        try:
+            lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
+            lang = lang_resp.json().get('responseData').get('language')
+        except:
+            return
+        save_data['language'] = lang
         # 获取基金
-        save_data['jiJin'] = self.server.get_more_fields(article_html, '基金')
+        save_data['funders'] = self.server.get_funders(article_html)
         # 数字对象标识符
-        save_data['DOI'] = self.server.get_more_fields(article_html, 'DOI')
+        save_data['doi'] = self.server.get_more_fields(article_html, 'DOI')
         # 获取中图分类号
-        save_data['zhongTuFenLeiHao'] = self.server.get_more_fields(article_html, '分类号')
+        save_data['classification_code'] = self.server.get_more_fields(article_html, '分类号')
         # 期刊名称
-        save_data['qiKanMingCheng'] = self.server.get_qi_kan_name(article_html)
+        save_data['journal_name'] = self.server.get_journal_name(article_html)
+        year, vol, issue = self.server.get_year(article_html)
+        # 年
+        save_data['year'] = year
+        # 卷号
+        save_data['volume'] = vol
         # 期号
-        save_data['qiHao'] = self.server.get_qi_hao(article_html)
+        save_data['issue'] = issue
         # 获取下载
         save_data['xiaZai'] = task_data.get('xiaZai', '')
         # 获取在线阅读
         save_data['zaiXianYueDu'] = task_data.get('zaiXianYueDu', '')
         # 获取下载次数
-        save_data['xiaZaiCiShu'] = self.server.get_xia_zai(article_html)
+        save_data['downloads'] = self.server.get_info(article_html, '下载')
         # 获取所在页码
-        save_data['suoZaiYeMa'] = self.server.get_suo_zai_ye_ma(article_html)
+        save_data['start_page'] = re.findall(r"(\d+)-", self.server.get_info(article_html, '页码'))[0]
+        save_data['end_page'] = re.findall(r"-(\d+)", self.server.get_info(article_html, '页码'))[0]
         # 获取页数
-        save_data['yeShu'] = self.server.get_ye_shu(article_html)
+        save_data['total_page'] = self.server.get_info(article_html, '页数')
         # 获取大小
-        save_data['daXiao'] = self.server.get_da_xiao(article_html)
-        # 获取时间
-        shijian = self.server.get_year(article_html)
-        if shijian:
-            save_data['shiJian'] = timeutils.get_date_time_record(shijian)
-        else:
-            save_data['shiJian'] = ''
+        save_data['size'] = self.server.get_info(article_html, '大小')
         # 学科类别
-        save_data['xueKeLeiBie'] = task_data.get('xueKeLeiBie', '')
-        # 来源分类
-        save_data['laiYuanFenLei'] = ''
+        save_data['subject_classification_name'] = task_data.get('xueKeLeiBie', '')
         # 获取参考文献
-        save_data['guanLianCanKaoWenXian'] = self.server.canKaoWenXian(url=url, download=self._get_resp)
+        save_data['references'] = self.server.canKaoWenXian(url=url, download=self._get_resp, s=self.s)
+        # 获取引证文献
+        save_data['cited_literature'] = self.server.canKaoWenXian(url=url, download=self._get_resp)
+        # 获取文献数量年度分布
+        save_data['annual_trend_of_literature_number'] = self.server.canKaoWenXian(url=url, download=self._get_resp)
         # 关联期刊
-        save_data['guanLianQiKan'] = self.server.guanLianQiKan(task_data.get('parentUrl'))
+        save_data['rela_journal'] = self.server.rela_journal(task_data.get('parentUrl'))
         # 关联人物
-        save_data['guanLianRenWu'] = self.server.guanLianRenWu(article_html)
+        save_data['rela_creators'] = self.server.rela_creators(article_html)
         # 关联企业机构
-        save_data['guanLianQiYeJiGou'] = self.server.guanLianQiYeJiGou(article_html)
+        save_data['rela_organization'] = self.server.rela_organization(article_html)
         # 关联文档
-        save_data['guanLianWenDang'] = {}
+        save_data['rela_document'] = {}
 
         # 获取所有图片链接
         pic_datas = self.server.get_pic_url(text=article_html, fetch=self._get_resp)
@@ -253,9 +290,9 @@ class SpiderMain(BastSpiderMain):
         # 采集服务器集群
         save_data['cluster'] = 'crawler'
         # 元数据版本号
-        save_data['metadata_version'] = 'V2.0'
+        save_data['metadata_version'] = 'V1.2'
         # 采集脚本版本号
-        save_data['script_version'] = 'V1.0'
+        save_data['script_version'] = 'V1.3'
 
         # =============== 存储部分 ==================
         # 保存人物队列
@@ -289,8 +326,8 @@ class SpiderMain(BastSpiderMain):
             task_timer.start()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
-            # task = '{"url": "http://103.247.176.188/View.aspx?id=81378664", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=81378664", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=23677", "sha": "121f7ce3d5b82baa6b51a1276854971163af399d"}'
+            # task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
+            task = '{"theme": "基础医学研究", "url": "https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=JYKY202001010&dbname=CJFDLAST2020", "xiaZai": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=n8sbjTFvPSUrNDkHGGwa1ho8r3UKR0Eg1blqUAXs46uVtWbBkzCDkcKJ5VmGgPhX&tableName=CJFDLAST2017", "zaiXianYueDu": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=SYKQ201705008&tablename=CJFDLAST2017&filetype=XML;EPUB;", "xueKeLeiBie": "医药卫生科技_口腔科学", "parentUrl": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=SYKQ", "year": "2017", "issue": "05", "sha": "047fe93efaba692553e3eab9ff38bd58bbb593e2"}'
             if task:
                 try:
                     # 创建数据存储字典

@@ -87,7 +87,7 @@ class SpiderMain(BastSpiderMain):
 
     def handle(self, task, save_data):
         # 数据类型转换
-        task_data = self.server.get_eval_response(task)
+        task_data = self.server.get_eval(task)
         # print(task_data)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
@@ -111,7 +111,7 @@ class SpiderMain(BastSpiderMain):
         # 获取作者
         save_data['zuoZhe'] = self.server.get_author(article_html)
         # 获取作者单位
-        save_data['zuoZheDanWei'] = self.server.get_author_affiliation(article_html)
+        save_data['zuoZheDanWei'] = self.server.get_affiliation(article_html)
         # 获取摘要
         save_data['zhaiYao'] = self.server.get_abstract(article_html)
         # 获取关键词
@@ -131,9 +131,9 @@ class SpiderMain(BastSpiderMain):
         # 获取所在页码
         save_data['suoZaiYeMa'] = self.server.get_suo_zai_ye_ma(article_html)
         # 获取页数
-        save_data['yeShu'] = self.server.get_ye_shu(article_html)
+        save_data['yeShu'] = self.server.get_total_page(article_html)
         # 获取大小
-        save_data['daXiao'] = self.server.get_da_xiao(article_html)
+        save_data['daXiao'] = self.server.get_size(article_html)
         # 获取论文集url
         wenji_url = self.server.getLunWenJiUrl(article_html)
         if wenji_url:
@@ -157,9 +157,9 @@ class SpiderMain(BastSpiderMain):
         # 关联活动_会议
         save_data['guanLianHuoDongHuiYi'] = self.server.guanLianHuoDongHuiYi(task_data.get('parentUrl'))
         # 关联人物
-        save_data['guanLianRenWu'] = self.server.guanLianRenWu(article_html)
+        save_data['guanLianRenWu'] = self.server.rela_creators(article_html)
         # 关联企业机构
-        save_data['guanLianQiYeJiGou'] = self.server.guanLianQiYeJiGou(article_html)
+        save_data['guanLianQiYeJiGou'] = self.server.rela_organization(article_html)
         # 关联文档
         save_data['guanLianWenDang'] = {}
 

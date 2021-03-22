@@ -52,10 +52,10 @@ class SpiderMain(BaseSpiderMain):
         # 记录存储种子数量
         self.num = 0
 
-    def _get_resp(self, url, method, s=None, data=None, cookies=None, referer=None):
+    def _get_resp(self, url, method, s=None, data=None, host=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
         for i in range(3):
-            resp = self.download.get_resp(s=s, url=url, method=method, data=data,
+            resp = self.download.get_resp(s=s, url=url, method=method, data=data, host=host,
                                           cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 10:
@@ -69,10 +69,12 @@ class SpiderMain(BaseSpiderMain):
         self.timer.start()
         while True:
             # 获取任务
-            category = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_CATALOG)
-            # category = '{"url": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=KZWH", "sha": "3a2e43f21e64ed49fe85ede84f9a13bbcc2f8cf1", "s_xueKeLeiBie": "哲学与人文科学_中国近现代史", "s_zhongWenHeXinQiKanMuLu": ""}'
+            # category = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_CATALOG)
+            category = '{"url": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=LDXU", "s_xueKeLeiBie": "基础科学_物理学|信息科技_无线电电子学", "s_zhongWenHeXinQiKanMuLu": "第四编 自然科学_物理", "sha": "291486f783b472c705e8831d0e669c26f2b7777f"}'
             # print(category)
             if category:
+                # # 获取cookie
+                # self._get_resp(url='https://navi.cnki.net/KNavi/Journal.html', method='GET')
                 # 数据类型转换
                 task = json.loads(category)
                 # print(task)
@@ -138,7 +140,7 @@ class SpiderMain(BaseSpiderMain):
                         else:
                             logger.info('catalog | 年、期列表获取完毕')
                     else:
-                        logger.info('catalog | 年、期列表获取失败, url: {}'.format(qikan_time_list_url))
+                        logger.error('catalog | 年、期列表获取失败, url: {}'.format(qikan_time_list_url))
                         # 队列一条任务
                         self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                         continue
@@ -192,8 +194,8 @@ def process_start():
     # self.run()
 
     # 创建线程池
-    tpool = ThreadPoolExecutor(max_workers=4)
-    for i in range(4):
+    tpool = ThreadPoolExecutor(max_workers=1)
+    for i in range(1):
         tpool.submit(start)
     tpool.shutdown(wait=True)
 
@@ -203,9 +205,9 @@ if __name__ == '__main__':
     begin_time = time.time()
     # process_start()
     # 创建进程池
-    ppool = ProcessPoolExecutor(max_workers=2)
+    ppool = ProcessPoolExecutor(max_workers=1)
     # ppool.submit(queue_task)
-    for i in range(2):
+    for i in range(1):
         ppool.submit(process_start)
     ppool.shutdown(wait=True)
     end_time = time.time()

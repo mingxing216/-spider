@@ -9,13 +9,15 @@ import ast
 import json
 import copy
 import hashlib
-import requests
+from urllib import parse
+
 from bs4 import BeautifulSoup
 from lxml import html
 from scrapy.selector import Selector
 
 from Utils import timers
 from settings import LANG_API
+
 etree = html.etree
 
 
@@ -48,11 +50,10 @@ class Service(object):
     def __init__(self, logging):
         self.logger = logging
         self.dom_holder = DomResultHolder()
-        self.lang_api = LANG_API
 
     # 数据类型转换
     @staticmethod
-    def get_eval_response(task_data):
+    def get_eval(task_data):
         return ast.literal_eval(task_data)
 
 
@@ -96,40 +97,40 @@ class XueWeiLunWen_xueWeiShouYuDanWei(Service):
         value = data_tuple[2]
         return_data['SearchStateJson'] = json.dumps(
             {"StateID": "",
-            "Platfrom": "",
-            "QueryTime": "",
-            "Account": "knavi",
-            "ClientToken": "",
-            "Language": "",
-            "CNode": {"PCode": "CDMD",
-                      "SMode": "",
-                      "OperateT": ""},
-            "QNode": {"SelectT": "",
-                      "Select_Fields": "",
-                      "S_DBCodes": "",
-                      "QGroup": [
-                          {"Key": "Navi",
-                           "Logic": 1,
-                           "Items": [],
-                           "ChildItems": [
-                               {"Key": "PPaper",
-                                "Logic": 1,
-                                "Items": [{"Key": 1,
-                                         "Title": "",
-                                         "Logic": 1,
-                                         "Name": "{}".format(name),
-                                         "Operate": "",
-                                         "Value": "{}?".format(value),
-                                         "ExtendType": 0,
-                                         "ExtendValue": "",
-                                         "Value2": ""}],
-                                "ChildItems": []}
-                           ]}
-                      ],
-                      "OrderBy": "RT|",
-                      "GroupBy": "",
-                      "Additon": ""}
-            })
+             "Platfrom": "",
+             "QueryTime": "",
+             "Account": "knavi",
+             "ClientToken": "",
+             "Language": "",
+             "CNode": {"PCode": "CDMD",
+                       "SMode": "",
+                       "OperateT": ""},
+             "QNode": {"SelectT": "",
+                       "Select_Fields": "",
+                       "S_DBCodes": "",
+                       "QGroup": [
+                           {"Key": "Navi",
+                            "Logic": 1,
+                            "Items": [],
+                            "ChildItems": [
+                                {"Key": "PPaper",
+                                 "Logic": 1,
+                                 "Items": [{"Key": 1,
+                                            "Title": "",
+                                            "Logic": 1,
+                                            "Name": "{}".format(name),
+                                            "Operate": "",
+                                            "Value": "{}?".format(value),
+                                            "ExtendType": 0,
+                                            "ExtendValue": "",
+                                            "Value2": ""}],
+                                 "ChildItems": []}
+                            ]}
+                       ],
+                       "OrderBy": "RT|",
+                       "GroupBy": "",
+                       "Additon": ""}
+             })
         return_data['displaymode'] = 1
         return_data['pageindex'] = page
         return_data['pagecount'] = 21
@@ -249,6 +250,7 @@ class XueWeiLunWen_xueWeiShouYuDanWei(Service):
         e['ss'] = '机构'
 
         return e
+
 
 class XueWeiLunWen_LunWen(Service):
     # 生成专业列表页请求参数
@@ -374,7 +376,8 @@ class XueWeiLunWen_LunWen(Service):
                 else:
                     continue
 
-                save_data['url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
+                save_data[
+                    'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
             except:
                 save_data['url'] = ''
 
@@ -404,8 +407,18 @@ class XueWeiLunWen_LunWen(Service):
 
         return return_data
 
+
 class LunWen_Data(Service):
     # ========================================= DATA
+    # 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=BDYX202002006&dbname=CJFDLAST2020'
+    def get_id(self, url):
+        try:
+            id_list = re.findall(r"dbcode=(\w+)&filename=(\w+)&dbname=(\w+)", url)[0]
+        except:
+            id_list = []
+
+        return '|'.join(id_list)
+
     def get_title(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
@@ -418,12 +431,7 @@ class LunWen_Data(Service):
     def get_author(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            if selector.xpath("//h3[@class='author']/span/a"):
-                zuozhe_list = selector.xpath("//h3[@class='author']/span/a/text()").extract()
-
-            else:
-                zuozhe_list = selector.xpath("//h3[@class='author']/span/text()").extract()
-
+            zuozhe_list = selector.xpath("//h3[@class='author']//*[not(name()='sup')]/text()").extract()
             zuozhe = '|'.join(zuozhe_list)
 
         except Exception:
@@ -431,76 +439,58 @@ class LunWen_Data(Service):
 
         return zuozhe
 
-    def get_author_affiliation(self, text):
+    def get_affiliation(self, text):
+        data_list = []
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            if selector.xpath("//h3[@class='author']/following-sibling::h3[1]/span/a"):
-                danwei_list = selector.xpath("//h3[@class='author']/following-sibling::h3[1]/span/a/text()").extract()
-            else:
-                danwei_list = selector.xpath("//h3[@class='author']/following-sibling::h3[1]/span/text()").extract()
+            danwei_list = selector.xpath("//h3[@class='author']/following-sibling::h3[1]//text()").extract()
+            for danwei in danwei_list:
+                # 去除每个作者单位开头序号
+                value = re.sub(r"^\d+[.。]", "", danwei).strip()
+                data_list.append(value)
 
-            danwei = '|'.join(danwei_list)
+            affiliation = '|'.join(data_list)
 
         except Exception:
-            danwei = ''
+            affiliation = ''
 
-        return danwei
+        return affiliation
+
+    def get_catalog(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            catalog = selector.xpath("//ul[@class='catalog-list']").extract_first()
+            if catalog is None:
+                catalog = ''
+
+        except Exception:
+            catalog = ''
+
+        return catalog
 
     def get_abstract(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            zhaiyao = selector.xpath("//span[@id='ChDivSummary']").extract_first()
-            html_value = re.sub(r"[\r\n\t]", "", zhaiyao).strip()
+            abstract = selector.xpath("//span[@class='abstract-text']/text()").extract_first()
 
         except Exception:
-            html_value = ''
+            abstract = ''
 
-        return html_value
+        return abstract
 
-    def get_qi_kan_name(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            name = selector.xpath("//p[@class='title']/a/text()").extract_first().strip()
-
-        except Exception:
-            name = ''
-
-        return name
-
-    def get_qi_hao(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            qihao = selector.xpath("//div[@class='sourinfo']/p/a[contains(text(), '年')]/text()").extract_first().strip()
-
-        except Exception:
-            qihao = ''
-
-        return qihao
-
-    def get_year(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            qihao = selector.xpath("//div[@class='sourinfo']/p/a[contains(text(), '年')]/text()").extract_first().strip()
-            year = re.findall(r"(\d{4})年?", qihao)[0]
-
-        except Exception:
-            year = ''
-
-        return year
-
-    def get_more_fields(self, text, para):
+    def get_keyword(self, text):
         data_list = []
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            if selector.xpath("//label[contains(text(), '" + para + "')]/../a"):
-                value_list = selector.xpath("//label[contains(text(), '" + para + "')]/../a/text()").extract()
+            if selector.xpath("//p[@class='keywords']/a"):
+                value_list = selector.xpath("//p[@class='keywords']//text()").extract()
                 for v in value_list:
                     # 去除每个关键词末尾分号
                     value = re.sub(r"[;；]$", "", v.strip())
                     data_list.append(value)
                 value = '|'.join(data_list)
             else:
-                values = selector.xpath("//label[contains(text(), '" + para + "')]/../text()").extract_first().strip()
+                values = selector.xpath("//p[@class='keywords']/text()").extract_first().strip()
                 value = re.sub(r"[;；]", "|", re.sub(r"[;；]$", "", values))
                 value_list = value.split('|')
                 # 每个关键词去除左右空格
@@ -512,6 +502,118 @@ class LunWen_Data(Service):
             value = ''
 
         return value
+
+    def get_funders(self, text):
+        funds_list = []
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            # 有链接
+            a_list = selector.xpath("//p[@class='funds']/a")
+            for a in a_list:
+                data_dict = {}
+                # 获取值
+                a_text = a.xpath("./text()").extract_first()
+                # 去除每个关键词末尾分号
+                data_dict['project_name'] = re.sub(r"[;；]$", "", a_text.strip())
+                onclick = a.xpath("./@onclick").extract_first().strip()
+                para = self.get_eval(re.findall(r"TurnPageToKnet(\(.*\));$", onclick)[0])
+                data_dict[
+                    'project_url'] = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
+                    para[0], parse.quote(para[1]), para[2])
+                funds_list.append(data_dict)
+            # 无链接
+            funds = selector.xpath("//p[@class='funds']/text()").extract()
+            for fund in funds:
+                data_dict = {}
+                # 去除每个关键词末尾分号
+                data_dict['project_name'] = re.sub(r"[;；]$", "", fund.strip()).strip()
+                funds_list.append(data_dict)
+
+        except Exception:
+            return funds_list
+
+        return funds_list
+
+    def get_journal_name(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            name = selector.xpath("//a[contains(@onclick, 'getKns8NaviLink')]/text()").extract_first().strip()
+
+        except Exception:
+            name = ''
+
+        return name
+
+    def get_year(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            qihao = selector.xpath("//a[contains(@onclick, 'getKns8YearNaviLink')]/text()").extract_first().strip()
+            try:
+                year = re.findall(r"(\d{4})[,，]?", qihao)[0]
+            except Exception:
+                year = ''
+            try:
+                vol = re.findall(r"[,，]?(\d+)[\(（]", qihao)[0]
+            except Exception:
+                vol = ''
+            try:
+                issue = re.findall(r"[（\(](\d+)[\)）]", qihao)[0]
+            except Exception:
+                issue = ''
+
+        except Exception:
+            year = ''
+            vol = ''
+            issue = ''
+
+        return year, vol, issue
+
+    def get_volume(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            qihao = selector.xpath("//a[contains(@onclick, 'getKns8YearNaviLink')]/text()").extract_first().strip()
+            vol = re.findall(r"[,，]?(\d+)[\(（]", qihao)[0]
+
+        except Exception:
+            vol = ''
+
+        return vol
+
+    def get_issue(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            qihao = selector.xpath("//a[contains(@onclick, 'getKns8YearNaviLink')]/text()").extract_first().strip()
+            issue = re.findall(r"(\(\d+\))", qihao)[0]
+
+        except Exception:
+            issue = ''
+
+        return issue
+
+    def get_more_fields(self, text, para):
+        data_list = []
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            if selector.xpath("//span[contains(text(), '{}')]/following-sibling::p[1]/a".format(para)):
+                value_list = selector.xpath("//span[contains(text(), '{}')]/following-sibling::p[1]//text()".format(para)).extract()
+                for v in value_list:
+                    # 去除每个关键词末尾分号
+                    value = re.sub(r"[;；]$", "", v.strip())
+                    data_list.append(value)
+                field_value = '|'.join(data_list)
+            else:
+                values = selector.xpath("//span[contains(text(), '{}')]/following-sibling::p[1]/text()".format(para)).extract_first()
+                value = re.sub(r"[;；]", "|", re.sub(r"[;；]$", "", values.strip()))
+                value_list = value.split('|')
+                # 每个关键词去除左右空格
+                for v in value_list:
+                    data_list.append(v.strip())
+                field_value = '|'.join(data_list)
+
+        except Exception:
+            field_value = ''
+
+        return field_value
 
     # 获取文内图片
     def get_pic_url(self, text, fetch):
@@ -601,15 +703,16 @@ class LunWen_Data(Service):
 
         return labelObj
 
-    def get_xia_zai(self, text):
+    def get_info(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            xiazai = selector.xpath("//label[contains(text(), '下载')]/../b/text()").extract_first().strip()
+            tag = selector.xpath("//p[@class='total-inform']/span[contains(text(), '{}')]/text()".format(para)).extract_first().strip()
+            info = re.sub(r".*[:：]", "", tag).strip()
 
         except Exception:
-            xiazai = ''
+            info = ''
 
-        return xiazai
+        return info
 
     def get_suo_zai_ye_ma(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
@@ -621,7 +724,7 @@ class LunWen_Data(Service):
 
         return yema
 
-    def get_ye_shu(self, text):
+    def get_total_page(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
             value = selector.xpath("//label[contains(text(), '页数')]/../b/text()").extract_first().strip()
@@ -631,7 +734,7 @@ class LunWen_Data(Service):
 
         return yeshu
 
-    def get_da_xiao(self, text):
+    def get_size(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
             values = selector.xpath("//label[contains(text(), '大小')]/../b/text()").extract_first().strip()
@@ -716,7 +819,7 @@ class LunWen_Data(Service):
             return False
 
     # 获取关联参考文献
-    def canKaoWenXian(self, url, download):
+    def canKaoWenXian(self, url, download, s):
         return_data = []
         # =================正式============================
         if re.findall(r"dbcode=(.*?)&", url, re.I):
@@ -752,7 +855,7 @@ class LunWen_Data(Service):
 
         canKaoUrl = index_url.format(dbcode, filename, dbname)
         # 获取参考文献页源码
-        canKaoResp = download(url=canKaoUrl, method='GET')
+        canKaoResp = download(url=canKaoUrl, method='GET', s=s, host='kns.cnki.net', referer=url)
         if not canKaoResp:
             self.logger.error('参考文献接口页响应失败, url: {}'.format(canKaoUrl))
             return
@@ -817,11 +920,13 @@ class LunWen_Data(Service):
                         for li in li_list:
                             data = {}
                             try:
-                                data["标题"] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp;)', '', li.xpath("./a/text()").extract_first())).strip()
+                                data["标题"] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp;)', '',
+                                                                        li.xpath("./a/text()").extract_first())).strip()
                             except:
                                 data["标题"] = ""
                             try:
-                                data["其它信息"] = re.sub(r'^.', '', re.sub(r'\s+', ' ', re.sub(r'[\r\n\t]', '', li.xpath("./text()").extract_first()))).strip()
+                                data["其它信息"] = re.sub(r'^.', '', re.sub(r'\s+', ' ', re.sub(r'[\r\n\t]', '', li.xpath(
+                                    "./text()").extract_first()))).strip()
                             except:
                                 data["其他信息"] = ""
 
@@ -861,20 +966,24 @@ class LunWen_Data(Service):
                         for li in li_list:
                             data = {}
                             try:
-                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '', li.xpath("./a[@target='kcmstarget']/text()").extract_first())).strip()
+                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '', li.xpath(
+                                    "./a[@target='kcmstarget']/text()").extract_first())).strip()
                             except:
                                 data['标题'] = ""
                             try:
-                                zuoZhe = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '', li.xpath("./text()").extract_first())).strip()
+                                zuoZhe = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '',
+                                                                    li.xpath("./text()").extract_first())).strip()
                                 data['作者'] = re.sub('[,，]', '|', ''.join(re.findall(r'\.(.*?)\.', zuoZhe))).strip()
                             except:
                                 data['作者'] = ""
                             try:
-                                data['刊名'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '', li.xpath("./a[2]/text()").extract_first())).strip()
+                                data['刊名'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '', li.xpath(
+                                    "./a[2]/text()").extract_first())).strip()
                             except:
                                 data['刊名'] = ""
                             try:
-                                data['年卷期'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp;)', '', li.xpath("./a[3]/text()").extract_first())).strip()
+                                data['年卷期'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp;)', '', li.xpath(
+                                    "./a[3]/text()").extract_first())).strip()
                             except:
                                 data['年卷期'] = ""
 
@@ -913,7 +1022,8 @@ class LunWen_Data(Service):
                         for li in li_list:
                             data = {}
                             try:
-                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '', li.xpath("./a/text()").extract_first())).strip()
+                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '',
+                                                                        li.xpath("./a/text()").extract_first())).strip()
                             except:
                                 data['标题'] = ""
                             try:
@@ -932,12 +1042,21 @@ class LunWen_Data(Service):
                             except:
                                 data['年卷期'] = ""
                             try:
-                                zuozhe = re.findall(r'\.\s*(.*)\s*\.&nbsp', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t)', '', li.xpath("./text()").extract_first())))[0].strip()
+                                zuozhe = re.findall(r'\.\s*(.*)\s*\.&nbsp', re.sub(r'\s+', ' ',
+                                                                                   re.sub(r'(\r|\n|\t)', '', li.xpath(
+                                                                                       "./text()").extract_first())))[
+                                    0].strip()
                                 data['作者'] = re.sub(r"[,，]", "|", zuozhe).strip()
                             except:
                                 data['作者'] = ''
                             try:
-                                data['刊名'] = re.sub(r"&nbsp", "", re.findall(r'&nbsp\s*(.*)\s*\.', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t)', '', li.xpath("./text()").extract_first())))[0]).strip()
+                                data['刊名'] = re.sub(r"&nbsp", "", re.findall(r'&nbsp\s*(.*)\s*\.', re.sub(r'\s+', ' ',
+                                                                                                          re.sub(
+                                                                                                              r'(\r|\n|\t)',
+                                                                                                              '',
+                                                                                                              li.xpath(
+                                                                                                                  "./text()").extract_first())))[
+                                    0]).strip()
                             except:
                                 data['刊名'] = ""
                             try:
@@ -980,11 +1099,14 @@ class LunWen_Data(Service):
                         for li in li_list:
                             data = {}
                             try:
-                                data['其它信息'] = re.sub(r'\s+', ' ', re.sub('.*\[M\]\.', '', re.sub(r"&nbsp", "", ''.join(re.findall(r"[^\r\n]", li.xpath("./text()").extract_first()))))).strip()
+                                data['其它信息'] = re.sub(r'\s+', ' ', re.sub('.*\[M\]\.', '', re.sub(r"&nbsp", "", ''.join(
+                                    re.findall(r"[^\r\n]", li.xpath("./text()").extract_first()))))).strip()
                             except:
                                 data['其他信息'] = ""
                             try:
-                                data['标题'] = re.findall(r"(.*)\[M\]", re.sub(r'(\r|\n|&nbsp)', '', li.xpath("./text()").extract_first()))[0].strip()
+                                data['标题'] = re.findall(r"(.*)\[M\]", re.sub(r'(\r|\n|&nbsp)', '',
+                                                                             li.xpath("./text()").extract_first()))[
+                                    0].strip()
                             except:
                                 data['标题'] = ""
 
@@ -1023,20 +1145,26 @@ class LunWen_Data(Service):
                         for li in li_list:
                             data = {}
                             try:
-                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath("./a[@target='kcmstarget']/text()").extract_first())).strip()
+                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath(
+                                    "./a[@target='kcmstarget']/text()").extract_first())).strip()
                             except:
                                 data['标题'] = ""
                             try:
                                 re_time = re.compile("\d{4}")
-                                data['时间'] = [re.findall(re_time, time)[0] for time in li.xpath(".//text()").extract() if re.findall(re_time, time)][0].strip()
+                                data['时间'] = \
+                                    [re.findall(re_time, time)[0] for time in li.xpath(".//text()").extract() if
+                                     re.findall(re_time, time)][0].strip()
                             except:
                                 data['时间'] = ""
                             try:
-                                data['作者'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', re.findall(r"\[D\]\.(.*)\.", li.xpath("./text()").extract_first())[0])).strip()
+                                data['作者'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
+                                                                        re.findall(r"\[D\]\.(.*)\.", li.xpath(
+                                                                            "./text()").extract_first())[0])).strip()
                             except:
                                 data['作者'] = ""
                             try:
-                                data['机构'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath("./a[2]/text()").extract_first())).strip()
+                                data['机构'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath(
+                                    "./a[2]/text()").extract_first())).strip()
                             except:
                                 data['机构'] = ""
 
@@ -1075,15 +1203,18 @@ class LunWen_Data(Service):
                         for li in li_list:
                             data = {}
                             try:
-                                data['标准号'] = ''.join(re.findall(r"[^\r\n]", li.xpath("./text()").extract_first())).strip()
+                                data['标准号'] = ''.join(
+                                    re.findall(r"[^\r\n]", li.xpath("./text()").extract_first())).strip()
                             except:
                                 data['标准号'] = ''
                             try:
-                                data['标题'] = ''.join(re.findall(r"[^\r\n\.]", li.xpath("./a/text()").extract_first())).strip()
+                                data['标题'] = ''.join(
+                                    re.findall(r"[^\r\n\.]", li.xpath("./a/text()").extract_first())).strip()
                             except:
                                 data['标题'] = ''
                             try:
-                                data['时间'] = ''.join(re.findall(r"S\.*\s*(.*)", li.xpath("./text()").extract()[1])).strip()
+                                data['时间'] = ''.join(
+                                    re.findall(r"S\.*\s*(.*)", li.xpath("./text()").extract()[1])).strip()
                             except:
                                 data['时间'] = ''
                             try:
@@ -1138,16 +1269,24 @@ class LunWen_Data(Service):
                             except:
                                 data['标题'] = ''
                             try:
-                                zuozhe = re.findall(r'\. (.*?)\.', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath('./text()').extract_first())))[0]
+                                zuozhe = re.findall(r'\. (.*?)\.', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
+                                                                                              li.xpath(
+                                                                                                  './text()').extract_first())))[
+                                    0]
                                 data['作者'] = re.sub(',', '|', zuozhe)
                             except:
                                 data['作者'] = ''
                             try:
-                                data['类型'] = re.findall(r'.*\. (.*?)\:', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath('./text()').extract_first())))[0]
+                                data['类型'] = re.findall(r'.*\. (.*?)\:', re.sub(r'\s+', ' ',
+                                                                                re.sub(r'(\r|\n|&nbsp)', '', li.xpath(
+                                                                                    './text()').extract_first())))[0]
                             except:
                                 data['类型'] = ''
                             try:
-                                data['公开号'] = re.findall('\:(.*?)\,', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath('./text()').extract_first())))[0]
+                                data['公开号'] = re.findall('\:(.*?)\,', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
+                                                                                                 li.xpath(
+                                                                                                     './text()').extract_first())))[
+                                    0]
                             except:
                                 data['公开号'] = ''
                             try:
@@ -1190,15 +1329,22 @@ class LunWen_Data(Service):
                         for li in li_list:
                             data = {}
                             try:
-                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath("./a/text()").extract_first()))
+                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
+                                                                        li.xpath("./a/text()").extract_first()))
                             except:
                                 data['标题'] = ''
                             try:
-                                data['机构'] = re.findall(r'.*\.(.*?)\.', re.sub('\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath("./text()").extract_first())))[0]
+                                data['机构'] = re.findall(r'.*\.(.*?)\.', re.sub('\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
+                                                                                                  li.xpath(
+                                                                                                      "./text()").extract_first())))[
+                                    0]
                             except:
                                 data['机构'] = ''
                             try:
-                                data['时间'] = re.findall(r'. (\d{4}.*)', re.sub('\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath("./text()").extract_first())))[0]
+                                data['时间'] = re.findall(r'. (\d{4}.*)', re.sub('\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
+                                                                                                  li.xpath(
+                                                                                                      "./text()").extract_first())))[
+                                    0]
                             except:
                                 data['时间'] = ''
                             try:
@@ -1243,16 +1389,21 @@ class LunWen_Data(Service):
                             try:
                                 # li_string_html = html.tostring(doc=li, encoding='utf-8').decode('utf-8')
                                 li_string_html = li.extract_first()
-                                data['标题'] = re.findall(r'<a onclick="getKns55NaviLink\(.*?\);">(.*)</a>', li_string_html)[0]
+                                data['标题'] = \
+                                    re.findall(r'<a onclick="getKns55NaviLink\(.*?\);">(.*)</a>', li_string_html)[0]
                             except:
                                 data['标题'] = ''
                             try:
-                                data['机构'] = re.findall(r'\. (.*?)\.', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath('./text()').extract_first())))[0]
+                                data['机构'] = re.findall(r'\. (.*?)\.', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
+                                                                                                  li.xpath(
+                                                                                                      './text()').extract_first())))[
+                                    0]
                             except:
                                 data['机构'] = ''
                             try:
                                 li_string_html = html.tostring(doc=li, encoding='utf-8').decode('utf-8')
-                                data['时间'] = re.findall(r'<a onclick="getKns55YearNaviLink\(.*?\);">(.*)</a>', li_string_html)[0]
+                                data['时间'] = \
+                                    re.findall(r'<a onclick="getKns55YearNaviLink\(.*?\);">(.*)</a>', li_string_html)[0]
                             except:
                                 data['时间'] = ''
 
@@ -1295,15 +1446,28 @@ class LunWen_Data(Service):
                             except:
                                 data['标题'] = ''
                             try:
-                                data['作者'] = re.sub(r"(,|，)", "|", re.findall(r"\[A\]\.(.*?)\.", re.sub(r'\s+', ' ', re.sub(r"(\r|\n)", "", li.xpath("./text()").extract_first())))[0])
+                                data['作者'] = re.sub(r"(,|，)", "|", re.findall(r"\[A\]\.(.*?)\.", re.sub(r'\s+', ' ',
+                                                                                                        re.sub(
+                                                                                                            r"(\r|\n)",
+                                                                                                            "",
+                                                                                                            li.xpath(
+                                                                                                                "./text()").extract_first())))[
+                                    0])
                             except:
                                 data['作者'] = ''
                             try:
-                                data['文集'] = re.findall(r"\[A\]\..*?\.(.*?)\[C\]", re.sub(r'\s+', ' ', re.sub(r"(\r|\n)", "", li.xpath("./text()").extract_first())))[0]
+                                data['文集'] = re.findall(r"\[A\]\..*?\.(.*?)\[C\]", re.sub(r'\s+', ' ',
+                                                                                          re.sub(r"(\r|\n)", "",
+                                                                                                 li.xpath(
+                                                                                                     "./text()").extract_first())))[
+                                    0]
                             except:
                                 data['文集'] = ''
                             try:
-                                data['时间'] = re.findall(r"\[C\]\.(.*)", re.sub(r'\s+', ' ', re.sub(r"(\r|\n)", "", li.xpath("./text()").extract_first())))[0]
+                                data['时间'] = re.findall(r"\[C\]\.(.*)", re.sub(r'\s+', ' ', re.sub(r"(\r|\n)", "",
+                                                                                                   li.xpath(
+                                                                                                       "./text()").extract_first())))[
+                                    0]
                             except:
                                 data['时间'] = {}
 
@@ -1316,7 +1480,7 @@ class LunWen_Data(Service):
 
         return return_data
 
-    def guanLianRenWu(self, resp):
+    def rela_creators(self, resp):
         return_data = []
         selector = Selector(text=resp)
         try:
@@ -1328,9 +1492,9 @@ class LunWen_Data(Service):
                     if onclick:
                         onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
-                              onclick[0],
-                              onclick[1],
-                              onclick[2])
+                            onclick[0],
+                            onclick[1],
+                            onclick[2])
                         name = onclick[1]
                         e['name'] = name
                         e['url'] = url
@@ -1345,7 +1509,7 @@ class LunWen_Data(Service):
 
         return return_data
 
-    def guanLianQiYeJiGou(self, text):
+    def rela_organization(self, text):
         return_data = []
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
@@ -1357,9 +1521,9 @@ class LunWen_Data(Service):
                     if onclick:
                         onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
-                              onclick[0],
-                              onclick[1],
-                              onclick[2])
+                            onclick[0],
+                            onclick[1],
+                            onclick[2])
                         name = onclick[1]
                         e['name'] = name
                         e['url'] = url
@@ -1429,7 +1593,7 @@ class LunWen_Data(Service):
         else:
             return e
 
-    def guanLianQiKan(self, url):
+    def rela_journal(self, url):
         e = {}
         if url:
             e['url'] = url
@@ -1471,6 +1635,7 @@ class LunWen_Data(Service):
                 people['shiJian'] = t
 
         return people_list
+
 
 class HuiYiLunWen_WenJi_HuiYi(Service):
     def getDaoHangPageData(self):
@@ -1673,9 +1838,11 @@ class HuiYiLunWen_WenJi_HuiYi(Service):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
             if selector.xpath("//ul/li/p[contains(text(), '" + para + "')]/span/@title"):
-                value = selector.xpath("//ul/li/p[contains(text(), '" + para + "')]/span/@title").extract_first().strip()
+                value = selector.xpath(
+                    "//ul/li/p[contains(text(), '" + para + "')]/span/@title").extract_first().strip()
             else:
-                value = selector.xpath("//ul/li/p[contains(text(), '" + para + "')]/span/text()").extract_first().strip()
+                value = selector.xpath(
+                    "//ul/li/p[contains(text(), '" + para + "')]/span/text()").extract_first().strip()
 
         except Exception:
             value = ''
@@ -1695,6 +1862,7 @@ class HuiYiLunWen_WenJi_HuiYi(Service):
         e['sha'] = sha
         e['ss'] = '期刊'
         return e
+
 
 class HuiYiLunWen_LunWen(Service):
     # 获取列表页首页URL
@@ -1770,7 +1938,8 @@ class HuiYiLunWen_LunWen(Service):
                 else:
                     continue
 
-                save_data['url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
+                save_data[
+                    'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
 
             except:
                 continue
@@ -1811,6 +1980,7 @@ class HuiYiLunWen_LunWen(Service):
         }
 
         return data
+
 
 class ZhiWangLunWen_JiGou(Service):
     # ================================= DATA
@@ -1865,6 +2035,7 @@ class ZhiWangLunWen_JiGou(Service):
 
         return e
 
+
 class ZhiWangLunWen_ZuoZhe(Service):
     # =================================== DATA
     def ifEffective(self, resp):
@@ -1873,7 +2044,6 @@ class ZhiWangLunWen_ZuoZhe(Service):
 
         else:
             return True
-
 
     def getSuoZaiDanWei(self, text, shijian):
         return_data = []
@@ -1907,9 +2077,9 @@ class ZhiWangLunWen_ZuoZhe(Service):
                     if onclick:
                         onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
-                              onclick[0],
-                              onclick[1],
-                              onclick[2])
+                            onclick[0],
+                            onclick[1],
+                            onclick[2])
                         name = onclick[1]
                         e['name'] = name
                         e['url'] = url
@@ -1923,6 +2093,7 @@ class ZhiWangLunWen_ZuoZhe(Service):
             return return_data
 
         return return_data
+
 
 class QiKanLunWen_QiKan(Service):
     def get_fen_lei_url(self, url):
@@ -2035,74 +2206,86 @@ class QiKanLunWen_QiKan(Service):
         return shoulu
 
     def get_parallel_title(self, text):
-        return_data = {}
+        soup = self.dom_holder.get(mode='BeautifulSoup', text=text)
+        try:
+            p = soup.h3.p.get_text()
+            en_title = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp;)', '', p)).strip()
+        except Exception:
+            en_title = ''
+
+        return en_title
+
+    def get_cover(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            p_text = selector.xpath("//dd[@class='infobox']/p[not(@class)]/text()").extract_first()
-            data = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp;)', '', p_text)).strip()
-
-        except:
-            data = ''
-
-        if data:
-            return_data['text'] = data
-            return_data['lang'] = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
-
-        return data
-
-    def get_biao_shi(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            pic_url = 'http:' + selector.xpath("//dt[@id='J_journalPic']/img/@src").extract_first().strip()
+            pic_url = 'https:' + selector.xpath("//dt[@id='J_journalPic']/img/@src").extract_first().strip()
 
         except Exception:
-            pic_url = ""
+            pic_url = ''
 
         return pic_url
 
     def get_data(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            data = selector.xpath("//ul/li[not(@class)]/p[contains(text(), '" + para + "')]/span/text()").extract_first().strip()
+            fileds = selector.xpath(
+                "//ul/li[not(@class='tit')]/p[contains(text(), '{}')]/span/text()".format(para)).extract_first().strip()
         except Exception:
-            data =''
+            fileds = ''
 
-        return data
+        return fileds
+
+    def get_counts(self, text, para):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            span = selector.xpath(
+                "//ul/li[not(@class='tit')]/p[contains(text(), '{}')]/span/text()".format(para)).extract_first().strip()
+            counts = re.findall(r"\d+", span)[0]
+        except Exception:
+            counts = ''
+
+        return counts
 
     def get_more_data(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            datas = selector.xpath("//ul/li[not(@class)]/p[contains(text(), '" + para + "')]/span/text()").extract_first().strip()
+            datas = selector.xpath(
+                "//ul/li[not(@class='tit')]/p[contains(text(), '{}')]/span/text()".format(para)).extract_first().strip()
             data = re.sub(r"(;|；)", "|", datas)
         except Exception:
-            data =''
+            data = ''
 
         return data
 
-    def get_ying_xiang_yin_zi(self, text, para):
+    def get_impact_factor(self, text):
+        data_list = []
         data_dict = {}
+        impact_factors = ['复合影响因子', '综合影响因子']
+        en_if = ['combined_impact_factor', 'comprehensive_impact_factor']
         selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            p = selector.xpath("//ul/li[not(@class)]/p[contains(text(), '" + para + "')]")
-            if p:
-                try:
-                    year = re.findall(r"\(?(\d+)\)?", p.xpath("./text()").extract_first())[0]
-                except Exception:
-                    year = ''
-                try:
-                    value = p.xpath("./span/text()").extract_first().strip()
-                except Exception:
-                    value = ''
-                data_dict['因子年版'] = year
-                data_dict['因子数值'] = value
-            else:
-                return data_dict
+        for i in range(len(impact_factors)):
+            try:
+                p = selector.xpath("//ul/li[not(@class)]/p[contains(text(), '{}')]".format(impact_factors[i]))
+                if p:
+                    try:
+                        year = re.findall(r"\(?(\d+)\)?", p.xpath("./text()").extract_first())[0]
+                    except Exception:
+                        year = ''
+                    try:
+                        value = p.xpath("./span/text()").extract_first().strip()
+                    except Exception:
+                        value = ''
+                    data_dict['year'] = year
+                    data_dict[en_if[i]] = value
 
-        except Exception:
-            return data_dict
+                else:
+                    return data_list
 
-        return data_dict
+            except Exception:
+                return data_list
 
+        data_list.append(data_dict)
+        return data_list
 
     # def getLaiYuanShuJuKu(self, resp):
     #     response = bytes(bytearray(resp, encoding='utf-8'))
@@ -2115,45 +2298,46 @@ class QiKanLunWen_QiKan(Service):
     #
     #     return database
 
-    def get_lai_yuan_shu_ju_ku(self, text):
+    def get_databases(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
             tags = selector.xpath("//p[@class='database']/@title").extract()
             database = '|'.join(tags)
-
         except Exception:
-            database = ""
+            database = ''
 
         return database
 
-    def get_lai_yuan_ban_ben(self, text):
+    def get_chinese_core_journals(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
             tag = selector.xpath("//p[@class='hostUnit']/span/@title").extract_first()
             banben = re.sub(r"[\|;；]$", "", re.sub(r"[,，]", "|", tag))
 
         except Exception:
-            banben = ""
+            banben = ''
 
         return banben
 
-    def getQiKanRongYu(self, text):
+    def get_journal_honors(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
             tags = selector.xpath("//p[contains(text(), '期刊荣誉')]/following-sibling::p").extract()
             database = ''.join(tags)
 
         except Exception:
-            database = ""
+            database = ''
 
         return database
 
-    def guanLianQiKan(self, url, sha):
+    def rela_journal(self, url, key, sha):
         e = {}
         e['url'] = url
+        e['key'] = key
         e['sha'] = sha
         e['ss'] = '期刊'
         return e
+
 
 class QiKanLunWen_LunWen(Service):
     # 生成单个知网期刊的时间列表种子
@@ -2193,7 +2377,7 @@ class QiKanLunWen_LunWen(Service):
                 year = dl.xpath("./dt/em/text()").extract_first().strip()
                 # 只获取2018-2020年份的期刊论文
                 if int(year) >= 2015:
-                    stage_list = dl.xpath("./dd/a/text()").extract() # 期列表
+                    stage_list = dl.xpath("./dd/a/text()").extract()  # 期列表
                     for stage in stage_list:
                         issue = re.findall(r'No\.(.*)', stage)[0]
                         issues_list.append((year, issue))
@@ -2274,7 +2458,8 @@ class QiKanLunWen_LunWen(Service):
                                 else:
                                     continue
 
-                                save_data['url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
+                                save_data[
+                                    'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=' + dbcode + '&filename=' + filename + '&dbname=' + dbname
 
                             except:
                                 continue

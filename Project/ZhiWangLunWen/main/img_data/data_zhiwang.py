@@ -58,7 +58,7 @@ class SpiderMain(BastSpiderMain):
 
     def imgDownload(self, img_task):
         # 数据类型转换
-        task_data = self.server.get_eval_response(img_task)
+        task_data = self.server.get_eval(img_task)
         # print(task_data)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()

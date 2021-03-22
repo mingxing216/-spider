@@ -16,6 +16,8 @@ import hashlib
 import traceback
 from multiprocessing.pool import Pool, ThreadPool
 
+import requests
+
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 from Log import logging
 from Utils import timeutils, timers
@@ -23,7 +25,7 @@ from Project.ZhiWangLunWen.middleware import download_middleware
 from Project.ZhiWangLunWen.service import service
 from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
-from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY, LANG_API
 
 LOG_FILE_DIR = 'ZhiWangLunWen'  # LOG日志存放路径
 LOG_NAME = '期刊_data'  # LOG名
@@ -46,11 +48,13 @@ class SpiderMain(BaseSpiderMain):
     def __init__(self):
         super().__init__()
         self.timer = timers.Timer()
+        self.lang_api = LANG_API
+        self.s = requests.Session()
 
-    def _get_resp(self, url, method, s=None, data=None, cookies=None, referer=None):
+    def _get_resp(self, url, method, s=None, data=None, host=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
         for i in range(3):
-            resp = self.download.get_resp(s=s, url=url, method=method, data=data,
+            resp = self.download.get_resp(s=s, url=url, method=method, data=data, host=host,
                                           cookies=cookies, referer=referer)
             if resp:
                 if '请输入验证码' in resp.text or len(resp.text) < 10:
@@ -62,13 +66,9 @@ class SpiderMain(BaseSpiderMain):
 
     def img(self, img_dict):
         # 获取图片响应
-        media_resp = self._get_resp(url=img_dict['url'], method='GET')
+        media_resp = self._get_resp(url=img_dict['url'], method='GET', host='c61.cnki.net')
         if not media_resp:
             logger.error('downloader | 图片响应失败, url: {}'.format(img_dict['url']))
-            # 标题内容调整格式
-            img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-            # 存储图片种子
-            self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             return
 
         img_content = media_resp.content
@@ -79,10 +79,6 @@ class SpiderMain(BaseSpiderMain):
         if suc:
             return True
         else:
-            # 标题内容调整格式
-            img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-            # 存储图片种子
-            self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             return
 
     def handle(self, task_data, save_data):
@@ -96,9 +92,10 @@ class SpiderMain(BaseSpiderMain):
 
         key = '中国知网|' + _id
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
-
+        # 获取cookie
+        self._get_resp(url='https://navi.cnki.net/KNavi/Journal.html', method='GET', s=self.s)
         # 获取期刊详情页源码
-        resp = self._get_resp(url=url, method='GET')
+        resp = self._get_resp(url=url, method='GET', s=self.s, host='navi.cnki.net')
 
         # with open('article.html', 'w', encoding='utf-8') as f:
         #     f.write(resp.text)
@@ -111,88 +108,77 @@ class SpiderMain(BaseSpiderMain):
         # ========================获取数据==========================
         # 标题
         save_data['title'] = self.server.get_title(response)
-        # 获取核心收录
-        save_data['heXinShouLu'] = self.server.get_he_xin_shou_lu(response)
+        if not save_data['title']:
+            return
+
+        # # 获取核心收录
+        # save_data['heXinShouLu'] = self.server.get_he_xin_shou_lu(response)
         # 获取外文名称
-        save_data['parallel_title'] = self.server.get_parallel_title(response)
+        save_data['parallel_title'] = {}
+        t_text = self.server.get_parallel_title(response)
+        if t_text:
+            save_data['parallel_title']['text'] = t_text
+            form_data = {'q': t_text}
+            try:
+                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
+                lang = lang_resp.json().get('responseData').get('language')
+            except:
+                return
+            save_data['parallel_title']['lang'] = lang
         # 获取图片
-        save_data['biaoShi'] = self.server.get_biao_shi(response)
+        save_data['cover'] = self.server.get_cover(response)
         # 获取曾用名
-        save_data['cengYongMing'] = self.server.get_data(response, '曾用刊名')
+        save_data['former_name'] = self.server.get_data(response, '曾用刊名')
         # 获取主办单位
-        save_data['zhuBanDanWei'] = self.server.get_more_data(response, '主办单位')
+        save_data['responsible_organization'] = self.server.get_more_data(response, '主办单位')
         # 获取出版周期
-        save_data['chuBanZhouQi'] = self.server.get_data(response, '出版周期')
+        save_data['period'] = self.server.get_data(response, '出版周期')
         # 获取issn
-        save_data['ISSN'] = self.server.get_data(response, 'ISSN')
+        save_data['issn'] = self.server.get_data(response, 'ISSN')
         # 获取CN
-        save_data['guoNeiKanHao'] = self.server.get_data(response, 'CN')
+        save_data['cn'] = self.server.get_data(response, 'CN')
         # 获取出版地
-        save_data['chuBanDi'] = self.server.get_data(response, '出版地')
+        save_data['place_of_publication'] = self.server.get_data(response, '出版地')
         # 获取语种
-        save_data['yuZhong'] = self.server.get_data(response, '语种')
+        save_data['language'] = self.server.get_data(response, '语种')
         # 获取开本
-        save_data['kaiBen'] = self.server.get_data(response, '开本')
+        save_data['book_size'] = self.server.get_data(response, '开本')
         # 获取邮发代号
-        save_data['youFaDaiHao'] = self.server.get_data(response, '邮发代号')
+        save_data['issuing_code'] = self.server.get_data(response, '邮发代号')
         # 获取创刊时间
         shijian = self.server.get_data(response, '创刊时间')
-        save_data['chuangKanShiJian'] = timeutils.get_date_time_record(shijian)
-        # 获取专辑名称
-        save_data['zhuanJiMingCheng'] = self.server.get_more_data(response, '专辑名称')
-        # 获取专题名称
-        save_data['zhuanTiMingCheng'] = self.server.get_more_data(response, '专题名称')
+        save_data['start_year_of_publication'] = timeutils.get_date_time_record(shijian)
         # 获取出版文献量
-        try:
-            save_data['chuBanWenXianLiang'] = {'v': re.findall(r'\d+', self.server.get_data(response, '出版文献量'))[0], 'u': '篇'}
-        except:
-            save_data['chuBanWenXianLiang'] = ''
+        save_data['number_of_published_articles'] = self.server.get_counts(response, '出版文献量')
         # 获取总下载次数
-        try:
-            save_data['zongXiaZaiCiShu'] = {'v': re.findall(r'\d+', self.server.get_data(response, '总下载次数'))[0], 'u': '次'}
-        except:
-            save_data['zongXiaZaiCiShu'] = ''
+        save_data['journal_downloads'] = self.server.get_counts(response, '总下载次数')
         # 获取总被引次数
-        try:
-            save_data['zongBeiYinCiShu'] = {'v': re.findall(r'\d+', self.server.get_data(response, '总被引次数'))[0], 'u': '次'}
-        except:
-            save_data['zongBeiYinCiShu'] = ''
-        # 获取复合影响因子
-        save_data['fuHeYingXiangYinZi'] = self.server.get_ying_xiang_yin_zi(response, '复合影响因子')
-        # 获取综合影响因子
-        save_data['zongHeYingXiangYinZi'] = self.server.get_ying_xiang_yin_zi(response, '综合影响因子')
+        save_data['journal_cites'] = self.server.get_counts(response, '总被引次数')
+        # 获取影响因子（复合影响因子、综合影响因子）
+        save_data['impact_factor'] = self.server.get_impact_factor(response)
         # 获取来源数据库
-        save_data['laiYuanShuJuKu'] = self.server.get_lai_yuan_shu_ju_ku(response)
-        # 获取来源版本
-        save_data['laiYuanBanBen'] = self.server.get_lai_yuan_ban_ben(response)
+        save_data['databases'] = self.server.get_databases(response)
+        # 获取中文核心期刊来源版本
+        save_data['in_chinese_core_journals'] = self.server.get_chinese_core_journals(response)
         # 获取期刊荣誉
-        save_data['qiKanRongYu'] = self.server.getQiKanRongYu(response)
-        # 获取来源分类
-        save_data['laiYuanFenLei'] = ''
-        # 获取关联主管单位
-        save_data['guanLianZhuGuanDanWei'] = {}
-        # 获取关联主办单位
-        save_data['guanLianZhuBanDanWei'] = {}
-        # 生成学科类别
-        save_data['xueKeLeiBie'] = task_data.get('s_xueKeLeiBie', '')
-        # 生成核心期刊导航
-        save_data['zhongWenHeXinQiKanMuLu'] = task_data.get('s_zhongWenHeXinQiKanMuLu', '')
+        save_data['journal_honors'] = self.server.get_journal_honors(response)
+        # 学科类别
+        save_data['subject_classification_name'] = task_data.get('s_xueKeLeiBie', '')
+        # 核心期刊导航
+        save_data['classification_name'] = task_data.get('s_zhongWenHeXinQiKanMuLu', '')
 
         # 保存图片
-        if save_data['biaoShi']:
+        if save_data['cover']:
             img_dict = dict()
-            img_dict['url'] = save_data['biaoShi']
+            img_dict['url'] = save_data['cover']
             img_dict['bizTitle'] = save_data['title']
-            img_dict['relEsse'] = self.server.guanLianQiKan(url, sha)
+            img_dict['relEsse'] = self.server.rela_journal(url, key, sha)
             img_dict['relPics'] = {}
 
             # 存储图片
             suc = self.img(img_dict=img_dict)
             if not suc:
                 return
-
-        # # 获取期刊论文种子
-        # self.getPaperTask(qiKanUrl=url, qikanSha=sha, xueKeLeiBie=xueKeLeiBie)
 
         # =========================== 公共字段
         # url
@@ -220,9 +206,9 @@ class SpiderMain(BaseSpiderMain):
         # 采集服务器集群
         save_data['cluster'] = 'crawler'
         # 元数据版本号
-        save_data['metadata_version'] = 'V2.0'
+        save_data['metadata_version'] = 'V1.2'
         # 采集脚本版本号
-        save_data['script_version'] = 'V1.0'
+        save_data['script_version'] = 'V1.3'
 
     def run(self):
         task_timer = timers.Timer()
@@ -236,8 +222,8 @@ class SpiderMain(BaseSpiderMain):
             # 获取任务
             logger.info('task start')
             task_timer.start()
-            # task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_MAGAZINE)
-            task = '{"url": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=HDKJ", "sha": "6fab3a87edaa09065c89d5df8e5242f02dabe2fa", "s_xueKeLeiBie": "基础科学_基础科学综合", "s_zhongWenHeXinQiKanMuLu": ""}'
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_MAGAZINE)
+            # task = '{"url": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=WBXB", "s_xueKeLeiBie": "信息科技_无线电电子学", "s_zhongWenHeXinQiKanMuLu": "第七编 工业技术_无线电电子学、电信技术", "sha": "30a13f1189561739bd2493feb5c10c455e5c70bf"}'
             if task:
                 try:
                     # 创建数据存储字典

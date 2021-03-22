@@ -81,7 +81,7 @@ class SpiderMain(BastSpiderMain):
 
     def run(self, category):
         # 数据类型转换
-        task = self.server.get_eval_response(category)
+        task = self.server.get_eval(category)
         para = task['data']
         totalCount = int(task['totalCount'])
         num = int(task['num'])
@@ -101,7 +101,7 @@ class SpiderMain(BastSpiderMain):
             catalog_resp.encoding = catalog_resp.apparent_encoding
             catalog_text = catalog_resp.text
             # 获取单位url
-            para_value = self.server.get_eval_response(para)
+            para_value = self.server.get_eval(para)
             danwei_url_list = self.server.get_dan_wei_url_list(resp=catalog_text, value=para_value[2])
             # print(danwei_url_list)
             # 学位授予单位详情页作为二级分类页进入redis队列

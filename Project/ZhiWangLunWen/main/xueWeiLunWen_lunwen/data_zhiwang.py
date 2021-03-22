@@ -86,7 +86,7 @@ class SpiderMain(BastSpiderMain):
 
     def handle(self, task, save_data):
         # 数据类型转换
-        task_data = self.server.get_eval_response(task)
+        task_data = self.server.get_eval(task)
         # print(task)
         url = task_data['url']
         sha = hashlib.sha1(url.encode('utf-8')).hexdigest()
@@ -110,7 +110,7 @@ class SpiderMain(BastSpiderMain):
         # 获取作者
         save_data['zuoZhe'] = self.server.get_author(article_html)
         # 获取作者单位
-        save_data['zuoZheDanWei'] = self.server.get_author_affiliation(article_html)
+        save_data['zuoZheDanWei'] = self.server.get_affiliation(article_html)
         # 获取摘要
         save_data['zhaiYao'] = self.server.get_abstract(article_html)
         # 获取关键词
@@ -124,9 +124,9 @@ class SpiderMain(BastSpiderMain):
         # 获取下载次数
         save_data['xiaZaiCiShu'] = task_data['xiaZaiCiShu']
         # 获取页数
-        save_data['yeShu'] = self.server.get_ye_shu(article_html)
+        save_data['yeShu'] = self.server.get_total_page(article_html)
         # 获取大小
-        save_data['daXiao'] = self.server.get_da_xiao(article_html)
+        save_data['daXiao'] = self.server.get_size(article_html)
         # 获取下载
         save_data['xiaZai'] = self.server.getUrl(article_html, '整本下载')
         # 获取在线阅读
@@ -140,13 +140,13 @@ class SpiderMain(BastSpiderMain):
         # 获取参考文献
         save_data['guanLianCanKaoWenXian'] = self.server.canKaoWenXian(url=url, download=self.__getResp)
         # 获取关联人物
-        save_data['guanLianRenWu'] = self.server.guanLianRenWu(article_html)
+        save_data['guanLianRenWu'] = self.server.rela_creators(article_html)
         # 获取关联导师
         save_data['guanLianDaoShi'] = self.server.guanLianDaoShi(article_html)
         # 获取学位授予单位
         save_data['guanLianXueWeiShouYuDaWei'] = self.server.guanLianXueWeiShouYuDanWei(task_data.get('parentUrl'))
         # 获取关联企业机构
-        save_data['guanLianQiYeJiGou'] = self.server.guanLianQiYeJiGou(article_html)
+        save_data['guanLianQiYeJiGou'] = self.server.rela_organization(article_html)
         # 获取关联文档
         save_data['guanLianWenDang'] = {}
 

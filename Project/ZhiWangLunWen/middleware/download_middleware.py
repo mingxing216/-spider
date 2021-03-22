@@ -6,6 +6,7 @@
 import sys
 import os
 import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import re
 import time
@@ -28,10 +29,11 @@ class Downloader(downloader.BaseDownloader):
         self.cookie_obj = cookie_obj
         self.timer = timers.Timer()
 
-    def get_resp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):
+    def get_resp(self, url, method, s=None, data=None, host=None, cookies=None, referer=None, ranges=None, user=None):
         self.logger.info('downloader start')
         self.timer.start()
-        ret = self._get_resp(url, method, s, data, cookies, referer, ranges, user)
+        ret = self._get_resp(url, method, s=s, data=data, host=host, cookies=cookies, referer=referer,
+                             ranges=ranges, user=user)
         if not ret:
             self.logger.info('downloader end | 下载失败 | use time: {}'.format(self.timer.use_time()))
             return
@@ -42,14 +44,15 @@ class Downloader(downloader.BaseDownloader):
             return
 
         if ret['code'] == 1:
-            msg = 'downloader end | 下载失败, 页面响应状态码错误, status: {} | use time: {}'.format(ret['status'], self.timer.use_time())
+            msg = 'downloader end | 下载失败, 页面响应状态码错误, status: {} | use time: {}'.format(ret['status'],
+                                                                                       self.timer.use_time())
             self.logger.error(msg)
             return
 
         self.logger.info('downloader end | 下载成功 | use time: {}'.format(self.timer.use_time()))
         return ret['data']
 
-    def _get_resp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):
+    def _get_resp(self, url, method, s=None, data=None, host=None, cookies=None, referer=None, ranges=None, user=None):
         # 响应状态码错误重试次数
         stat_count = 0
         # 请求异常重试次数
@@ -65,7 +68,7 @@ class Downloader(downloader.BaseDownloader):
                 'Range': ranges,
                 # 'Cookie': 'ASP.NET_SessionId=32nrqfxmdq0r5xcs05eac55d; skybug=46c629a8306c41bd731afe1b03760367; usercssn=UserID=376906&allcheck=732715F2D8B151F6113B09AD01A0352A',
                 # 'Connection': 'close',
-                # 'Host': 'navi.cnki.net',
+                'Host': host,
                 # 'Origin': 'https://navi.cnki.net',
                 'User-Agent': user_agent_u.get_ua()
             }
@@ -94,11 +97,10 @@ class Downloader(downloader.BaseDownloader):
             # 返回值中添加IP信息
             down_data['proxy_ip'] = ip
             # 释放代理
-            self.proxy_obj.release_proxy(ip, down_data['code'] == 0 or down_data['code'] == 1)
+            # self.proxy_obj.release_proxy(ip, down_data['code'] == 0 or down_data['code'] == 1)
 
             # 判断
             if down_data['code'] == 0:
-
                 return down_data
 
             if down_data['code'] == 1:
@@ -108,7 +110,7 @@ class Downloader(downloader.BaseDownloader):
                 else:
                     if stat_count > 3:
 
-                       return down_data
+                        return down_data
                     else:
                         stat_count += 1
                         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
@@ -199,6 +201,7 @@ class Downloader(downloader.BaseDownloader):
         data['random'] = random.random()
 
         self.get_resp(s=s, url=url, method='POST', data=data)
+
 
 class QiKanLunWen_QiKanTaskDownloader(downloader.BaseDownloader):
     def __init__(self, logging, timeout, proxy_enabled, stream):

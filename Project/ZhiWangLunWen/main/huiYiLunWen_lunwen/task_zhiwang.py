@@ -105,7 +105,7 @@ class SpiderMain(BastSpiderMain):
 
     def run(self, category):
         # 数据类型转换
-        task = self.server.get_eval_response(category)
+        task = self.server.get_eval(category)
         # print(task)
         url = task['url']
 
