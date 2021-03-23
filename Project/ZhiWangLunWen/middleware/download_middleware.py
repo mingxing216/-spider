@@ -41,16 +41,16 @@ class Downloader(downloader.BaseDownloader):
         if ret['code'] == 2:
             msg = 'downloader end | 下载失败, 页面响应失败, msg: {} | use time: {}'.format(ret['message'], self.timer.use_time())
             self.logger.error(msg)
-            return
+            return ret
 
         if ret['code'] == 1:
             msg = 'downloader end | 下载失败, 页面响应状态码错误, status: {} | use time: {}'.format(ret['status'],
                                                                                        self.timer.use_time())
             self.logger.error(msg)
-            return
+            return ret
 
         self.logger.info('downloader end | 下载成功 | use time: {}'.format(self.timer.use_time()))
-        return ret['data']
+        return ret
 
     def _get_resp(self, url, method, s=None, data=None, host=None, cookies=None, referer=None, ranges=None, user=None):
         # 响应状态码错误重试次数

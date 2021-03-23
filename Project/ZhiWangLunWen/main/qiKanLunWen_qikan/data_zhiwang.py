@@ -56,8 +56,8 @@ class SpiderMain(BaseSpiderMain):
         for i in range(3):
             resp = self.download.get_resp(s=s, url=url, method=method, data=data, host=host,
                                           cookies=cookies, referer=referer)
-            if resp:
-                if '请输入验证码' in resp.text or len(resp.text) < 10:
+            if resp['data']:
+                if '请输入验证码' in resp['data'].text or len(resp['data'].text) < 10:
                     logger.error('captcha | 出现验证码: {}'.format(url))
                     continue
             return resp
@@ -67,11 +67,14 @@ class SpiderMain(BaseSpiderMain):
     def img(self, img_dict):
         # 获取图片响应
         media_resp = self._get_resp(url=img_dict['url'], method='GET', host='c61.cnki.net')
-        if not media_resp:
+        if media_resp['status'] == 404:
+            return True
+
+        if not media_resp['data']:
             logger.error('downloader | 图片响应失败, url: {}'.format(img_dict['url']))
             return
 
-        img_content = media_resp.content
+        img_content = media_resp['data'].content
         # 存储图片
         content_type = 'image/jpeg'
         suc = self.dao.save_media_to_hbase(media_url=img_dict['url'], content=img_content, item=img_dict,
@@ -100,11 +103,11 @@ class SpiderMain(BaseSpiderMain):
         # with open('article.html', 'w', encoding='utf-8') as f:
         #     f.write(resp.text)
 
-        if not resp:
+        if not resp['data']:
             logger.error('downloader | 页面响应失败, url: {}'.format(url))
             return
 
-        response = resp.text
+        response = resp['data'].text
         # ========================获取数据==========================
         # 标题
         save_data['title'] = self.server.get_title(response)
@@ -216,7 +219,7 @@ class SpiderMain(BaseSpiderMain):
         # 第一次请求的等待时间
         self.timer.start()
         time.sleep(random.uniform(DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY))
-        logger.info('thread | wait download delay time| use time: {}'.format(self.timer.use_time()))
+        logger.info('thread | wait download delay time | use time: {}'.format(self.timer.use_time()))
         # 单线程无限循环
         while True:
             # 获取任务

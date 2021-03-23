@@ -236,9 +236,9 @@ class SpiderMain(BastSpiderMain):
             # 采集服务器集群
             pics['cluster'] = 'crawler'
             # 元数据版本号
-            pics['metadata_version'] = 'V2.0'
+            pics['metadata_version'] = 'V1.2'
             # 采集脚本版本号
-            pics['script_version'] = 'V1.0'
+            pics['script_version'] = 'V1.3'
 
             # 保存组图实体到Hbase
             pics_suc = self.dao.save_data_to_hbase(data=pics)
