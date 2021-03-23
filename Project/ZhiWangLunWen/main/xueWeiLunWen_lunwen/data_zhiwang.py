@@ -138,7 +138,7 @@ class SpiderMain(BastSpiderMain):
         # 获取专业
         save_data['zhuanYe'] = task_data['s_zhuanYe']
         # 获取参考文献
-        save_data['guanLianCanKaoWenXian'] = self.server.canKaoWenXian(url=url, download=self.__getResp)
+        save_data['guanLianCanKaoWenXian'] = self.server.get_literature(url=url, download=self.__getResp)
         # 获取关联人物
         save_data['guanLianRenWu'] = self.server.rela_creators(article_html)
         # 获取关联导师

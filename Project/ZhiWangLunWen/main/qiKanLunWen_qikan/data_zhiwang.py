@@ -56,10 +56,11 @@ class SpiderMain(BaseSpiderMain):
         for i in range(3):
             resp = self.download.get_resp(s=s, url=url, method=method, data=data, host=host,
                                           cookies=cookies, referer=referer)
-            if resp['data']:
-                if '请输入验证码' in resp['data'].text or len(resp['data'].text) < 10:
-                    logger.error('captcha | 出现验证码: {}'.format(url))
-                    continue
+            if resp:
+                if resp['status'] == 200:
+                    if '请输入验证码' in resp['data'].text or len(resp['data'].text) < 10:
+                        logger.error('captcha | 出现验证码: {}'.format(url))
+                        continue
             return resp
         else:
             return
@@ -99,7 +100,8 @@ class SpiderMain(BaseSpiderMain):
         self._get_resp(url='https://navi.cnki.net/KNavi/Journal.html', method='GET', s=self.s)
         # 获取期刊详情页源码
         resp = self._get_resp(url=url, method='GET', s=self.s, host='navi.cnki.net')
-
+        if resp['status'] == 404:
+            return
         # with open('article.html', 'w', encoding='utf-8') as f:
         #     f.write(resp.text)
 

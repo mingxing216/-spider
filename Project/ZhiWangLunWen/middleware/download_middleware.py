@@ -41,7 +41,7 @@ class Downloader(downloader.BaseDownloader):
         if ret['code'] == 2:
             msg = 'downloader end | 下载失败, 页面响应失败, msg: {} | use time: {}'.format(ret['message'], self.timer.use_time())
             self.logger.error(msg)
-            return ret
+            return
 
         if ret['code'] == 1:
             msg = 'downloader end | 下载失败, 页面响应状态码错误, status: {} | use time: {}'.format(ret['status'],

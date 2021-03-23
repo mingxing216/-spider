@@ -151,7 +151,7 @@ class SpiderMain(BastSpiderMain):
         # 获取在线阅读
         save_data['zaiXianYueDu'] = task_data.get('zaiXianYueDu')
         # 获取参考文献
-        save_data['guanLianCanKaoWenXian'] = self.server.canKaoWenXian(url=url, download=self.__getResp)
+        save_data['guanLianCanKaoWenXian'] = self.server.get_literature(url=url, download=self.__getResp)
         # 关联文集
         save_data['guanLianWenJi'] = self.server.guanLianWenJi(task_data.get('parentUrl'))
         # 关联活动_会议

@@ -326,8 +326,8 @@ class Dao(object):
             content_bs64 = base64.b64encode(content)
             # 内存中打开图片
             img = Image.open(BytesIO(content))
-            data_dict['naturalHeight'] = "{}".format(img.height),
-            data_dict['naturalWidth'] = "{}".format(img.width)
+            data_dict['natural_height'] = "{}".format(img.height)
+            data_dict['natural_width'] = "{}".format(img.width)
             store_data = "{}".format(content_bs64.decode('utf-8'))
         # 文档存储
         if 'pdf' in contype:

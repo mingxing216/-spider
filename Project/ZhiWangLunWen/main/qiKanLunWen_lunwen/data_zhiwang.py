@@ -57,7 +57,7 @@ class SpiderMain(BastSpiderMain):
             resp = self.download.get_resp(s=s, url=url, method=method, data=data, host=host,
                                           cookies=cookies, referer=referer)
             if resp:
-                if '请输入验证码' in resp.text or len(resp.text) < 10:
+                if '请输入验证码' in resp['data'].text or len(resp['data'].text) < 10:
                     logger.error('captcha | 出现验证码: {}'.format(url))
                     continue
             return resp
@@ -67,7 +67,10 @@ class SpiderMain(BastSpiderMain):
     def img_download(self, img_dict):
         # 获取图片响应
         media_resp = self._get_resp(url=img_dict['url'], method='GET')
-        if not media_resp:
+        if media_resp['status'] == 404:
+            return True
+
+        if not media_resp['data']:
             logger.error('downloader | 图片响应失败, url: {}'.format(img_dict['url']))
             # 标题内容调整格式
             img_dict['bizTitle'] = img_dict['bizTitle'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
@@ -75,7 +78,7 @@ class SpiderMain(BastSpiderMain):
             self.dao.save_task_to_mysql(table=config.MYSQL_IMG, memo=img_dict, ws='中国知网', es='论文')
             return
         # media_resp.encoding = media_resp.apparent_encoding
-        img_content = media_resp.content
+        img_content = media_resp['data'].content
         # 存储图片
         content_type = 'image/jpeg'
         succ = self.dao.save_media_to_hbase(media_url=img_dict['url'], content=img_content, item=img_dict,
@@ -90,7 +93,7 @@ class SpiderMain(BastSpiderMain):
             return
 
     def handle(self, task_data, save_data):
-        print(task_data)
+        # print(task_data)
         url = task_data['url']
         _id= self.server.get_id(url)
         # print(id)
@@ -98,13 +101,13 @@ class SpiderMain(BastSpiderMain):
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
 
         # 获取论文详情页html源码
-        resp = self._get_resp(url=url, method='GET', s=self.s, host='kns.cnki.net')
-        if not resp:
+        resp = self._get_resp(url=url, method='GET', host='kns.cnki.net')
+        if not resp['data']:
             logger.error('downloader | 论文详情页响应失败, url: {}'.format(url))
             return
 
         # resp.encoding = resp.apparent_encoding
-        article_html = resp.text
+        article_html = resp['data'].text
 
         # ======================== 期刊论文实体数据 ===========================
         # 获取标题
@@ -184,11 +187,11 @@ class SpiderMain(BastSpiderMain):
         # 学科类别
         save_data['subject_classification_name'] = task_data.get('xueKeLeiBie', '')
         # 获取参考文献
-        save_data['references'] = self.server.canKaoWenXian(url=url, download=self._get_resp, s=self.s)
+        save_data['references'] = self.server.get_literature(article_html, 1, url=url, download=self._get_resp)
         # 获取引证文献
-        save_data['cited_literature'] = self.server.canKaoWenXian(url=url, download=self._get_resp)
+        save_data['cited_literature'] = self.server.get_literature(article_html, 3, url=url, download=self._get_resp)
         # 获取文献数量年度分布
-        save_data['annual_trend_of_literature_number'] = self.server.canKaoWenXian(url=url, download=self._get_resp)
+        save_data['annual_trend_of_literature_number'] = self.server.get_literature(url=url, download=self._get_resp)
         # 关联期刊
         save_data['rela_journal'] = self.server.rela_journal(task_data.get('parentUrl'))
         # 关联人物
@@ -326,8 +329,8 @@ class SpiderMain(BastSpiderMain):
             task_timer.start()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            # task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
-            task = '{"theme": "基础医学研究", "url": "https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=JYKY202001010&dbname=CJFDLAST2020", "xiaZai": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=n8sbjTFvPSUrNDkHGGwa1ho8r3UKR0Eg1blqUAXs46uVtWbBkzCDkcKJ5VmGgPhX&tableName=CJFDLAST2017", "zaiXianYueDu": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=SYKQ201705008&tablename=CJFDLAST2017&filetype=XML;EPUB;", "xueKeLeiBie": "医药卫生科技_口腔科学", "parentUrl": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=SYKQ", "year": "2017", "issue": "05", "sha": "047fe93efaba692553e3eab9ff38bd58bbb593e2"}'
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
+            # task = '{"theme": "基础医学研究", "url": "https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=JYKY202001010&dbname=CJFDLAST2020", "xiaZai": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=n8sbjTFvPSUrNDkHGGwa1ho8r3UKR0Eg1blqUAXs46uVtWbBkzCDkcKJ5VmGgPhX&tableName=CJFDLAST2017", "zaiXianYueDu": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=SYKQ201705008&tablename=CJFDLAST2017&filetype=XML;EPUB;", "xueKeLeiBie": "医药卫生科技_口腔科学", "parentUrl": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=SYKQ", "year": "2017", "issue": "05", "sha": "047fe93efaba692553e3eab9ff38bd58bbb593e2"}'
             if task:
                 try:
                     # 创建数据存储字典

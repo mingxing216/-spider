@@ -819,7 +819,7 @@ class LunWen_Data(Service):
             return False
 
     # 获取关联参考文献
-    def canKaoWenXian(self, url, download, s):
+    def get_literature(self, text, reftype, url, download):
         return_data = []
         # =================正式============================
         if re.findall(r"dbcode=(.*?)&", url, re.I):
@@ -843,6 +843,13 @@ class LunWen_Data(Service):
         else:
             return return_data
 
+        # 获取参考、引证文献vl参数
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            vl = selector.xpath("//input[@id='listv']/@value").extract_first().strip()
+        except Exception:
+            return return_data
+
         # 'http://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=1&vl='
         # 'http://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=3&vl='
         # ================================================
@@ -850,17 +857,17 @@ class LunWen_Data(Service):
                      'dbcode={}'
                      '&filename={}'
                      '&dbname={}'
-                     '&RefType=1'
-                     '&vl=')
+                     '&RefType={}'
+                     '&vl={}')
 
-        canKaoUrl = index_url.format(dbcode, filename, dbname)
+        canKaoUrl = index_url.format(dbcode, filename, dbname, reftype, vl)
         # 获取参考文献页源码
-        canKaoResp = download(url=canKaoUrl, method='GET', s=s, host='kns.cnki.net', referer=url)
-        if not canKaoResp:
+        cakao_resp = download(url=canKaoUrl, method='GET', host='kns.cnki.net', referer=url)
+        if not cakao_resp['data']:
             self.logger.error('参考文献接口页响应失败, url: {}'.format(canKaoUrl))
             return
 
-        response = canKaoResp.text
+        response = cakao_resp['data'].text
         selector = Selector(text=response)
         div_list = selector.xpath("//div[@class='essayBox']")
         i = -1
@@ -868,81 +875,25 @@ class LunWen_Data(Service):
             leixing_dict = {}
             i += 1
             # 获取实体类型
-            shiTiLeiXing = div.xpath("./div[@class='dbTitle']/text()").extract_first()
-            # print(shiTiLeiXing)
+            entity_type = div.xpath("./div[@class='dbTitle']/text()").extract_first()
+            # print(entity_type)
             # 获取CurDBCode参数
             CurDBCode = re.findall(r"pc_(.*)", div.xpath("./div[@class='dbTitle']/b/span/@id").extract_first())[0]
             # 获取该类型总页数
             article_number = int(div.xpath("./div[@class='dbTitle']/b/span/text()").extract_first())
             if article_number % 10 == 0:
                 page_number = int(article_number / 10)
-                # 判断总页数是否大于50页，大于50页，只翻最后50页
-                if page_number > 50:
-                    first_page = int(page_number - 50)
-                else:
-                    first_page = 0
             else:
                 page_number = int((article_number / 10)) + 1
-                # 判断总页数是否大于50页，大于50页，只翻最后50页
-                if page_number > 50:
-                    first_page = int(page_number - 50)
-                else:
-                    first_page = 0
 
-            # 题录
-            if '题录' in shiTiLeiXing:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '题录'
-                leixing_list = []
-                # pass
-                # # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    leiXingResp = leiXingResp.content.decode('utf-8')
-                    selector = Selector(text=leiXingResp)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data["标题"] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp;)', '',
-                                                                        li.xpath("./a/text()").extract_first())).strip()
-                            except:
-                                data["标题"] = ""
-                            try:
-                                data["其它信息"] = re.sub(r'^.', '', re.sub(r'\s+', ' ', re.sub(r'[\r\n\t]', '', li.xpath(
-                                    "./text()").extract_first()))).strip()
-                            except:
-                                data["其他信息"] = ""
-
-                            # 列表去重
-                            if data not in leixing_list:
-                                leixing_list.append(data)
-
-                leixing_dict['题录'] = leixing_list
-
-            elif '学术期刊' in shiTiLeiXing:
+            # 学术期刊
+            if '期刊' in entity_type:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '学术期刊'
-                leixing_list = []
-                # pass
+                type_list = []
+                # passkeyword
                 # 翻页获取
-                for page in range(first_page, page_number):
+                for page in range(1, page_number + 1):
                     qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
                                            'dbcode={}'
                                            '&filename={}'
@@ -987,15 +938,64 @@ class LunWen_Data(Service):
                             except:
                                 data['年卷期'] = ""
 
-                            if data not in leixing_list:
-                                leixing_list.append(data)
+                            if data not in type_list:
+                                type_list.append(data)
 
-                leixing_dict['期刊论文'] = leixing_list
+                leixing_dict['期刊论文'] = type_list
 
-            elif '国际期刊' in shiTiLeiXing:
+            # 题录
+            elif '题录' in entity_type:
+                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                keyword = '题录'
+                type_list = []
+                # pass
+                # # 翻页获取
+                for page in range(first_page, page_number):
+                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                                           'dbcode={}'
+                                           '&filename={}'
+                                           '&dbname={}'
+                                           '&RefType=1'
+                                           '&CurDBCode={}'
+                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
+                    # 获取该页html
+                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
+                    if not leiXingResp:
+                        continue
+
+                    leiXingResp = leiXingResp.content.decode('utf-8')
+                    selector = Selector(text=leiXingResp)
+                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
+                    # 判断参考文献类型页面是否正确
+                    status = self._judgeHtml(leiXingDivList, i, keyword)
+                    if status:
+                        leiXingDiv = leiXingDivList[i]
+                        li_list = leiXingDiv.xpath(".//li")
+                        for li in li_list:
+                            data = {}
+                            try:
+                                data["标题"] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp;)', '',
+                                                                        li.xpath("./a/text()").extract_first())).strip()
+                            except:
+                                data["标题"] = ""
+                            try:
+                                data["其它信息"] = re.sub(r'^.', '', re.sub(r'\s+', ' ', re.sub(r'[\r\n\t]', '', li.xpath(
+                                    "./text()").extract_first()))).strip()
+                            except:
+                                data["其他信息"] = ""
+
+                            # 列表去重
+                            if data not in type_list:
+                                type_list.append(data)
+
+                leixing_dict['题录'] = type_list
+
+
+
+            elif '国际期刊' in entity_type:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '国际期刊'
-                leixing_list = []
+                type_list = []
                 # pass
                 # 翻页获取
                 for page in range(first_page, page_number):
@@ -1064,15 +1064,15 @@ class LunWen_Data(Service):
                             except:
                                 data['链接'] = ''
 
-                            if data not in leixing_list:
-                                leixing_list.append(data)
+                            if data not in type_list:
+                                type_list.append(data)
 
-                leixing_dict['外文文献'] = leixing_list
+                leixing_dict['外文文献'] = type_list
 
-            elif '图书' in shiTiLeiXing:
+            elif '图书' in entity_type:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '图书'
-                leixing_list = []
+                type_list = []
                 # pass
                 # 翻页获取
                 for page in range(first_page, page_number):
@@ -1110,15 +1110,15 @@ class LunWen_Data(Service):
                             except:
                                 data['标题'] = ""
 
-                            if data not in leixing_list:
-                                leixing_list.append(data)
+                            if data not in type_list:
+                                type_list.append(data)
 
-                leixing_dict['图书'] = leixing_list
+                leixing_dict['图书'] = type_list
 
-            elif '学位' in shiTiLeiXing:
+            elif '学位' in entity_type:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '学位'
-                leixing_list = []
+                type_list = []
                 # pass
                 # 翻页获取
                 for page in range(first_page, page_number):
@@ -1168,15 +1168,15 @@ class LunWen_Data(Service):
                             except:
                                 data['机构'] = ""
 
-                            if data not in leixing_list:
-                                leixing_list.append(data)
+                            if data not in type_list:
+                                type_list.append(data)
 
-                leixing_dict['学位论文'] = leixing_list
+                leixing_dict['学位论文'] = type_list
 
-            elif '标准' in shiTiLeiXing:
+            elif '标准' in entity_type:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '标准'
-                leixing_list = []
+                type_list = []
                 # pass
                 # 翻页获取
                 for page in range(first_page, page_number):
@@ -1230,15 +1230,15 @@ class LunWen_Data(Service):
                             except:
                                 data['链接'] = ''
 
-                            if data not in leixing_list:
-                                leixing_list.append(data)
+                            if data not in type_list:
+                                type_list.append(data)
 
-                leixing_dict['标准'] = leixing_list
+                leixing_dict['标准'] = type_list
 
-            elif '专利' in shiTiLeiXing:
+            elif '专利' in entity_type:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '专利'
-                leixing_list = []
+                type_list = []
                 # pass
                 # 翻页获取
                 for page in range(first_page, page_number):
@@ -1294,15 +1294,15 @@ class LunWen_Data(Service):
                             except:
                                 data['链接'] = ''
 
-                            if data not in leixing_list:
-                                leixing_list.append(data)
+                            if data not in type_list:
+                                type_list.append(data)
 
-                leixing_dict['专利'] = leixing_list
+                leixing_dict['专利'] = type_list
 
-            elif '报纸' in shiTiLeiXing:
+            elif '报纸' in entity_type:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '报纸'
-                leixing_list = []
+                type_list = []
                 # pass
                 # 翻页获取
                 for page in range(first_page, page_number):
@@ -1352,15 +1352,15 @@ class LunWen_Data(Service):
                             except:
                                 data['链接'] = ''
 
-                            if data not in leixing_list:
-                                leixing_list.append(data)
+                            if data not in type_list:
+                                type_list.append(data)
 
-                leixing_dict['报纸'] = leixing_list
+                leixing_dict['报纸'] = type_list
 
-            elif '年鉴' in shiTiLeiXing:
+            elif '年鉴' in entity_type:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '年鉴'
-                leixing_list = []
+                type_list = []
                 # pass
                 # 翻页获取
                 for page in range(first_page, page_number):
@@ -1407,15 +1407,15 @@ class LunWen_Data(Service):
                             except:
                                 data['时间'] = ''
 
-                            if data not in leixing_list:
-                                leixing_list.append(data)
+                            if data not in type_list:
+                                type_list.append(data)
 
-                leixing_dict['年鉴'] = leixing_list
+                leixing_dict['年鉴'] = type_list
 
-            elif '会议' in shiTiLeiXing:
+            elif '会议' in entity_type:
                 # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                 keyword = '会议'
-                leixing_list = []
+                type_list = []
                 # pass
                 # 翻页获取
                 for page in range(first_page, page_number):
@@ -1471,10 +1471,10 @@ class LunWen_Data(Service):
                             except:
                                 data['时间'] = {}
 
-                            if data not in leixing_list:
-                                leixing_list.append(data)
+                            if data not in type_list:
+                                type_list.append(data)
 
-                leixing_dict['会议论文'] = leixing_list
+                leixing_dict['会议论文'] = type_list
 
             return_data.append(leixing_dict)
 
