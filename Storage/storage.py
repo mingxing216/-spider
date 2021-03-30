@@ -264,10 +264,10 @@ class Dao(object):
         # 将待存储数据编码成二进制数据
         b_data = save_data.encode('utf-8')
         url = '{}'.format(settings.SAVE_HBASE_DATA_URL)
-        form_data = {"ip": "{}".format(self.localIP),
-                     "wid": "python",
-                     "ref": "",
-                     "item": save_data}
+        form_data = {'ip': '{}'.format(self.localIP),
+                     'wid': 'python',
+                     'ref': '',
+                     'item': save_data}
 
         # 开始存储实体数据
         data_start = timers.Timer()
@@ -318,6 +318,7 @@ class Dao(object):
             'rel_pics': json.dumps(item.get('rel_pics'), ensure_ascii=False),
             'content_type': contype,
             'tag_src': media_url,
+            'metadata_version': 'V1.2'
         }
         store_data = ''
         # 图片存储
@@ -340,14 +341,13 @@ class Dao(object):
             store_data = content
 
         form_data = {
-            "ip": "{}".format(self.localIP),
+            'ip': '{}'.format(self.localIP),
             'type': type,
             'url': media_url,
-            "content": store_data,
-            "wid": "100",
-            "ref": "",
-            "metadata_version": 'V1.2',
-            "item": json.dumps(data_dict, ensure_ascii=False)
+            'content': store_data,
+            'wid': '100',
+            'ref': '',
+            'item': json.dumps(data_dict, ensure_ascii=False)
         }
         # 开始存储多媒体数据
         media_start = timers.Timer()
