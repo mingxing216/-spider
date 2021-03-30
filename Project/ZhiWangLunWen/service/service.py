@@ -2878,19 +2878,27 @@ class QiKanLunWen_LunWen(Service):
         issues_list = []
         text = resp.text
         selector = self.dom_holder.get(mode='Selector', text=text)
-        dl_list = selector.xpath("//div[@class='yearissuepage']/dl")
-        for dl in dl_list:
-            try:
-                year = dl.xpath("./dt/em/text()").extract_first().strip()
-                # 只获取2018-2020年份的期刊论文
-                if int(year) >= 2015:
-                    stage_list = dl.xpath("./dd/a/text()").extract()  # 期列表
-                    for stage in stage_list:
-                        issue = re.findall(r'No\.(.*)', stage)[0]
-                        issues_list.append((year, issue))
+        try:
+            dl_list = selector.xpath("//div[@class='yearissuepage']/dl")
+            if dl_list:
+                for dl in dl_list:
+                    year = dl.xpath("./dt/em/text()").extract_first().strip()
+                    # 只获取2018-2020年份的期刊论文
+                    if int(year) >= 2015:
+                        stage_list = dl.xpath("./dd/a/text()").extract()  # 期列表
+                        for stage in stage_list:
+                            issue = re.findall(r'No\.(.*)', stage)[0]
+                            issues_list.append((year, issue))
+                    else:
+                        break
 
-            except Exception:
-                continue
+                if not issues_list:
+                    return
+            else:
+                return issues_list
+
+        except Exception:
+            return issues_list
 
         return issues_list
 
