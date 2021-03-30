@@ -68,6 +68,9 @@ class SpiderMain(BastSpiderMain):
     def img_download(self, img_dict):
         # 获取图片响应
         media_resp = self._get_resp(url=img_dict['url'], method='GET')
+        if media_resp is None:
+            return
+
         if media_resp['status'] == 404:
             return True
 
@@ -99,6 +102,12 @@ class SpiderMain(BastSpiderMain):
 
         # 获取论文详情页html源码
         resp = self._get_resp(url=url, method='GET', host='kns.cnki.net')
+        if resp is None:
+            return
+
+        if resp['status'] == 404:
+            return
+
         if not resp['data']:
             logger.error('downloader | 论文详情页响应失败, url: {}'.format(url))
             return
@@ -276,7 +285,7 @@ class SpiderMain(BastSpiderMain):
             # 采集脚本版本号
             doc_data['script_version'] = 'V1.3'
             # 保存文档实体到Hbase
-            pics_suc = self.dao.save_data_to_hbase(data=doc_data)
+            pics_suc = self.dao.save_data_to_hbase(data=doc_data, ss_type=doc_data['ss'], sha=doc_data['sha'], url=doc_data['url'])
             if not pics_suc:
                 logger.error('storage | 文档实体存储失败, url: {}'.format(url))
                 return
@@ -326,7 +335,7 @@ class SpiderMain(BastSpiderMain):
             pics['script_version'] = 'V1.3'
 
             # 保存组图实体到Hbase
-            pics_suc = self.dao.save_data_to_hbase(data=pics)
+            pics_suc = self.dao.save_data_to_hbase(data=pics, ss_type=pics['ss'], sha=pics['sha'], url=pics['url'])
             if not pics_suc:
                 logger.error('storage | 组图实体存储失败, url: {}'.format(url))
                 return
