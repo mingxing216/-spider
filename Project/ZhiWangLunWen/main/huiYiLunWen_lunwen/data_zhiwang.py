@@ -151,7 +151,7 @@ class SpiderMain(BastSpiderMain):
         # 获取在线阅读
         save_data['zaiXianYueDu'] = task_data.get('zaiXianYueDu')
         # 获取参考文献
-        save_data['guanLianCanKaoWenXian'] = self.server.get_literature(url=url, download=self.__getResp)
+        save_data['guanLianCanKaoWenXian'] = self.server.get_literature(url=url, down=self.__getResp)
         # 关联文集
         save_data['guanLianWenJi'] = self.server.guanLianWenJi(task_data.get('parentUrl'))
         # 关联活动_会议
@@ -164,7 +164,7 @@ class SpiderMain(BastSpiderMain):
         save_data['guanLianWenDang'] = {}
 
         # 获取所有图片链接
-        picDatas = self.server.get_pic_url(resp=article_html, fetch=self.__getResp)
+        picDatas = self.server.get_pic_url(resp=article_html, down=self.__getResp)
         if picDatas:
             # 获取组图(关联组图)
             save_data['relationPics'] = self.server.rela_pics(url, sha)
@@ -257,7 +257,7 @@ class SpiderMain(BastSpiderMain):
         # 存储部分
         # --------------------------
         # 保存人物队列
-        people_list = self.server.getPeople(zuozhe=save_data['guanLianRenWu'], daoshi=save_data.get('guanLianDaoShi'), t=save_data['shiJian'])
+        people_list = self.server.get_people(zuozhe=save_data['guanLianRenWu'], daoshi=save_data.get('guanLianDaoShi'), t=save_data['shiJian'])
         # print(people_list)
         if people_list:
             for people in people_list:

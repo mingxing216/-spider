@@ -313,9 +313,9 @@ class Dao(object):
             'pk': sha,
             'type': type,
             'url': media_url,
-            'biz_title': item.get('bizTitle'),
-            'rel_esse': json.dumps(item.get('relEsse'), ensure_ascii=False),
-            'rel_pics': json.dumps(item.get('relPics'), ensure_ascii=False),
+            'biz_title': item.get('title'),
+            'rel_esse': json.dumps(item.get('rel_esse'), ensure_ascii=False),
+            'rel_pics': json.dumps(item.get('rel_pics'), ensure_ascii=False),
             'content_type': contype,
             'tag_src': media_url,
         }
@@ -346,6 +346,7 @@ class Dao(object):
             "content": store_data,
             "wid": "100",
             "ref": "",
+            "metadata_version": 'V1.2',
             "item": json.dumps(data_dict, ensure_ascii=False)
         }
         # 开始存储多媒体数据

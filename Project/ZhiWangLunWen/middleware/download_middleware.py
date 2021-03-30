@@ -97,7 +97,7 @@ class Downloader(downloader.BaseDownloader):
             # 返回值中添加IP信息
             down_data['proxy_ip'] = ip
             # 释放代理
-            # self.proxy_obj.release_proxy(ip, down_data['code'] == 0 or down_data['code'] == 1)
+            self.proxy_obj.release_proxy(ip, down_data['code'] == 0 or down_data['code'] == 1)
 
             # 判断
             if down_data['code'] == 0:

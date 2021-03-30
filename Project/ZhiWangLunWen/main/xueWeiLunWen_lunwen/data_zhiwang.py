@@ -138,7 +138,7 @@ class SpiderMain(BastSpiderMain):
         # 获取专业
         save_data['zhuanYe'] = task_data['s_zhuanYe']
         # 获取参考文献
-        save_data['guanLianCanKaoWenXian'] = self.server.get_literature(url=url, download=self.__getResp)
+        save_data['guanLianCanKaoWenXian'] = self.server.get_literature(url=url, down=self.__getResp)
         # 获取关联人物
         save_data['guanLianRenWu'] = self.server.rela_creators(article_html)
         # 获取关联导师
@@ -151,7 +151,7 @@ class SpiderMain(BastSpiderMain):
         save_data['guanLianWenDang'] = {}
 
         # 获取所有图片链接
-        picDatas = self.server.get_pic_url(resp=article_html, fetch=self.__getResp)
+        picDatas = self.server.get_pic_url(resp=article_html, down=self.__getResp)
         if picDatas:
             # 获取组图(关联组图)
             save_data['relationPics'] = self.server.rela_pics(url, sha)
@@ -244,7 +244,7 @@ class SpiderMain(BastSpiderMain):
         # 存储部分
         # --------------------------
         # 保存人物队列
-        people_list = self.server.getPeople(zuozhe=save_data['guanLianRenWu'], daoshi=save_data['guanLianDaoShi'], t=save_data['shiJian'])
+        people_list = self.server.get_people(zuozhe=save_data['guanLianRenWu'], daoshi=save_data['guanLianDaoShi'], t=save_data['shiJian'])
         # print(people_list)
         if people_list:
             for people in people_list:

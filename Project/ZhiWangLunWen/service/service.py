@@ -12,13 +12,8 @@ import hashlib
 from urllib import parse
 
 from bs4 import BeautifulSoup
-from lxml import html
+from lxml import etree
 from scrapy.selector import Selector
-
-from Utils import timers
-from settings import LANG_API
-
-etree = html.etree
 
 
 class DomResultHolder(object):
@@ -412,10 +407,7 @@ class LunWen_Data(Service):
     # ========================================= DATA
     # 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=BDYX202002006&dbname=CJFDLAST2020'
     def get_id(self, url):
-        try:
-            id_list = re.findall(r"dbcode=(\w+)&filename=(\w+)&dbname=(\w+)", url)[0]
-        except:
-            id_list = []
+        id_list = re.findall(r"dbcode=(.*?)&filename=(.*?)&dbname=(.*?)$", url, re.I)[0]
 
         return '|'.join(id_list)
 
@@ -615,42 +607,84 @@ class LunWen_Data(Service):
 
         return field_value
 
-    # 获取文内图片
-    def get_pic_url(self, text, fetch):
-        return_data = []
+    def get_classification_code(self, text):
+        data_list = []
         selector = self.dom_holder.get(mode='Selector', text=text)
-        data = selector.xpath("//a[@class='btn-note']/@href").extract_first()
-        if data:
-            fnbyIdAndName = re.findall(r"filename=(.*?)&", data)[0]
-            # 图片参数url
-            image_data_url = 'https://image.cnki.net/getimage.ashx?fnbyIdAndName={}'.format(str(fnbyIdAndName))
-            # 获取图片参数
-            image_data_resp = fetch(url=image_data_url, method='GET')
-            if not image_data_resp:
-                self.logger.error('图片参数获取失败, url: {}'.format(image_data_url))
-                return return_data
-            image_data_response = image_data_resp.content.decode('utf-8')
-            # print(image_data_response)
-            try:
-                img_para = re.findall(r"var oJson={'IDs':'(.*)'}", image_data_response)[0]
-                if img_para:
-                    index_list = img_para.split('||')
-                    for index in index_list:
-                        image_data = {}
-                        url_data = re.findall(r"(.*)##", index)[0]
-                        image_title = re.findall(r"##(.*)", index)[0]
-                        image_url = 'https://image.cnki.net/getimage.ashx?id={}'.format(url_data)
-                        image_data['url'] = image_url
-                        image_data['title'] = image_title
-                        return_data.append(image_data)
+        try:
+            if selector.xpath("//span[contains(text(), '分类号')]/following-sibling::p[1]/a"):
+                value_list = selector.xpath("//span[contains(text(), '{}')]/following-sibling::p[1]//text()").extract()
+                for v in value_list:
+                    code_dict = {}
+                    # 去除每个关键词末尾分号
+                    value = re.sub(r"[;；]$", "", v.strip())
+                    code_dict['name'] = ''
+                    code_dict['code'] = value.strip()
+                    code_dict['type'] = '中图分类'
+                    data_list.append(code_dict)
+            else:
+                values = selector.xpath("//span[contains(text(), '分类号')]/following-sibling::p[1]/text()").extract_first()
+                value = re.sub(r"[;；]", "|", re.sub(r"[;；]$", "", values.strip()))
+                value_list = value.split('|')
+                # 每个关键词去除左右空格
+                for v in value_list:
+                    code_dict = {}
+                    code_dict['name'] = ''
+                    code_dict['code'] = v.strip()
+                    code_dict['type'] = '中图分类'
+                    data_list.append(code_dict)
 
-                    return return_data
-                else:
+        except Exception:
+            return data_list
+
+        return data_list
+
+    # 获取文内图片
+    def get_pic_url(self, href, down):
+        return_data = []
+        try:
+            if re.findall(r"fileName=(.*?)&", href, re.I):
+                filename = re.findall(r"fileName=(.*?)&", href, re.I)[0]
+            elif re.findall(r"fileName=(.*)", href, re.I):
+                filename = re.findall(r"fileName=(.*)", href, re.I)[0]
+            else:
+                return return_data
+
+            if filename:
+                # 图片参数url
+                image_data_url = 'https://image.cnki.net/getimage.ashx?fnbyIdAndName={}'.format(filename)
+                # 获取图片参数
+                image_data_resp = down(url=image_data_url, method='GET')
+                if image_data_resp['status'] == 404:
                     return return_data
 
-            except:
+                if not image_data_resp['data']:
+                    self.logger.error('图片参数获取失败, url: {}'.format(image_data_url))
+                    return return_data
+
+                image_data_response = image_data_resp['data'].text
+                try:
+                    img_para = re.findall(r"var oJson={'IDs':'(.*)'}", image_data_response)[0]
+                    if img_para:
+                        index_list = img_para.split('||')
+                        for index in index_list:
+                            image_data = {}
+                            url_data = index.split('##')[0]
+                            image_title = index.split('##')[1]
+                            image_url = 'https://image.cnki.net/getimage.ashx?id={}'.format(url_data)
+                            image_data['url'] = image_url
+                            image_data['title'] = image_title
+                            return_data.append(image_data)
+
+                        return return_data
+                    else:
+                        return return_data
+
+                except Exception:
+                    return return_data
+            else:
                 return return_data
-        else:
+
+        except Exception:
             return return_data
 
     # 关联组图
@@ -662,6 +696,20 @@ class LunWen_Data(Service):
             e['key'] = key
             e['sha'] = sha
             e['ss'] = '组图'
+        except Exception:
+            return e
+
+        return e
+
+    # 关联文档
+    def rela_doc(self, url, key, sha):
+        # 创建关联对象
+        e = {}
+        try:
+            e['url'] = url
+            e['key'] = key
+            e['sha'] = sha
+            e['ss'] = '文档'
         except Exception:
             return e
 
@@ -681,27 +729,51 @@ class LunWen_Data(Service):
 
         return e
 
-    # 获取组图
-    def get_pics(self, imgData):
-        labelObj = {}
-        return_pics = []
+    # 获取文档
+    def get_media(self, media_data, media_key, ss, format='', size=''):
+        label_obj = {}
+        media_list = []
         try:
-            if imgData:
-                for img in imgData:
+            if media_data:
+                for media in media_data:
+                    if media['url']:
+                        media_obj = {
+                            'url': media['url'],
+                            'title': media.get('title', ''),
+                            'desc': '',
+                            'sha': hashlib.sha1(media['url'].encode('utf-8')).hexdigest(),
+                            'ss': ss,
+                            'format': format,
+                            'size': size
+                        }
+                        media_list.append(media_obj)
+                label_obj[media_key] = media_list
+        except Exception:
+            return label_obj
+
+        return label_obj
+
+    # 获取组图
+    def get_pics(self, img_data):
+        label_obj = {}
+        pic_list = []
+        try:
+            if img_data:
+                for img in img_data:
                     if img['url']:
-                        picObj = {
+                        pic_obj = {
                             'url': img['url'],
                             'title': img['title'],
                             'desc': "",
                             'sha': hashlib.sha1(img['url'].encode('utf-8')).hexdigest(),
                             'ss': 'image'
                         }
-                        return_pics.append(picObj)
-                labelObj['picture'] = return_pics
+                        pic_list.append(pic_obj)
+                label_obj['picture'] = pic_list
         except Exception:
-            labelObj['picture'] = []
+            label_obj['picture'] = []
 
-        return labelObj
+        return label_obj
 
     def get_info(self, text, para):
         selector = self.dom_holder.get(mode='Selector', text=text)
@@ -799,8 +871,88 @@ class LunWen_Data(Service):
 
         return href
 
+    def get_lite_num(self, url, down):
+        if re.findall(r"dbcode=(.*?)&", url, re.I):
+            dbcode = re.findall(r"dbcode=(.*?)&", url, re.I)[0]
+        elif re.findall(r"dbcode=(.*)", url):
+            dbcode = re.findall(r"dbcode=(.*)", url, re.I)[0]
+        else:
+            return ''
+
+        if re.findall(r"filename=(.*?)&", url, re.I):
+            filename = re.findall(r"filename=(.*?)&", url, re.I)[0]
+        elif re.findall(r"filename=(.*)", url):
+            filename = re.findall(r"filename=(.*)", url, re.I)[0]
+        else:
+            return ''
+
+        index_url = 'https://kns.cnki.net/kcms/detail/block/refcount.aspx?dbcode={}&filename={}'
+        num_url = index_url.format(dbcode, filename)
+
+        # 获取参考文献页源码
+        num_resp = down(url=num_url, method='GET', host='kns.cnki.net')
+        if not num_resp['data']:
+            self.logger.error('参考文献接口页响应失败, url: {}'.format(num_url))
+            return
+
+        try:
+            num_json = self.get_eval(num_resp['data'].text)
+        except:
+            return
+
+        return num_json
+
+    def get_annual_trend(self, url, down):
+        data_list = []
+        if re.findall(r"dbcode=(.*?)&", url, re.I):
+            dbcode = re.findall(r"dbcode=(.*?)&", url, re.I)[0]
+        elif re.findall(r"dbcode=(.*)", url):
+            dbcode = re.findall(r"dbcode=(.*)", url, re.I)[0]
+        else:
+            return data_list
+
+        if re.findall(r"filename=(.*?)&", url, re.I):
+            filename = re.findall(r"filename=(.*?)&", url, re.I)[0]
+        elif re.findall(r"filename=(.*)", url):
+            filename = re.findall(r"filename=(.*)", url, re.I)[0]
+        else:
+            return data_list
+
+        # 'https://kns.cnki.net/kcms/detail/block/refyear.aspx?dbcode=CJFD&filename=jzck201809006'
+        index_url = 'https://kns.cnki.net/kcms/detail/block/refyear.aspx?dbcode={}&filename={}'
+        trend_url = index_url.format(dbcode, filename)
+
+        # 获取参考文献页源码
+        trend_resp = down(url=trend_url, method='GET', host='kns.cnki.net')
+        if trend_resp['status'] == 404:
+            return data_list
+
+        if not trend_resp['data']:
+            self.logger.error('参考文献接口页响应失败, url: {}'.format(trend_url))
+            return data_list
+
+        trend_text = trend_resp['data'].text
+        # 获取年度分布
+        selector = etree.fromstring(trend_text)
+        try:
+            item_list = selector.xpath("//Item")
+            for item in item_list:
+                data_dict = {}
+                data_dict['year'] = item.xpath("./YEAR")[0].text
+                data_dict['reference'] = item.xpath("./REFERENCE")[0].text
+                data_dict['sub_reference'] = item.xpath("./SUB_REFERENCE")[0].text
+                data_dict['citing'] = item.xpath("./CITING")[0].text
+                data_dict['sub_citing'] = item.xpath("./SUB_CITING")[0].text
+                data_list.append(data_dict)
+
+        except Exception:
+            return data_list
+
+        temp_list = sorted(data_list, key=lambda k: int(k.get('year') if k.get('year') != '#' else 0), reverse=True)
+        return temp_list
+
     # 判断参考文献类型页面是否正确
-    def _judgeHtml(self, divlist, div_number, keyword):
+    def _verify_type(self, divlist, div_number, keyword):
         '''
         :param divlist: div标签列表
         :param div_number: 指定的div标签索引位置
@@ -819,664 +971,1016 @@ class LunWen_Data(Service):
             return False
 
     # 获取关联参考文献
-    def get_literature(self, text, reftype, url, download):
-        return_data = []
+    def get_literature(self, text, reftype, url, down, num):
+        return_data = {}
+        return_data['number'] = num
+        return_data['detail'] = []
+        type_list = ['J', 'A', 'D', 'S', 'P', 'M', 'N', 'Z']
+
         # =================正式============================
-        if re.findall(r"dbcode=(.*?)&", url, re.I):
-            dbcode = re.findall(r"dbcode=(.*?)&", url, re.I)[0]
-        elif re.findall(r"dbcode=(.*)", url):
-            dbcode = re.findall(r"dbcode=(.*)", url, re.I)[0]
-        else:
-            return return_data
-
-        if re.findall(r"filename=(.*?)&", url, re.I):
-            filename = re.findall(r"filename=(.*?)&", url, re.I)[0]
-        elif re.findall(r"filename=(.*)", url):
-            filename = re.findall(r"filename=(.*)", url, re.I)[0]
-        else:
-            return return_data
-
-        if re.findall(r"dbname=(.*?)&", url, re.I):
-            dbname = re.findall(r"dbname=(.*?)&", url, re.I)[0]
-        elif re.findall(r"dbname=(.*)", url, re.I):
-            dbname = re.findall(r"dbname=(.*)", url, re.I)[0]
-        else:
-            return return_data
-
-        # 获取参考、引证文献vl参数
-        selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            vl = selector.xpath("//input[@id='listv']/@value").extract_first().strip()
+            if re.findall(r"dbcode=(.*?)&", url, re.I):
+                dbcode = re.findall(r"dbcode=(.*?)&", url, re.I)[0]
+            elif re.findall(r"dbcode=(.*)", url):
+                dbcode = re.findall(r"dbcode=(.*)", url, re.I)[0]
+            else:
+                return return_data
+
+            if re.findall(r"filename=(.*?)&", url, re.I):
+                filename = re.findall(r"filename=(.*?)&", url, re.I)[0]
+            elif re.findall(r"filename=(.*)", url):
+                filename = re.findall(r"filename=(.*)", url, re.I)[0]
+            else:
+                return return_data
+
+            if re.findall(r"dbname=(.*?)&", url, re.I):
+                dbname = re.findall(r"dbname=(.*?)&", url, re.I)[0]
+            elif re.findall(r"dbname=(.*)", url, re.I):
+                dbname = re.findall(r"dbname=(.*)", url, re.I)[0]
+            else:
+                return return_data
+
+            # 获取参考、引证文献vl参数
+            selector = self.dom_holder.get(mode='Selector', text=text)
+            try:
+                vl = selector.xpath("//input[@id='listv']/@value").extract_first().strip()
+            except Exception:
+                return return_data
+
+            # 'http://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=1&vl='
+            # ================================================
+            index_url = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+                         'dbcode={}'
+                         '&filename={}'
+                         '&dbname={}'
+                         '&RefType={}'
+                         '&vl={}')
+
+            lite_url = index_url.format(dbcode, filename, dbname, reftype, vl)
+            # 获取参考文献页源码
+            lite_resp = down(url=lite_url, method='GET', host='kns.cnki.net', referer=url)
+            if not lite_resp['data']:
+                self.logger.error('文献列表接口页响应失败, url: {}'.format(lite_url))
+                return
+
+            response = lite_resp['data'].text
+            selector = Selector(text=response)
+
+            # 遍历文献类型
+            div_list = selector.xpath("//div[@class='essayBox']")
+            i = -1
+            for div in div_list:
+                type_dict = {}
+                i += 1
+                # 获取实体类型
+                entity_type = div.xpath("./div[@class='dbTitle']/text()").extract_first()
+                # print(entity_type)
+                # 获取CurDBCode参数
+                CurDBCode = re.findall(r"pc_(.*)", div.xpath("./div[@class='dbTitle']/b/span/@id").extract_first())[0]
+                # 获取该类型总页数
+                article_number = int(div.xpath("./div[@class='dbTitle']/b/span/text()").extract_first().strip())
+                if article_number % 10 == 0:
+                    page_number = int(article_number / 10)
+                else:
+                    page_number = int((article_number / 10)) + 1
+
+                # 期刊论文
+                if '期刊' in entity_type:
+                    type_dict['type'] = '期刊论文'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '期刊'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net', referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
+                                    final_list = one_text.split('&nbsp')
+                                    try:
+                                        data_dict['title'] = re.findall(r"\](.*)\[\w\]", final_list[0])[0].strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", final_list[0])[0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['author'] = re.findall(r"\[\w\]\s*\.+?(.*)\.", final_list[0])[0].strip()
+                                    except:
+                                        data_dict['author'] = ''
+                                    try:
+                                        data_dict['journal_name'] = re.findall(r"(.*)\.\s*\d+", final_list[-1])[0].strip()
+                                    except:
+                                        data_dict['journal_name'] = ''
+                                    try:
+                                        data_dict['year_vol_issue'] = re.findall(r"\.\s*(\d+.*)", final_list[-1])[0].strip()
+                                    except:
+                                        data_dict['year_vol_issue'] = ''
+                                    data_dict['full_content'] = one_text
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict['url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '论文'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                elif '会议' in entity_type:
+                    type_dict['type'] = '会议论文'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '会议'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
+                                             referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    final_list = one_text.split('.')
+                                    try:
+                                        data_dict['title'] = re.findall(r"^\[\d+\](.*)\[\w+\]$", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['author'] = final_list[1].strip()
+                                    except:
+                                        data_dict['author'] = ''
+                                    try:
+                                        data_dict['collection'] = re.findall(r"(.*)\[\w+\]$", final_list[2].strip())[0].strip()
+                                    except:
+                                        data_dict['collection'] = ''
+                                    try:
+                                        data_dict['date'] = final_list[3].strip()
+                                    except:
+                                        data_dict['date'] = ''
+                                    data_dict['full_content'] = one_text
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict[
+                                        'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(
+                                        dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '论文'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                elif '博士' in entity_type:
+                    type_dict['type'] = '学位论文'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '博士'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
+                                             referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    final_list = one_text.split('.')
+                                    try:
+                                        data_dict['title'] = re.findall(r"^\[\d+\](.*)\[\w+\]$", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['author'] = final_list[1].strip()
+                                    except:
+                                        data_dict['author'] = ''
+                                    try:
+                                        data_dict['author_affiliation'] = re.findall(r"(.*)\s+\d+", final_list[2])[0].strip()
+                                    except:
+                                        data_dict['author_affiliation'] = ''
+                                    try:
+                                        data_dict['date'] = re.findall(r".*?\s+(\d+)", final_list[2])[0].strip()
+                                    except:
+                                        data_dict['date'] = ''
+                                    data_dict['full_content'] = one_text
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict[
+                                        'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(
+                                        dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '论文'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                elif '硕士' in entity_type:
+                    type_dict['type'] = '学位论文'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '硕士'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
+                                             referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    final_list = one_text.split('.')
+                                    data_dict['full_content'] = one_text
+                                    try:
+                                        data_dict['title'] = re.findall(r"^\[\d+\](.*)\[\w+\]$", final_list[0].strip())[
+                                            0].strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", final_list[0].strip())[
+                                            0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['author'] = final_list[1].strip()
+                                    except:
+                                        data_dict['author'] = ''
+                                    try:
+                                        data_dict['author_affiliation'] = re.findall(r"(.*)\s+\d+", final_list[2])[
+                                            0].strip()
+                                    except:
+                                        data_dict['author_affiliation'] = ''
+                                    try:
+                                        data_dict['date'] = re.findall(r".*?\s+(\d+)", final_list[2])[0].strip()
+                                    except:
+                                        data_dict['date'] = ''
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict[
+                                        'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(
+                                        dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '论文'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                # 题录
+                elif '题录' in entity_type:
+                    type_dict['type'] = '题录'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '题录'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
+                                             referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    data_dict['full_content'] = one_text
+                                    try:
+                                        data_dict['title'] = re.findall(r"\](.*?)\.+?", one_text)[0].strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", one_text)[0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['other'] = re.findall(r"\.+?(.*)", one_text)[0].strip()
+                                    except:
+                                        data_dict['other'] = ''
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict[
+                                        'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(
+                                        dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '题录'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                elif '图书' in entity_type:
+                    type_dict['type'] = '图书'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '图书'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
+                                             referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    data_dict['full_content'] = one_text
+                                    try:
+                                        data_dict['title'] = re.findall(r"\](.*?)\[\w\]\s*\.+?", one_text)[0].strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", one_text)[0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['other'] = re.findall(r"\.+?(.*)", one_text)[0].strip()
+                                    except:
+                                        data_dict['other'] = ''
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict['url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(
+                                        dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '图书'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                elif '标准' in entity_type:
+                    type_dict['type'] = '标准'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '标准'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
+                                             referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    final_list = one_text.split('. ')
+                                    data_dict['full_content'] = one_text
+                                    try:
+                                        data_dict['standard_number'] = re.sub(r"^\[\d+\]", "", final_list[0].strip()).strip()
+                                    except:
+                                        data_dict['standard_number'] = ''
+                                    try:
+                                        data_dict['title'] = re.sub(r"\[\w+\]$", "", final_list[1].strip()).strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", final_list[1].strip())[0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['date'] = final_list[2].strip()
+                                    except:
+                                        data_dict['date'] = ''
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict[
+                                        'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(
+                                        dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '标准'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                elif '专利' in entity_type:
+                    type_dict['type'] = '专利'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '专利'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
+                                             referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    final_list = one_text.split('.')
+                                    data_dict['full_content'] = one_text
+                                    try:
+                                        data_dict['title'] = re.findall(r"^\[\d+\](.*)\[\w+\]$", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['author'] = final_list[1].strip()
+                                    except:
+                                        data_dict['author'] = ''
+                                    try:
+                                        data_dict['patent_type'] = re.findall(r"(.*)[:：]", final_list[2])[0].strip()
+                                    except:
+                                        data_dict['patent_type'] = ''
+                                    try:
+                                        data_dict['publication_number'] = re.findall(r"[:：](.*)", final_list[2])[0].strip()
+                                    except:
+                                        data_dict['publication_number'] = ''
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict[
+                                        'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(
+                                        dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '专利'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                elif '报纸' in entity_type:
+                    type_dict['type'] = '报纸'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '报纸'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
+                                             referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    final_list = one_text.split('.')
+                                    data_dict['full_content'] = one_text
+                                    try:
+                                        data_dict['title'] = re.findall(r"^\[\d+\](.*)\[\w+\]$", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['author'] = final_list[1].strip()
+                                    except:
+                                        data_dict['author'] = ''
+                                    try:
+                                        data_dict['newspaper'] = final_list[2].strip()
+                                    except:
+                                        data_dict['newspaper'] = ''
+                                    try:
+                                        data_dict['date'] = re.findall(r"(\d+)\s*[\(（]", final_list[3])[0].strip()
+                                    except:
+                                        data_dict['date'] = ''
+                                    try:
+                                        data_dict['edition'] = re.findall(r"\d+[\(（](.*)[）\)]", final_list[3])[0].strip()
+                                    except:
+                                        data_dict['edition'] = ''
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict[
+                                        'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(
+                                        dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '报纸'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                elif '年鉴' in entity_type:
+                    type_dict['type'] = '年鉴'
+                    type_dict['content'] = []
+                    # 获取当前文献类型url
+                    current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
+                    # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
+                    keyword = '年鉴'
+                    # passkeyword
+                    # 翻页获取
+                    for page in range(page_number):
+                        current_page_url = current_url + '&page={}'.format(page + 1)
+                        # 获取该页html
+                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
+                                             referer=current_url)
+                        if not cur_page_resp['data']:
+                            continue
+
+                        resp_text = cur_page_resp['data'].text
+                        selector = Selector(text=resp_text)
+                        type_div_list = selector.xpath("//div[@class='essayBox']")
+                        # 判断参考文献类型页面是否正确
+                        status = self._verify_type(type_div_list, i, keyword)
+                        if status:
+                            leiXingDiv = type_div_list[i]
+                            li_list = leiXingDiv.xpath(".//li")
+                            for li in li_list:
+                                data_dict = {}
+                                try:
+                                    text_list = li.xpath(".//text()").extract()
+                                    con_text = ''.join(text_list)
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    final_list = one_text.split('.')
+                                    data_dict['full_content'] = one_text
+                                    try:
+                                        data_dict['title'] = re.findall(r"^\[\d+\](.*)\[\w+\]$", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['title'] = ''
+                                    try:
+                                        data_dict['document_code'] = re.findall(r"\[([A-Za-z])\]", final_list[0].strip())[0].strip()
+                                    except:
+                                        data_dict['document_code'] = ''
+                                    try:
+                                        data_dict['organization'] = final_list[1].strip()
+                                    except:
+                                        data_dict['organization'] = ''
+                                    try:
+                                        data_dict['date'] = final_list[2].strip()
+                                    except:
+                                        data_dict['date'] = ''
+                                except Exception:
+                                    break
+
+                                try:
+                                    title_url = li.xpath("./a[@target='kcmstarget']/@href").extract_first().strip()
+                                except:
+                                    title_url = ''
+
+                                if title_url:
+                                    if re.findall(r"dbcode=(.*?)&", title_url, re.I):
+                                        dbcode = re.findall(r"dbcode=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbcode=(.*)", title_url):
+                                        dbcode = re.findall(r"dbcode=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbcode = ''
+
+                                    if re.findall(r"filename=(.*?)&", title_url, re.I):
+                                        filename = re.findall(r"filename=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"filename=(.*)", title_url):
+                                        filename = re.findall(r"filename=(.*)", title_url, re.I)[0]
+                                    else:
+                                        filename = ''
+
+                                    if re.findall(r"dbname=(.*?)&", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*?)&", title_url, re.I)[0]
+                                    elif re.findall(r"dbname=(.*)", title_url, re.I):
+                                        dbname = re.findall(r"dbname=(.*)", title_url, re.I)[0]
+                                    else:
+                                        dbname = ''
+
+                                    data_dict[
+                                        'url'] = 'https://kns.cnki.net/kcms/detail/detail.aspx?dbcode={}&filename={}&dbname={}'.format(
+                                        dbcode, filename, dbname)
+                                    key = '中国知网|{}|{}|{}'.format(dbcode, filename, dbname)
+                                    data_dict['sha'] = hashlib.sha1(key.encode('utf-8')).hexdigest()
+                                    data_dict['ss'] = '图书'
+                                else:
+                                    data_dict['url'] = ''
+
+                                if data_dict not in type_dict['content']:
+                                    type_dict['content'].append(data_dict)
+
+                else:
+                    self.logger.error('service | 文献列表中有不识别的文献类型')
+                    return
+
+                return_data['detail'].append(type_dict)
+
         except Exception:
             return return_data
-
-        # 'http://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=1&vl='
-        # 'http://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=3&vl='
-        # ================================================
-        index_url = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                     'dbcode={}'
-                     '&filename={}'
-                     '&dbname={}'
-                     '&RefType={}'
-                     '&vl={}')
-
-        canKaoUrl = index_url.format(dbcode, filename, dbname, reftype, vl)
-        # 获取参考文献页源码
-        cakao_resp = download(url=canKaoUrl, method='GET', host='kns.cnki.net', referer=url)
-        if not cakao_resp['data']:
-            self.logger.error('参考文献接口页响应失败, url: {}'.format(canKaoUrl))
-            return
-
-        response = cakao_resp['data'].text
-        selector = Selector(text=response)
-        div_list = selector.xpath("//div[@class='essayBox']")
-        i = -1
-        for div in div_list:
-            leixing_dict = {}
-            i += 1
-            # 获取实体类型
-            entity_type = div.xpath("./div[@class='dbTitle']/text()").extract_first()
-            # print(entity_type)
-            # 获取CurDBCode参数
-            CurDBCode = re.findall(r"pc_(.*)", div.xpath("./div[@class='dbTitle']/b/span/@id").extract_first())[0]
-            # 获取该类型总页数
-            article_number = int(div.xpath("./div[@class='dbTitle']/b/span/text()").extract_first())
-            if article_number % 10 == 0:
-                page_number = int(article_number / 10)
-            else:
-                page_number = int((article_number / 10)) + 1
-
-            # 学术期刊
-            if '期刊' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '学术期刊'
-                type_list = []
-                # passkeyword
-                # 翻页获取
-                for page in range(1, page_number + 1):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    resp_text = leiXingResp.text
-                    selector = Selector(text=resp_text)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '', li.xpath(
-                                    "./a[@target='kcmstarget']/text()").extract_first())).strip()
-                            except:
-                                data['标题'] = ""
-                            try:
-                                zuoZhe = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '',
-                                                                    li.xpath("./text()").extract_first())).strip()
-                                data['作者'] = re.sub('[,，]', '|', ''.join(re.findall(r'\.(.*?)\.', zuoZhe))).strip()
-                            except:
-                                data['作者'] = ""
-                            try:
-                                data['刊名'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '', li.xpath(
-                                    "./a[2]/text()").extract_first())).strip()
-                            except:
-                                data['刊名'] = ""
-                            try:
-                                data['年卷期'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp;)', '', li.xpath(
-                                    "./a[3]/text()").extract_first())).strip()
-                            except:
-                                data['年卷期'] = ""
-
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['期刊论文'] = type_list
-
-            # 题录
-            elif '题录' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '题录'
-                type_list = []
-                # pass
-                # # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    leiXingResp = leiXingResp.content.decode('utf-8')
-                    selector = Selector(text=leiXingResp)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data["标题"] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp;)', '',
-                                                                        li.xpath("./a/text()").extract_first())).strip()
-                            except:
-                                data["标题"] = ""
-                            try:
-                                data["其它信息"] = re.sub(r'^.', '', re.sub(r'\s+', ' ', re.sub(r'[\r\n\t]', '', li.xpath(
-                                    "./text()").extract_first()))).strip()
-                            except:
-                                data["其他信息"] = ""
-
-                            # 列表去重
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['题录'] = type_list
-
-
-
-            elif '国际期刊' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '国际期刊'
-                type_list = []
-                # pass
-                # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    resp_text = leiXingResp.text
-                    selector = Selector(text=resp_text)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status is True:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|\t|&nbsp)', '',
-                                                                        li.xpath("./a/text()").extract_first())).strip()
-                            except:
-                                data['标题'] = ""
-                            try:
-                                try:
-                                    year = re.findall(r"(\d{4})", li.xpath("./text()").extract_first())[0].strip()
-                                except:
-                                    year = ""
-                                try:
-                                    qi = re.findall(r"(\(.*\))", li.xpath("./text()").extract_first())[0].strip()
-                                except:
-                                    qi = ""
-                                if year:
-                                    data['年卷期'] = year + qi
-                                else:
-                                    data['年卷期'] = ""
-                            except:
-                                data['年卷期'] = ""
-                            try:
-                                zuozhe = re.findall(r'\.\s*(.*)\s*\.&nbsp', re.sub(r'\s+', ' ',
-                                                                                   re.sub(r'(\r|\n|\t)', '', li.xpath(
-                                                                                       "./text()").extract_first())))[
-                                    0].strip()
-                                data['作者'] = re.sub(r"[,，]", "|", zuozhe).strip()
-                            except:
-                                data['作者'] = ''
-                            try:
-                                data['刊名'] = re.sub(r"&nbsp", "", re.findall(r'&nbsp\s*(.*)\s*\.', re.sub(r'\s+', ' ',
-                                                                                                          re.sub(
-                                                                                                              r'(\r|\n|\t)',
-                                                                                                              '',
-                                                                                                              li.xpath(
-                                                                                                                  "./text()").extract_first())))[
-                                    0]).strip()
-                            except:
-                                data['刊名'] = ""
-                            try:
-                                data['链接'] = 'http://kns.cnki.net' + li.xpath("./a/@href").extract_first()
-                            except:
-                                data['链接'] = ''
-
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['外文文献'] = type_list
-
-            elif '图书' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '图书'
-                type_list = []
-                # pass
-                # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    resp_text = leiXingResp.text
-                    selector = Selector(text=resp_text)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data['其它信息'] = re.sub(r'\s+', ' ', re.sub('.*\[M\]\.', '', re.sub(r"&nbsp", "", ''.join(
-                                    re.findall(r"[^\r\n]", li.xpath("./text()").extract_first()))))).strip()
-                            except:
-                                data['其他信息'] = ""
-                            try:
-                                data['标题'] = re.findall(r"(.*)\[M\]", re.sub(r'(\r|\n|&nbsp)', '',
-                                                                             li.xpath("./text()").extract_first()))[
-                                    0].strip()
-                            except:
-                                data['标题'] = ""
-
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['图书'] = type_list
-
-            elif '学位' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '学位'
-                type_list = []
-                # pass
-                # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    resp_text = leiXingResp.text
-                    selector = Selector(text=resp_text)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status is True:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath(
-                                    "./a[@target='kcmstarget']/text()").extract_first())).strip()
-                            except:
-                                data['标题'] = ""
-                            try:
-                                re_time = re.compile("\d{4}")
-                                data['时间'] = \
-                                    [re.findall(re_time, time)[0] for time in li.xpath(".//text()").extract() if
-                                     re.findall(re_time, time)][0].strip()
-                            except:
-                                data['时间'] = ""
-                            try:
-                                data['作者'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
-                                                                        re.findall(r"\[D\]\.(.*)\.", li.xpath(
-                                                                            "./text()").extract_first())[0])).strip()
-                            except:
-                                data['作者'] = ""
-                            try:
-                                data['机构'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '', li.xpath(
-                                    "./a[2]/text()").extract_first())).strip()
-                            except:
-                                data['机构'] = ""
-
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['学位论文'] = type_list
-
-            elif '标准' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '标准'
-                type_list = []
-                # pass
-                # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    resp_text = leiXingResp.text
-                    selector = Selector(text=resp_text)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status is True:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data['标准号'] = ''.join(
-                                    re.findall(r"[^\r\n]", li.xpath("./text()").extract_first())).strip()
-                            except:
-                                data['标准号'] = ''
-                            try:
-                                data['标题'] = ''.join(
-                                    re.findall(r"[^\r\n\.]", li.xpath("./a/text()").extract_first())).strip()
-                            except:
-                                data['标题'] = ''
-                            try:
-                                data['时间'] = ''.join(
-                                    re.findall(r"S\.*\s*(.*)", li.xpath("./text()").extract()[1])).strip()
-                            except:
-                                data['时间'] = ''
-                            try:
-                                url = li.xpath("./a/@href")[0]
-                                # 去掉amp;
-                                url = re.sub('amp;', '', url)
-                                # dbcode替换成dbname
-                                url = re.sub('dbcode', 'dbname', url)
-                                # 截取参数部分
-                                url = re.findall(r"detail\.aspx\?(.*)", url)[0]
-                                # 拼接url
-                                data['链接'] = 'https://dbpub.cnki.net/grid2008/dbpub/detail.aspx?' + url
-                            except:
-                                data['链接'] = ''
-
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['标准'] = type_list
-
-            elif '专利' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '专利'
-                type_list = []
-                # pass
-                # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    resp_text = leiXingResp.text
-                    selector = Selector(text=resp_text)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status is True:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data['标题'] = re.sub(r'(\r|\n|&nbsp)', '', li.xpath("./a/text()").extract_first())
-                            except:
-                                data['标题'] = ''
-                            try:
-                                zuozhe = re.findall(r'\. (.*?)\.', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
-                                                                                              li.xpath(
-                                                                                                  './text()').extract_first())))[
-                                    0]
-                                data['作者'] = re.sub(',', '|', zuozhe)
-                            except:
-                                data['作者'] = ''
-                            try:
-                                data['类型'] = re.findall(r'.*\. (.*?)\:', re.sub(r'\s+', ' ',
-                                                                                re.sub(r'(\r|\n|&nbsp)', '', li.xpath(
-                                                                                    './text()').extract_first())))[0]
-                            except:
-                                data['类型'] = ''
-                            try:
-                                data['公开号'] = re.findall('\:(.*?)\,', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
-                                                                                                 li.xpath(
-                                                                                                     './text()').extract_first())))[
-                                    0]
-                            except:
-                                data['公开号'] = ''
-                            try:
-                                data['链接'] = 'https://kns.cnki.net' + li.xpath('./a/@href').extract_first()
-                            except:
-                                data['链接'] = ''
-
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['专利'] = type_list
-
-            elif '报纸' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '报纸'
-                type_list = []
-                # pass
-                # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    resp_text = leiXingResp.text
-                    selector = Selector(text=resp_text)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status is True:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data['标题'] = re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
-                                                                        li.xpath("./a/text()").extract_first()))
-                            except:
-                                data['标题'] = ''
-                            try:
-                                data['机构'] = re.findall(r'.*\.(.*?)\.', re.sub('\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
-                                                                                                  li.xpath(
-                                                                                                      "./text()").extract_first())))[
-                                    0]
-                            except:
-                                data['机构'] = ''
-                            try:
-                                data['时间'] = re.findall(r'. (\d{4}.*)', re.sub('\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
-                                                                                                  li.xpath(
-                                                                                                      "./text()").extract_first())))[
-                                    0]
-                            except:
-                                data['时间'] = ''
-                            try:
-                                data['链接'] = 'http://kns.cnki.net' + li.xpath('./a/@href').extract_first()
-                            except:
-                                data['链接'] = ''
-
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['报纸'] = type_list
-
-            elif '年鉴' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '年鉴'
-                type_list = []
-                # pass
-                # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    resp_text = leiXingResp.text
-                    selector = Selector(text=resp_text)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status is True:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                # li_string_html = html.tostring(doc=li, encoding='utf-8').decode('utf-8')
-                                li_string_html = li.extract_first()
-                                data['标题'] = \
-                                    re.findall(r'<a onclick="getKns55NaviLink\(.*?\);">(.*)</a>', li_string_html)[0]
-                            except:
-                                data['标题'] = ''
-                            try:
-                                data['机构'] = re.findall(r'\. (.*?)\.', re.sub(r'\s+', ' ', re.sub(r'(\r|\n|&nbsp)', '',
-                                                                                                  li.xpath(
-                                                                                                      './text()').extract_first())))[
-                                    0]
-                            except:
-                                data['机构'] = ''
-                            try:
-                                li_string_html = html.tostring(doc=li, encoding='utf-8').decode('utf-8')
-                                data['时间'] = \
-                                    re.findall(r'<a onclick="getKns55YearNaviLink\(.*?\);">(.*)</a>', li_string_html)[0]
-                            except:
-                                data['时间'] = ''
-
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['年鉴'] = type_list
-
-            elif '会议' in entity_type:
-                # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
-                keyword = '会议'
-                type_list = []
-                # pass
-                # 翻页获取
-                for page in range(first_page, page_number):
-                    qiKanLunWenIndexUrl = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
-                                           'dbcode={}'
-                                           '&filename={}'
-                                           '&dbname={}'
-                                           '&RefType=1'
-                                           '&CurDBCode={}'
-                                           '&page={}'.format(dbcode, filename, dbname, CurDBCode, page + 1))
-                    # 获取该页html
-                    leiXingResp = download(url=qiKanLunWenIndexUrl, method='GET')
-                    if not leiXingResp:
-                        continue
-
-                    resp_text = leiXingResp.text
-                    selector = Selector(text=resp_text)
-                    leiXingDivList = selector.xpath("//div[@class='essayBox']")
-                    # 判断参考文献类型页面是否正确
-                    status = self._judgeHtml(leiXingDivList, i, keyword)
-                    if status is True:
-                        leiXingDiv = leiXingDivList[i]
-                        li_list = leiXingDiv.xpath(".//li")
-                        for li in li_list:
-                            data = {}
-                            try:
-                                data['标题'] = li.xpath("./a/text()").extract_first()
-                            except:
-                                data['标题'] = ''
-                            try:
-                                data['作者'] = re.sub(r"(,|，)", "|", re.findall(r"\[A\]\.(.*?)\.", re.sub(r'\s+', ' ',
-                                                                                                        re.sub(
-                                                                                                            r"(\r|\n)",
-                                                                                                            "",
-                                                                                                            li.xpath(
-                                                                                                                "./text()").extract_first())))[
-                                    0])
-                            except:
-                                data['作者'] = ''
-                            try:
-                                data['文集'] = re.findall(r"\[A\]\..*?\.(.*?)\[C\]", re.sub(r'\s+', ' ',
-                                                                                          re.sub(r"(\r|\n)", "",
-                                                                                                 li.xpath(
-                                                                                                     "./text()").extract_first())))[
-                                    0]
-                            except:
-                                data['文集'] = ''
-                            try:
-                                data['时间'] = re.findall(r"\[C\]\.(.*)", re.sub(r'\s+', ' ', re.sub(r"(\r|\n)", "",
-                                                                                                   li.xpath(
-                                                                                                       "./text()").extract_first())))[
-                                    0]
-                            except:
-                                data['时间'] = {}
-
-                            if data not in type_list:
-                                type_list.append(data)
-
-                leixing_dict['会议论文'] = type_list
-
-            return_data.append(leixing_dict)
 
         return return_data
 
@@ -1484,13 +1988,13 @@ class LunWen_Data(Service):
         return_data = []
         selector = Selector(text=resp)
         try:
-            a_list = selector.xpath("//div[@class='author']/span/a")
+            a_list = selector.xpath("//h3[@class='author']//a")
             if a_list:
                 for a in a_list:
                     e = {}
                     onclick = a.xpath("./@onclick").extract_first()
                     if onclick:
-                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
+                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnetV(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
                             onclick[0],
                             onclick[1],
@@ -1498,7 +2002,8 @@ class LunWen_Data(Service):
                         name = onclick[1]
                         e['name'] = name
                         e['url'] = url
-                        e['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
+                        e['key'] = '中国知网|{}|{}|{}'.format(onclick[0], onclick[1], onclick[2])
+                        e['sha'] = hashlib.sha1(e['key'].encode('utf-8')).hexdigest()
                         e['ss'] = '人物'
                         return_data.append(e)
                     else:
@@ -1513,13 +2018,13 @@ class LunWen_Data(Service):
         return_data = []
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            a_list = selector.xpath("//div[@class='orgn']/span/a")
+            a_list = selector.xpath("//h3[@class='author']/following-sibling::h3[1]//a")
             if a_list:
                 for a in a_list:
                     e = {}
                     onclick = a.xpath("./@onclick").extract_first()
                     if onclick:
-                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
+                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnetV(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
                             onclick[0],
                             onclick[1],
@@ -1527,7 +2032,8 @@ class LunWen_Data(Service):
                         name = onclick[1]
                         e['name'] = name
                         e['url'] = url
-                        e['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
+                        e['key'] = '中国知网|{}|{}|{}'.format(onclick[0], onclick[1], onclick[2])
+                        e['sha'] = hashlib.sha1(e['key'].encode('utf-8')).hexdigest()
                         e['ss'] = '机构'
                         return_data.append(e)
                     else:
@@ -1542,7 +2048,7 @@ class LunWen_Data(Service):
         data_list = []
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            a_list = selector.xpath("//label[contains(text(), '导师')]/../a")
+            a_list = selector.xpath("//div[span[contains(text(), '导师')]]/p/a")
             if a_list:
                 for a in a_list:
                     e = {}
@@ -1597,7 +2103,8 @@ class LunWen_Data(Service):
         e = {}
         if url:
             e['url'] = url
-            e['sha'] = hashlib.sha1(url.encode('utf-8')).hexdigest()
+            e['key'] = '中国知网|' + re.findall(r"pykm=(\w+)$", url)[0]
+            e['sha'] = hashlib.sha1(e['key'].encode('utf-8')).hexdigest()
             e['ss'] = '期刊'
 
             return e
@@ -1617,7 +2124,7 @@ class LunWen_Data(Service):
         else:
             return e
 
-    def getPeople(self, zuozhe, daoshi, t):
+    def get_people(self, zuozhe, daoshi, t):
         if zuozhe:
             zuozheList = copy.deepcopy(zuozhe)
         else:
@@ -1630,9 +2137,9 @@ class LunWen_Data(Service):
         people_list = zuozheList + daoshiList
         if people_list:
             for people in people_list:
-                people['name'] = people['name'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-                people['url'] = people['url'].replace('"', '\\"').replace("'", "''").replace('\\', '\\\\')
-                people['shiJian'] = t
+                people['name'] = people['name']
+                people['url'] = people['url']
+                people['year'] = t
 
         return people_list
 
