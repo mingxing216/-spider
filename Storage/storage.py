@@ -248,26 +248,25 @@ class Dao(object):
         else:
             return
 
-    def save_data_to_hbase(self, data, ss_type="", sha="", url=""):
+    def save_data_to_hbase(self, data):
         self.timer.start()
-        self.logging.info('storage start | 开始存储实体 {} | sha: {} | url: {}'.format(ss_type, sha, url))
+        self.logging.info('storage start | 开始存储实体')
         ret = self.__save_data_to_hbase(data)
         if ret:
-            self.logging.info('storage end | 存储实体成功 {} | use time: {} | sha: {} | url: {}'.format(ss_type, self.timer.use_time(), sha, url))
+            self.logging.info('storage end | 存储实体成功 | use time: {}'.format(self.timer.use_time()))
         else:
-            self.logging.error('storage end | 存储实体失败 {} | use time: {} | sha: {} | url: {}'.format(ss_type, self.timer.use_time(), sha, url))
+            self.logging.error('storage end | 存储实体失败 | use time: {}'.format(self.timer.use_time()))
         return ret
 
     # 存储数据到Hbase数据库 resultCode
-    def __save_data_to_hbase(self, data):
-        save_data = json.dumps(data, ensure_ascii=False)
+    def __save_data_to_hbase(self, data_list):
+        save_data = json.dumps(data_list, ensure_ascii=False)
         # 将待存储数据编码成二进制数据
-        b_data = save_data.encode('utf-8')
         url = '{}'.format(settings.SAVE_HBASE_DATA_URL)
         form_data = {'ip': '{}'.format(self.localIP),
                      'wid': 'python',
                      'ref': '',
-                     'item': save_data}
+                     'list': save_data}
 
         # 开始存储实体数据
         data_start = timers.Timer()
@@ -276,21 +275,30 @@ class Dao(object):
             resp = self.s.post(url=url, data=form_data, timeout=(10, 30)).content.decode('utf-8')
             respon = json.loads(resp)
             if respon['resultCode'] == 0:
-                self.logging.info(
-                    'storage | Save data to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format(
-                        data_start.use_time(), data.get('sha'), len(b_data), resp))
+                for data in data_list:
+                    entity_data = json.dumps(data, ensure_ascii=False)
+                    b_data = entity_data.encode('utf-8')
+                    self.logging.info(
+                        'storage | Save data to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format(
+                            data_start.use_time(), data.get('sha'), len(b_data), resp))
                 return True
 
             else:
-                self.logging.error(
-                    'storage | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
-                        data_start.use_time(), data.get('sha'), len(b_data), resp))
+                for data in data_list:
+                    entity_data = json.dumps(data, ensure_ascii=False)
+                    b_data = entity_data.encode('utf-8')
+                    self.logging.error(
+                        'storage | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
+                            data_start.use_time(), data.get('sha'), len(b_data), resp))
                 return False
 
         except Exception as e:
-            self.logging.error(
-                'storage | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
-                    data_start.use_time(), data.get('sha'), len(b_data), e))
+            for data in data_list:
+                entity_data = json.dumps(data, ensure_ascii=False)
+                b_data = entity_data.encode('utf-8')
+                self.logging.error(
+                    'storage | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
+                        data_start.use_time(), data.get('sha'), len(b_data), e))
             return False
 
     def save_media_to_hbase(self, media_url, content, item, type, length=None, contype=None):

@@ -1167,7 +1167,7 @@ class LunWen_Data(Service):
                                 try:
                                     text_list = li.xpath(".//text()").extract()
                                     con_text = ''.join(text_list)
-                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
                                     final_list = one_text.split('.')
                                     try:
                                         data_dict['title'] = re.findall(r"^\[\d+\](.*)\[\w+\]$", final_list[0].strip())[0].strip()
@@ -1262,7 +1262,7 @@ class LunWen_Data(Service):
                                 try:
                                     text_list = li.xpath(".//text()").extract()
                                     con_text = ''.join(text_list)
-                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
                                     final_list = one_text.split('.')
                                     try:
                                         data_dict['title'] = re.findall(r"^\[\d+\](.*)\[\w+\]$", final_list[0].strip())[0].strip()
@@ -1357,7 +1357,7 @@ class LunWen_Data(Service):
                                 try:
                                     text_list = li.xpath(".//text()").extract()
                                     con_text = ''.join(text_list)
-                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
                                     final_list = one_text.split('.')
                                     data_dict['full_content'] = one_text
                                     try:
@@ -1456,7 +1456,7 @@ class LunWen_Data(Service):
                                 try:
                                     text_list = li.xpath(".//text()").extract()
                                     con_text = ''.join(text_list)
-                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
                                     data_dict['full_content'] = one_text
                                     try:
                                         data_dict['title'] = re.findall(r"\](.*?)\.+?", one_text)[0].strip()
@@ -1542,7 +1542,7 @@ class LunWen_Data(Service):
                                 try:
                                     text_list = li.xpath(".//text()").extract()
                                     con_text = ''.join(text_list)
-                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
                                     data_dict['full_content'] = one_text
                                     try:
                                         data_dict['title'] = re.findall(r"\](.*?)\[\w\]\s*\.+?", one_text)[0].strip()
@@ -1627,7 +1627,7 @@ class LunWen_Data(Service):
                                 try:
                                     text_list = li.xpath(".//text()").extract()
                                     con_text = ''.join(text_list)
-                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
                                     final_list = one_text.split('. ')
                                     data_dict['full_content'] = one_text
                                     try:
@@ -1718,7 +1718,7 @@ class LunWen_Data(Service):
                                 try:
                                     text_list = li.xpath(".//text()").extract()
                                     con_text = ''.join(text_list)
-                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
                                     final_list = one_text.split('.')
                                     data_dict['full_content'] = one_text
                                     try:
@@ -1813,7 +1813,7 @@ class LunWen_Data(Service):
                                 try:
                                     text_list = li.xpath(".//text()").extract()
                                     con_text = ''.join(text_list)
-                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
                                     final_list = one_text.split('.')
                                     data_dict['full_content'] = one_text
                                     try:
@@ -1912,7 +1912,7 @@ class LunWen_Data(Service):
                                 try:
                                     text_list = li.xpath(".//text()").extract()
                                     con_text = ''.join(text_list)
-                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t|&nbsp)", " ", con_text)).strip()
+                                    one_text = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", con_text)).strip()
                                     final_list = one_text.split('.')
                                     data_dict['full_content'] = one_text
                                     try:

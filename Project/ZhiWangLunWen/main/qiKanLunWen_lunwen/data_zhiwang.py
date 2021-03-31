@@ -67,7 +67,7 @@ class SpiderMain(BastSpiderMain):
 
     def img_download(self, img_dict):
         # 获取图片响应
-        media_resp = self._get_resp(url=img_dict['url'], method='GET')
+        media_resp = self._get_resp(url=img_dict['url'], method='GET', host='image.cnki.net')
         if media_resp is None:
             return
 
@@ -92,7 +92,7 @@ class SpiderMain(BastSpiderMain):
         else:
             return True
 
-    def handle(self, task_data, save_data):
+    def handle(self, task_data, data_list):
         # print(task_data)
         url = task_data['url']
         _id= self.server.get_id(url)
@@ -116,16 +116,18 @@ class SpiderMain(BastSpiderMain):
         article_html = resp['data'].text
 
         # ======================== 期刊论文实体数据 ===========================
+        # 创建数据存储字典
+        entity_data = dict()
         # 获取标题
-        save_data['title'] = self.server.get_title(article_html)
-        if not save_data['title']:
+        entity_data['title'] = self.server.get_title(article_html)
+        if not entity_data['title']:
             return
         # 获取作者
-        save_data['author'] = self.server.get_author(article_html)
+        entity_data['author'] = self.server.get_author(article_html)
         # 获取作者单位
-        save_data['author_affiliation'] = self.server.get_affiliation(article_html)
+        entity_data['author_affiliation'] = self.server.get_affiliation(article_html)
         # 获取目录
-        save_data['catalog'] = []
+        entity_data['catalog'] = []
         catalog = self.server.get_catalog(article_html)
         if catalog:
             catalog_dict = {}
@@ -137,9 +139,9 @@ class SpiderMain(BastSpiderMain):
             except:
                 return
             catalog_dict['lang'] = lang
-            save_data['catalog'].append(catalog_dict)
+            entity_data['catalog'].append(catalog_dict)
         # 获取摘要
-        save_data['abstract'] = []
+        entity_data['abstract'] = []
         abstract = self.server.get_abstract(article_html)
         if abstract:
             ab_dict = {}
@@ -151,9 +153,9 @@ class SpiderMain(BastSpiderMain):
             except:
                 return
             ab_dict['lang'] = lang
-            save_data['abstract'].append(ab_dict)
+            entity_data['abstract'].append(ab_dict)
         # 获取关键词
-        save_data['keyword'] = []
+        entity_data['keyword'] = []
         keywords = self.server.get_keyword(article_html)
         if keywords:
             kw_dict = {}
@@ -165,51 +167,51 @@ class SpiderMain(BastSpiderMain):
             except:
                 return
             kw_dict['lang'] = lang
-            save_data['keyword'].append(kw_dict)
+            entity_data['keyword'].append(kw_dict)
         # 获取语种
-        form_data = {'q': save_data['title']}
+        form_data = {'q': entity_data['title']}
         try:
             lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
             lang = lang_resp.json().get('responseData').get('language')
         except:
             return
-        save_data['language'] = lang
+        entity_data['language'] = lang
         # 获取基金
-        save_data['funders'] = self.server.get_funders(article_html)
+        entity_data['funders'] = self.server.get_funders(article_html)
         # 数字对象标识符
-        save_data['doi']  = {}
-        save_data['doi']['doi'] = self.server.get_more_fields(article_html, 'DOI')
-        save_data['doi']['doi_url'] = ''
+        entity_data['doi']  = {}
+        entity_data['doi']['doi'] = self.server.get_more_fields(article_html, 'DOI')
+        entity_data['doi']['doi_url'] = ''
         # 获取中图分类号
-        save_data['classification_code'] = self.server.get_classification_code(article_html)
+        entity_data['classification_code'] = self.server.get_classification_code(article_html)
         # 期刊名称
-        save_data['journal_name'] = self.server.get_journal_name(article_html)
+        entity_data['journal_name'] = self.server.get_journal_name(article_html)
         # 所属期刊栏目
-        save_data['journal_column'] = task_data.get('theme', '')
+        entity_data['journal_column'] = task_data.get('theme', '')
         year, vol, issue = self.server.get_year(article_html)
         # 年
-        save_data['year'] = year
+        entity_data['year'] = year
         # 卷号
-        save_data['volume'] = vol
+        entity_data['volume'] = vol
         # 期号
-        save_data['issue'] = issue
+        entity_data['issue'] = issue
 
         # 获取下载次数
-        save_data['downloads'] = self.server.get_info(article_html, '下载')
+        entity_data['downloads'] = self.server.get_info(article_html, '下载')
         # 获取所在页码
         pages = self.server.get_info(article_html, '页码')
         if '-' in pages:
-            save_data['start_page'] = re.findall(r"(.+)-", pages)[0]
-            save_data['end_page'] = re.findall(r"-(.+)", pages)[0]
+            entity_data['start_page'] = re.findall(r"(.+)-", pages)[0]
+            entity_data['end_page'] = re.findall(r"-(.+)", pages)[0]
         else:
-            save_data['start_page'] = pages
-            save_data['end_page'] = ''
+            entity_data['start_page'] = pages
+            entity_data['end_page'] = ''
         # 获取页数
-        save_data['total_page'] = self.server.get_info(article_html, '页数')
+        entity_data['total_page'] = self.server.get_info(article_html, '页数')
         # 获取大小
-        save_data['size'] = self.server.get_info(article_html, '大小')
+        entity_data['size'] = self.server.get_info(article_html, '大小')
         # 学科类别
-        save_data['subject_classification_name'] = task_data.get('xueKeLeiBie', '')
+        entity_data['subject_classification_name'] = task_data.get('xueKeLeiBie', '')
         # 获取参考、引证文献数量
         lite_num = self.server.get_lite_num(url=url, down=self._get_resp)
         if lite_num:
@@ -217,37 +219,37 @@ class SpiderMain(BastSpiderMain):
             cite_num = int(lite_num.get('CITING', 0))
             if ref_num:
                 # 获取参考文献
-                save_data['references'] = self.server.get_literature(article_html, 1, url=url, down=self._get_resp, num=ref_num)
-                if save_data['references'] is None:
+                entity_data['references'] = self.server.get_literature(article_html, 1, url=url, down=self._get_resp, num=ref_num)
+                if entity_data['references'] is None:
                     return
             else:
-                save_data['references'] = {}
+                entity_data['references'] = {}
             if cite_num:
                 # 获取引证文献
-                save_data['cited_literature'] = self.server.get_literature(article_html, 3, url=url, down=self._get_resp, num=cite_num)
-                if save_data['cited_literature'] is None:
+                entity_data['cited_literature'] = self.server.get_literature(article_html, 3, url=url, down=self._get_resp, num=cite_num)
+                if entity_data['cited_literature'] is None:
                     return
             else:
-                save_data['cited_literature'] = {}
+                entity_data['cited_literature'] = {}
         else:
-            save_data['references'] = {}
-            save_data['references'] = {}
+            entity_data['references'] = {}
+            entity_data['references'] = {}
         # 获取文献数量年度分布
-        save_data['annual_trend_of_literature_number'] = self.server.get_annual_trend(url=url, down=self._get_resp)
+        entity_data['annual_trend_of_literature_number'] = self.server.get_annual_trend(url=url, down=self._get_resp)
         # 关联期刊
-        save_data['rela_journal'] = self.server.rela_journal(task_data.get('parentUrl'))
+        entity_data['rela_journal'] = self.server.rela_journal(task_data.get('parentUrl'))
         # 关联人物
-        save_data['rela_creators'] = self.server.rela_creators(article_html)
+        entity_data['rela_creators'] = self.server.rela_creators(article_html)
         # 关联企业机构
-        save_data['rela_organization'] = self.server.rela_organization(article_html)
+        entity_data['rela_organization'] = self.server.rela_organization(article_html)
         # 关联文档
         if task_data.get('xiaZai', '') or task_data.get('zaiXianYueDu', ''):
-            save_data['rela_document'] = self.server.rela_doc(url, key, sha)
-            pdf_list = [{'url': task_data.get('xiaZai', '')},{'url': task_data.get('zaiXianYueDu', '')}]
+            entity_data['rela_document'] = self.server.rela_doc(url, key, sha)
+            pdf_list = [{'url': task_data.get('xiaZai', ''), 'title': entity_data['title']},{'url': task_data.get('zaiXianYueDu', ''), 'title': entity_data['title']}]
             # 文档数据存储字典
             doc_data = dict()
             # 获取标题
-            doc_data['title'] = save_data['title']
+            doc_data['title'] = entity_data['title']
             # 文档内容
             doc_data['label_obj'] = self.server.get_media(pdf_list, 'document', 'document')
             # 获取来源网站
@@ -284,23 +286,20 @@ class SpiderMain(BastSpiderMain):
             doc_data['metadata_version'] = 'V1.2'
             # 采集脚本版本号
             doc_data['script_version'] = 'V1.3'
-            # 保存文档实体到Hbase
-            pics_suc = self.dao.save_data_to_hbase(data=doc_data, ss_type=doc_data['ss'], sha=doc_data['sha'], url=doc_data['url'])
-            if not pics_suc:
-                logger.error('storage | 文档实体存储失败, url: {}'.format(url))
-                return
+            # 文档实体存入列表
+            data_list.append(doc_data)
         else:
-            save_data['rela_document'] = {}
+            entity_data['rela_document'] = {}
 
-            # 获取所有图片链接
+        # 获取所有图片链接
         pic_datas = self.server.get_pic_url(href=url, down=self._get_resp)
         if pic_datas:
             # 关联组图
-            save_data['rela_pics'] = self.server.rela_pics(url, key, sha)
+            entity_data['rela_pics'] = self.server.rela_pics(url, key, sha)
             # 组图实体
             pics = {}
             # 标题
-            pics['title'] = save_data['title']
+            pics['title'] = entity_data['title']
             # 组图内容
             pics['label_obj'] = self.server.get_media(pic_datas, 'picture', 'image')
             # 关联论文
@@ -333,12 +332,8 @@ class SpiderMain(BastSpiderMain):
             pics['metadata_version'] = 'V1.2'
             # 采集脚本版本号
             pics['script_version'] = 'V1.3'
-
-            # 保存组图实体到Hbase
-            pics_suc = self.dao.save_data_to_hbase(data=pics, ss_type=pics['ss'], sha=pics['sha'], url=pics['url'])
-            if not pics_suc:
-                logger.error('storage | 组图实体存储失败, url: {}'.format(url))
-                return
+            # 组图实体存入列表
+            data_list.append(pics)
 
             # 存储图片种子
             for img in pic_datas:
@@ -354,41 +349,43 @@ class SpiderMain(BastSpiderMain):
                     return
         else:
             # 关联组图
-            save_data['rela_pics'] = {}
+            entity_data['rela_pics'] = {}
 
         # ====================================公共字段
         # url
-        save_data['url'] = url
+        entity_data['url'] = url
         # 生成key
-        save_data['key'] = key
+        entity_data['key'] = key
         # 生成sha
-        save_data['sha'] = sha
+        entity_data['sha'] = sha
         # 生成ss ——实体
-        save_data['ss'] = '论文'
+        entity_data['ss'] = '论文'
         # es ——栏目名称
-        save_data['es'] = '期刊论文'
+        entity_data['es'] = '期刊论文'
         # 生成ws ——目标网站
-        save_data['ws'] = '中国知网'
+        entity_data['ws'] = '中国知网'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '论文_期刊论文'
+        entity_data['clazz'] = '论文_期刊论文'
         # 生成biz ——项目
-        save_data['biz'] = '文献大数据_论文'
+        entity_data['biz'] = '文献大数据_论文'
         # 生成ref
-        save_data['ref'] = ''
+        entity_data['ref'] = ''
         # 采集责任人
-        save_data['creator'] = '张明星'
+        entity_data['creator'] = '张明星'
         # 更新责任人
-        save_data['modified_by'] = ''
+        entity_data['modified_by'] = ''
         # 采集服务器集群
-        save_data['cluster'] = 'crawler'
+        entity_data['cluster'] = 'crawler'
         # 元数据版本号
-        save_data['metadata_version'] = 'V1.2'
+        entity_data['metadata_version'] = 'V1.2'
         # 采集脚本版本号
-        save_data['script_version'] = 'V1.3'
+        entity_data['script_version'] = 'V1.3'
+        # 论文实体存入列表
+        data_list.append(entity_data)
 
         # =============== 存储部分 ==================
         # 保存人物队列
-        people_list = self.server.get_people(zuozhe=save_data['rela_creators'], daoshi=save_data.get('rela_tutor'), t=save_data['year'])
+        people_list = self.server.get_people(zuozhe=entity_data['rela_creators'], daoshi=entity_data.get('rela_tutor'), t=entity_data['year'])
         # print(people_list)
         if people_list:
             for people in people_list:
@@ -397,8 +394,8 @@ class SpiderMain(BastSpiderMain):
                     logger.error('seed | 人物种子存储失败, url: {}'.format(people['url']))
 
         # 保存机构队列
-        if save_data['rela_organization']:
-            jigouList = copy.deepcopy(save_data['rela_organization'])
+        if entity_data['rela_organization']:
+            jigouList = copy.deepcopy(entity_data['rela_organization'])
             for jigou in jigouList:
                 jigou_suc = self.dao.save_task_to_mysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
                 if not jigou_suc:
@@ -423,27 +420,27 @@ class SpiderMain(BastSpiderMain):
             if task:
                 try:
                     # 创建数据存储字典
-                    save_data = dict()
+                    data_list = []
                     # json数据类型转换
                     task_data = json.loads(task)
                     sha = task_data['sha']
                     # 获取字段值存入字典并返回sha
-                    self.handle(task_data=task_data, save_data=save_data)
+                    self.handle(task_data=task_data, data_list=data_list)
                     # 保存数据到Hbase
-                    if not save_data:
+                    if not data_list:
                         # 逻辑删除任务
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.error(
                             'task end | task failed | use time: {} | No data.'.format(task_timer.use_time()))
                         continue
-                    if 'sha' not in save_data:
+                    if 'sha' not in data_list[-1]:
                         # 逻辑删除任务
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.error(
                             'task end | task failed | use time: {} | Data Incomplete.'.format(task_timer.use_time()))
                         continue
                     # 存储数据
-                    success = self.dao.save_data_to_hbase(data=save_data, ss_type=save_data['ss'], sha=save_data['sha'], url=save_data['url'])
+                    success = self.dao.save_data_to_hbase(data=data_list)
 
                     if success:
                         # 已完成任务
