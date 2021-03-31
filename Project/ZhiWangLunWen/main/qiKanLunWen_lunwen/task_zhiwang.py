@@ -101,6 +101,12 @@ class SpiderMain(BaseSpiderMain):
                     else:
                         qikanTimeListHtml = self._get_resp(url=qikan_time_list_url, method='GET',
                                                            host='navi.cnki.net')
+                        if qikanTimeListHtml is None:
+                            logger.error('catalog | 期刊时间列表页获取失败, url: {}'.format(qikan_time_list_url))
+                            # 队列一条任务
+                            self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                            continue
+
                         if not qikanTimeListHtml['data']:
                             logger.error('catalog | 期刊时间列表页获取失败, url: {}'.format(qikan_time_list_url))
                             # 队列一条任务
@@ -123,6 +129,14 @@ class SpiderMain(BaseSpiderMain):
                             # 获取论文列表页html源码
                             if article_url:
                                 article_list_html = self._get_resp(url=article_url, method='GET', host='navi.cnki.net')
+                                if article_list_html is None:
+                                    logger.error('catalog | 论文列表页html源码获取失败, url: {}'.format(article_url))
+                                    # 队列一条任务
+                                    issue_index = issues_list.index(year_issue)
+                                    task['issues_list'] = issues_list[issue_index:]
+                                    self.dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                                    break
+
                                 if not article_list_html['data']:
                                     logger.error('catalog | 论文列表页html源码获取失败, url: {}'.format(article_url))
                                     # 队列一条任务
@@ -132,14 +146,16 @@ class SpiderMain(BaseSpiderMain):
                                     break
 
                                 # 获取论文详情种子
-                                article_url_list = self.server.get_article_url_list(article_list_html['data'], qikan_url, xueke_leibie, year_issue)
+                                article_url_list = self.server.get_article_url_list(article_list_html['data'],
+                                                                                    qikan_url, xueke_leibie, year_issue)
                                 if article_url_list:
                                     for paper_url in article_url_list:
                                         # print(paper_url)
                                         # 存储种子
                                         self.num += 1
                                         logger.info('profile | 已抓种子数量: {}'.format(self.num))
-                                        self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_url, ws='中国知网', es='期刊论文')
+                                        self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_url, ws='中国知网',
+                                                                    es='期刊论文')
                                 else:
                                     logger.error('profile | 详情种子获取失败, url: {}'.format(article_url))
                                     # 队列一条任务
@@ -169,10 +185,11 @@ class SpiderMain(BaseSpiderMain):
         while True:
             # 查询redis队列中任务数量
             url_number = self.dao.select_task_number(key=config.REDIS_QIKAN_CATALOG)
-            if url_number <= config.MAX_QUEUE_REDIS/10:
+            if url_number <= config.MAX_QUEUE_REDIS / 10:
                 logger.info('queue | redis中任务已少于 {}, 开始新增队列任务'.format(int(config.MAX_QUEUE_REDIS / 10)))
                 # 获取任务
-                new_task_list = self.dao.get_task_list_from_mysql(table=config.MYSQL_MAGAZINE, ws='中国知网', es='期刊', count=15000)
+                new_task_list = self.dao.get_task_list_from_mysql(table=config.MYSQL_MAGAZINE, ws='中国知网', es='期刊',
+                                                                  count=15000)
                 # print(new_task_list)
                 # 队列任务
                 self.dao.queue_tasks_from_mysql_to_redis(key=config.REDIS_QIKAN_CATALOG, data=new_task_list)

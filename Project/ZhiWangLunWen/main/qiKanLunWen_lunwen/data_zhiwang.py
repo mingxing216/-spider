@@ -95,7 +95,7 @@ class SpiderMain(BastSpiderMain):
     def handle(self, task_data, data_list):
         # print(task_data)
         url = task_data['url']
-        _id= self.server.get_id(url)
+        _id = self.server.get_id(url)
         # print(id)
         key = '中国知网|' + _id
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
@@ -179,7 +179,7 @@ class SpiderMain(BastSpiderMain):
         # 获取基金
         entity_data['funders'] = self.server.get_funders(article_html)
         # 数字对象标识符
-        entity_data['doi']  = {}
+        entity_data['doi'] = {}
         entity_data['doi']['doi'] = self.server.get_more_fields(article_html, 'DOI')
         entity_data['doi']['doi_url'] = ''
         # 获取中图分类号
@@ -219,14 +219,16 @@ class SpiderMain(BastSpiderMain):
             cite_num = int(lite_num.get('CITING', 0))
             if ref_num:
                 # 获取参考文献
-                entity_data['references'] = self.server.get_literature(article_html, 1, url=url, down=self._get_resp, num=ref_num)
+                entity_data['references'] = self.server.get_literature(article_html, 1, url=url, down=self._get_resp,
+                                                                       num=ref_num)
                 if entity_data['references'] is None:
                     return
             else:
                 entity_data['references'] = {}
             if cite_num:
                 # 获取引证文献
-                entity_data['cited_literature'] = self.server.get_literature(article_html, 3, url=url, down=self._get_resp, num=cite_num)
+                entity_data['cited_literature'] = self.server.get_literature(article_html, 3, url=url,
+                                                                             down=self._get_resp, num=cite_num)
                 if entity_data['cited_literature'] is None:
                     return
             else:
@@ -245,7 +247,8 @@ class SpiderMain(BastSpiderMain):
         # 关联文档
         if task_data.get('xiaZai', '') or task_data.get('zaiXianYueDu', ''):
             entity_data['rela_document'] = self.server.rela_doc(url, key, sha)
-            pdf_list = [{'url': task_data.get('xiaZai', ''), 'title': entity_data['title']},{'url': task_data.get('zaiXianYueDu', ''), 'title': entity_data['title']}]
+            pdf_list = [{'url': task_data.get('xiaZai', ''), 'title': entity_data['title']},
+                        {'url': task_data.get('zaiXianYueDu', ''), 'title': entity_data['title']}]
             # 文档数据存储字典
             doc_data = dict()
             # 获取标题
@@ -385,7 +388,8 @@ class SpiderMain(BastSpiderMain):
 
         # =============== 存储部分 ==================
         # 保存人物队列
-        people_list = self.server.get_people(zuozhe=entity_data['rela_creators'], daoshi=entity_data.get('rela_tutor'), t=entity_data['year'])
+        people_list = self.server.get_people(zuozhe=entity_data['rela_creators'], daoshi=entity_data.get('rela_tutor'),
+                                             t=entity_data['year'])
         # print(people_list)
         if people_list:
             for people in people_list:
