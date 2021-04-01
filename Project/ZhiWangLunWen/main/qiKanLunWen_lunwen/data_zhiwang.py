@@ -388,22 +388,21 @@ class SpiderMain(BastSpiderMain):
 
         # =============== 存储部分 ==================
         # 保存人物队列
-        people_list = self.server.get_people(zuozhe=entity_data['rela_creators'], daoshi=entity_data.get('rela_tutor'),
+        people_list = self.server.get_people(zuozhe=entity_data.get('rela_creators'), daoshi=entity_data.get('rela_tutor'),
                                              t=entity_data['year'])
-        # print(people_list)
         if people_list:
             for people in people_list:
                 author_suc = self.dao.save_task_to_mysql(table=config.MYSQL_PEOPLE, memo=people, ws='中国知网', es='论文')
                 if not author_suc:
-                    logger.error('seed | 人物种子存储失败, url: {}'.format(people['url']))
+                    logger.error('seed | 人物种子存储失败, url: {}'.format(people.get('url')))
 
         # 保存机构队列
-        if entity_data['rela_organization']:
-            jigouList = copy.deepcopy(entity_data['rela_organization'])
-            for jigou in jigouList:
+        if entity_data.get('rela_organization'):
+            jigou_list = copy.deepcopy(entity_data.get('rela_organization'))
+            for jigou in jigou_list:
                 jigou_suc = self.dao.save_task_to_mysql(table=config.MYSQL_INSTITUTE, memo=jigou, ws='中国知网', es='论文')
                 if not jigou_suc:
-                    logger.error('seed | 机构种子存储失败, url: {}'.format(jigou['url']))
+                    logger.error('seed | 机构种子存储失败, url: {}'.format(jigou.get('url')))
 
     def run(self):
         logger.debug('thread start')

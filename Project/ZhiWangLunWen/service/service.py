@@ -2137,8 +2137,8 @@ class LunWen_Data(Service):
         people_list = zuozheList + daoshiList
         if people_list:
             for people in people_list:
-                people['name'] = people['name']
                 people['url'] = people['url']
+                people['name'] = people['name']
                 people['year'] = t
 
         return people_list

@@ -185,7 +185,7 @@ class Dao(object):
     # 从Mysql获取指定一条任务
     def get_one_task_from_mysql(self, table, sha):
         self.timer.start()
-        sql = "select * from {} where `del` = '0' and `sha` = '{}'".format(table, sha)
+        sql = "select * from {} where `sha` = '{}' and `del` = '0'".format(table, sha)
 
         data_list = self.mysql_client.get_results(sql=sql)
 
@@ -196,7 +196,7 @@ class Dao(object):
     # 从Mysql获取任务
     def get_task_list_from_mysql(self, table, ws, es, count):
         self.timer.start()
-        sql = "select * from {} where `del` = '0' and `ws` = '{}' and `es` = '{}' limit {}".format(table, ws, es, count)
+        sql = "select * from {} where `ws` = '{}' and `es` = '{}' and `del` = '0' limit {}".format(table, ws, es, count)
 
         data_list = self.mysql_client.get_results(sql=sql)
 
@@ -227,6 +227,16 @@ class Dao(object):
         if data:
             self.redis_client.sadd(key=key, value=json.dumps(data, ensure_ascii=False))
             self.logging.info('task | 已队列 1 条种子 | use time: {}'.format(self.timer.use_time()))
+
+        else:
+            return
+
+    # 队列一条种子任务
+    def remove_one_task_from_redis(self, key, data):
+        self.timer.start()
+        if data:
+            self.redis_client.srem(key=key, value=json.dumps(data, ensure_ascii=False))
+            self.logging.info('task | 已删除队列中 1 条种子 | use time: {}'.format(self.timer.use_time()))
 
         else:
             return
@@ -272,7 +282,7 @@ class Dao(object):
         data_start = timers.Timer()
         data_start.start()
         try:
-            resp = self.s.post(url=url, data=form_data, timeout=(10, 30)).content.decode('utf-8')
+            resp = self.s.post(url=url, data=form_data, timeout=(5, 10)).content.decode('utf-8')
             respon = json.loads(resp)
             if respon['resultCode'] == 0:
                 for data in data_list:
@@ -361,7 +371,7 @@ class Dao(object):
         media_start = timers.Timer()
         media_start.start()
         try:
-            resp = self.s.post(url=url, data=form_data, timeout=(10, 30)).content.decode('utf-8')
+            resp = self.s.post(url=url, data=form_data, timeout=(10, 20)).content.decode('utf-8')
             respon = json.loads(resp)
             if respon['resultCode'] == 0:
                 self.logging.info(
@@ -555,7 +565,7 @@ class Dao(object):
         if sha:
             try:
                 sql = "delete from {} where `sha` = '{}' and `del` = '0'".format(table, sha)
-                self.mysql_client.execute(sql=sql)
+                self.mysql_client.get_result(sql=sql)
                 self.logging.info('mysql | 数据库任务已删除: {}'.format(sha))
             except:
                 self.logging.warning('mysql | 数据库任务删除异常: {}'.format(sha))
@@ -563,7 +573,7 @@ class Dao(object):
         elif url:
             try:
                 sql = "delete from {} where `url` = '{}' and `del` = '0'".format(table, url)
-                self.mysql_client.execute(sql=sql)
+                self.mysql_client.get_result(sql=sql)
                 self.logging.info('mysql | 数据库任务已删除: {}'.format(url))
             except:
                 self.logging.warning('mysql | 数据库任务删除异常: {}'.format(url))

@@ -1,7 +1,7 @@
 # -*-coding:utf-8-*-
-'''
+"""
 mysql连接池操作
-'''
+"""
 
 import pymysql
 from DBUtils.PooledDB import PooledDB
@@ -147,7 +147,7 @@ class MysqlPool(object):
 if __name__ == '__main__':
     mysql_cli = MysqlPool(10)
     # sql = "select count(*) from job_paper where `ws` = '英文哲学社会科学' and `es` = '期刊论文' and `del` = '0';"
-    sql = "select * from job_paper where ws = '英文哲学社会科学' and es = '期刊论文' and del = '0' limit 10;"
+    sql = "select * from job_paper where ws = '英文哲学社会科学' and es = '期刊论文' and del = '0' limit 10"
     result = mysql_cli.get_results(sql)
     print(result)
     print(type(result))
