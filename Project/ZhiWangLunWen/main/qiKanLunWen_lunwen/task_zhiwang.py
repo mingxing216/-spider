@@ -10,7 +10,7 @@ import sys
 import os
 import time
 import json
-import requests
+import hashlib
 import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
@@ -48,8 +48,6 @@ class SpiderMain(BaseSpiderMain):
         self.qikan_time_url = 'https://navi.cnki.net/knavi/JournalDetail/GetJournalYearList?pcode={}&pykm={}&pIdx=0'
         # 初始化论文列表种子模板
         self.lunwen_url = 'https://navi.cnki.net/knavi/JournalDetail/GetArticleList?year={}&issue={}&pykm={}&pageIdx=0&pcode={}'
-        # 会话
-        self.s = requests.Session()
         # 记录存储种子数量
         self.num = 0
 
@@ -85,6 +83,7 @@ class SpiderMain(BaseSpiderMain):
                 self.dao.queue_one_task_to_redis(key=config.REDIS_CATALOG_TEMP, data=task)
 
                 qikan_url = task.get('url')
+                qikan_sha = task.get('sha')
                 xueke_leibie = task.get('s_xueKeLeiBie')
 
                 # # 创建cookies
@@ -168,7 +167,9 @@ class SpiderMain(BaseSpiderMain):
                                         # 存储种子
                                         self.num += 1
                                         logger.info('profile | 已抓种子数量: {}'.format(self.num))
-                                        self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=paper_url, ws='中国知网',
+                                        paper_sha = hashlib.sha1(paper_url.get('url').encode('utf-8')).hexdigest()
+                                        mysql_paper = 'job_paper_{}'.format(paper_sha[0])
+                                        self.dao.save_task_to_mysql(table=mysql_paper, memo=paper_url, ws='中国知网',
                                                                     es='期刊论文')
                                 else:
                                     logger.error('profile | 详情种子获取失败, url: {}'.format(article_url))
@@ -192,6 +193,8 @@ class SpiderMain(BaseSpiderMain):
                             logger.info('catalog | 年、期列表获取完毕, url: {}'.format(qikan_url))
                             # 删除临时队列中该种子
                             self.dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
+                            # 已完成任务
+                            self.dao.finish_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=qikan_sha)
                     else:
                         logger.error('catalog | 年、期列表获取失败, url: {}'.format(qikan_url))
                         # 删除临时队列中该种子
