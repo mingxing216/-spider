@@ -11,11 +11,11 @@ import settings
 class DBUtils_PyMysql(object):
 
     def get_connection(self):
-        conn = pymysql.connect(host=settings.DB_HOST,
-                               user=settings.DB_USER,
-                               password=settings.DB_PASS,
-                               database=settings.DB_NAME,
-                               port=settings.DB_PORT,
+        conn = pymysql.connect(host=settings.SPI_HOST,
+                               user=settings.SPI_USER,
+                               password=settings.SPI_PASS,
+                               database=settings.SPI_NAME,
+                               port=settings.SPI_PORT,
                                charset="utf8mb4",
                                cursorclass=pymysql.cursors.DictCursor)
         return conn

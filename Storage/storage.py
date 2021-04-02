@@ -27,7 +27,7 @@ from Utils import timeutils
 
 
 class Dao(object):
-    def __init__(self, logging, mysqlpool_number=0, redispool_number=0):
+    def __init__(self, logging, host, port, user, pwd, db, mysqlpool_number=0, redispool_number=0):
         self.logging = logging
         self.timer = timers.Timer()
         self.s = requests.Session()
@@ -48,10 +48,12 @@ class Dao(object):
 
         if int(mysqlpool_number) == 0 or int(mysqlpool_number) < 0:
             # 默认创建一个mysql链接
-            self.mysql_client = mysql_pool.MysqlPool(1, logger=logging)
+            self.mysql_client = mysql_pool.MysqlPool(number=1, host=host, port=port, user=user, pwd=pwd, db=db,
+                                                     logger=logging)
         else:
             # 创建指定个数mysql链接
-            self.mysql_client = mysql_pool.MysqlPool(int(mysqlpool_number), logger=logging)
+            self.mysql_client = mysql_pool.MysqlPool(number=int(mysqlpool_number), host=host, port=port, user=user,
+                                                     pwd=pwd, db=db, logger=logging)
 
         if int(redispool_number) == 0 or int(redispool_number) < 0:
             # 默认创建一个redis链接

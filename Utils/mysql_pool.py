@@ -11,7 +11,7 @@ from Utils import timeutils
 
 
 class MysqlPool(object):
-    def __init__(self, number, logger=None):
+    def __init__(self, number, host, port, user, pwd, db, logger=None):
         self.logger = logger
         # 创建mysql连接池
         self.pool = PooledDB(
@@ -20,11 +20,11 @@ class MysqlPool(object):
             maxcached=5,  # 最大空闲连接数
             maxconnections=number,  # 最大连接数
             blocking=True,
-            host=settings.DB_HOST,
-            port=settings.DB_PORT,
-            user=settings.DB_USER,
-            passwd=settings.DB_PASS,
-            db=settings.DB_NAME,
+            host=host,
+            port=port,
+            user=user,
+            passwd=pwd,
+            db=db,
             charset="utf8mb4",
             cursorclass=pymysql.cursors.DictCursor  # 以字典格式返回数据
         )
