@@ -1052,7 +1052,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '期刊'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
@@ -1144,7 +1143,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '会议'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
@@ -1239,7 +1237,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '博士'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
@@ -1334,7 +1331,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '硕士'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
@@ -1433,7 +1429,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '题录'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
@@ -1519,7 +1514,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '图书'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
@@ -1604,7 +1598,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '标准'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
@@ -1695,7 +1688,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '专利'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
@@ -1790,7 +1782,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '报纸'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
@@ -1889,7 +1880,6 @@ class LunWen_Data(Service):
                     current_url = lite_url + '&CurDBCode={}'.format(CurDBCode)
                     # 关联文献种类关键字， 用于判断翻页后当前标签是否是这个题录
                     keyword = '年鉴'
-                    # passkeyword
                     # 翻页获取
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)

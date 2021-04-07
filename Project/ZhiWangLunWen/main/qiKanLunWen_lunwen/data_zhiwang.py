@@ -123,6 +123,7 @@ class SpiderMain(BastSpiderMain):
         # 获取标题
         entity_data['title'] = self.server.get_title(article_html)
         if not entity_data['title']:
+            logger.error('service | 无标题')
             return
         # 获取作者
         entity_data['author'] = self.server.get_author(article_html)
@@ -139,6 +140,7 @@ class SpiderMain(BastSpiderMain):
                 lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
                 lang = lang_resp.json().get('responseData').get('language')
             except:
+                logger.error('service | 语种识别失败')
                 return
             catalog_dict['lang'] = lang
             entity_data['catalog'].append(catalog_dict)
@@ -153,6 +155,7 @@ class SpiderMain(BastSpiderMain):
                 lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
                 lang = lang_resp.json().get('responseData').get('language')
             except:
+                logger.error('service | 语种识别失败')
                 return
             ab_dict['lang'] = lang
             entity_data['abstract'].append(ab_dict)
@@ -167,6 +170,7 @@ class SpiderMain(BastSpiderMain):
                 lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
                 lang = lang_resp.json().get('responseData').get('language')
             except:
+                logger.error('service | 语种识别失败')
                 return
             kw_dict['lang'] = lang
             entity_data['keyword'].append(kw_dict)
@@ -176,6 +180,7 @@ class SpiderMain(BastSpiderMain):
             lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
             lang = lang_resp.json().get('responseData').get('language')
         except:
+            logger.error('service | 语种识别失败')
             return
         entity_data['language'] = lang
         # 获取基金
