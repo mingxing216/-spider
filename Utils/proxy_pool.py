@@ -30,13 +30,18 @@ class ProxyUtils(object):
         for _i in range(3):
             try:
                 r = requests.get(url=url, timeout=10)
-                resp = r.text
-                # print(proxy)
-                if resp:
-                    self.logger.info('proxy | {} 成功 | use time: {}'.format(msg, self.timer.use_time()))
-                    return resp
+                if r.status_code == 200:
+                    resp = r.text
+                    # print(resp)
+                    if resp:
+                            self.logger.info('proxy | {} 成功 | use time: {}'.format(msg, self.timer.use_time()))
+                            return resp
+                    else:
+                        self.logger.error('proxy | {} 失败'.format(msg))
+                        time.sleep(3)
+                        continue
                 else:
-                    self.logger.error('proxy | {} 失败'.format(msg))
+                    self.logger.error('proxy | 响应码错误: {}'.format(r.status_code))
                     time.sleep(3)
                     continue
 
@@ -55,7 +60,7 @@ class ProxyUtils(object):
     def get_proxy(self, ws="", protocol="http", using_time=30):
         return self.proxy_service_request(settings.GET_PROXY_API.format(ws, protocol, using_time), "获取代理")
 
-    # 代理权重减1
+    # 释放代理，代理权重减1
     def release_proxy(self, ip, result):
         return self.proxy_service_request(settings.RELEASE_PROXY_API.format(ip, result), "释放代理 {}".format(ip))
 
