@@ -23,13 +23,14 @@ class ProxyUtils(object):
     def __init__(self, logger=None):
         self.logger = logger
         self.timer = Timer()
+        self.s = requests.Session()
 
     # 获取代理
     def proxy_service_request(self, url, msg):
         self.timer.start()
         for _i in range(3):
             try:
-                r = requests.get(url=url, timeout=10)
+                r = self.s.get(url=url, timeout=10)
                 if r.status_code == 200:
                     resp = r.text
                     # print(resp)

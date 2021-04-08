@@ -52,6 +52,7 @@ class SpiderMain(BastSpiderMain):
         self.lang_api = LANG_API
         self.timer = timers.Timer()
         self.s = requests.Session()
+        self.default_host = 'kns.cnki.net'
         self.profile_host = 'chn.oversea.cnki.net'
         self.image_host = 'image.cnki.net'
 
@@ -98,7 +99,9 @@ class SpiderMain(BastSpiderMain):
 
     def handle(self, task_data, data_list):
         # print(task_data)
-        url = task_data['url'].replace('kns.cnki.net', 'chn.oversea.cnki.net')
+        url = task_data['url']
+        if self.profile_host != self.default_host:
+            url = url.replace(self.default_host, self.profile_host)
         _id = self.server.get_id(url)
         # print(id)
         key = '中国知网|' + _id

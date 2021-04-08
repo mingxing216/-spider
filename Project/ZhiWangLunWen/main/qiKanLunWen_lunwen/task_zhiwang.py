@@ -164,6 +164,10 @@ class SpiderMain(BaseSpiderMain):
                                     self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                                     break
 
+                                if '暂无目录信息' in article_list_html['data'].text:
+                                    logger.error('catalog | 列表页无内容, url: {}'.format(article_url))
+                                    continue
+
                                 # 获取论文详情种子
                                 article_url_list = self.server.get_article_url_list(article_list_html['data'],
                                                                                     qikan_url, xueke_leibie, year_issue)
