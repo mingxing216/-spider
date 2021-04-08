@@ -871,7 +871,7 @@ class LunWen_Data(Service):
 
         return href
 
-    def get_lite_num(self, url, down):
+    def get_lite_num(self, url, down, host):
         if re.findall(r"dbcode=(.*?)&", url, re.I):
             dbcode = re.findall(r"dbcode=(.*?)&", url, re.I)[0]
         elif re.findall(r"dbcode=(.*)", url):
@@ -886,11 +886,11 @@ class LunWen_Data(Service):
         else:
             return ''
 
-        index_url = 'https://kns.cnki.net/kcms/detail/block/refcount.aspx?dbcode={}&filename={}'
-        num_url = index_url.format(dbcode, filename)
+        index_url = 'https://{}/kcms/detail/block/refcount.aspx?dbcode={}&filename={}'
+        num_url = index_url.format(host, dbcode, filename)
 
         # 获取参考文献页源码
-        num_resp = down(url=num_url, method='GET', host='kns.cnki.net')
+        num_resp = down(url=num_url, method='GET', host=host)
         if not num_resp['data']:
             self.logger.error('参考文献接口页响应失败, url: {}'.format(num_url))
             return
@@ -902,7 +902,7 @@ class LunWen_Data(Service):
 
         return num_json
 
-    def get_annual_trend(self, url, down):
+    def get_annual_trend(self, url, down, host):
         data_list = []
         if re.findall(r"dbcode=(.*?)&", url, re.I):
             dbcode = re.findall(r"dbcode=(.*?)&", url, re.I)[0]
@@ -919,11 +919,11 @@ class LunWen_Data(Service):
             return data_list
 
         # 'https://kns.cnki.net/kcms/detail/block/refyear.aspx?dbcode=CJFD&filename=jzck201809006'
-        index_url = 'https://kns.cnki.net/kcms/detail/block/refyear.aspx?dbcode={}&filename={}'
-        trend_url = index_url.format(dbcode, filename)
+        index_url = 'https://{}/kcms/detail/block/refyear.aspx?dbcode={}&filename={}'
+        trend_url = index_url.format(host, dbcode, filename)
 
         # 获取参考文献页源码
-        trend_resp = down(url=trend_url, method='GET', host='kns.cnki.net')
+        trend_resp = down(url=trend_url, method='GET', host=host)
         if trend_resp['status'] == 404:
             return data_list
 
@@ -971,7 +971,7 @@ class LunWen_Data(Service):
             return False
 
     # 获取关联参考文献
-    def get_literature(self, text, reftype, url, down, num):
+    def get_literature(self, text, reftype, url, down, host, num):
         return_data = {}
         return_data['number'] = num
         return_data['detail'] = []
@@ -1009,16 +1009,16 @@ class LunWen_Data(Service):
 
             # 'http://kns.cnki.net/kcms/detail/frame/list.aspx?dbcode=CMFD&filename=2009014335.nh&dbname=CMFD2009&RefType=1&vl='
             # ================================================
-            index_url = ('https://kns.cnki.net/kcms/detail/frame/list.aspx?'
+            index_url = ('https://{}/kcms/detail/frame/list.aspx?'
                          'dbcode={}'
                          '&filename={}'
                          '&dbname={}'
                          '&RefType={}'
                          '&vl={}')
 
-            lite_url = index_url.format(dbcode, filename, dbname, reftype, vl)
+            lite_url = index_url.format(host, dbcode, filename, dbname, reftype, vl)
             # 获取参考文献页源码
-            lite_resp = down(url=lite_url, method='GET', host='kns.cnki.net', referer=url)
+            lite_resp = down(url=lite_url, method='GET', host=host, referer=url)
             if not lite_resp['data']:
                 self.logger.error('文献列表接口页响应失败, url: {}'.format(lite_url))
                 return
@@ -1056,7 +1056,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net', referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1147,8 +1147,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
-                                             referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1241,8 +1240,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
-                                             referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1335,8 +1333,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
-                                             referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1433,8 +1430,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
-                                             referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1518,8 +1514,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
-                                             referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1602,8 +1597,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
-                                             referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1692,8 +1686,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
-                                             referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1786,8 +1779,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
-                                             referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1884,8 +1876,7 @@ class LunWen_Data(Service):
                     for page in range(page_number):
                         current_page_url = current_url + '&page={}'.format(page + 1)
                         # 获取该页html
-                        cur_page_resp = down(url=current_page_url, method='GET', host='kns.cnki.net',
-                                             referer=current_url)
+                        cur_page_resp = down(url=current_page_url, method='GET', host=host, referer=current_url)
                         if not cur_page_resp['data']:
                             continue
 
@@ -1984,7 +1975,7 @@ class LunWen_Data(Service):
                     e = {}
                     onclick = a.xpath("./@onclick").extract_first()
                     if onclick:
-                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnetV(\(.*\))", onclick)[0])
+                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnet.*?(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
                             onclick[0],
                             onclick[1],
@@ -2014,7 +2005,7 @@ class LunWen_Data(Service):
                     e = {}
                     onclick = a.xpath("./@onclick").extract_first()
                     if onclick:
-                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnetV(\(.*\))", onclick)[0])
+                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnet.*?(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
                             onclick[0],
                             onclick[1],
@@ -2044,7 +2035,7 @@ class LunWen_Data(Service):
                     e = {}
                     onclick = a.xpath("./@onclick").extract_first()
                     if onclick:
-                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnet(\(.*\))", onclick)[0])
+                        onclick = ast.literal_eval(re.findall(r"TurnPageToKnet.*?(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
                             onclick[0],
                             onclick[1],

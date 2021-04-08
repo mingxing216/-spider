@@ -52,6 +52,8 @@ class SpiderMain(BastSpiderMain):
         self.lang_api = LANG_API
         self.timer = timers.Timer()
         self.s = requests.Session()
+        self.profile_host = 'chn.oversea.cnki.net'
+        self.image_host = 'image.cnki.net'
 
     def _get_resp(self, url, method, s=None, data=None, host=None, cookies=None, referer=None):
         # 发现验证码，请求页面3次
@@ -69,7 +71,7 @@ class SpiderMain(BastSpiderMain):
 
     def img_download(self, img_dict):
         # 获取图片响应
-        media_resp = self._get_resp(url=img_dict['url'], method='GET', host='image.cnki.net')
+        media_resp = self._get_resp(url=img_dict['url'], method='GET', host=self.image_host)
         if media_resp is None:
             return
 
@@ -96,14 +98,14 @@ class SpiderMain(BastSpiderMain):
 
     def handle(self, task_data, data_list):
         # print(task_data)
-        url = task_data['url']
+        url = task_data['url'].replace('kns.cnki.net', 'chn.oversea.cnki.net')
         _id = self.server.get_id(url)
         # print(id)
         key = '中国知网|' + _id
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
 
         # 获取论文详情页html源码
-        resp = self._get_resp(url=url, method='GET', host='kns.cnki.net')
+        resp = self._get_resp(url=url, method='GET', host=self.profile_host)
         if resp is None:
             return
 
@@ -220,14 +222,14 @@ class SpiderMain(BastSpiderMain):
         # 学科类别
         entity_data['subject_classification_name'] = task_data.get('xueKeLeiBie', '')
         # 获取参考、引证文献数量
-        lite_num = self.server.get_lite_num(url=url, down=self._get_resp)
+        lite_num = self.server.get_lite_num(url=url, down=self._get_resp, host=self.profile_host)
         if lite_num:
             ref_num = int(lite_num.get('REFERENCE', 0))
             cite_num = int(lite_num.get('CITING', 0))
             if ref_num:
                 # 获取参考文献
                 entity_data['references'] = self.server.get_literature(article_html, 1, url=url, down=self._get_resp,
-                                                                       num=ref_num)
+                                                                       host=self.profile_host, num=ref_num)
                 if entity_data['references'] is None:
                     return
             else:
@@ -235,7 +237,8 @@ class SpiderMain(BastSpiderMain):
             if cite_num:
                 # 获取引证文献
                 entity_data['cited_literature'] = self.server.get_literature(article_html, 3, url=url,
-                                                                             down=self._get_resp, num=cite_num)
+                                                                             down=self._get_resp,
+                                                                             host=self.profile_host, num=cite_num)
                 if entity_data['cited_literature'] is None:
                     return
             else:
@@ -244,7 +247,8 @@ class SpiderMain(BastSpiderMain):
             entity_data['references'] = {}
             entity_data['references'] = {}
         # 获取文献数量年度分布
-        entity_data['annual_trend_of_literature_number'] = self.server.get_annual_trend(url=url, down=self._get_resp)
+        entity_data['annual_trend_of_literature_number'] = self.server.get_annual_trend(url=url, down=self._get_resp,
+                                                                                        host=self.profile_host)
         # 关联期刊
         entity_data['rela_journal'] = self.server.rela_journal(task_data.get('parentUrl'))
         # 关联人物
@@ -426,7 +430,7 @@ class SpiderMain(BastSpiderMain):
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
             task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
-            # task = '{"theme": "基础医学研究", "url": "https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=LAWS202101010&dbname=CJFDAUTO", "xiaZai": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=n8sbjTFvPSUrNDkHGGwa1ho8r3UKR0Eg1blqUAXs46uVtWbBkzCDkcKJ5VmGgPhX&tableName=CJFDLAST2017", "zaiXianYueDu": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=SYKQ201705008&tablename=CJFDLAST2017&filetype=XML;EPUB;", "xueKeLeiBie": "医药卫生科技_口腔科学", "parentUrl": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=SYKQ", "year": "2017", "issue": "05", "sha": "047fe93efaba692553e3eab9ff38bd58bbb593e2"}'
+            # task = '{"theme": "基础医学研究", "url": "https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=CKYK202106013&dbname=CJFDLAST2021", "xiaZai": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=n8sbjTFvPSUrNDkHGGwa1ho8r3UKR0Eg1blqUAXs46uVtWbBkzCDkcKJ5VmGgPhX&tableName=CJFDLAST2017", "zaiXianYueDu": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=SYKQ201705008&tablename=CJFDLAST2017&filetype=XML;EPUB;", "xueKeLeiBie": "医药卫生科技_口腔科学", "parentUrl": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=SYKQ", "year": "2017", "issue": "05", "sha": "047fe93efaba692553e3eab9ff38bd58bbb593e2"}'
             if task:
                 try:
                     # 创建数据存储列表
