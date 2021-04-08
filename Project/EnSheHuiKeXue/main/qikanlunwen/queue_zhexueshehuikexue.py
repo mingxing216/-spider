@@ -17,6 +17,7 @@ from Project.EnSheHuiKeXue.middleware import download_middleware
 from Project.EnSheHuiKeXue.service import service
 from Project.EnSheHuiKeXue.dao import dao
 from Project.EnSheHuiKeXue import config
+from settings import SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
 
 LOG_FILE_DIR = 'EnSheHuiKeXue'  # LOG日志存放路径
 LOG_NAME = '英文论文_queue'  # LOG名
@@ -30,6 +31,7 @@ class BastSpiderMain(object):
                                                                   timeout=config.TIMEOUT)
         self.server = service.Server(logging=logger)
         self.dao = dao.Dao(logging=logger,
+                           host=SPI_HOST, port=SPI_PORT, user=SPI_USER, pwd=SPI_PASS, db=SPI_NAME,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
 

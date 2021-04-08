@@ -24,7 +24,7 @@ from Project.ZheXueSheHuiKeXueQiKan.middleware import download_middleware
 from Project.ZheXueSheHuiKeXueQiKan.service import service
 from Project.ZheXueSheHuiKeXueQiKan.dao import dao
 from Project.ZheXueSheHuiKeXueQiKan import config
-from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY, SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
 from Utils import user_pool
 
 logger_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} {process} {thread} {level} - {message}"
@@ -50,12 +50,11 @@ class BastSpiderMain(object):
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   stream=config.STREAM,
                                                                   timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY,
-                                                                  proxy_city=config.CITY,
                                                                   cookie_obj=self.cookie_obj)
         # self.server = service.Server(logging=LOGGING)
         # 存储
         self.dao = dao.Dao(logging=logger,
+                           host=SPI_HOST, port=SPI_PORT, user=SPI_USER, pwd=SPI_PASS, db=SPI_NAME,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
 
@@ -540,7 +539,7 @@ class SpiderMain(BastSpiderMain):
             start_time = time.time()
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_RETRY)
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
             if task:
                 try:
                     # 创建数据存储字典

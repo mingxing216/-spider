@@ -12,8 +12,9 @@ from Storage import storage
 
 
 class Dao(storage.Dao):
-    def __init__(self, logging, mysqlpool_number=0, redispool_number=0):
+    def __init__(self, logging, host, port, user, pwd, db, mysqlpool_number=0, redispool_number=0):
         super(Dao, self).__init__(logging=logging,
+                                  host=host, port=port, user=user, pwd=pwd, db=db,
                                   mysqlpool_number=mysqlpool_number,
                                   redispool_number=redispool_number)
 

@@ -19,10 +19,10 @@ from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
 class Downloader(downloader_bofore.BaseDownloader):
-    def __init__(self, logging, stream, timeout, proxy_type, proxy_country, proxy_city, cookie_obj=None):
+    def __init__(self, logging, stream, timeout, proxy_type, cookie_obj=None):
         super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_type = proxy_type
-        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging, mode=proxy_type, country=proxy_country, city=proxy_city)
+        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging)
         self.cookie_obj = cookie_obj
 
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):
@@ -76,6 +76,8 @@ class Downloader(downloader_bofore.BaseDownloader):
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
 
+            # 释放代理
+            self.proxy_obj.release_proxy(ip, down_data['code'] == 0 or down_data['code'] == 1)
             # 返回值中添加IP信息
             down_data['proxy_ip'] = ip
             # 判断

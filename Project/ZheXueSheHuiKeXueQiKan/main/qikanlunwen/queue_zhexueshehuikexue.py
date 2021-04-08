@@ -17,6 +17,7 @@ from Project.ZheXueSheHuiKeXueQiKan.middleware import download_middleware
 from Project.ZheXueSheHuiKeXueQiKan.service import service
 from Project.ZheXueSheHuiKeXueQiKan.dao import dao
 from Project.ZheXueSheHuiKeXueQiKan import config
+from settings import SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
 
 logger_format = "{time:YYYY-MM-DD HH:mm:ss.SSS} {process} {thread} {level} - {message}"
 # 输出到指定目录下的log文件，并按天分隔
@@ -34,11 +35,10 @@ class BastSpiderMain(object):
         self.download_middleware = download_middleware.Downloader(logging=logger,
                                                                   proxy_type=config.PROXY_TYPE,
                                                                   stream=config.STREAM,
-                                                                  timeout=config.TIMEOUT,
-                                                                  proxy_country=config.COUNTRY,
-                                                                  proxy_city=config.CITY)
+                                                                  timeout=config.TIMEOUT)
         self.server = service.Server(logging=logger)
         self.dao = dao.Dao(logging=logger,
+                           host=SPI_HOST, port=SPI_PORT, user=SPI_USER, pwd=SPI_PASS, db=SPI_NAME,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
 

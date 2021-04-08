@@ -25,7 +25,7 @@ from Project.EnSheHuiKeXue.middleware import download_middleware
 from Project.EnSheHuiKeXue.service import service
 from Project.EnSheHuiKeXue.dao import dao
 from Project.EnSheHuiKeXue import config
-from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY, SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
 from Utils import user_pool, timers
 from Project.EnSheHuiKeXue.service.service import CaptchaProcessor
 
@@ -44,6 +44,7 @@ class BaseSpiderMain(object):
         self.server = service.Server(logging=logger)
         # 存储
         self.dao = dao.Dao(logging=logger,
+                           host=SPI_HOST, port=SPI_PORT, user=SPI_USER, pwd=SPI_PASS, db=SPI_NAME,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
 
@@ -118,7 +119,7 @@ class SpiderMain(BaseSpiderMain):
     #     return True
 
     # 获取文档实体字段
-    def document(self, pdf_dict):
+    def document(self, pdf_dict, data_list):
         logger.debug('document | 开始获取内容')
         self.timer.start()
         pdf_url = pdf_dict['url']
@@ -274,15 +275,13 @@ class SpiderMain(BaseSpiderMain):
         # 采集脚本版本号
         doc_data['script_version'] = 'V1.3'
 
-        # 保存数据到Hbase
-        sto = self.dao.save_data_to_hbase(data=doc_data, ss_type=doc_data['ss'], sha=doc_data['sha'], url=doc_data['url'])
+        # # 保存数据到Hbase
+        # sto = self.dao.save_data_to_hbase(data=doc_data, ss_type=doc_data['ss'], sha=doc_data['sha'], url=doc_data['url'])
+        data_list.append(doc_data)
 
-        if sto:
-            return True
-        else:
-            return
+        return True
 
-    def handle(self, task_data, save_data):
+    def handle(self, task_data, data_list):
         # print(task_data)
         url = task_data.get('url')
         try:
@@ -307,50 +306,52 @@ class SpiderMain(BaseSpiderMain):
         #     f.write(profile_text)
 
         # ========================== 获取实体 ============================
+        # 创建数据存储字典
+        entity_data = dict()
         # 获取标题
-        save_data['title'] = self.server.get_paper_title(profile_text)
+        entity_data['title'] = self.server.get_paper_title(profile_text)
         # 获取作者
-        save_data['author'] = self.server.get_more_value(profile_text, '作者')
+        entity_data['author'] = self.server.get_more_value(profile_text, '作者')
         # ISSN
-        save_data['issn'] = self.server.get_normal_value(profile_text, '印刷版ISSN')
-        save_data['e_issn'] = self.server.get_normal_value(profile_text, '电子版ISSN')
+        entity_data['issn'] = self.server.get_normal_value(profile_text, '印刷版ISSN')
+        entity_data['e_issn'] = self.server.get_normal_value(profile_text, '电子版ISSN')
         # DOI
-        save_data['doi'] = {}
+        entity_data['doi'] = {}
         doi = self.server.get_normal_value(profile_text, 'DOI')
         doi_url = self.server.get_full_link(profile_text, '全文链接')
         if doi:
-            save_data['doi']['doi'] = doi
-            save_data['doi']['doi_url'] = doi_url
-            save_data['source_url'] = ""
+            entity_data['doi']['doi'] = doi
+            entity_data['doi']['doi_url'] = doi_url
+            entity_data['source_url'] = ""
         else:
             # 全文链接
-            save_data['source_url'] = doi_url
+            entity_data['source_url'] = doi_url
         # 获取期刊信息
-        save_data['journal_information'] = {}
-        save_data['journal_information']['name'] = self.server.get_normal_value(profile_text, '期刊名称')
-        save_data['journal_information']['year'] = self.server.get_normal_value(profile_text, '出版年度')
-        save_data['journal_information']['volume'] = self.server.get_normal_value(profile_text, '卷号')
-        save_data['journal_information']['issue'] = self.server.get_normal_value(profile_text, '期号')
+        entity_data['journal_information'] = {}
+        entity_data['journal_information']['name'] = self.server.get_normal_value(profile_text, '期刊名称')
+        entity_data['journal_information']['year'] = self.server.get_normal_value(profile_text, '出版年度')
+        entity_data['journal_information']['volume'] = self.server.get_normal_value(profile_text, '卷号')
+        entity_data['journal_information']['issue'] = self.server.get_normal_value(profile_text, '期号')
         pages = self.server.get_normal_value(profile_text, '页码')
         if pages:
             if '-' in pages:
-                save_data['journal_information']['start_page'] = re.findall(r"(.*)-", pages)[0]
-                save_data['journal_information']['end_page'] = re.findall(r"-(.*)", pages)[0]
-                save_data['journal_information']['total_page'] = ""
+                entity_data['journal_information']['start_page'] = re.findall(r"(.*)-", pages)[0]
+                entity_data['journal_information']['end_page'] = re.findall(r"-(.*)", pages)[0]
+                entity_data['journal_information']['total_page'] = ""
             else:
-                save_data['journal_information']['start_page'] = ""
-                save_data['journal_information']['end_page'] = ""
-                save_data['journal_information']['total_page'] = pages
+                entity_data['journal_information']['start_page'] = ""
+                entity_data['journal_information']['end_page'] = ""
+                entity_data['journal_information']['total_page'] = pages
         else:
-            save_data['journal_information']['start_page'] = ""
-            save_data['journal_information']['end_page'] = ""
-            save_data['journal_information']['total_page'] = ""
+            entity_data['journal_information']['start_page'] = ""
+            entity_data['journal_information']['end_page'] = ""
+            entity_data['journal_information']['total_page'] = ""
         # 语种
-        save_data['language'] = self.server.get_normal_value(profile_text, '语种')
+        entity_data['language'] = self.server.get_normal_value(profile_text, '语种')
         # 出版社
-        save_data['publisher'] = self.server.get_normal_value(profile_text, '出版社')
+        entity_data['publisher'] = self.server.get_normal_value(profile_text, '出版社')
         # 获取摘要
-        save_data['abstract'] = []
+        entity_data['abstract'] = []
         abstract_text = self.server.get_abstract_value(profile_text, '摘要')
         if abstract_text:
             abstract = {}
@@ -362,7 +363,7 @@ class SpiderMain(BaseSpiderMain):
             except:
                 return
             abstract['lang'] = lang
-            save_data['abstract'].append(abstract)
+            entity_data['abstract'].append(abstract)
         en_abstract_text = self.server.get_normal_value(profile_text, '英文摘要')
         if en_abstract_text:
             en_abstract = {}
@@ -374,9 +375,9 @@ class SpiderMain(BaseSpiderMain):
             except:
                 return
             en_abstract['lang'] = lang
-            save_data['abstract'].append(en_abstract)
+            entity_data['abstract'].append(en_abstract)
         # 获取关键词
-        save_data['keyword'] = []
+        entity_data['keyword'] = []
         keyword_text = self.server.get_keyword_value(profile_text, '关键词')
         if keyword_text:
             keyword = {}
@@ -388,7 +389,7 @@ class SpiderMain(BaseSpiderMain):
             except:
                 return
             keyword['lang'] = lang
-            save_data['keyword'].append(keyword)
+            entity_data['keyword'].append(keyword)
         en_keyword_text = self.server.get_en_keyword_value(profile_text, '英文关键词')
         if en_keyword_text:
             en_keyword = {}
@@ -400,68 +401,69 @@ class SpiderMain(BaseSpiderMain):
             except:
                 return
             en_keyword['lang'] = lang
-            save_data['keyword'].append(en_keyword)
+            entity_data['keyword'].append(en_keyword)
         # 获取作者单位
-        save_data['author_affiliation'] = self.server.get_author_affiliation(profile_text, '作者单位')
+        entity_data['author_affiliation'] = self.server.get_author_affiliation(profile_text, '作者单位')
         # 关联期刊
         qikan_url = task_data.get('journalUrl')
         qikan_id = re.findall(r"id=(\w+)$", qikan_url)[0]
         qikan_key = '哲学社会科学外文OA资源数据库|' + qikan_id
         qikan_sha = hashlib.sha1(qikan_key.encode('utf-8')).hexdigest()
-        save_data['rela_journal'] = self.server.rela_journal(qikan_url, qikan_key, qikan_sha)
+        entity_data['rela_journal'] = self.server.rela_journal(qikan_url, qikan_key, qikan_sha)
         # 获取关联文档
         pdf_url = task_data.get('pdfUrl')
         if pdf_url:
             doc_key = key
             doc_sha = hashlib.sha1(doc_key.encode('utf-8')).hexdigest()
             doc_url = pdf_url
-            save_data['rela_document'] = self.server.rela_document(doc_url, doc_key, doc_sha)
+            entity_data['rela_document'] = self.server.rela_document(doc_url, doc_key, doc_sha)
 
             pdf_dict = dict()
             pdf_dict['url'] = doc_url
             pdf_dict['key'] = doc_key
             pdf_dict['id'] = _id
-            pdf_dict['bizTitle'] = save_data['title']
+            pdf_dict['bizTitle'] = entity_data['title']
             pdf_dict['relEsse'] = self.server.rela_paper(url, key, sha)
-            pdf_dict['relPics'] = save_data['rela_document']
+            pdf_dict['relPics'] = entity_data['rela_document']
 
             # 存储文档实体及文档本身
-            suc = self.document(pdf_dict=pdf_dict)
+            suc = self.document(pdf_dict=pdf_dict, data_list=data_list)
             if not suc:
                 return
 
         else:
-            save_data['rela_document'] = {}
+            entity_data['rela_document'] = {}
 
         # ======================公共字段
         # url
-        save_data['url'] = url
+        entity_data['url'] = url
         # 生成key
-        save_data['key'] = key
+        entity_data['key'] = key
         # 生成sha
-        save_data['sha'] = sha
+        entity_data['sha'] = sha
         # 生成ss ——实体
-        save_data['ss'] = '论文'
+        entity_data['ss'] = '论文'
         # es ——栏目名称
-        save_data['es'] = '英文期刊论文'
+        entity_data['es'] = '英文期刊论文'
         # 生成ws ——目标网站
-        save_data['ws'] = '哲学社会科学外文OA资源数据库'
+        entity_data['ws'] = '哲学社会科学外文OA资源数据库'
         # 生成clazz ——层级关系
-        save_data['clazz'] = '论文_期刊论文'
+        entity_data['clazz'] = '论文_期刊论文'
         # 生成biz ——项目
-        save_data['biz'] = '文献大数据_论文'
+        entity_data['biz'] = '文献大数据_论文'
         # 生成ref
-        save_data['ref'] = ''
+        entity_data['ref'] = ''
         # 采集责任人
-        save_data['creator'] = '张明星'
+        entity_data['creator'] = '张明星'
         # 更新责任人
-        save_data['modified_by'] = ''
+        entity_data['modified_by'] = ''
         # 采集服务器集群
-        save_data['cluster'] = 'crawler'
+        entity_data['cluster'] = 'crawler'
         # 元数据版本号
-        save_data['metadata_version'] = 'V1.1'
+        entity_data['metadata_version'] = 'V1.1'
         # 采集脚本版本号
-        save_data['script_version'] = 'V1.3'
+        entity_data['script_version'] = 'V1.3'
+        data_list.append(entity_data)
 
     def run(self):
         logger.debug('thread start')
@@ -481,28 +483,28 @@ class SpiderMain(BaseSpiderMain):
             # task = '{"url": "http://103.247.176.188/View.aspx?id=81378664", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=81378664", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=23677", "sha": "121f7ce3d5b82baa6b51a1276854971163af399d"}'
             if task:
                 try:
-                    # 创建数据存储字典
-                    save_data = dict()
+                    # 创建数据存储列表
+                    data_list = []
                     # json数据类型转换
                     task_data = json.loads(task)
                     sha = task_data['sha']
                     # 获取字段值存入字典并返回sha
-                    self.handle(task_data=task_data, save_data=save_data)
+                    self.handle(task_data=task_data, data_list=data_list)
                     # 保存数据到Hbase
-                    if not save_data:
+                    if not data_list:
                         # 逻辑删除任务
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.error(
                             'task end | task failed | use time: {} | No data.'.format(task_timer.use_time()))
                         continue
-                    if 'sha' not in save_data:
+                    if 'sha' not in data_list[-1]:
                         # 逻辑删除任务
                         self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                         logger.error(
                             'task end | task failed | use time: {} | Data Incomplete.'.format(task_timer.use_time()))
                         continue
                     # 存储数据
-                    success = self.dao.save_data_to_hbase(data=save_data, ss_type=save_data['ss'], sha=save_data['sha'], url=save_data['url'])
+                    success = self.dao.save_data_to_hbase(data=data_list)
 
                     if success:
                         # 已完成任务
