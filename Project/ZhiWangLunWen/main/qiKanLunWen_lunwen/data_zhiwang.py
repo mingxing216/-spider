@@ -51,6 +51,7 @@ class SpiderMain(BastSpiderMain):
         super().__init__()
         self.lang_api = LANG_API
         self.timer = timers.Timer()
+        self.langid_timer = timers.Timer()
         self.s = requests.Session()
         self.default_host = 'kns.cnki.net'
         self.profile_host = 'chn.oversea.cnki.net'
@@ -97,6 +98,17 @@ class SpiderMain(BastSpiderMain):
         else:
             return True
 
+    def get_langid(self, text):
+        self.langid_timer.start()
+        try:
+            lang_resp = self.s.post(url=self.lang_api, data={'q': text}, timeout=(5, 10))
+            lang = lang_resp.json().get('responseData').get('language')
+            logger.info('service | 语种识别成功 | use time: {}'.format(self.langid_timer.use_time()))
+            return lang
+        except:
+            logger.error('service | 语种识别失败 | use time: {}'.format(self.langid_timer.use_time()))
+            return
+
     def handle(self, task_data, data_list):
         # print(task_data)
         url = task_data['url']
@@ -140,12 +152,8 @@ class SpiderMain(BastSpiderMain):
         if catalog:
             catalog_dict = {}
             catalog_dict['text'] = catalog
-            form_data = {'q': catalog}
-            try:
-                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
-                lang = lang_resp.json().get('responseData').get('language')
-            except:
-                logger.error('service | 语种识别失败')
+            lang = self.get_langid(catalog)
+            if lang is None:
                 return
             catalog_dict['lang'] = lang
             entity_data['catalog'].append(catalog_dict)
@@ -155,12 +163,8 @@ class SpiderMain(BastSpiderMain):
         if abstract:
             ab_dict = {}
             ab_dict['text'] = abstract
-            form_data = {'q': abstract}
-            try:
-                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
-                lang = lang_resp.json().get('responseData').get('language')
-            except:
-                logger.error('service | 语种识别失败')
+            lang = self.get_langid(abstract)
+            if lang is None:
                 return
             ab_dict['lang'] = lang
             entity_data['abstract'].append(ab_dict)
@@ -170,22 +174,14 @@ class SpiderMain(BastSpiderMain):
         if keywords:
             kw_dict = {}
             kw_dict['text'] = keywords
-            form_data = {'q': keywords}
-            try:
-                lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
-                lang = lang_resp.json().get('responseData').get('language')
-            except:
-                logger.error('service | 语种识别失败')
+            lang = self.get_langid(keywords)
+            if lang is None:
                 return
             kw_dict['lang'] = lang
             entity_data['keyword'].append(kw_dict)
         # 获取语种
-        form_data = {'q': entity_data['title']}
-        try:
-            lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5, 10))
-            lang = lang_resp.json().get('responseData').get('language')
-        except:
-            logger.error('service | 语种识别失败')
+        lang = self.get_langid(entity_data['title'])
+        if lang is None:
             return
         entity_data['language'] = lang
         # 获取基金
