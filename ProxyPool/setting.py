@@ -7,7 +7,7 @@ REDIS_HOST = '192.168.10.93'
 REDIS_PORT = 6379
 
 # Redis密码，如无填None
-REDIS_PASSWORD = 'onecooo'
+REDIS_PASSWORD = 'spider'
 
 REDIS_KEY = 'proxies'
 
