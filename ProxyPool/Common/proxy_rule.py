@@ -35,6 +35,7 @@ class ProxyRule(object):
         :param: result: 代理成功true/代理失败false
         :return: 修改后的分数
         """
+        self.timer.start()
         if result or result == 'True':
             code = conn.modify_score(ip, 1)
             if isinstance(code, (int, float)):
