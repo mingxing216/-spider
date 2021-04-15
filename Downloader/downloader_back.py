@@ -14,7 +14,7 @@ from requests.exceptions import ReadTimeout
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 from settings import DOWNLOAD_DELAY
-from Utils import proxy_pool
+from ProxyPool.ProxyClient import proxy_client
 
 
 def _error(func):
@@ -97,7 +97,7 @@ class Downloader(object):
         self.retry = retry
         self.proxy_type = proxy_type
         self.update_proxy_frequency = update_proxy_frequency
-        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging, mode=proxy_type, country=proxy_country)
+        self.proxy_obj = proxy_client.ProxyPoolClient(logger=logging)
 
     @_error
     def get(self, url: object, headers: object, cookies: object, timeout: object, proxies: object) -> object:

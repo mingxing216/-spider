@@ -474,8 +474,8 @@ class SpiderMain(BastSpiderMain):
 
 
 def start():
-    main = SpiderMain()
     try:
+        main = SpiderMain()
         main.run()
     except:
         logger.exception(str(traceback.format_exc()))

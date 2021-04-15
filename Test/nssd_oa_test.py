@@ -1,12 +1,11 @@
 # -*- coding:utf-8 -*-
-import os
-import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import requests
 from scrapy import Selector
 
 from Log import logging
-from Utils import user_agent_u, proxy_pool
+from Utils import user_agent_u
+from ProxyPool.ProxyClient import proxy_client
 from Utils.captcha import RecognizeCode
 
 LOG_FILE_DIR = 'Test'  # LOG日志存放路径
@@ -18,7 +17,7 @@ class CaptchaProcessor(object):
     def __init__(self):
         self.session = requests.Session()
         self.headers = {'User-Agent': user_agent_u.get_ua()}
-        self.proxy_obj = proxy_pool.ProxyUtils(logger=logger)
+        self.proxy_obj = proxy_client.ProxyUtils(logger=logger)
         self.recognize_code = RecognizeCode(logger)
 
     def downloader(self, method, url, data=None):

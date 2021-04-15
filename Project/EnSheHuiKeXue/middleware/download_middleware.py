@@ -3,17 +3,14 @@
 '''
 
 '''
-import sys
-import os
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-import re
 import time
-import requests
 import random
 
 from Downloader import downloader
-from Utils import user_agent_u, proxy_pool, user_pool, timers
+from Utils import user_agent_u, timers
+from ProxyPool.ProxyClient import proxy_client
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
@@ -21,7 +18,7 @@ class Downloader(downloader.BaseDownloader):
     def __init__(self, logging, stream, timeout, proxy_enabled, cookie_obj=None):
         super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_enabled = proxy_enabled
-        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging)
+        self.proxy_obj = proxy_client.ProxyPoolClient(logger=logging)
         self.cookie_obj = cookie_obj
         self.timer = timers.Timer()
 

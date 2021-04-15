@@ -7,23 +7,18 @@ import sys
 import os
 import json
 import base64
-import random
 from PIL import Image
 from io import BytesIO
 import hashlib
 import requests
 import re
-import time
-import ast
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../")
 import settings
-from Utils.proxy_pool import ProxyUtils
-from Utils import mysql_pool, timers
-from Utils import redis_pool
-from Utils import timeutils
+from ProxyPool.ProxyClient.proxy_client import ProxyPoolClient
+from Utils import mysql_pool, redis_pool, timers, timeutils
 
 
 class Dao(object):
@@ -40,7 +35,7 @@ class Dao(object):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'}
         # 获取本机IP，存储使用
         while True:
-            self.localIP = ProxyUtils.get_local_ip()
+            self.localIP = ProxyPoolClient.get_local_ip()
             if not self.localIP:
                 continue
             else:

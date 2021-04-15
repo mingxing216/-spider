@@ -16,14 +16,20 @@ import re
 import time
 
 import settings
+from ProxyPool.Common.db import RedisClient
+from ProxyPool.setting import *
+from ProxyPool.Common.proxy_rule import ProxyRule
 from Utils.timers import Timer
 
 
-class ProxyUtils(object):
-    def __init__(self, logger=None):
+class ProxyPoolClient(object):
+    def __init__(self, logger, local=True):
         self.logger = logger
         self.timer = Timer()
         self.s = requests.Session()
+        self.conn = RedisClient()
+        self.proxy_rule = ProxyRule(logger=logger)
+        self.local = local
 
     # 获取代理
     def proxy_service_request(self, url, msg):
@@ -59,11 +65,17 @@ class ProxyUtils(object):
 
     # 获取代理
     def get_proxy(self, ws="", protocol="http", using_time=30):
-        return self.proxy_service_request(settings.GET_PROXY_API.format(ws, protocol, using_time), "获取代理")
+        if self.local:
+            return self.proxy_rule.get_proxy(self.conn, ws, protocol, using_time)
+        else:
+            return self.proxy_service_request(settings.GET_PROXY_API.format(ws, protocol, using_time), "获取代理")
 
     # 释放代理，代理权重减1
     def release_proxy(self, ip, result):
-        return self.proxy_service_request(settings.RELEASE_PROXY_API.format(ip, result), "释放代理 {}".format(ip))
+        if self.local:
+            return self.proxy_rule.release_proxy(self.conn, ip, result, ERROR_DELTA_SCORE)
+        else:
+            return self.proxy_service_request(settings.RELEASE_PROXY_API.format(ip, result), "释放代理 {}".format(ip))
 
     # 检测代理IP是否是高匿代理， 高匿返回True， 否则返回Fales
     def _jianChaNiMingDu(self, **proxies):
@@ -127,5 +139,5 @@ class ProxyUtils(object):
 
 
 if __name__ == '__main__':
-    proxier = ProxyUtils()
-    print(proxier.get_proxy())
+    proxy_obj = ProxyPoolClient()
+    print(proxy_obj.get_proxy())

@@ -8,16 +8,14 @@ import os
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-import re
 import time
 import json
-import requests
 import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader
 from Utils import user_agent_u, timers
-from Utils import proxy_pool
+from ProxyPool.ProxyClient import proxy_client
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
@@ -25,7 +23,7 @@ class Downloader(downloader.BaseDownloader):
     def __init__(self, logging, stream, timeout, proxy_enabled, cookie_obj=None):
         super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_enabled = proxy_enabled
-        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging)
+        self.proxy_obj = proxy_client.ProxyPoolClient(logger=logging)
         self.cookie_obj = cookie_obj
         self.timer = timers.Timer()
 
@@ -207,7 +205,7 @@ class QiKanLunWen_QiKanTaskDownloader(downloader.BaseDownloader):
     def __init__(self, logging, timeout, proxy_enabled, stream):
         super(QiKanLunWen_QiKanTaskDownloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_type = proxy_enabled
-        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging)
+        self.proxy_obj = proxy_client.ProxyUtils(logger=logging)
 
     # 检查验证码
     def __judge_verify(self, param):

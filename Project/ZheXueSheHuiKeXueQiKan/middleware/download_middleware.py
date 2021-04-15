@@ -7,14 +7,14 @@ import sys
 import os
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-import re
 import time
 import requests
 import random
 
 sys.path.append(os.path.dirname(__file__) + os.sep + "../../../")
 from Downloader import downloader_bofore
-from Utils import user_agent_u, proxy_pool, user_pool
+from Utils import user_agent_u
+from ProxyPool.ProxyClient import proxy_client
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 
 
@@ -22,7 +22,7 @@ class Downloader(downloader_bofore.BaseDownloader):
     def __init__(self, logging, stream, timeout, proxy_type, cookie_obj=None):
         super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_type = proxy_type
-        self.proxy_obj = proxy_pool.ProxyUtils(logger=logging)
+        self.proxy_obj = proxy_client.ProxyPoolClient(logger=logging)
         self.cookie_obj = cookie_obj
 
     def getResp(self, url, method, s=None, data=None, cookies=None, referer=None, ranges=None, user=None):
@@ -126,6 +126,3 @@ class Downloader(downloader_bofore.BaseDownloader):
         except:
             self.logging.error('cookie创建异常')
             return None
-
-
-
