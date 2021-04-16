@@ -209,8 +209,9 @@ class SpiderMain(BastSpiderMain):
         # 获取所在页码
         pages = self.server.get_info(article_html, '页码')
         if '-' in pages:
-            entity_data['start_page'] = re.findall(r"(.+)-", pages)[0]
-            entity_data['end_page'] = re.findall(r"-(.+)", pages)[0]
+            page_list = pages.split('-')
+            entity_data['start_page'] = page_list[0]
+            entity_data['end_page'] = page_list[1]
         else:
             entity_data['start_page'] = pages
             entity_data['end_page'] = ''
@@ -244,7 +245,7 @@ class SpiderMain(BastSpiderMain):
                 entity_data['cited_literature'] = {}
         else:
             entity_data['references'] = {}
-            entity_data['references'] = {}
+            entity_data['cited_literature'] = {}
         # 获取文献数量年度分布
         entity_data['annual_trend_of_literature_number'] = self.server.get_annual_trend(url=url, down=self._get_resp,
                                                                                         host=self.profile_host)

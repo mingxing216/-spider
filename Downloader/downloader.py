@@ -39,7 +39,7 @@ class BaseDownloader(object):
         self.logger = logging
         self.timeout = timeout
         self.stream = stream
-        self.timer = Timer()
+        self.base_timer = Timer()
 
     @_error
     def get(self, url, session=None, headers=None, data=None, proxies=None, cookies=None):
@@ -72,7 +72,7 @@ class BaseDownloader(object):
 
     def begin(self, url, session=None, headers=None, data=None, proxies=None, cookies=None, method='GET'):
         assert method.upper() == 'GET' or method.upper() == 'POST'
-        self.timer.start()
+        self.base_timer.start()
         if method.upper() == 'GET':
             resp_data = self.get(url=url, session=session, headers=headers, data=data,
                                  cookies=cookies, proxies=proxies)
@@ -88,14 +88,14 @@ class BaseDownloader(object):
         if resp_data['code'] == 0 or resp_data['code'] == 1:
             self.logger.info(
                 "downloader | request for url: {} | use time: {} | code: {} | status: {} | length: {} | method: {} | "
-                "message: {} | data: {} | proxy: {}".format(url, self.timer.use_time(), resp_data['code'],
+                "message: {} | data: {} | proxy: {}".format(url, self.base_timer.use_time(), resp_data['code'],
                                                             resp_data['status'],
                                                             resp_data['data'].headers.get('Content-Length'),
                                                             method, resp_data['message'], data, proxies))
         else:
             self.logger.info(
                 "downloader | request for url: {} | use time: {} | code: {} | status: {} | method: {} | message: {} | "
-                "data: {} | proxy: {}".format(url, self.timer.use_time(), resp_data["code"], resp_data['status'],
+                "data: {} | proxy: {}".format(url, self.base_timer.use_time(), resp_data["code"], resp_data['status'],
                                               method, resp_data['message'], data, proxies))
 
         return resp_data

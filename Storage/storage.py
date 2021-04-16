@@ -340,10 +340,12 @@ class Dao(object):
         if 'image' in contype:
             # 二进制图片文件转成base64文件
             content_bs64 = base64.b64encode(content)
+            length = len(content_bs64)
             # 内存中打开图片
             img = Image.open(BytesIO(content))
             data_dict['natural_height'] = "{}".format(img.height)
             data_dict['natural_width'] = "{}".format(img.width)
+            data_dict['length'] = length
             store_data = "{}".format(content_bs64.decode('utf-8'))
         # 文档存储
         if 'pdf' in contype:
@@ -354,6 +356,8 @@ class Dao(object):
         # HTML数据存储
         if 'text' in contype:
             store_data = content
+            length = len(content)
+            data_dict['length'] = length
 
         form_data = {
             'ip': '{}'.format(self.localIP),
@@ -555,7 +559,7 @@ class Dao(object):
     def delete_task_from_mysql(self, table, sha=None, url=None):
         self.timer.start()
         self._delete_task_from_mysql(table, sha, url)
-        self.logging.info('mysql | 数据库删除任务 | use time: {}'.format(self.timer.use_time()))
+        self.logging.info('mysql end | 数据库删除任务 | use time: {}'.format(self.timer.use_time()))
 
     # 物理删除mysql中任务
     def _delete_task_from_mysql(self, table, sha=None, url=None):
@@ -578,7 +582,7 @@ class Dao(object):
     def delete_logic_task_from_mysql(self, table, sha=None, url=None):
         self.timer.start()
         self._delete_logic_task_from_mysql(table, sha, url)
-        self.logging.info('mysql | 数据库逻辑删除任务 | use time: {}'.format(self.timer.use_time()))
+        self.logging.info('mysql end | 数据库逻辑删除任务 | use time: {}'.format(self.timer.use_time()))
 
     # 逻辑删除mysql中任务
     def _delete_logic_task_from_mysql(self, table, sha=None, url=None):
@@ -602,7 +606,7 @@ class Dao(object):
     def finish_task_from_mysql(self, table, sha=None, url=None):
         self.timer.start()
         self._finish_task_from_mysql(table, sha, url)
-        self.logging.info('mysql | 数据库任务已完成 | use time: {}'.format(self.timer.use_time()))
+        self.logging.info('mysql end | 数据库任务已完成 | use time: {}'.format(self.timer.use_time()))
 
     # mysql中已完成任务
     def _finish_task_from_mysql(self, table, sha=None, url=None):

@@ -25,29 +25,29 @@ class Downloader(downloader.BaseDownloader):
         self.proxy_enabled = proxy_enabled
         self.proxy_obj = proxy_client.ProxyPoolClient(logger=logging)
         self.cookie_obj = cookie_obj
-        self.timer = timers.Timer()
+        self.downloader_timer = timers.Timer()
 
     def get_resp(self, url, method, s=None, data=None, host=None, cookies=None, referer=None, ranges=None, user=None):
         self.logger.info('downloader start')
-        self.timer.start()
+        self.downloader_timer.start()
         ret = self._get_resp(url, method, s=s, data=data, host=host, cookies=cookies, referer=referer,
                              ranges=ranges, user=user)
         if not ret:
-            self.logger.info('downloader end | 下载失败 | use time: {}'.format(self.timer.use_time()))
+            self.logger.info('downloader end | 下载失败 | use time: {}'.format(self.downloader_timer.use_time()))
             return
 
         if ret['code'] == 2:
-            msg = 'downloader end | 下载失败, 页面响应失败, msg: {} | use time: {}'.format(ret['message'], self.timer.use_time())
+            msg = 'downloader end | 下载失败, 页面响应失败, msg: {} | use time: {}'.format(ret['message'], self.downloader_timer.use_time())
             self.logger.error(msg)
             return
 
         if ret['code'] == 1:
             msg = 'downloader end | 下载失败, 页面响应状态码错误, status: {} | use time: {}'.format(ret['status'],
-                                                                                       self.timer.use_time())
+                                                                                       self.downloader_timer.use_time())
             self.logger.error(msg)
             return ret
 
-        self.logger.info('downloader end | 下载成功 | use time: {}'.format(self.timer.use_time()))
+        self.logger.info('downloader end | 下载成功 | use time: {}'.format(self.downloader_timer.use_time()))
         return ret
 
     def _get_resp(self, url, method, s=None, data=None, host=None, cookies=None, referer=None, ranges=None, user=None):
@@ -89,15 +89,17 @@ class Downloader(downloader.BaseDownloader):
             down_data = self.begin(session=s, url=url, method=method, data=data, headers=headers, proxies=proxies,
                                    cookies=cookies)
 
-            if down_data is None:
-                return
-
-            # 返回值中添加IP信息
-            down_data['proxy_ip'] = ip
             # 释放代理
             self.proxy_obj.release_proxy(ip, down_data['code'] == 0 or down_data['code'] == 1)
 
             # 判断
+            if down_data is None:
+
+                return
+
+            # 返回值中添加IP信息
+            down_data['proxy_ip'] = ip
+
             if down_data['code'] == 0:
                 return down_data
 
