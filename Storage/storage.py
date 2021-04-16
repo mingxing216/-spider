@@ -284,20 +284,16 @@ class Dao(object):
             respon = json.loads(resp)
             if respon['resultCode'] == 0:
                 for data in data_list:
-                    entity_data = json.dumps(data, ensure_ascii=False)
-                    b_data = entity_data.encode('utf-8')
                     self.logging.info(
-                        'storage | Save data to Hbase | use time: {} | status: OK | sha: {} | length: {} | memo: {}'.format(
-                            data_start.use_time(), data.get('sha'), len(b_data), resp))
+                        'storage | Save data to Hbase | use time: {} | status: OK | sha: {} | ss: {} | memo: {}'.format(
+                            data_start.use_time(), data.get('sha'), data.get('ss'), resp))
                 return True
 
             else:
                 for data in data_list:
-                    entity_data = json.dumps(data, ensure_ascii=False)
-                    b_data = entity_data.encode('utf-8')
                     self.logging.error(
-                        'storage | Save data to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
-                            data_start.use_time(), data.get('sha'), len(b_data), resp))
+                        'storage | Save data to Hbase | use time: {} | status: NO | sha: {} | ss: {} | memo: {}'.format(
+                            data_start.use_time(), data.get('sha'), data.get('ss'), resp))
                 return False
 
         except Exception as e:
