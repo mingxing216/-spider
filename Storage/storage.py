@@ -35,10 +35,11 @@ class Dao(object):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'}
         # 获取本机IP，存储使用
         while True:
-            self.localIP = ProxyPoolClient.get_local_ip()
-            if not self.localIP:
+            local_ip = ProxyPoolClient.get_local_ip()
+            if not local_ip:
                 continue
             else:
+                self.local_ip = '{}'.format(local_ip)
                 break
 
         if int(mysqlpool_number) == 0 or int(mysqlpool_number) < 0:
@@ -269,8 +270,8 @@ class Dao(object):
     def __save_data_to_hbase(self, data_list):
         save_data = json.dumps(data_list, ensure_ascii=False)
         # 将待存储数据编码成二进制数据
-        url = '{}'.format(settings.SAVE_HBASE_DATA_URL)
-        form_data = {'ip': '{}'.format(self.localIP),
+        url = settings.SAVE_HBASE_DATA_URL
+        form_data = {'ip': self.local_ip,
                      'wid': 'python',
                      'ref': '',
                      'list': save_data}
@@ -321,7 +322,7 @@ class Dao(object):
 
     # 保存流媒体到hbase
     def __save_media_to_hbase(self, media_url, content, item, type, length=None, contype=None):
-        url = '{}'.format(settings.SAVE_HBASE_MEDIA_URL)
+        url = settings.SAVE_HBASE_MEDIA_URL
         sha = hashlib.sha1(media_url.encode('utf-8')).hexdigest()
 
         data_dict = {
@@ -340,19 +341,19 @@ class Dao(object):
         if 'image' in contype:
             # 二进制图片文件转成base64文件
             content_bs64 = base64.b64encode(content)
-            length = len(content_bs64)
+            length = len(content)
             # 内存中打开图片
             img = Image.open(BytesIO(content))
             data_dict['natural_height'] = "{}".format(img.height)
             data_dict['natural_width'] = "{}".format(img.width)
             data_dict['length'] = length
-            store_data = "{}".format(content_bs64.decode('utf-8'))
+            store_data = content_bs64.decode('utf-8')
         # 文档存储
         if 'pdf' in contype:
             # 二进制文件转成base64文件
             content_bs64 = base64.b64encode(content)
             data_dict['length'] = length
-            store_data = "{}".format(content_bs64.decode('utf-8'))
+            store_data = content_bs64.decode('utf-8')
         # HTML数据存储
         if 'text' in contype:
             store_data = content
@@ -360,7 +361,7 @@ class Dao(object):
             data_dict['length'] = length
 
         form_data = {
-            'ip': '{}'.format(self.localIP),
+            'ip': self.local_ip,
             'type': type,
             'url': media_url,
             'content': store_data,
