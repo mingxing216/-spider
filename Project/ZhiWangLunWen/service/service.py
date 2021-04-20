@@ -1974,7 +1974,7 @@ class LunWen_Data(Service):
                 for a in a_list:
                     e = {}
                     onclick = a.xpath("./@onclick").extract_first()
-                    href = a.xpath("./@href").extract_first().strip()
+                    href = a.xpath("./@href").extract_first()
                     if onclick:
                         onclick = ast.literal_eval(re.findall(r"TurnPageToKnet.*?(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
@@ -1989,7 +1989,7 @@ class LunWen_Data(Service):
                         e['ss'] = '人物'
                         return_data.append(e)
                     elif href:
-                        url = 'https://kns.cnki.net' + href
+                        url = 'https://kns.cnki.net' + href.strip()
                         name = a.xpath("./text()").extract_first().strip()
                         e['name'] = name
                         e['url'] = url
@@ -1998,6 +1998,7 @@ class LunWen_Data(Service):
                         e['key'] = '中国知网|{}'.format(para)
                         e['sha'] = hashlib.sha1(e['key'].encode('utf-8')).hexdigest()
                         e['ss'] = '人物'
+                        return_data.append(e)
                     else:
                         continue
 
@@ -2015,7 +2016,7 @@ class LunWen_Data(Service):
                 for a in a_list:
                     e = {}
                     onclick = a.xpath("./@onclick").extract_first()
-                    href = a.xpath("./@href").extract_first().strip()
+                    href = a.xpath("./@href").extract_first()
                     if onclick:
                         onclick = ast.literal_eval(re.findall(r"TurnPageToKnet.*?(\(.*\))", onclick)[0])
                         url = 'https://kns.cnki.net/kcms/detail/knetsearch.aspx?sfield={}&skey={}&code={}'.format(
@@ -2030,7 +2031,7 @@ class LunWen_Data(Service):
                         e['ss'] = '机构'
                         return_data.append(e)
                     elif href:
-                        url = 'https://kns.cnki.net' + href
+                        url = 'https://kns.cnki.net' + href.strip()
                         name = a.xpath("./text()").extract_first().strip()
                         e['name'] = name
                         e['url'] = url
@@ -2039,6 +2040,7 @@ class LunWen_Data(Service):
                         e['key'] = '中国知网|{}'.format(para)
                         e['sha'] = hashlib.sha1(e['key'].encode('utf-8')).hexdigest()
                         e['ss'] = '机构'
+                        return_data.append(e)
                     else:
                         continue
 
