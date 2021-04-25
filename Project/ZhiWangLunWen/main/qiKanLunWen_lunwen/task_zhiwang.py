@@ -79,110 +79,119 @@ class SpiderMain(BaseSpiderMain):
             # category = '{"url": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=LDXU", "s_xueKeLeiBie": "基础科学_物理学|信息科技_无线电电子学", "s_zhongWenHeXinQiKanMuLu": "第四编 自然科学_物理", "sha": "291486f783b472c705e8831d0e669c26f2b7777f"}'
             # print(category)
             if category:
+                try:
+                    # # 获取cookie
+                    # self._get_resp(url=self.index_url, method='GET')
+                    # 数据类型转换
+                    task = json.loads(category)
+                    # print(task)
+                    # 保存线程中的任务种子到临时队列
+                    self.spi_dao.queue_one_task_to_redis(key=config.REDIS_CATALOG_TEMP, data=task)
 
-                # # 获取cookie
-                # self._get_resp(url=self.index_url, method='GET')
-                # 数据类型转换
-                task = json.loads(category)
-                # print(task)
-                # 保存线程中的任务种子到临时队列
-                self.spi_dao.queue_one_task_to_redis(key=config.REDIS_CATALOG_TEMP, data=task)
+                    qikan_url = task.get('url')
+                    qikan_sha = task.get('sha')
+                    xueke_leibie = task.get('s_xueKeLeiBie')
 
-                qikan_url = task.get('url')
-                qikan_sha = task.get('sha')
-                xueke_leibie = task.get('s_xueKeLeiBie')
+                    # # 创建cookies
+                    # self._get_resp(url=qikan_url, method='GET', s=self.s)
+                    # # 设置会话cookies
+                    # print(self.s.cookies)
 
-                # # 创建cookies
-                # self._get_resp(url=qikan_url, method='GET', s=self.s)
-                # # 设置会话cookies
-                # print(self.s.cookies)
+                    # 生成单个知网期刊的时间列表种子
+                    qikan_time_list_url, pcode, pykm = self.server.qikan_time_list_url(qikan_url, self.qikan_time_url)
+                    # print(qikan_time_list_url, pcode, pykm)
+                    # 获取期刊时间列表页html源码
+                    if qikan_time_list_url:
+                        # 获取期刊【年】、【期】列表
+                        # 循环获取指定年、期页文章列表页种子
+                        # 判断附加信息中是否有年期列表
+                        if task.get('issues_list'):
+                            issues_list = task.get('issues_list')
+                        else:
+                            qikanTimeListHtml = self._get_resp(url=qikan_time_list_url, method='GET',
+                                                               host='navi.cnki.net')
+                            if qikanTimeListHtml is None:
+                                logger.error('catalog | 期刊时间列表页获取失败, url: {}'.format(qikan_time_list_url))
+                                # 删除临时队列中该种子
+                                self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
+                                # 队列一条任务
+                                self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                                continue
 
-                # 生成单个知网期刊的时间列表种子
-                qikan_time_list_url, pcode, pykm = self.server.qikan_time_list_url(qikan_url, self.qikan_time_url)
-                # print(qikan_time_list_url, pcode, pykm)
-                # 获取期刊时间列表页html源码
-                if qikan_time_list_url:
-                    # 获取期刊【年】、【期】列表
-                    # 循环获取指定年、期页文章列表页种子
-                    # 判断附加信息中是否有年期列表
-                    if task.get('issues_list'):
-                        issues_list = task.get('issues_list')
-                    else:
-                        qikanTimeListHtml = self._get_resp(url=qikan_time_list_url, method='GET',
-                                                           host='navi.cnki.net')
-                        if qikanTimeListHtml is None:
-                            logger.error('catalog | 期刊时间列表页获取失败, url: {}'.format(qikan_time_list_url))
+                            if not qikanTimeListHtml['data']:
+                                logger.error('catalog | 期刊时间列表页获取失败, url: {}'.format(qikan_time_list_url))
+                                # 删除临时队列中该种子
+                                self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
+                                # 队列一条任务
+                                self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                                continue
+
+                            issues_list = self.server.get_qikan_time_list(qikanTimeListHtml['data'])
+
+                        if issues_list is None:
                             # 删除临时队列中该种子
                             self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
-                            # 队列一条任务
-                            self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                             continue
 
-                        if not qikanTimeListHtml['data']:
-                            logger.error('catalog | 期刊时间列表页获取失败, url: {}'.format(qikan_time_list_url))
-                            # 删除临时队列中该种子
-                            self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
-                            # 队列一条任务
-                            self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
-                            continue
+                        if issues_list:
+                            for year_issue in issues_list:
+                                # 获取文章列表页种子
+                                article_url = self.server.get_article_list_url(url=self.lunwen_url,
+                                                                               data=year_issue,
+                                                                               pcode=pcode,
+                                                                               pykm=pykm)
+                                # print(article_url)
+                                # 获取论文列表页html源码
+                                if article_url:
+                                    article_list_html = self._get_resp(url=article_url, method='GET', host='navi.cnki.net')
+                                    if article_list_html is None:
+                                        logger.error('catalog | 论文列表页html源码获取失败, url: {}'.format(article_url))
+                                        # 删除临时队列中该种子
+                                        self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
+                                        # 队列一条任务
+                                        issue_index = issues_list.index(year_issue)
+                                        task['issues_list'] = issues_list[issue_index:]
+                                        self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                                        break
 
-                        issues_list = self.server.get_qikan_time_list(qikanTimeListHtml['data'])
+                                    if not article_list_html['data']:
+                                        logger.error('catalog | 论文列表页html源码获取失败, url: {}'.format(article_url))
+                                        # 删除临时队列中该种子
+                                        self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
+                                        # 队列一条任务
+                                        issue_index = issues_list.index(year_issue)
+                                        task['issues_list'] = issues_list[issue_index:]
+                                        self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                                        break
 
-                    if issues_list is None:
-                        # 删除临时队列中该种子
-                        self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
-                        continue
+                                    if '暂无目录信息' in article_list_html['data'].text:
+                                        logger.error('catalog | 列表页无内容, url: {}'.format(article_url))
+                                        continue
 
-                    if issues_list:
-                        for year_issue in issues_list:
-                            # 获取文章列表页种子
-                            article_url = self.server.get_article_list_url(url=self.lunwen_url,
-                                                                           data=year_issue,
-                                                                           pcode=pcode,
-                                                                           pykm=pykm)
-                            # print(article_url)
-                            # 获取论文列表页html源码
-                            if article_url:
-                                article_list_html = self._get_resp(url=article_url, method='GET', host='navi.cnki.net')
-                                if article_list_html is None:
-                                    logger.error('catalog | 论文列表页html源码获取失败, url: {}'.format(article_url))
-                                    # 删除临时队列中该种子
-                                    self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
-                                    # 队列一条任务
-                                    issue_index = issues_list.index(year_issue)
-                                    task['issues_list'] = issues_list[issue_index:]
-                                    self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
-                                    break
-
-                                if not article_list_html['data']:
-                                    logger.error('catalog | 论文列表页html源码获取失败, url: {}'.format(article_url))
-                                    # 删除临时队列中该种子
-                                    self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
-                                    # 队列一条任务
-                                    issue_index = issues_list.index(year_issue)
-                                    task['issues_list'] = issues_list[issue_index:]
-                                    self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
-                                    break
-
-                                if '暂无目录信息' in article_list_html['data'].text:
-                                    logger.error('catalog | 列表页无内容, url: {}'.format(article_url))
-                                    continue
-
-                                # 获取论文详情种子
-                                article_url_list = self.server.get_article_url_list(article_list_html['data'],
-                                                                                    qikan_url, xueke_leibie, year_issue)
-                                if article_url_list:
-                                    for paper_url in article_url_list:
-                                        # print(paper_url)
-                                        # 存储种子
-                                        self.num += 1
-                                        logger.info('profile | 已抓种子数量: {}'.format(self.num))
-                                        paper_sha = hashlib.sha1(paper_url.get('url').encode('utf-8')).hexdigest()
-                                        mysql_paper = 'job_paper_{}'.format(paper_sha[0])
-                                        self.sto_dao.save_task_to_mysql(table=mysql_paper, memo=paper_url, ws='中国知网',
-                                                                        es='期刊论文')
+                                    # 获取论文详情种子
+                                    article_url_list = self.server.get_article_url_list(article_list_html['data'],
+                                                                                        qikan_url, xueke_leibie, year_issue)
+                                    if article_url_list:
+                                        for paper_url in article_url_list:
+                                            # print(paper_url)
+                                            # 存储种子
+                                            self.num += 1
+                                            logger.info('profile | 已抓种子数量: {}'.format(self.num))
+                                            paper_sha = hashlib.sha1(paper_url.get('url').encode('utf-8')).hexdigest()
+                                            mysql_paper = 'job_paper_{}'.format(paper_sha[0])
+                                            self.sto_dao.save_task_to_mysql(table=mysql_paper, memo=paper_url, ws='中国知网',
+                                                                            es='期刊论文')
+                                    else:
+                                        logger.error('profile | 详情种子获取失败, url: {}'.format(article_url))
+                                        # 删除临时队列中该种子
+                                        self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
+                                        # 队列一条任务
+                                        issue_index = issues_list.index(year_issue)
+                                        task['issues_list'] = issues_list[issue_index:]
+                                        self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                                        break
                                 else:
-                                    logger.error('profile | 详情种子获取失败, url: {}'.format(article_url))
+                                    logger.error('catalog | 论文{}年{}期列表页获取失败'.format(year_issue[0], year_issue[1]))
                                     # 删除临时队列中该种子
                                     self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
                                     # 队列一条任务
@@ -191,27 +200,22 @@ class SpiderMain(BaseSpiderMain):
                                     self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                                     break
                             else:
-                                logger.error('catalog | 论文{}年{}期列表页获取失败'.format(year_issue[0], year_issue[1]))
+                                logger.info('catalog | 年、期列表获取完毕, url: {}'.format(qikan_url))
                                 # 删除临时队列中该种子
                                 self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
-                                # 队列一条任务
-                                issue_index = issues_list.index(year_issue)
-                                task['issues_list'] = issues_list[issue_index:]
-                                self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
-                                break
+                                # 已完成任务
+                                self.spi_dao.finish_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=qikan_sha)
                         else:
-                            logger.info('catalog | 年、期列表获取完毕, url: {}'.format(qikan_url))
+                            logger.error('catalog | 年、期列表获取失败, url: {}'.format(qikan_url))
                             # 删除临时队列中该种子
                             self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
-                            # 已完成任务
-                            self.spi_dao.finish_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=qikan_sha)
-                    else:
-                        logger.error('catalog | 年、期列表获取失败, url: {}'.format(qikan_url))
-                        # 删除临时队列中该种子
-                        self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
-                        # 队列一条任务
-                        self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
-                        continue
+                            # 队列一条任务
+                            self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
+                            continue
+
+                except Exception:
+                    continue
+
             else:
                 logger.info('task | 队列中已无任务，结束程序 | use time: {}'.format(self.timer.use_time()))
                 return
@@ -235,16 +239,16 @@ class SpiderMain(BaseSpiderMain):
 
 
 def queue_task():
-    main = SpiderMain()
     try:
+        main = SpiderMain()
         main.queue_catalog()
     except:
         logger.exception(str(traceback.format_exc()))
 
 
 def start():
-    main = SpiderMain()
     try:
+        main = SpiderMain()
         main.run()
     except:
         logger.exception(str(traceback.format_exc()))
