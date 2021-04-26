@@ -463,7 +463,7 @@ class LunWen_Data(Service):
     def get_abstract(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            abstract = selector.xpath("//span[@class='abstract-text']/text()").extract_first()
+            abstract = selector.xpath("//span[@class='abstract-text']").extract_first()
 
         except Exception:
             abstract = ''
