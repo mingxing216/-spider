@@ -3,15 +3,15 @@
 """
 
 """
-import sys
-import os
-import json
 import base64
-from PIL import Image
-from io import BytesIO
 import hashlib
-import requests
+import json
+import os
 import re
+import sys
+import requests
+from io import BytesIO
+from PIL import Image
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
@@ -198,13 +198,17 @@ class Dao(object):
 
         data_list = self.mysql_client.get_results(sql=sql)
 
-        self.logging.info('mysql | 已从Mysql获取到{}个任务 | use time: {}'.format(len(data_list), self.timer.use_time()))
+        # 进入redis队列的数据，在mysql数据库中改变`del`字段值为'1'，表示正在执行，同时更新时间
+        sha_list = []
+        for data in data_list:
+            sha_list.append(data.get('sha'))
+        # date_updated = timeutils.get_now_datetime()
 
-        # 进入redis队列的数据，在mysql数据库中改变`del`字段值为'1'，表示正在执行
-        # for data in data_list:
-        #     sha = data['sha']
-        #     set = {'del': '1'}
-        #     self.mysql_client.update(table, data=set, where="`sha` = '{}'".format(sha))
+        update_sql = "update {table} set `del` = '1' where `sha` = %s".format(table=table)
+        self.mysql_client.execute_many(sql=update_sql, data=sha_list)
+
+        self.logging.info(
+            'mysql | 已从Mysql获取到{}个任务, 种子状态更新 | use time: {}'.format(len(data_list), self.timer.use_time()))
 
         return data_list
 
@@ -562,7 +566,7 @@ class Dao(object):
     def _delete_task_from_mysql(self, table, sha=None, url=None):
         if sha:
             try:
-                sql = "delete from {} where `sha` = '{}' and `del` = '0'".format(table, sha)
+                sql = "delete from {} where `sha` = '{}'".format(table, sha)
                 self.mysql_client.get_result(sql=sql)
                 self.logging.info('mysql | 数据库任务已删除: {}'.format(sha))
             except:
@@ -570,7 +574,7 @@ class Dao(object):
 
         elif url:
             try:
-                sql = "delete from {} where `url` = '{}' and `del` = '0'".format(table, url)
+                sql = "delete from {} where `url` = '{}'".format(table, url)
                 self.mysql_client.get_result(sql=sql)
                 self.logging.info('mysql | 数据库任务已删除: {}'.format(url))
             except:
@@ -584,18 +588,18 @@ class Dao(object):
     # 逻辑删除mysql中任务
     def _delete_logic_task_from_mysql(self, table, sha=None, url=None):
         data = {
-            'del': '1'
+            'del': '3'
         }
         if sha:
             try:
-                self.mysql_client.update(table=table, data=data, where="`sha` = '{}' and `del` = '0'".format(sha))
+                self.mysql_client.update(table=table, data=data, where="`sha` = '{}'".format(sha))
                 self.logging.info('mysql | 数据库任务已逻辑删除: {}'.format(sha))
             except:
                 self.logging.warning('mysql | 数据库任务逻辑删除异常: {}'.format(sha))
 
         elif url:
             try:
-                self.mysql_client.update(table=table, data=data, where="url = '{}' and `del` = '0'".format(url))
+                self.mysql_client.update(table=table, data=data, where="`url` = '{}'".format(url))
                 self.logging.info('mysql | 数据库任务已逻辑删除: {}'.format(url))
             except:
                 self.logging.warning('mysql | 数据库任务逻辑删除异常: {}'.format(url))
@@ -612,14 +616,14 @@ class Dao(object):
         }
         if sha:
             try:
-                self.mysql_client.update(table=table, data=data, where="`sha` = '{}' and `del` = '0'".format(sha))
+                self.mysql_client.update(table=table, data=data, where="`sha` = '{}'".format(sha))
                 self.logging.info('mysql | 数据库任务已完成: {}'.format(sha))
             except:
                 self.logging.warning('mysql | 数据库已完成任务标记异常: {}'.format(sha))
 
         elif url:
             try:
-                self.mysql_client.update(table=table, data=data, where="url = '{}' and `del` = '0'".format(url))
+                self.mysql_client.update(table=table, data=data, where="`url` = '{}'".format(url))
                 self.logging.info('mysql | 数据库任务已完成: {}'.format(url))
             except:
                 self.logging.warning('mysql | 数据库已完成任务标记异常: {}'.format(url))

@@ -432,12 +432,12 @@ class SpiderMain(BastSpiderMain):
             task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
             # task = '{"theme": "基础医学研究", "url": "https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=CKYK202106013&dbname=CJFDLAST2021", "xiaZai": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=n8sbjTFvPSUrNDkHGGwa1ho8r3UKR0Eg1blqUAXs46uVtWbBkzCDkcKJ5VmGgPhX&tableName=CJFDLAST2017", "zaiXianYueDu": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=SYKQ201705008&tablename=CJFDLAST2017&filetype=XML;EPUB;", "xueKeLeiBie": "医药卫生科技_口腔科学", "parentUrl": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=SYKQ", "year": "2017", "issue": "05", "sha": "047fe93efaba692553e3eab9ff38bd58bbb593e2"}'
             if task:
+                # 创建数据存储列表
+                data_list = []
+                # json数据类型转换
+                task_data = json.loads(task)
+                sha = task_data.get('sha')
                 try:
-                    # 创建数据存储列表
-                    data_list = []
-                    # json数据类型转换
-                    task_data = json.loads(task)
-                    sha = task_data['sha']
                     # 获取字段值存入字典并返回sha
                     self.handle(task_data=task_data, data_list=data_list)
                     # 保存数据到Hbase
@@ -469,6 +469,8 @@ class SpiderMain(BastSpiderMain):
 
                 except:
                     logger.exception(str(traceback.format_exc()))
+                    # 逻辑删除任务
+                    self.dao.delete_logic_task_from_mysql(table=config.MYSQL_PAPER, sha=sha)
                     logger.error('task end | task failed | use time: {}'.format(task_timer.use_time()))
             else:
                 logger.info('task | 队列中已无任务')
