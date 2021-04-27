@@ -213,7 +213,8 @@ class SpiderMain(BaseSpiderMain):
                             self.spi_dao.queue_one_task_to_redis(key=config.REDIS_QIKAN_CATALOG, data=task)
                             continue
 
-                except Exception:
+                except Exception as e:
+                    logger.error('except | 执行错误: {}'.format(e))
                     continue
 
             else:

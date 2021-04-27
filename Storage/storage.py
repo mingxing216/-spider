@@ -105,41 +105,45 @@ class Dao(object):
         else:
             # self.logging.warning('种子已存在: {}'.format(sha))
             # 从mysql数据库中取出该种子
-            if ctx == data_status['ctx']:
+            if ctx == data_status.get('ctx'):
                 self.logging.warning('mysql | 种子已存在: {}'.format(sha))
                 return True
 
             else:
-                old_ctx = json.loads(data_status['ctx'])
-                # 遍历新ctx中的key,value值
-                for k, v in memo.items():
-                    # 遍历旧的key,value值
-                    for m, n in old_ctx.items():
-                        # 判断新的key值是否以's_'开头，并且value是字符串
-                        if k.startswith('s_') and isinstance(v, str):
-                            if k == m:
-                                if v not in n:
-                                    if n == '':
-                                        old_ctx[k] = v
+                str_ctx = data_status.get('ctx')
+                if str_ctx:
+                    old_ctx = json.loads(str_ctx)
+                    # 遍历新ctx中的key,value值
+                    for k, v in memo.items():
+                        # 遍历旧的key,value值
+                        for m, n in old_ctx.items():
+                            # 判断新的key值是否以's_'开头，并且value是字符串
+                            if k.startswith('s_') and isinstance(v, str):
+                                if k == m:
+                                    if v not in n:
+                                        if n == '':
+                                            old_ctx[k] = v
+                                        else:
+                                            old_ctx[k] = n + '|' + v
+                                        break
                                     else:
-                                        old_ctx[k] = n + '|' + v
+                                        break
+                                else:
+                                    continue
+                            else:
+                                if k == m:
+                                    old_ctx[k] = v
                                     break
                                 else:
-                                    break
-                            else:
-                                continue
+                                    continue
                         else:
-                            if k == m:
-                                old_ctx[k] = v
-                                break
-                            else:
-                                continue
-                    else:
-                        old_ctx[k] = v
-                # print(old_ctx)
+                            old_ctx[k] = v
+                    # print(old_ctx)
+                    # 存储新种子
+                    new_ctx = json.dumps(old_ctx, ensure_ascii=False)
+                else:
+                    new_ctx = json.dumps(memo, ensure_ascii=False)
 
-                # 存储新种子
-                new_ctx = json.dumps(old_ctx, ensure_ascii=False)
                 newdata = {
                     'sha': sha,
                     'ctx': new_ctx,

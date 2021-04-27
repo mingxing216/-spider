@@ -2888,17 +2888,16 @@ class QiKanLunWen_LunWen(Service):
             if dl_list:
                 for dl in dl_list:
                     year = dl.xpath("./dt/em/text()").extract_first().strip()
-                    # 只获取2014-2000年份的期刊论文
-                    if int(year) >= 2000:
-                        continue
+                    # # 只获取2014-2000年份的期刊论文
+                    # if int(year) >= 2000:
+                    #     continue
 
-                    if int(year) < 2000:
-                        stage_list = dl.xpath("./dd/a/text()").extract()  # 期列表
-                        for stage in stage_list:
-                            issue = re.findall(r'No\.(.*)', stage)[0]
-                            issues_list.append((year, issue))
-                    else:
-                        break
+                    stage_list = dl.xpath("./dd/a/text()").extract()  # 期列表
+                    for stage in stage_list:
+                        issue = re.findall(r'No\.(.*)', stage)[0]
+                        issues_list.append((year, issue))
+                    # else:
+                    #     break
 
                 if not issues_list:
                     return
