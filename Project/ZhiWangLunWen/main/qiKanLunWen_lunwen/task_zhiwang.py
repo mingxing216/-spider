@@ -71,12 +71,27 @@ class SpiderMain(BaseSpiderMain):
         else:
             return
 
+    def remove_duplicate(self, old_list, new_list):
+        new_issue_list = []
+        old_issue_list = []
+        for old in old_list:
+            old_tuple = []
+            for v in old.values():
+                old_tuple.append(v)
+            old_issue_list.append(tuple(old_tuple))
+
+        for new_issue in new_list:
+            if new_issue not in old_issue_list:
+                new_issue_list.append(new_issue)
+                
+        return new_issue_list
+
     def run(self):
         self.timer.start()
         while True:
             # 获取任务
             category = self.spi_dao.get_one_task_from_redis(key=config.REDIS_QIKAN_CATALOG)
-            # category = '{"url": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=LDXU", "s_xueKeLeiBie": "基础科学_物理学|信息科技_无线电电子学", "s_zhongWenHeXinQiKanMuLu": "第四编 自然科学_物理", "sha": "291486f783b472c705e8831d0e669c26f2b7777f"}'
+            # category = '{"url": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=JYJX", "sha": "725f5c55d58f0b8871078b00de7c4284d9c66e19", "s_xueKeLeiBie": "医药卫生科技_医药卫生综合", "s_zhongWenHeXinQiKanMuLu": ""}'
             # print(category)
             if category:
                 try:
@@ -127,6 +142,23 @@ class SpiderMain(BaseSpiderMain):
                                 continue
 
                             issues_list = self.server.get_qikan_time_list(qikanTimeListHtml['data'])
+                            if issues_list:
+                                # 参数
+                                journal_info = ['中国知网', pykm, qikan_url, '张明星']
+                                # 从mysql获取该期刊年卷期信息
+                                year_issue_list = self.sto_dao.get_journal_info_from_mysql(table=config.MYSQL_JOURNAL_INFO,
+                                                                                           ws='中国知网', journal_id=pykm)
+                                if not year_issue_list:
+                                    self.sto_dao.record_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
+                                                                              data=issues_list,
+                                                                              para = journal_info)
+                                # else:
+                                #     issues_list = self.remove_duplicate(year_issue_list, issues_list)
+                                #     if issues_list:
+                                #         self.sto_dao.record_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
+                                #                                                   data=issues_list,
+                                #                                                   para=journal_info)
+
 
                         if issues_list is None:
                             # 删除临时队列中该种子
@@ -203,6 +235,8 @@ class SpiderMain(BaseSpiderMain):
                                 logger.info('catalog | 年、期列表获取完毕, url: {}'.format(qikan_url))
                                 # 删除临时队列中该种子
                                 self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
+                                # 更新mysql存储表中年期状态
+                                self.sto_dao.update_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO, data=pykm)
                                 # 已完成任务
                                 self.spi_dao.finish_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=qikan_sha)
                         else:

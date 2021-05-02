@@ -4,6 +4,7 @@
 
 """
 import base64
+import copy
 import hashlib
 import json
 import os
@@ -161,6 +162,45 @@ class Dao(object):
                 except Exception as e:
                     self.logging.warning('mysql | 种子更新警告: {}, {}'.format(e, ctx))
                     return False
+
+    # 期刊年卷期信息批量登记到mysql表中
+    def record_journal_info_to_mysql(self, table, data, para):
+        self.timer.start()
+        data_list = []
+        date = timeutils.get_now_datetime()
+        para.append(date)
+        para.append(date)
+        for info in data:
+            info_list = copy.deepcopy(para)
+            for issue in info:
+                info_list.append(issue)
+            data_list.append(info_list)
+
+        journal_field = ['ws', 'journal_id', 'url', 'create_owner', 'created', 'updated', 'year', 'issue']
+        sql = "insert into {table} ({name}) values (%s, %s, %s, %s, %s, %s, %s, %s)".format(
+            table=table, name=', '.join(journal_field))
+
+        self.mysql_client.execute_many(sql, data_list)
+        self.logging.info('mysql | 已插入到Mysql表中 | use time: {}'.format(self.timer.use_time()))
+
+    # 更新mysql存储表状态
+    def update_journal_info_to_mysql(self, table, data):
+        self.timer.start()
+        date_updated = timeutils.get_now_datetime()
+        sql = "update {table} set `stat` = 2, `updated` = '{update}' where `journal_id` = %s".format(table=table, update=date_updated)
+
+        self.mysql_client.execute_many(sql, data)
+        self.logging.info('mysql | 已更改Mysql表状态 | use time: {}'.format(self.timer.use_time()))
+
+    # 获取期刊年卷期信息
+    def get_journal_info_from_mysql(self, table, ws, journal_id):
+        self.timer.start()
+        sql = "select `year`, `issue` from {} where `ws` = '{}' and `journal_id` = '{}'".format(table, ws, journal_id)
+
+        data_list = self.mysql_client.get_results(sql=sql)
+        self.logging.info('mysql | 已从Mysql获取到 {} 条年卷期 | use time: {}'.format(len(data_list), self.timer.use_time()))
+
+        return data_list
 
     # 更新mysql种子状态
     def update_task_to_mysql(self, table, data, sha):
