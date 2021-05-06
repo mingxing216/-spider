@@ -10,8 +10,9 @@ import json
 import os
 import re
 import sys
-import requests
 from io import BytesIO
+
+import requests
 from PIL import Image
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
@@ -184,13 +185,13 @@ class Dao(object):
         self.logging.info('mysql | 已插入到Mysql表中 | use time: {}'.format(self.timer.use_time()))
 
     # 更新mysql存储表状态
-    def update_journal_info_to_mysql(self, table, data):
+    def update_journal_info_to_mysql(self, table, journal_id, year, issue):
         self.timer.start()
-        date_updated = timeutils.get_now_datetime()
-        sql = "update {table} set `stat` = 2, `updated` = '{update}' where `journal_id` = %s".format(table=table, update=date_updated)
+        sql = "update {} set `stat` = 2, `updated` = now() where `journal_id` = '{}' and `year` = '{}' and `issue` = '{}'".format(
+            table, journal_id, year, issue)
 
-        self.mysql_client.execute_many(sql, data)
-        self.logging.info('mysql | 已更改Mysql表状态 | use time: {}'.format(self.timer.use_time()))
+        self.mysql_client.execute_one(sql)
+        self.logging.info('mysql | 已更改Mysql表状态, {} {} {} | use time: {}'.format(journal_id, year, issue, self.timer.use_time()))
 
     # 获取期刊年卷期信息
     def get_journal_info_from_mysql(self, table, ws, journal_id):
@@ -674,4 +675,16 @@ class Dao(object):
 
 
 if __name__ == '__main__':
-    pass
+    from Log import logging
+    from settings import STO_HOST, STO_PORT, STO_USER, STO_PASS, STO_NAME
+
+    LOG_FILE_DIR = 'ZhiWangLunWen'  # LOG日志存放路径
+    LOG_NAME = '期刊论文_task'  # LOG名
+    logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
+
+    sto_dao = Dao(logging=logger,
+                  host=STO_HOST, port=STO_PORT, user=STO_USER, pwd=STO_PASS, db=STO_NAME,
+                  mysqlpool_number=5,
+                  redispool_number=5)
+
+    sto_dao.update_journal_info_to_mysql(table='journal_info', journal_id='GYYZ', year='2020', issue='03')

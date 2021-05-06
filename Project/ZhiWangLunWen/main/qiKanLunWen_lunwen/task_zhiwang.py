@@ -213,6 +213,13 @@ class SpiderMain(BaseSpiderMain):
                                             mysql_paper = 'job_paper_{}'.format(paper_sha[0])
                                             self.sto_dao.save_task_to_mysql(table=mysql_paper, memo=paper_url, ws='中国知网',
                                                                             es='期刊论文')
+
+                                        # 更新mysql存储表中年期状态
+                                        self.sto_dao.update_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
+                                                                                  journal_id=pykm,
+                                                                                  year=year_issue[0],
+                                                                                  issue=year_issue[1])
+
                                     else:
                                         logger.error('profile | 详情种子获取失败, url: {}'.format(article_url))
                                         # 删除临时队列中该种子
@@ -235,8 +242,6 @@ class SpiderMain(BaseSpiderMain):
                                 logger.info('catalog | 年、期列表获取完毕, url: {}'.format(qikan_url))
                                 # 删除临时队列中该种子
                                 self.spi_dao.remove_one_task_from_redis(key=config.REDIS_CATALOG_TEMP, data=task)
-                                # 更新mysql存储表中年期状态
-                                self.sto_dao.update_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO, data=pykm)
                                 # 已完成任务
                                 self.spi_dao.finish_task_from_mysql(table=config.MYSQL_MAGAZINE, sha=qikan_sha)
                         else:

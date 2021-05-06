@@ -144,6 +144,23 @@ class MysqlPool(object):
             self.close()
 
     # 批量操作数据
+    def execute_one(self, sql):
+        """
+        :param table: 表名
+        :sql: 操作语句
+        """
+        try:
+            self.new_conn.execute(sql)
+            self._conn.commit()
+
+        except Exception as e:
+            self.logger.error('sql | 执行错误: {}'.format(e))
+            self._conn.rollback()
+
+        finally:
+            self.close()
+
+    # 批量操作数据
     def execute_many(self, sql, data):
         """
         :param table: 表名
