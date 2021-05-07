@@ -216,6 +216,7 @@ class SpiderMain(BaseSpiderMain):
 
                                         # 更新mysql存储表中年期状态
                                         self.sto_dao.update_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
+                                                                                  ws='中国知网',
                                                                                   journal_id=pykm,
                                                                                   year=year_issue[0],
                                                                                   issue=year_issue[1])

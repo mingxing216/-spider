@@ -187,10 +187,10 @@ class Dao(object):
         self.logging.info('mysql | {} 已插入到Mysql表中 | use time: {}'.format(origin_id, self.timer.use_time()))
 
     # 更新mysql存储表状态
-    def update_journal_info_to_mysql(self, table, journal_id, year, issue):
+    def update_journal_info_to_mysql(self, table, ws, journal_id, year, issue):
         self.timer.start()
-        sql = "update {} set `stat` = 2, `updated` = now() where `journal_id` = '{}' and `year` = '{}' and `issue` = '{}'".format(
-            table, journal_id, year, issue)
+        sql = "update {} set `stat` = 2, `updated` = now() where `ws` = '{}' and `journal_id` = '{}' and `year` = '{}' and `issue` = '{}'".format(
+            table, ws, journal_id, year, issue)
 
         self.mysql_client.execute_one(sql)
         self.logging.info('mysql | 已更改Mysql表状态, {} {} {} | use time: {}'.format(journal_id, year, issue, self.timer.use_time()))
