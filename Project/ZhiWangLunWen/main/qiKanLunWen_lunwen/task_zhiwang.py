@@ -152,12 +152,12 @@ class SpiderMain(BaseSpiderMain):
                                     self.sto_dao.record_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
                                                                               data=issues_list,
                                                                               para = journal_info)
-                                # else:
-                                #     issues_list = self.remove_duplicate(year_issue_list, issues_list)
-                                #     if issues_list:
-                                #         self.sto_dao.record_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
-                                #                                                   data=issues_list,
-                                #                                                   para=journal_info)
+                                else:
+                                    issues_list = self.remove_duplicate(year_issue_list, issues_list)
+                                    if issues_list:
+                                        self.sto_dao.record_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
+                                                                                  data=issues_list,
+                                                                                  para=journal_info)
 
 
                         if issues_list is None:

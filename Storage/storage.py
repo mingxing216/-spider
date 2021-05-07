@@ -171,18 +171,20 @@ class Dao(object):
         date = timeutils.get_now_datetime()
         para.append(date)
         para.append(date)
+        origin_id = para[0] + '_' + para[1]
         for info in data:
             info_list = copy.deepcopy(para)
-            for issue in info:
-                info_list.append(issue)
+            info_list.append(info[0])
+            info_list.append(info[1])
+            info_list.append(origin_id + '_' + info[0] + '_' + info[1])
             data_list.append(info_list)
 
-        journal_field = ['ws', 'journal_id', 'url', 'create_owner', 'created', 'updated', 'year', 'issue']
-        sql = "insert into {table} ({name}) values (%s, %s, %s, %s, %s, %s, %s, %s)".format(
+        journal_field = ['ws', 'journal_id', 'url', 'create_owner', 'created', 'updated', 'year', 'issue', 'id']
+        sql = "insert into {table} ({name}) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)".format(
             table=table, name=', '.join(journal_field))
 
         self.mysql_client.execute_many(sql, data_list)
-        self.logging.info('mysql | 已插入到Mysql表中 | use time: {}'.format(self.timer.use_time()))
+        self.logging.info('mysql | {} 已插入到Mysql表中 | use time: {}'.format(origin_id, self.timer.use_time()))
 
     # 更新mysql存储表状态
     def update_journal_info_to_mysql(self, table, journal_id, year, issue):
