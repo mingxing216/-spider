@@ -414,7 +414,8 @@ class LunWen_Data(Service):
     def get_title(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            title = selector.xpath("//h1/text()").extract_first().strip()
+            title_text = selector.xpath("string(//h1)").extract_first()
+            title = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", title_text)).strip()
         except Exception:
             title = ''
 
@@ -475,20 +476,21 @@ class LunWen_Data(Service):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
             if selector.xpath("//p[@class='keywords']/a"):
-                value_list = selector.xpath("//p[@class='keywords']//text()").extract()
-                for v in value_list:
+                values = selector.xpath("string(//p[@class='keywords'])").extract_first()
+                # values = ''.join(value_list)
+                # for v in value_list:
                     # 去除每个关键词末尾分号
-                    value = re.sub(r"[;；]$", "", v.strip())
-                    data_list.append(value)
-                value = '|'.join(data_list)
+                    # value = re.sub(r"[;；]$", "", v.strip())
+                    # data_list.append(value)
+                # value = '|'.join(data_list)
             else:
-                values = selector.xpath("//p[@class='keywords']/text()").extract_first().strip()
-                value = re.sub(r"[;；]", "|", re.sub(r"[;；]$", "", values))
-                value_list = value.split('|')
-                # 每个关键词去除左右空格
-                for v in value_list:
-                    data_list.append(v.strip())
-                value = '|'.join(data_list)
+                values = selector.xpath("//p[@class='keywords']/text()").extract_first()
+            value = re.sub(r"[;；]", "|", re.sub(r"[;；]$", "", values.strip()))
+            value_list = value.split('|')
+            # 每个关键词去除左右空格
+            for v in value_list:
+                data_list.append(v.strip())
+            value = '|'.join(data_list)
 
         except Exception:
             value = ''
@@ -549,7 +551,7 @@ class LunWen_Data(Service):
             except Exception:
                 vol = ''
             try:
-                issue = re.findall(r"[（\(](\d+)[\)）]", qihao)[0]
+                issue = re.findall(r"[（\(](.+)[\)）]", qihao)[0]
             except Exception:
                 issue = ''
 
@@ -968,6 +970,16 @@ class LunWen_Data(Service):
                 return False
 
         except:
+            return False
+
+    def judge_number(self, num, datas):
+        n = 0
+        for detail in datas.get('detail', ''):
+            n += len(detail.get('content', 0))
+
+        if n == int(num):
+            return True
+        else:
             return False
 
     # 获取关联参考文献

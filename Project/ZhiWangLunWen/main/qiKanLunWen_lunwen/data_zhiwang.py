@@ -198,11 +198,17 @@ class SpiderMain(BastSpiderMain):
         entity_data['journal_column'] = task_data.get('theme', '')
         year, vol, issue = self.server.get_year(article_html)
         # 年
-        entity_data['year'] = year
+        if year:
+            entity_data['year'] = year
+        else:
+            entity_data['year'] = task_data.get('year', '')
         # 卷号
         entity_data['volume'] = vol
         # 期号
-        entity_data['issue'] = issue
+        if issue:
+            entity_data['issue'] = issue
+        else:
+            entity_data['issue'] = task_data.get('issue', '')
 
         # 获取下载次数
         entity_data['downloads'] = self.server.get_info(article_html, '下载')
@@ -227,19 +233,37 @@ class SpiderMain(BastSpiderMain):
             ref_num = int(lite_num.get('REFERENCE', 0))
             cite_num = int(lite_num.get('CITING', 0))
             if ref_num:
-                # 获取参考文献
-                entity_data['references'] = self.server.get_literature(article_html, 1, url=url, down=self._get_resp,
-                                                                       host=self.profile_host, num=ref_num)
-                if entity_data['references'] is None:
+                for _i in range(3):
+                    # 获取参考文献
+                    references = self.server.get_literature(article_html, 1, url=url, down=self._get_resp,
+                                                                           host=self.profile_host, num=ref_num)
+                    if references is None:
+                        return
+
+                    if self.server.judge_number(ref_num, references):
+                        entity_data['references'] = references
+                        break
+                    else:
+                        continue
+                else:
                     return
             else:
                 entity_data['references'] = {}
             if cite_num:
-                # 获取引证文献
-                entity_data['cited_literature'] = self.server.get_literature(article_html, 3, url=url,
-                                                                             down=self._get_resp,
-                                                                             host=self.profile_host, num=cite_num)
-                if entity_data['cited_literature'] is None:
+                for _j in range(3):
+                    # 获取引证文献
+                    cited_literature = self.server.get_literature(article_html, 3, url=url,
+                                                                                 down=self._get_resp,
+                                                                                 host=self.profile_host, num=cite_num)
+                    if cited_literature is None:
+                        return
+
+                    if self.server.judge_number(cite_num, cited_literature):
+                        entity_data['cited_literature'] = cited_literature
+                        break
+                    else:
+                        continue
+                else:
                     return
             else:
                 entity_data['cited_literature'] = {}
@@ -305,65 +329,65 @@ class SpiderMain(BastSpiderMain):
         else:
             entity_data['rela_document'] = {}
 
-        # 获取所有图片链接
-        pic_datas = self.server.get_pic_url(href=url, down=self._get_resp)
-        if pic_datas:
-            # 关联组图
-            entity_data['rela_pics'] = self.server.rela_pics(url, key, sha)
-            # 组图实体
-            pics = {}
-            # 标题
-            pics['title'] = entity_data['title']
-            # 组图内容
-            pics['label_obj'] = self.server.get_media(pic_datas, 'picture', 'image')
-            # 关联论文
-            pics['rela_paper'] = self.server.rela_paper(url, key, sha)
-            # url
-            pics['url'] = url
-            # 生成key
-            pics['key'] = key
-            # 生成sha
-            pics['sha'] = sha
-            # 生成ss ——实体
-            pics['ss'] = '组图'
-            # es ——栏目名称
-            pics['es'] = '期刊论文'
-            # 生成ws ——目标网站
-            pics['ws'] = '中国知网'
-            # 生成clazz ——层级关系
-            pics['clazz'] = '组图_实体'
-            # 生成biz ——项目
-            pics['biz'] = '文献大数据_论文'
-            # 生成ref
-            pics['ref'] = ''
-            # 采集责任人
-            pics['creator'] = '张明星'
-            # 更新责任人
-            pics['modified_by'] = ''
-            # 采集服务器集群
-            pics['cluster'] = 'crawler'
-            # 元数据版本号
-            pics['metadata_version'] = 'V1.2'
-            # 采集脚本版本号
-            pics['script_version'] = 'V1.3'
-            # 组图实体存入列表
-            data_list.append(pics)
-
-            # 存储图片种子
-            for img in pic_datas:
-                img_dict = {}
-                img_dict['url'] = img['url']
-                img_dict['title'] = img['title']
-                img_dict['rel_esse'] = self.server.rela_paper(url, key, sha)
-                img_dict['rel_pics'] = self.server.rela_pics(url, key, sha)
-
-                suc = self.img_download(img_dict)
-                if not suc:
-                    logger.error('seed | 图片存储失败, url: {}'.format(img['url']))
-                    return
-        else:
-            # 关联组图
-            entity_data['rela_pics'] = {}
+        # # 获取所有图片链接
+        # pic_datas = self.server.get_pic_url(href=url, down=self._get_resp)
+        # if pic_datas:
+        #     # 关联组图
+        #     entity_data['rela_pics'] = self.server.rela_pics(url, key, sha)
+        #     # 组图实体
+        #     pics = {}
+        #     # 标题
+        #     pics['title'] = entity_data['title']
+        #     # 组图内容
+        #     pics['label_obj'] = self.server.get_media(pic_datas, 'picture', 'image')
+        #     # 关联论文
+        #     pics['rela_paper'] = self.server.rela_paper(url, key, sha)
+        #     # url
+        #     pics['url'] = url
+        #     # 生成key
+        #     pics['key'] = key
+        #     # 生成sha
+        #     pics['sha'] = sha
+        #     # 生成ss ——实体
+        #     pics['ss'] = '组图'
+        #     # es ——栏目名称
+        #     pics['es'] = '期刊论文'
+        #     # 生成ws ——目标网站
+        #     pics['ws'] = '中国知网'
+        #     # 生成clazz ——层级关系
+        #     pics['clazz'] = '组图_实体'
+        #     # 生成biz ——项目
+        #     pics['biz'] = '文献大数据_论文'
+        #     # 生成ref
+        #     pics['ref'] = ''
+        #     # 采集责任人
+        #     pics['creator'] = '张明星'
+        #     # 更新责任人
+        #     pics['modified_by'] = ''
+        #     # 采集服务器集群
+        #     pics['cluster'] = 'crawler'
+        #     # 元数据版本号
+        #     pics['metadata_version'] = 'V1.2'
+        #     # 采集脚本版本号
+        #     pics['script_version'] = 'V1.3'
+        #     # 组图实体存入列表
+        #     data_list.append(pics)
+        #
+        #     # 存储图片种子
+        #     for img in pic_datas:
+        #         img_dict = {}
+        #         img_dict['url'] = img['url']
+        #         img_dict['title'] = img['title']
+        #         img_dict['rel_esse'] = self.server.rela_paper(url, key, sha)
+        #         img_dict['rel_pics'] = self.server.rela_pics(url, key, sha)
+        #
+        #         suc = self.img_download(img_dict)
+        #         if not suc:
+        #             logger.error('seed | 图片存储失败, url: {}'.format(img['url']))
+        #             return
+        # else:
+        #     # 关联组图
+        #     entity_data['rela_pics'] = {}
 
         # ====================================公共字段
         # url
@@ -430,7 +454,7 @@ class SpiderMain(BastSpiderMain):
             # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
             task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
-            # task = '{"theme": "基础医学研究", "url": "https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=CKYK202106013&dbname=CJFDLAST2021", "xiaZai": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=n8sbjTFvPSUrNDkHGGwa1ho8r3UKR0Eg1blqUAXs46uVtWbBkzCDkcKJ5VmGgPhX&tableName=CJFDLAST2017", "zaiXianYueDu": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=SYKQ201705008&tablename=CJFDLAST2017&filetype=XML;EPUB;", "xueKeLeiBie": "医药卫生科技_口腔科学", "parentUrl": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=SYKQ", "year": "2017", "issue": "05", "sha": "047fe93efaba692553e3eab9ff38bd58bbb593e2"}'
+            # task = '{"theme": "", "url": "https://kns.cnki.net/kcms/detail/detail.aspx?dbcode=CJFD&filename=DATE200701035&dbname=CJFD2007", "xiaZai": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=XZ&q=nFrh4jEAHve1tEpBnJjmBUbXZotShkQUYyJLQuzx%mmd2BeY9nV0WaHVfnNQG4TiA8tcE&tableName=CJFD2007", "zaiXianYueDu": "https://navi.cnki.net/knavi/Common/RedirectPage?sfield=RD&dbCode=CJFD&filename=DATE200701035&tablename=CJFD2007&filetype=", "xueKeLeiBie": "信息科技_电信技术", "parentUrl": "https://navi.cnki.net/knavi/JournalDetail?pcode=CJFD&pykm=DATE", "year": "2007", "issue": "01", "sha": "fd1afcf50a33a6f591000362f45bff090888b5cb"}'
             if task:
                 # 创建数据存储列表
                 data_list = []
