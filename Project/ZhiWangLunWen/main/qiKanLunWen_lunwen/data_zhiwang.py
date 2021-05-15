@@ -323,7 +323,7 @@ class SpiderMain(BastSpiderMain):
             # 元数据版本号
             doc_data['metadata_version'] = 'V1.2'
             # 采集脚本版本号
-            doc_data['script_version'] = 'V1.3'
+            doc_data['script_version'] = 'V1.4'
             # 文档实体存入列表
             data_list.append(doc_data)
         else:
@@ -369,7 +369,7 @@ class SpiderMain(BastSpiderMain):
         #     # 元数据版本号
         #     pics['metadata_version'] = 'V1.2'
         #     # 采集脚本版本号
-        #     pics['script_version'] = 'V1.3'
+        #     pics['script_version'] = 'V1.4'
         #     # 组图实体存入列表
         #     data_list.append(pics)
         #
@@ -417,7 +417,7 @@ class SpiderMain(BastSpiderMain):
         # 元数据版本号
         entity_data['metadata_version'] = 'V1.2'
         # 采集脚本版本号
-        entity_data['script_version'] = 'V1.3'
+        entity_data['script_version'] = 'V1.4'
         # 论文实体存入列表
         data_list.append(entity_data)
 
