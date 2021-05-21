@@ -246,6 +246,7 @@ class SpiderMain(BastSpiderMain):
                     else:
                         continue
                 else:
+                    logger.error('service | 参考文献数量不一致')
                     return
             else:
                 entity_data['references'] = {}
@@ -264,6 +265,7 @@ class SpiderMain(BastSpiderMain):
                     else:
                         continue
                 else:
+                    logger.error('service | 引证文献数量不一致')
                     return
             else:
                 entity_data['cited_literature'] = {}

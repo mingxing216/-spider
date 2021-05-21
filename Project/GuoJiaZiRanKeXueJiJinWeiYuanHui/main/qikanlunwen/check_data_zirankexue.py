@@ -54,7 +54,7 @@ class BastSpiderMain(object):
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
         # hbase存储对象
-        self.hbase_obj = hbase_pool.HBasePool(logging=logger)
+        self.hbase_obj = hbase_pool.HBasePool(host='mm-node5', logging=logger)
 
 
 class SpiderMain(BastSpiderMain):
