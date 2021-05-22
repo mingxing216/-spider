@@ -36,26 +36,27 @@ class BaseChecher(object):
 
 
 class CheckerMain(BaseChecher):
-    def __init__(self):
+    def __init__(self, hostname):
         super().__init__()
         self.timer = timers.Timer()
         # redis对象
         self.redis_obj = redis_pool.RedisPoolUtils(10)
         # hbase对象
-        self.hbase_obj = hbase_pool.HBasePool(host='mm-node5', logging=logger)
+        self.hbase_obj = hbase_pool.HBasePool(host=hostname, logging=logger)
 
     def handle(self, task_list, data_list):
         self.timer.start()
         for task in task_list:
             print(task)
             sha = task[0]
-            title = task[1].get('d:title', '')
-            author = task[1].get('d:author', '')
-            keyword = task[1].get('d:keyword', '')
-            abstract = task[1].get('d:abstract', '')
-            total_page = task[1].get('d:total_page', '')
-            references = task[1].get('d:references', '')
-            cited_literature = task[1].get('d:cited_literature', '')
+            obj = json.loads(task[1],encoding='utf-8')
+            title = obj.get('d:title', '')
+            author = obj.get('d:author', '')
+            keyword = obj.get('d:keyword', '')
+            abstract = obj.get('d:abstract', '')
+            total_page = obj.get('d:total_page', '')
+            references = obj.get('d:references', '')
+            cited_literature = obj.get('d:cited_literature', '')
             ref_detail = ''
             cit_detail = ''
             if references:
@@ -89,12 +90,11 @@ class CheckerMain(BaseChecher):
 
         logger.info('handle | check | use time: {} | count: {}'.format(self.timer.use_time(), len(task_list)))
 
-    def run(self):
+    def run(self, row_start, row_stop):
         logger.debug('thread start')
         task_timer = timers.Timer()
         total_count = 0
-        row_start = '0'
-        row_stop = '1'
+        redis_field_key = row_start + ':' + row_stop
         query = "SingleColumnValueFilter('s', 'ws', =, 'substring:中国知网') AND SingleColumnValueFilter('s', 'es', =, 'substring:期刊论文') AND SingleColumnValueFilter('d', 'metadata_version', =, 'substring:V1', true, true)"
         columns = ['s:ws', 's:es', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
                    'd:keyword', 'd:total_page', 'd:references', 'd:cited_literature', 'd:url']
@@ -117,8 +117,9 @@ class CheckerMain(BaseChecher):
                 first_key = task_list[0][0]
                 row_start = first_key
                 # 将起始行键和处理总量存入redis中
-                self.redis_obj.hset('check_start', 'current_key', first_key)
-                self.redis_obj.hset('check_start', 'current_count', total_count)
+                self.redis_obj.hset('check_start', redis_field_key,
+                                    {'current_key':first_key,
+                                     'current_count': total_count})
                 # 创建数据存储列表
                 data_list = []
 
@@ -156,18 +157,26 @@ class CheckerMain(BaseChecher):
                 break
 
 
-def start():
+def start(row_start, row_stop, hostname):
     try:
-        main = CheckerMain()
-        main.run()
+        main = CheckerMain(hostname)
+        main.run(row_start, row_stop)
     except:
         logger.exception(str(traceback.format_exc()))
 
 
 if __name__ == '__main__':
+    if (len(sys.argv)) < 3:
+        print("Usage: {} <row_start> <row_stop> <hostname>".format(sys.argv[0]))
+        exit(1)
+
     logger.info('====== The Start! ======')
+    row_start = sys.argv[1]
+    row_stop = sys.argv[2]
+    hostname = sys.argv[3]
+
     total_timer = timers.Timer()
     total_timer.start()
-    start()
+    start(row_start, row_stop, hostname)
     logger.info('====== The End! ======')
     logger.info('====== Time consuming is {} ======' % (total_timer.use_time()))
