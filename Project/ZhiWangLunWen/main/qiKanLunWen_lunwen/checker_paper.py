@@ -124,7 +124,7 @@ class CheckerMain(BaseChecher):
             # task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
 
             task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=first_key, row_stop=row_stop,
-                                                       query=query, columns=columns)
+                                                       query=query, columns=columns, limit=500)
             if task_list:
                 total_count += len(task_list)
                 first_key = task_list[0][0]
@@ -192,4 +192,4 @@ if __name__ == '__main__':
     total_timer.start()
     start(row_start, row_stop, hostname)
     logger.info('====== The End! ======')
-    logger.info('====== Time consuming is {} ======' % (total_timer.use_time()))
+    logger.info('====== Time consuming is {} ======'.format(total_timer.use_time()))

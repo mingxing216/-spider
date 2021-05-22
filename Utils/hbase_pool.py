@@ -99,7 +99,7 @@ class HBasePool(object):
             return False
 
     # hbase scan 批量扫描数据
-    def scan_from_hbase(self, table, limit=10, row_start=None, row_stop=None, query=None, columns=None):
+    def scan_from_hbase(self, table, limit=500, row_start=None, row_stop=None, query=None, columns=None):
         self.timer.start()
         self.logging.debug('hbase | 开始扫描数据')
         data_list = []
