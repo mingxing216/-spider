@@ -98,6 +98,15 @@ class CheckerMain(BaseChecher):
         query = "SingleColumnValueFilter('s', 'ws', =, 'substring:中国知网') AND SingleColumnValueFilter('s', 'es', =, 'substring:期刊论文') AND SingleColumnValueFilter('d', 'metadata_version', =, 'substring:V1', true, true)"
         columns = ['s:ws', 's:es', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
                    'd:keyword', 'd:total_page', 'd:references', 'd:cited_literature', 'd:url']
+        # get last start_key from redis;
+        redis_value = self.redis_obj.hget('check_start', redis_field_key)
+        if redis_value:
+            redis_values = redis_value.split('|')
+            first_key = redis_values[0]
+            total_count = redis_values[1]
+        else:
+            first_key = row_start
+
         # 单线程无限循环
         while True:
             # 获取任务
@@ -107,7 +116,7 @@ class CheckerMain(BaseChecher):
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
             # task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
 
-            task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=row_start, row_stop=row_stop,
+            task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=first_key, row_stop=row_stop,
                                                        query=query, columns=columns)
             print(task_list)
             print(type(task_list))
@@ -115,11 +124,9 @@ class CheckerMain(BaseChecher):
             if task_list:
                 total_count += len(task_list)
                 first_key = task_list[0][0]
-                row_start = first_key
                 # 将起始行键和处理总量存入redis中
                 self.redis_obj.hset('check_start', redis_field_key,
-                                    {'current_key':first_key,
-                                     'current_count': total_count})
+                                    "{}|{}".format(first_key,total_count))
                 # 创建数据存储列表
                 data_list = []
 
@@ -142,6 +149,7 @@ class CheckerMain(BaseChecher):
 
                     if success:
                         row_start = task_list[-1][0]
+                        first_key = row_start[:39] + chr(ord(row_start[39:]) + 1)
                         logger.info('task end | task success | use time: {} | count: {}'.format(task_timer.use_time(),
                                                                                                   len(task_list)))
                     else:
