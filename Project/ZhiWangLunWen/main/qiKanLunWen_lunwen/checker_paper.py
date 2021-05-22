@@ -49,8 +49,8 @@ class CheckerMain(BaseChecher):
             obj = json.loads(task[1], encoding='utf-8')
             title = obj.get('d:title', '')
             author = obj.get('d:author', '')
-            keyword = obj.get('d:keyword', '')
-            abstract = obj.get('d:abstract', '')
+            keyword = json.loads(obj.get('d:keyword', '[]'))
+            abstract = json.loads(obj.get('d:abstract', '[]'))
             total_page = obj.get('d:total_page', '')
             references = obj.get('d:references', '')
             cited_literature = obj.get('d:cited_literature', '')
@@ -73,6 +73,8 @@ class CheckerMain(BaseChecher):
             else:
                 entity_data['quality_score'] = '0'
 
+            logger.info('handle | score | use time: {} | score: {} | sha: {}'.
+                        format(self.timer.use_time(), entity_data['quality_score'], sha))
             # ====================================公共字段
             # 生成sha
             entity_data['sha'] = sha
