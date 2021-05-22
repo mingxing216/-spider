@@ -9,9 +9,7 @@ import os
 # from gevent import monkey
 # monkey.patch_all()
 import sys
-import time
 import traceback
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 from Project.ZhiWangLunWen.service import service
@@ -47,9 +45,8 @@ class CheckerMain(BaseChecher):
     def handle(self, task_list, data_list):
         self.timer.start()
         for task in task_list:
-            print(task)
             sha = task[0]
-            obj = json.loads(task[1],encoding='utf-8')
+            obj = json.loads(task[1], encoding='utf-8')
             title = obj.get('d:title', '')
             author = obj.get('d:author', '')
             keyword = obj.get('d:keyword', '')
@@ -81,10 +78,18 @@ class CheckerMain(BaseChecher):
             entity_data['sha'] = sha
             # 生成ss ——实体
             entity_data['ss'] = '论文'
+            # es ——栏目名称
+            entity_data['es'] = '期刊论文'
+            # 生成ws ——目标网站
+            entity_data['ws'] = '中国知网'
+            # 生成clazz ——层级关系
+            entity_data['clazz'] = '论文_期刊论文'
+            # 生成biz ——项目
+            entity_data['biz'] = '文献大数据_论文'
             # 元数据版本号
-            entity_data['metadata_version'] = 'V1.2'
+            entity_data['metadata_version'] = 'V1.2.1'
             # 采集脚本版本号
-            entity_data['script_version'] = 'V1.4'
+            entity_data['script_version'] = 'V1.4.1'
 
             data_list.append(entity_data)
 
@@ -118,15 +123,12 @@ class CheckerMain(BaseChecher):
 
             task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=first_key, row_stop=row_stop,
                                                        query=query, columns=columns)
-            print(task_list)
-            print(type(task_list))
-
             if task_list:
                 total_count += len(task_list)
                 first_key = task_list[0][0]
                 # 将起始行键和处理总量存入redis中
                 self.redis_obj.hset('check_start', redis_field_key,
-                                    "{}|{}".format(first_key,total_count))
+                                    "{}|{}".format(first_key, total_count))
                 # 创建数据存储列表
                 data_list = []
 
@@ -136,30 +138,31 @@ class CheckerMain(BaseChecher):
                     # 保存数据到Hbase
                     if not data_list:
                         logger.error(
-                            'task end | task failed | use time: {} | count: {} | No data'.format(task_timer.use_time(),
-                                                                                                  len(task_list)))
-                        continue
-                    if 'sha' not in data_list[-1]:
+                            'task end | task failed | use time: {} | count: {} | key: {} | No data'.
+                                format(task_timer.use_time(), len(task_list), first_key))
+                    elif 'sha' not in data_list[-1]:
                         logger.error(
-                            'task end | task failed | use time: {} | count: {} | Data Incomplete'.format(task_timer.use_time(),
-                                                                                                          len(task_list)))
-                        continue
-                    # 存储数据
-                    success = self.dao.save_data_to_hbase(data=data_list)
-
-                    if success:
-                        row_start = task_list[-1][0]
-                        first_key = row_start[:39] + chr(ord(row_start[39:]) + 1)
-                        logger.info('task end | task success | use time: {} | count: {}'.format(task_timer.use_time(),
-                                                                                                  len(task_list)))
+                            'task end | task failed | use time: {} | count: {} | key: {} | Data Incomplete'.
+                                format(task_timer.use_time(), len(task_list), first_key))
                     else:
-                        logger.error(
-                            'task end | task failed | use time: {} | count: {}'.format(task_timer.use_time(),
-                                                                                                  len(task_list)))
+                        # 存储数据
+                        success = self.dao.save_data_to_hbase(data=data_list)
 
-                except:
+                        if not success:
+                            logger.error(
+                                'task end | task failed | use time: {} | count: {} | key: {}'.
+                                    format(task_timer.use_time(), len(task_list), first_key))
+                except Exception as e:
                     logger.exception(str(traceback.format_exc()))
-                    logger.error('task end | task failed | use time: {}'.format(task_timer.use_time()))
+                    logger.error(
+                        'task end | task failed | use time: {} | count: {} | key: {} | {}'.
+                            format(task_timer.use_time(), len(task_list), first_key, e))
+
+                row_start = task_list[-1][0]
+                first_key = row_start[:39] + chr(ord(row_start[39:]) + 1)
+                logger.info(
+                    'task end | task success | use time: {} | count: {}'.
+                        format(task_timer.use_time(), len(task_list), first_key))
             else:
                 logger.info('task | hbase库中已无任务')
                 break
