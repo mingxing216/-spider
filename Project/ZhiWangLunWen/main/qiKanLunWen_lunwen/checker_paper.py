@@ -46,14 +46,14 @@ class CheckerMain(BaseChecher):
         self.timer.start()
         for task in task_list:
             sha = task[0]
-            obj = json.loads(task[1], encoding='utf-8')
-            title = obj.get('d:title', '')
-            author = obj.get('d:author', '')
-            keyword = json.loads(obj.get('d:keyword', '[]'))
-            abstract = json.loads(obj.get('d:abstract', '[]'))
-            total_page = obj.get('d:total_page', '')
-            references = obj.get('d:references', '')
-            cited_literature = obj.get('d:cited_literature', '')
+            task_obj = json.loads(task[1], encoding='utf-8')
+            title = task_obj.get('d:title', '')
+            author = task_obj.get('d:author', '')
+            keyword = json.loads(task_obj.get('d:keyword', '[]'))
+            abstract = json.loads(task_obj.get('d:abstract', '[]'))
+            total_page = task_obj.get('d:total_page', '0')
+            references = task_obj.get('d:references', '')
+            cited_literature = task_obj.get('d:cited_literature', '')
             ref_detail = ''
             cit_detail = ''
             if references:
