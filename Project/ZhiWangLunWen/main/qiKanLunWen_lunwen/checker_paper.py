@@ -60,9 +60,9 @@ class CheckerMain(BaseChecher):
             ref_detail = ''
             cit_detail = ''
             if references:
-                ref_detail = int(references.get('detail', ''))
+                ref_detail = references.get('detail', '')
             if cited_literature:
-                cit_detail = int(cited_literature.get('detail', ''))
+                cit_detail = cited_literature.get('detail', '')
 
             # ======================== 期刊论文实体数据 ===========================
             entity_data = dict()
