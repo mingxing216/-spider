@@ -3,6 +3,7 @@
 """
 redis连接池操作
 """
+from random import choice
 
 import redis
 
@@ -72,13 +73,12 @@ def _redisLock(func):
 
 
 class RedisPoolUtils(object):
-    def __init__(self, number):
+    def __init__(self, number, db=0):
         self.redis_host = settings.REDIS_HOST
         self.redis_port = settings.REDIS_PORT
         self.redis_password = settings.REDIS_PASSWORD
-        self.redis_pool_max_number = number
         self.pool = redis.ConnectionPool(host=self.redis_host, port=self.redis_port, password=self.redis_password,
-                                         max_connections=self.redis_pool_max_number, decode_responses=True)
+                                         db=db, max_connections=number, decode_responses=True)
 
     @property
     def conn(self):
@@ -169,42 +169,6 @@ class RedisPoolUtils(object):
 
         return status
 
-    # 获取列表类型内容
-    def lrange(self, key, start, end):
-        """
-        :param key: 列表名
-        :param start: 开始索引
-        :param end: 结束索引
-        :return: 查询出的列表
-        """
-        return_data = []
-        datas = self.conn.lrange(key, start, end)
-        for re_value in datas:
-            return_data.append(re_value)
-        return return_data
-
-    # 保存数据到列表类型
-    def lpush(self, key, value):
-        """
-        :param key: 列表名
-        :param value: 值
-        """
-        len_list = self.conn.lpush(key, value)
-
-        return len_list  # 列表中的元素数量
-
-    # 删除列表类型元素
-    def lrem(self, key, count, value):
-        """
-        :param key: key
-        :param count: 删除个数
-        :param value: value
-        :return: 删除成功数
-        """
-        status = self.conn.lrem(name=key, count=count, value=value)
-
-        return status
-
     # 获取集合类型内元素数量
     def scard(self, key):
         """
@@ -275,6 +239,106 @@ class RedisPoolUtils(object):
             return_data.append(re_value)
 
         return return_data
+
+    # 获取列表类型内容
+    def lrange(self, key, start, end):
+        """
+        :param key: 列表名
+        :param start: 开始索引
+        :param end: 结束索引
+        :return: 查询出的列表
+        """
+        return_data = []
+        datas = self.conn.lrange(key, start, end)
+        for re_value in datas:
+            return_data.append(re_value)
+        return return_data
+
+    # 保存数据到列表类型
+    def lpush(self, key, value):
+        """
+        :param key: 列表名
+        :param value: 值
+        """
+        len_list = self.conn.lpush(key, value)
+
+        return len_list  # 列表中的元素数量
+
+    # 删除列表类型元素
+    def lrem(self, key, count, value):
+        """
+        :param key: key
+        :param count: 删除个数
+        :param value: value
+        :return: 删除成功数
+        """
+        status = self.conn.lrem(name=key, count=count, value=value)
+
+        return status
+
+    # hash
+    def hset(self, key, name, value):
+        """
+        设置代理
+        :param name: 主机名称
+        :param proxy: 代理
+        :return: 设置结果
+        """
+        return self.conn.hset(key, name, value)
+
+    def hget(self, key, name):
+        """
+        获取代理
+        :param name: 主机名称
+        :return: 代理
+        """
+        return self.conn.hget(key, name)
+
+    def hcount(self, key):
+        """
+        获取代理总数
+        :return: 代理总数
+        """
+        return self.conn.hlen(key)
+
+    def hremove(self, key, name):
+        """
+        删除代理
+        :param name: 主机名称
+        :return: 删除结果
+        """
+        return self.conn.hdel(key, name)
+
+    def hkeys(self, key):
+        """
+        获取主机名称列表
+        :return: 获取主机名称列表
+        """
+        return self.conn.hkeys(key)
+
+    def hvalues(self, key):
+        """
+        获取代理列表
+        :return: 代理列表
+        """
+        return self.conn.hvals(key)
+
+    def hrandom(self, key):
+        """
+        随机获取代理
+        :return:
+        """
+        proxies = self.hvalues(key)
+        return choice(proxies)
+
+    def hall(self, key):
+        """
+        获取字典
+        :return:
+        """
+        return self.conn.hgetall(key)
+
+
 
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@ from Project.ZhiWangLunWen.middleware import download_middleware
 from Project.ZhiWangLunWen.service import service
 from Project.ZhiWangLunWen.dao import dao
 from Project.ZhiWangLunWen import config
-from Utils import timeutils, timers
+from Utils import timers
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY, LANG_API, SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
 
 

@@ -98,22 +98,24 @@ class HBasePool(object):
             self.logging.error('hbase | 数据删除失败 | use time: {}'.format(self.timer.use_time()))
             return False
 
-    # hbase scan 批量获取数据
-    def get_record_from_hbase(self, table, limit=2, row_start=None, query_str=None):
+    # hbase scan 批量扫描数据
+    def scan_from_hbase(self, table, limit=10, row_start=None, row_stop=None, query=None, columns=None):
         self.timer.start()
-        self.logging.debug('hbase | 开始删除数据')
+        self.logging.debug('hbase | 开始扫描数据')
+        data_list = []
         try:
             with self.pool.connection() as connection:
                 table = happybase.Table(table, connection)
-                for row, datas in table.scan(limit=limit, filter=query_str):
+                for row, datas in table.scan(row_start=row_start, row_stop=row_stop, limit=limit, filter=query, columns=columns):
                     data = dict()
                     for key, value in datas.items():
                         data[key.decode("utf-8")] = value.decode('utf-8')
                     res = json.dumps(data, ensure_ascii=False)
-                    self.logging.info('hbase | 批量获取数据成功 | use time: {}'.format(self.timer.use_time()))
-                    return row.decode("utf-8"), res
-                else:
-                    return
+
+                    data_list.append((row.decode("utf-8"), res))
+
+                self.logging.info('hbase | scan取据成功 | use time: {} | count: {}'.format(self.timer.use_time(), len(data_list)))
+                return data_list
 
         except Exception as e:
             self.logging.error("hbase | {} | {}".format(row_start, e))
@@ -123,4 +125,4 @@ class HBasePool(object):
 if __name__ == '__main__':
     hb = HBasePool('mm-node5')
     hb.get_one_data_from_hbase('ef4c10c09147242b65750a77c2b8d28d8a579147')
-    hb.get_record_from_hbase('ss:paper')
+    hb.scan_from_hbase('ss:paper')
