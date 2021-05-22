@@ -341,7 +341,7 @@ class Dao(object):
             if isinstance(entity_data, list):
                 if respon['resultCode'] == 0:
                     for data in entity_data:
-                        self.logging.info(
+                        self.logging.debug(
                             'storage | Save data to Hbase | use time: {} | status: OK | sha: {} | ss: {} | memo: {}'.format(
                                 data_start.use_time(), data.get('sha'), data.get('ss'), resp))
                     return True

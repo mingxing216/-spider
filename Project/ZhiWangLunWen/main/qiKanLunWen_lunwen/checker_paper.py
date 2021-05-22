@@ -52,6 +52,10 @@ class CheckerMain(BaseChecher):
             keyword = json.loads(task_obj.get('d:keyword', '[]'))
             abstract = json.loads(task_obj.get('d:abstract', '[]'))
             total_page = task_obj.get('d:total_page', '0')
+            if total_page:
+                total_page = int(total_page)
+            else:
+                total_page = 0
             references = task_obj.get('d:references', '')
             cited_literature = task_obj.get('d:cited_literature', '')
             ref_detail = ''
@@ -68,7 +72,7 @@ class CheckerMain(BaseChecher):
                 entity_data['quality_score'] = '100'
             elif title and author and keyword:
                 entity_data['quality_score'] = '80'
-            elif title and author and int(total_page) > 1 and (ref_detail or cit_detail):
+            elif title and author and (total_page > 1) and (ref_detail or cit_detail):
                 entity_data['quality_score'] = '60'
             else:
                 entity_data['quality_score'] = '0'
