@@ -103,7 +103,7 @@ class CheckerMain(BaseChecher):
         if redis_value:
             redis_values = redis_value.split('|')
             first_key = redis_values[0]
-            total_count = redis_values[1]
+            total_count = int(redis_values[1])
         else:
             first_key = row_start
 
