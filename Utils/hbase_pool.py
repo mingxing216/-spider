@@ -105,8 +105,10 @@ class HBasePool(object):
         data_list = []
         try:
             with self.pool.connection() as connection:
-                table = happybase.Table(table, connection)
-                for row, datas in table.scan(row_start=row_start, row_stop=row_stop, limit=limit, filter=query, columns=columns):
+                tab = happybase.Table(table, connection)
+                scan_data = tab.scan(row_start=row_start, row_stop=row_stop, limit=limit, filter=query, columns=columns)
+                print(scan_data)
+                for row, datas in scan_data:
                     data = dict()
                     for key, value in datas.items():
                         data[key.decode("utf-8")] = value.decode('utf-8')

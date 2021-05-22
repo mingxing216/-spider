@@ -49,13 +49,13 @@ class CheckerMain(BaseChecher):
         for task in task_list:
             print(task)
             sha = task[0]
-            title = task[1].get('title', '')
-            author = task[1].get('author', '')
-            keyword = task[1].get('keyword', '')
-            abstract = task[1].get('abstract', '')
-            total_page = task[1].get('total_page', '')
-            references = task[1].get('references', '')
-            cited_literature = task[1].get('cited_literature', '')
+            title = task[1].get('d:title', '')
+            author = task[1].get('d:author', '')
+            keyword = task[1].get('d:keyword', '')
+            abstract = task[1].get('d:abstract', '')
+            total_page = task[1].get('d:total_page', '')
+            references = task[1].get('d:references', '')
+            cited_literature = task[1].get('d:cited_literature', '')
             ref_detail = ''
             cit_detail = ''
             if references:
@@ -73,7 +73,7 @@ class CheckerMain(BaseChecher):
             elif title and author and int(total_page) > 1 and (ref_detail or cit_detail):
                 entity_data['quality_score'] = '60'
             else:
-                entity_data['quality_score'] = '60'
+                entity_data['quality_score'] = '0'
 
             # ====================================公共字段
             # 生成sha
@@ -97,8 +97,7 @@ class CheckerMain(BaseChecher):
         row_stop = '1'
         query = "SingleColumnValueFilter('s', 'ws', =, 'substring:中国知网') AND SingleColumnValueFilter('s', 'es', =, 'substring:期刊论文') AND SingleColumnValueFilter('d', 'metadata_version', =, 'substring:V1', true, true)"
         columns = ['s:ws', 's:es', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
-                   'd:keyword', 'd:total_page', 'd:references',
-                   'd:cited_literature', 'd:url']
+                   'd:keyword', 'd:total_page', 'd:references', 'd:cited_literature', 'd:url']
         # 单线程无限循环
         while True:
             # 获取任务
@@ -108,7 +107,7 @@ class CheckerMain(BaseChecher):
             #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
             # task = self.dao.get_one_task_from_redis(key=config.REDIS_QIKAN_PAPER)
 
-            task_list = self.hbase_obj.scan_from_hbase(table='ss:paper', row_start=row_start, row_stop=row_stop,
+            task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=row_start, row_stop=row_stop,
                                                        query=query, columns=columns)
             print(task_list)
             print(type(task_list))
