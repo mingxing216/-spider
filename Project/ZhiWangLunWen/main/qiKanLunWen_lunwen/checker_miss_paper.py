@@ -109,60 +109,59 @@ class CheckerMain(BaseChecher):
         query = "SingleColumnValueFilter('s', 'ws', =, 'substring:中国知网') AND SingleColumnValueFilter('s', 'es', =, 'substring:期刊论文') AND SingleColumnValueFilter('d', 'metadata_version', =, 'substring:V1', true, true)"
         columns = ['s:ws', 's:es', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
                    'd:keyword', 'd:total_page', 'd:references', 'd:cited_literature', 'd:url']
-        with open('/opt/Log/Temp/error_sha.log', 'w') as f:
-            first_key_list = f.readline()
-            print(first_key_list)
+        with open('/opt/Log/Temp/error_sha.log', 'r') as f:
+            first_key_list = f.readlines()
             for first_key in first_key_list:
                 first_key = first_key.replace('\n', '')
-                print(first_key)
-            #     # 获取任务
-            #     logger.debug('task start')
-            #     task_timer.start()
-            #     task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=first_key,
-            #                                                query=query, columns=columns, limit=500)
-            #     if task_list:
-            #         total_count += len(task_list)
-            #         first_key = task_list[0][0]
-            #         # 创建数据存储列表
-            #         data_list = []
-            #         try:
-            #             # 获取字段值存入字典并返回sha
-            #             self.handle(task_list=task_list, data_list=data_list)
-            #             # 保存数据到Hbase
-            #             if not data_list:
-            #                 logger.error(
-            #                     'task end | task failed | use time: {} | count: {} | key: {} | No data'.
-            #                         format(task_timer.use_time(), len(task_list), first_key))
-            #             elif 'sha' not in data_list[-1]:
-            #                 logger.error(
-            #                     'task end | task failed | use time: {} | count: {} | key: {} | Data Incomplete'.
-            #                         format(task_timer.use_time(), len(task_list), first_key))
-            #             else:
-            #                 # 存储数据
-            #                 success = self.dao.save_data_to_hbase(data=data_list)
-            #
-            #                 if not success:
-            #                     logger.error(
-            #                         'task end | task failed | use time: {} | count: {} | key: {}'.
-            #                             format(task_timer.use_time(), len(task_list), first_key))
-            #         except Exception as e:
-            #             logger.exception(str(traceback.format_exc()))
-            #             logger.error(
-            #                 'task end | task failed | use time: {} | count: {} | key: {} | {}'.
-            #                     format(task_timer.use_time(), len(task_list), first_key, e))
-            #
-            #         row_start = task_list[-1][0]
-            #         first_key = row_start[:39] + chr(ord(row_start[39:]) + 1)
-            #         logger.info(
-            #             'task end | task success | use time: {} | count: {}'.
-            #                 format(task_timer.use_time(), len(task_list), first_key))
-            #     else:
-            #         logger.info('task | hbase库获取失败')
-            #         continue
-            #
-            # else:
-            #     logger.info('task | 已无任务')
-            #     return
+                # print(first_key)
+                # 获取任务
+                logger.debug('task start')
+                task_timer.start()
+                task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=first_key,
+                                                           query=query, columns=columns, limit=500)
+                if task_list:
+                    total_count += len(task_list)
+                    first_key = task_list[0][0]
+                    # 创建数据存储列表
+                    data_list = []
+                    try:
+                        # 获取字段值存入字典并返回sha
+                        self.handle(task_list=task_list, data_list=data_list)
+                        # 保存数据到Hbase
+                        if not data_list:
+                            logger.error(
+                                'task end | task failed | use time: {} | count: {} | key: {} | No data'.
+                                    format(task_timer.use_time(), len(task_list), first_key))
+                        elif 'sha' not in data_list[-1]:
+                            logger.error(
+                                'task end | task failed | use time: {} | count: {} | key: {} | Data Incomplete'.
+                                    format(task_timer.use_time(), len(task_list), first_key))
+                        else:
+                            # 存储数据
+                            success = self.dao.save_data_to_hbase(data=data_list)
+
+                            if not success:
+                                logger.error(
+                                    'task end | task failed | use time: {} | count: {} | key: {}'.
+                                        format(task_timer.use_time(), len(task_list), first_key))
+                    except Exception as e:
+                        logger.exception(str(traceback.format_exc()))
+                        logger.error(
+                            'task end | task failed | use time: {} | count: {} | key: {} | {}'.
+                                format(task_timer.use_time(), len(task_list), first_key, e))
+
+                    row_start = task_list[-1][0]
+                    first_key = row_start[:39] + chr(ord(row_start[39:]) + 1)
+                    logger.info(
+                        'task end | task success | use time: {} | count: {}'.
+                            format(task_timer.use_time(), len(task_list), first_key))
+                else:
+                    logger.info('task | hbase库获取失败')
+                    continue
+
+            else:
+                logger.info('task | 已无任务')
+                return
 
 
 def start(hostname):
@@ -174,9 +173,9 @@ def start(hostname):
 
 
 if __name__ == '__main__':
-    logger.info('====== The Start! ======')
     hostname = sys.argv[1]
 
+    logger.info('====== The Start! ======')
     total_timer = timers.Timer()
     total_timer.start()
     start(hostname)
