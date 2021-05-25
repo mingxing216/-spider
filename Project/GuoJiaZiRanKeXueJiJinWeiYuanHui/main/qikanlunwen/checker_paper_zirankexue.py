@@ -3,13 +3,16 @@
 """
 
 """
-import json
-import os
 # import gevent
 # from gevent import monkey
 # monkey.patch_all()
+import os
 import sys
+import json
+import base64
 import traceback
+from io import BytesIO
+from fitz import fitz
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 from Project.ZhiWangLunWen.service import service
@@ -42,6 +45,22 @@ class CheckerMain(BaseChecher):
         # hbase对象
         self.hbase_obj = hbase_pool.HBasePool(host=hostname, logging=logger)
 
+    def is_valid_pdf_bytes(self, content, sha):
+        b_valid = True
+        try:
+            with fitz.open(stream=BytesIO(content), filetype="pdf") as doc:
+                if not doc.isPDF:
+                    b_valid = False
+
+                if doc.pageCount < 1:
+                    b_valid = False
+
+        except Exception:
+            logger.error('检测PDF文件出错 sha: {}'.format(sha))
+            return
+
+        return b_valid
+
     def handle(self, task_list, data_list):
         self.timer.start()
         for task in task_list:
@@ -58,9 +77,9 @@ class CheckerMain(BaseChecher):
                 total_page = int(total_page)
             else:
                 total_page = 0
-            classification_code = json.loads(task_obj.get('d:abstract', '{}')).get('code', '')
-            ref_detail = json.loads(task_obj.get('d:references', '[]')).get('detail', '')
-            cit_detail = json.loads(task_obj.get('d:cited_literature', '[]')).get('detail', '')
+            classification_code = json.loads(task_obj.get('d:classification_code', '{}')).get('code', '')
+            ref_detail = json.loads(task_obj.get('d:references', '{}')).get('detail', '')
+            cit_detail = json.loads(task_obj.get('d:cited_literature', '{}')).get('detail', '')
 
             # ======================== 期刊论文实体数据 ===========================
             entity_data = dict()
@@ -84,14 +103,30 @@ class CheckerMain(BaseChecher):
                 columns = ['d:label_obj']
                 doc_data = self.hbase_obj.get_one_data_from_hbase('ss_document', document_sha, columns)
                 print(doc_data)
+                if doc_data:
+                    # 获取全文主键
+                    fulltext_sha = json.loads(doc_data.get('d:label_obj', '{}')).get('全部', '[]')[0].get('sha', '')
+                    print('fulltext_sha: {}'.format(fulltext_sha))
+                    if fulltext_sha:
+                        columns = ['o:content_type', 'o:length', 'm:content']
+                        fulltext_data = self.hbase_obj.get_one_data_from_hbase('media:document', fulltext_sha, columns)
 
-                # 获取全文主键
-                fulltext_sha = json.loads(doc_data).get('全部', '[]')[0].get('sha', '')
-                print('fulltext_sha: {}'.format(fulltext_sha))
-                if fulltext_sha:
-                    columns = ['d:label_obj']
-                    fulltext_data = self.hbase_obj.get_one_data_from_hbase('media:document', document_sha, columns)
-                    print(fulltext_data)
+                        content_type = fulltext_data.get('o:content_type', '')
+                        fulltext = fulltext_data.get('m:content', '')
+
+                        b_fulltext = base64.b64decode(fulltext)
+                        print(len(b_fulltext))
+                        print(fulltext_data.get('o:length', ''))
+                        # 检测PDF文件
+                        is_value = self.is_valid_pdf_bytes(b_fulltext, fulltext_sha)
+                        if is_value is None:
+                            logger.error('document | 检测PDF文件出错 sha: {}'.format(fulltext_sha))
+                            return
+
+                        if not is_value:
+                            # 更新种子错误信息
+                            logger.error('document | not PDF, sha: {}'.format(fulltext_sha))
+                            return
 
             # ====================================公共字段
             # 生成sha

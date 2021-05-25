@@ -47,7 +47,11 @@ class HBasePool(object):
                 # print(table.families())
                 info = tab.row(row_key, columns=columns, include_timestamp=False)
                 # print(info)
-                return info
+                data = dict()
+                for key, value in info.items():
+                    data[key.decode("utf-8")] = value.decode('utf-8')
+
+                return data
 
         except Exception as e:
             self.logging.error('{} {}'.format(str(e), row_key))
