@@ -26,10 +26,10 @@ class HBasePool(object):
                                              protocol='compact' # 协议
                                             )
 
-    def get_one_data_from_hbase(self, row_key):
+    def get_one_data_from_hbase(self, table, row_key, columns=None):
         self.timer.start()
         self.logging.debug('hbase | 开始获取数据')
-        res = self._get_one_data_from_hbase(row_key)
+        res = self._get_one_data_from_hbase(table, row_key, columns=columns)
         if res is not None:
             self.logging.info('hbase | 数据获取成功 | use time: {}'.format(self.timer.use_time()))
         else:
@@ -39,13 +39,13 @@ class HBasePool(object):
         return res
 
     # 获取hbase数据
-    def _get_one_data_from_hbase(self, row_key):
+    def _get_one_data_from_hbase(self, table, row_key, columns=None):
         try:
             with self.pool.connection() as connection:
                 # print(connection.tables())
-                table = happybase.Table('media:document', connection)
+                tab = happybase.Table(table, connection)
                 # print(table.families())
-                info = table.row(row_key, columns=None, include_timestamp=False)
+                info = tab.row(row_key, columns=columns, include_timestamp=False)
                 # print(info)
                 return info
 
@@ -53,10 +53,10 @@ class HBasePool(object):
             self.logging.error('{} {}'.format(str(e), row_key))
             return
 
-    def get_datas_from_hbase(self, row_key_list):
+    def get_datas_from_hbase(self, table, row_key_list):
         self.timer.start()
         self.logging.debug('hbase | 开始获取数据')
-        res = self._get_datas_from_hbase(row_key_list)
+        res = self._get_datas_from_hbase(table, row_key_list)
         if res is not None:
             self.logging.info('hbase | {} 条数据获取成功 | use time: {}'.format(len(res), self.timer.use_time()))
         else:
@@ -66,13 +66,13 @@ class HBasePool(object):
         return res
 
     # 获取hbase数据
-    def _get_datas_from_hbase(self, row_key_list):
+    def _get_datas_from_hbase(self, table, row_key_list):
         try:
             with self.pool.connection() as connection:
                 # print(connection.tables())
-                table = happybase.Table('media:document', connection)
+                tab = happybase.Table(table, connection)
                 # print(table.families())
-                info = table.rows(row_key_list, columns=None, include_timestamp=False)
+                info = tab.rows(row_key_list, columns=None, include_timestamp=False)
                 # print(info)
                 return info
 
@@ -107,7 +107,6 @@ class HBasePool(object):
             with self.pool.connection() as connection:
                 tab = happybase.Table(table, connection)
                 scan_data = tab.scan(row_start=row_start, row_stop=row_stop, limit=limit, filter=query, columns=columns)
-                print(scan_data)
                 for row, datas in scan_data:
                     data = dict()
                     for key, value in datas.items():
