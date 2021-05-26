@@ -83,9 +83,8 @@ class HBasePool(object):
                     data = dict()
                     for key, value in datas.items():
                         data[key.decode("utf-8")] = value.decode('utf-8')
-                    res = json.dumps(data, ensure_ascii=False)
 
-                    data_list.append((row.decode("utf-8"), res))
+                    data_list.append((row.decode("utf-8"), data))
 
                 return data_list
 
@@ -124,9 +123,8 @@ class HBasePool(object):
                     data = dict()
                     for key, value in datas.items():
                         data[key.decode("utf-8")] = value.decode('utf-8')
-                    res = json.dumps(data, ensure_ascii=False)
 
-                    data_list.append((row.decode("utf-8"), res))
+                    data_list.append((row.decode("utf-8"), data))
 
                 self.logging.info('hbase | scan获取数据成功 | use time: {} | count: {}'.format(self.timer.use_time(), len(data_list)))
                 return data_list

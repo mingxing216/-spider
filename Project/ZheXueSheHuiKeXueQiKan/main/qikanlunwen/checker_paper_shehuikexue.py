@@ -68,11 +68,12 @@ class CheckerMain(BaseChecher):
         self.timer.start()
         for task in task_list:
             sha = task[0]
-            task_obj = json.loads(task[1], encoding='utf-8')
+            task_obj = task[1]
             doc_sha = json.loads(task_obj.get('d:rela_document', '{}')).get('sha', '')
             paper_doc_dict[sha] = doc_sha
             if doc_sha:
                 doc_sha_list.append(doc_sha)
+
         columns = ['d:label_obj']
         doc_data_list = self.hbase_obj.get_datas_from_hbase('ss_document', doc_sha_list, columns)
         print(doc_data_list)
@@ -81,7 +82,7 @@ class CheckerMain(BaseChecher):
 
         for task in task_list:
             sha = task[0]
-            task_obj = json.loads(task[1], encoding='utf-8')
+            task_obj = task[1]
             title = task_obj.get('d:title', '')
             author = task_obj.get('d:author', '')
             keyword = json.loads(task_obj.get('d:keyword', '{}')).get('text', '')
@@ -119,13 +120,14 @@ class CheckerMain(BaseChecher):
                              format(self.pdf_timer.use_time(), sha))
                 entity_data['has_fulltext'] = 'None'
             else:
-                # 获取全文主键
+                # 获取文档实体数据
                 doc_data = doc_entity_dict[doc_sha]
                 if not doc_data:
                     logger.error('fulltext | 无文档实体 | use time: {} | none | sha: {}'.
                                  format(self.pdf_timer.use_time(), sha))
                     entity_data['has_fulltext'] = 'None'
                 else:
+                    # 获取全文主键
                     fulltext_sha = json.loads(doc_data.get('d:label_obj', '{}')).get('全部', '[]')[0].get('sha', '')
                     if not fulltext_sha:
                         logger.error('fulltext | 无关联全文 | use time: {} | none | sha: {}'.

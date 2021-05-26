@@ -65,7 +65,7 @@ class CheckerMain(BaseChecher):
         for task in task_list:
             self.timer.start()
             sha = task[0]
-            task_obj = json.loads(task[1], encoding='utf-8')
+            task_obj = task[1]
             title = task_obj.get('d:title', '')
             author = task_obj.get('d:author', '')
             keyword = json.loads(task_obj.get('d:keyword', '{}')).get('text', '')
