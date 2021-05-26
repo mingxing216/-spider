@@ -62,7 +62,23 @@ class CheckerMain(BaseChecher):
         return b_valid
 
     def handle(self, task_list, data_list):
+        paper_doc_dict = {}
+        doc_entity_dict = {}
+        doc_sha_list = []
         self.timer.start()
+        for task in task_list:
+            sha = task[0]
+            task_obj = json.loads(task[1], encoding='utf-8')
+            document_sha = json.loads(task_obj.get('d:rela_document', '{}')).get('sha', '')
+            paper_doc_dict[sha] = document_sha
+            if document_sha:
+                doc_sha_list.append(document_sha)
+        columns = ['d:label_obj']
+        doc_data_list = self.hbase_obj.get_datas_from_hbase('ss_document', doc_sha_list, columns)
+        print(doc_data_list)
+        for (document_sha, data) in doc_sha_list:
+            doc_entity_dict[document_sha] = data
+
         for task in task_list:
             sha = task[0]
             task_obj = json.loads(task[1], encoding='utf-8')
@@ -96,17 +112,33 @@ class CheckerMain(BaseChecher):
 
             self.pdf_timer.start()
             # 获取关联文档实体中的全文主键
-            document_sha = json.loads(task_obj.get('d:rela_document', '{}')).get('sha', '')
-            if document_sha:
-                columns = ['d:label_obj']
-                doc_data = self.hbase_obj.get_one_data_from_hbase('ss_document', document_sha, columns)
-                if doc_data:
-                    # 获取全文主键
+            # document_sha = json.loads(task_obj.get('d:rela_document', '{}')).get('sha', '')
+            document_sha = paper_doc_dict[sha]
+            if not document_sha:
+                logger.error('fulltext | 无关联文档 | use time: {} | none | sha: {}'.
+                             format(self.pdf_timer.use_time(), sha))
+                entity_data['has_fulltext'] = 'None'
+            else:
+                # 获取全文主键
+                doc_data = doc_entity_dict[document_sha]
+                if not doc_data:
+                    logger.error('fulltext | 无文档实体 | use time: {} | none | sha: {}'.
+                                 format(self.pdf_timer.use_time(), sha))
+                    entity_data['has_fulltext'] = 'None'
+                else:
                     fulltext_sha = json.loads(doc_data.get('d:label_obj', '{}')).get('全部', '[]')[0].get('sha', '')
-                    if fulltext_sha:
+                    if not fulltext_sha:
+                        logger.error('fulltext | 无关联全文 | use time: {} | none | sha: {}'.
+                                     format(self.pdf_timer.use_time(), sha))
+                        entity_data['has_fulltext'] = 'None'
+                    else:
                         columns = ['o:content_type', 'o:length', 'm:content']
                         fulltext_data = self.hbase_obj.get_one_data_from_hbase('media:document', fulltext_sha, columns)
-                        if fulltext_data:
+                        if not fulltext_data:
+                            logger.error('fulltext | 无全文 | use time: {} | none | sha: {}'.
+                                         format(self.pdf_timer.use_time(), sha))
+                            entity_data['has_fulltext'] = 'None'
+                        else:
                             content_type = fulltext_data.get('o:content_type', '')
                             fulltext = fulltext_data.get('m:content', '')
                             b_fulltext = base64.b64decode(fulltext)
@@ -131,23 +163,6 @@ class CheckerMain(BaseChecher):
                                     entity_data['has_fulltext'] = 'HTML'
                                 else:
                                     entity_data['has_fulltext'] = content_type
-
-                        else:
-                            logger.error('fulltext | 无全文 | use time: {} | none | sha: {}'.
-                                         format(self.pdf_timer.use_time(), sha))
-                            entity_data['has_fulltext'] = 'None'
-                    else:
-                        logger.error('fulltext | 无关联全文 | use time: {} | none | sha: {}'.
-                                     format(self.pdf_timer.use_time(), sha))
-                        entity_data['has_fulltext'] = 'None'
-                else:
-                    logger.error('fulltext | 无文档实体 | use time: {} | none | sha: {}'.
-                                 format(self.pdf_timer.use_time(), sha))
-                    entity_data['has_fulltext'] = 'None'
-            else:
-                logger.error('fulltext | 无关联文档 | use time: {} | none | sha: {}'.
-                             format(self.pdf_timer.use_time(), sha))
-                entity_data['has_fulltext'] = 'None'
 
             # ====================================公共字段
             # 生成sha

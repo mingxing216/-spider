@@ -57,10 +57,10 @@ class HBasePool(object):
             self.logging.error('{} {}'.format(str(e), row_key))
             return
 
-    def get_datas_from_hbase(self, table, row_key_list):
+    def get_datas_from_hbase(self, table, row_key_list, columns=None):
         self.timer.start()
         self.logging.debug('hbase | 开始获取数据')
-        res = self._get_datas_from_hbase(table, row_key_list)
+        res = self._get_datas_from_hbase(table, row_key_list, columns=columns)
         if res is not None:
             self.logging.info('hbase | rows获取数据成功 | use time: {} | count: {}'.format(self.timer.use_time(), len(res)))
         else:
@@ -70,13 +70,13 @@ class HBasePool(object):
         return res
 
     # 获取hbase数据
-    def _get_datas_from_hbase(self, table, row_key_list):
+    def _get_datas_from_hbase(self, table, row_key_list, columns=None):
         try:
             with self.pool.connection() as connection:
                 # print(connection.tables())
                 tab = happybase.Table(table, connection)
                 # print(table.families())
-                info = tab.rows(row_key_list, columns=None, include_timestamp=False)
+                info = tab.rows(row_key_list, columns=columns, include_timestamp=False)
                 # print(info)
                 return info
 
