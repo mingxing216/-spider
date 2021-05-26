@@ -109,7 +109,6 @@ class CheckerMain(BaseChecher):
                         if fulltext_data:
                             content_type = fulltext_data.get('o:content_type', '')
                             fulltext = fulltext_data.get('m:content', '')
-
                             b_fulltext = base64.b64decode(fulltext)
                             # 检测PDF文件
                             is_value = self.is_valid_pdf_bytes(b_fulltext)
@@ -117,14 +116,12 @@ class CheckerMain(BaseChecher):
                                 logger.error('fulltext | 检测PDF文件出错 | use time: {} | sha: {}'.
                                              format(self.pdf_timer.use_time(), fulltext_sha))
                                 entity_data['has_fulltext'] = 'None'
-
-                            if not is_value:
+                            elif not is_value:
                                 # 更新种子错误信息
                                 logger.error('fulltext | not PDF | use time: {} | sha: {}'.
                                              format(self.pdf_timer.use_time(), fulltext_sha))
                                 entity_data['has_fulltext'] = 'None'
-
-                            if is_value:
+                            else:
                                 # 全文数据增加content_type字段
                                 con_type = 'application/pdf'
                                 self.dao.save_content_type_to_hbase(sha=fulltext_sha, type='document', contype=con_type)
