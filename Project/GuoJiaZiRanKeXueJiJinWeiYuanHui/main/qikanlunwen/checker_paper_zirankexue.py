@@ -65,7 +65,6 @@ class CheckerMain(BaseChecher):
         self.timer.start()
         for task in task_list:
             sha = task[0]
-            print('paper_sha: {}'.format(sha))
             task_obj = json.loads(task[1], encoding='utf-8')
             title = task_obj.get('d:title', '')
             author = task_obj.get('d:author', '')
@@ -203,24 +202,23 @@ class CheckerMain(BaseChecher):
                 try:
                     # 获取字段值存入字典并返回sha
                     self.handle(task_list=task_list, data_list=data_list)
-                    print(data_list)
-                    # # 保存数据到Hbase
-                    # if not data_list:
-                    #     logger.error(
-                    #         'task end | task failed | use time: {} | count: {} | key: {} | No data'.
-                    #             format(task_timer.use_time(), len(task_list), first_key))
-                    # elif 'sha' not in data_list[-1]:
-                    #     logger.error(
-                    #         'task end | task failed | use time: {} | count: {} | key: {} | Data Incomplete'.
-                    #             format(task_timer.use_time(), len(task_list), first_key))
-                    # else:
-                    #     # 存储数据
-                    #     success = self.dao.save_data_to_hbase(data=data_list)
-                    #
-                    #     if not success:
-                    #         logger.error(
-                    #             'task end | task failed | use time: {} | count: {} | key: {}'.
-                    #                 format(task_timer.use_time(), len(task_list), first_key))
+                    # 保存数据到Hbase
+                    if not data_list:
+                        logger.error(
+                            'task end | task failed | use time: {} | count: {} | key: {} | No data'.
+                                format(task_timer.use_time(), len(task_list), first_key))
+                    elif 'sha' not in data_list[-1]:
+                        logger.error(
+                            'task end | task failed | use time: {} | count: {} | key: {} | Data Incomplete'.
+                                format(task_timer.use_time(), len(task_list), first_key))
+                    else:
+                        # 存储数据
+                        success = self.dao.save_data_to_hbase(data=data_list)
+
+                        if not success:
+                            logger.error(
+                                'task end | task failed | use time: {} | count: {} | key: {}'.
+                                    format(task_timer.use_time(), len(task_list), first_key))
                 except Exception as e:
                     logger.exception(str(traceback.format_exc()))
                     logger.error(
