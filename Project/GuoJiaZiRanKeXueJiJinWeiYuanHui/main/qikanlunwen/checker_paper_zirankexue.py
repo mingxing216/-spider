@@ -126,7 +126,7 @@ class CheckerMain(BaseChecher):
 
                             # 全文数据增加content_type字段
                             con_type = 'application/pdf'
-                            self.dao.save_content_type_to_hbase(sha=sha, type='document', contype=con_type)
+                            self.dao.save_content_type_to_hbase(sha=fulltext_sha, type='document', contype=con_type)
                             if not content_type:
                                 entity_data['has_fulltext'] = 'PDF'
 
@@ -152,10 +152,14 @@ class CheckerMain(BaseChecher):
             entity_data['sha'] = sha
             # 生成ss ——实体
             entity_data['ss'] = '论文'
+            # 生成clazz ——层级关系
+            entity_data['clazz'] = task_obj.get('s:clazz', '')
             # 生成ws ——目标网站
             entity_data['ws'] = '国家自然科学基金委员会'
             # 生成biz ——项目
             entity_data['biz'] = '文献大数据_论文'
+            # 更新责任人
+            entity_data['modified_by'] = '张明星'
             # 元数据版本号
             entity_data['metadata_version'] = 'V1.1.1'
             # 采集脚本版本号
@@ -171,7 +175,7 @@ class CheckerMain(BaseChecher):
         total_count = 0
         redis_field_key = row_start + ':' + row_stop
         query = "SingleColumnValueFilter('s', 'ws', =, 'substring:国家自然科学基金委员会') AND SingleColumnValueFilter('d', 'metadata_version', =, 'substring:V1', true, true)"
-        columns = ['s:ws', 's:es', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
+        columns = ['s:ws', 's:es', 's:clazz', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
                    'd:keyword', 'd:journal_information', 'd:classification_code', 'd:rela_document', 'd:references', 'd:cited_literature', 'd:url']
         # get last start_key from redis;
         redis_value = self.redis_obj.hget('check_start', redis_field_key)
@@ -189,7 +193,7 @@ class CheckerMain(BaseChecher):
             task_timer.start()
 
             task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=first_key, row_stop=row_stop,
-                                                       query=query, columns=columns, limit=2)
+                                                       query=query, columns=columns, limit=500)
             if task_list:
                 total_count += len(task_list)
                 first_key = task_list[0][0]
