@@ -71,14 +71,23 @@ class HBasePool(object):
 
     # 获取hbase数据
     def _get_datas_from_hbase(self, table, row_key_list, columns=None):
+        data_list = []
         try:
             with self.pool.connection() as connection:
                 # print(connection.tables())
                 tab = happybase.Table(table, connection)
                 # print(table.families())
-                info = tab.rows(row_key_list, columns=columns, include_timestamp=False)
+                rows_data = tab.rows(row_key_list, columns=columns, include_timestamp=False)
                 # print(info)
-                return info
+                for row, datas in rows_data:
+                    data = dict()
+                    for key, value in datas.items():
+                        data[key.decode("utf-8")] = value.decode('utf-8')
+                    res = json.dumps(data, ensure_ascii=False)
+
+                    data_list.append((row.decode("utf-8"), res))
+                
+                return data_list
 
         except Exception as e:
             self.logging.error('{} {}'.format(str(e), row_key_list))
