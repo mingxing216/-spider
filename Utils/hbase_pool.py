@@ -86,7 +86,7 @@ class HBasePool(object):
                     res = json.dumps(data, ensure_ascii=False)
 
                     data_list.append((row.decode("utf-8"), res))
-                
+
                 return data_list
 
         except Exception as e:
