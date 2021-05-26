@@ -62,8 +62,8 @@ class CheckerMain(BaseChecher):
         return b_valid
 
     def handle(self, task_list, data_list):
-        self.timer.start()
         for task in task_list:
+            self.timer.start()
             sha = task[0]
             task_obj = json.loads(task[1], encoding='utf-8')
             title = task_obj.get('d:title', '')
@@ -129,6 +129,13 @@ class CheckerMain(BaseChecher):
                             self.dao.save_content_type_to_hbase(sha=fulltext_sha, type='document', contype=con_type)
                             if not content_type:
                                 entity_data['has_fulltext'] = 'PDF'
+                            else:
+                                if 'pdf' in content_type:
+                                    entity_data['has_fulltext'] = 'PDF'
+                                elif 'text' in content_type:
+                                    entity_data['has_fulltext'] = 'HTML'
+                                else:
+                                    entity_data['has_fulltext'] = content_type
 
                         else:
                             logger.error('fulltext | 无全文 | use time: {} | none | sha: {}'.
