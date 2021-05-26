@@ -15,9 +15,9 @@ from io import BytesIO
 from fitz import fitz
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
-from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.service import service
-from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui.dao import dao
-from Project.GuoJiaZiRanKeXueJiJinWeiYuanHui import config
+from Project.ZheXueSheHuiKeXueQiKan.service import service
+from Project.ZheXueSheHuiKeXueQiKan.dao import dao
+from Project.ZheXueSheHuiKeXueQiKan import config
 from Log import logging
 from Utils import timers, hbase_pool, redis_pool
 from settings import SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
@@ -108,6 +108,7 @@ class CheckerMain(BaseChecher):
                         fulltext_data = self.hbase_obj.get_one_data_from_hbase('media:document', fulltext_sha, columns)
                         if fulltext_data:
                             content_type = fulltext_data.get('o:content_type', '')
+                            print(content_type)
                             fulltext = fulltext_data.get('m:content', '')
                             b_fulltext = base64.b64decode(fulltext)
                             # 检测PDF文件
@@ -122,18 +123,15 @@ class CheckerMain(BaseChecher):
                                              format(self.pdf_timer.use_time(), fulltext_sha))
                                 entity_data['has_fulltext'] = 'None'
                             else:
-                                # 全文数据增加content_type字段
-                                con_type = 'application/pdf'
-                                self.dao.save_content_type_to_hbase(sha=fulltext_sha, type='document', contype=con_type)
-                                if not content_type:
+                                # # 全文数据增加content_type字段
+                                # con_type = 'application/pdf'
+                                # self.dao.save_content_type_to_hbase(sha=fulltext_sha, type='document', contype=con_type)
+                                if 'pdf' in content_type:
                                     entity_data['has_fulltext'] = 'PDF'
+                                elif 'text' in content_type:
+                                    entity_data['has_fulltext'] = 'HTML'
                                 else:
-                                    if 'pdf' in content_type:
-                                        entity_data['has_fulltext'] = 'PDF'
-                                    elif 'text' in content_type:
-                                        entity_data['has_fulltext'] = 'HTML'
-                                    else:
-                                        entity_data['has_fulltext'] = content_type
+                                    entity_data['has_fulltext'] = content_type
 
                         else:
                             logger.error('fulltext | 无全文 | use time: {} | none | sha: {}'.
@@ -160,7 +158,7 @@ class CheckerMain(BaseChecher):
             # 生成clazz ——层级关系
             entity_data['clazz'] = task_obj.get('s:clazz', '')
             # 生成ws ——目标网站
-            entity_data['ws'] = '国家自然科学基金委员会'
+            entity_data['ws'] = task_obj.get('s:ws', '')
             # 生成biz ——项目
             entity_data['biz'] = '文献大数据_论文'
             # 更新责任人
@@ -179,7 +177,7 @@ class CheckerMain(BaseChecher):
         task_timer = timers.Timer()
         total_count = 0
         redis_field_key = row_start + ':' + row_stop
-        query = "SingleColumnValueFilter('s', 'ws', =, 'substring:国家自然科学基金委员会') AND SingleColumnValueFilter('d', 'metadata_version', =, 'substring:V1', true, true)"
+        query = "SingleColumnValueFilter('s', 'ws', =, 'substring:国家哲学社会科学学术期刊数据库') AND SingleColumnValueFilter('d', 'metadata_version', =, 'substring:V1', true, true)"
         columns = ['s:ws', 's:es', 's:clazz', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
                    'd:keyword', 'd:journal_information', 'd:classification_code', 'd:rela_document', 'd:references', 'd:cited_literature', 'd:url']
         # get last start_key from redis;
