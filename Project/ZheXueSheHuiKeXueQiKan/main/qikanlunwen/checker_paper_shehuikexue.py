@@ -22,7 +22,7 @@ from Log import logging
 from Utils import timers, hbase_pool, redis_pool
 from settings import SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
 
-LOG_FILE_DIR = 'ZiRanKeXue'  # LOG日志存放路径
+LOG_FILE_DIR = 'SheHuiKeXue'  # LOG日志存放路径
 LOG_NAME = '论文_check'  # LOG名
 logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 
@@ -42,7 +42,7 @@ class CheckerMain(BaseChecher):
         self.timer = timers.Timer()
         self.pdf_timer = timers.Timer()
         # redis对象
-        self.redis_obj = redis_pool.RedisPoolUtils(10, 1)
+        self.redis_obj = redis_pool.RedisPoolUtils(10, 2)
         # hbase对象
         self.hbase_obj = hbase_pool.HBasePool(host=hostname, logging=logger)
 
