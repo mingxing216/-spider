@@ -113,14 +113,14 @@ class CheckerMain(BaseChecher):
             self.pdf_timer.start()
             # 获取关联文档实体中的全文主键
             # document_sha = json.loads(task_obj.get('d:rela_document', '{}')).get('sha', '')
-            doc_sha = paper_doc_dict[sha]
+            doc_sha = paper_doc_dict.get(sha, '')
             if not doc_sha:
                 logger.error('fulltext | 无关联文档 | use time: {} | none | sha: {}'.
                              format(self.pdf_timer.use_time(), sha))
                 entity_data['has_fulltext'] = 'None'
             else:
                 # 获取文档实体数据
-                doc_data = doc_entity_dict[doc_sha]
+                doc_data = doc_entity_dict.get(doc_sha, '')
                 if not doc_data:
                     logger.error('fulltext | 无文档实体 | use time: {} | none | sha: {}'.
                                  format(self.pdf_timer.use_time(), sha))
