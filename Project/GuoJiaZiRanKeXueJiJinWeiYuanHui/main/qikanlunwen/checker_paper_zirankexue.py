@@ -124,18 +124,19 @@ class CheckerMain(BaseChecher):
                                              format(self.pdf_timer.use_time(), fulltext_sha))
                                 entity_data['has_fulltext'] = 'None'
 
-                            # 全文数据增加content_type字段
-                            con_type = 'application/pdf'
-                            self.dao.save_content_type_to_hbase(sha=fulltext_sha, type='document', contype=con_type)
-                            if not content_type:
-                                entity_data['has_fulltext'] = 'PDF'
-                            else:
-                                if 'pdf' in content_type:
+                            if is_value:
+                                # 全文数据增加content_type字段
+                                con_type = 'application/pdf'
+                                self.dao.save_content_type_to_hbase(sha=fulltext_sha, type='document', contype=con_type)
+                                if not content_type:
                                     entity_data['has_fulltext'] = 'PDF'
-                                elif 'text' in content_type:
-                                    entity_data['has_fulltext'] = 'HTML'
                                 else:
-                                    entity_data['has_fulltext'] = content_type
+                                    if 'pdf' in content_type:
+                                        entity_data['has_fulltext'] = 'PDF'
+                                    elif 'text' in content_type:
+                                        entity_data['has_fulltext'] = 'HTML'
+                                    else:
+                                        entity_data['has_fulltext'] = content_type
 
                         else:
                             logger.error('fulltext | 无全文 | use time: {} | none | sha: {}'.
