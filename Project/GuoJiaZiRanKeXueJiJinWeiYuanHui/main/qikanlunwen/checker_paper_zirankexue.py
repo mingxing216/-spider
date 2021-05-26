@@ -40,12 +40,13 @@ class CheckerMain(BaseChecher):
     def __init__(self, hostname):
         super().__init__()
         self.timer = timers.Timer()
+        self.pdf_timer = timers.Timer()
         # redis对象
         self.redis_obj = redis_pool.RedisPoolUtils(10, 1)
         # hbase对象
         self.hbase_obj = hbase_pool.HBasePool(host=hostname, logging=logger)
 
-    def is_valid_pdf_bytes(self, content, sha):
+    def is_valid_pdf_bytes(self, content):
         b_valid = True
         try:
             with fitz.open(stream=BytesIO(content), filetype="pdf") as doc:
@@ -56,7 +57,6 @@ class CheckerMain(BaseChecher):
                     b_valid = False
 
         except Exception:
-            logger.error('检测PDF文件出错 sha: {}'.format(sha))
             return
 
         return b_valid
@@ -64,7 +64,6 @@ class CheckerMain(BaseChecher):
     def handle(self, task_list, data_list):
         self.timer.start()
         for task in task_list:
-            print(task)
             sha = task[0]
             print('paper_sha: {}'.format(sha))
             task_obj = json.loads(task[1], encoding='utf-8')
@@ -96,37 +95,58 @@ class CheckerMain(BaseChecher):
             logger.info('checker | score | use time: {} | score: {} | sha: {}'.
                         format(self.timer.use_time(), entity_data['quality_score'], sha))
 
+            self.pdf_timer.start()
             # 获取关联文档实体中的全文主键
             document_sha = json.loads(task_obj.get('d:rela_document', '{}')).get('sha', '')
             if document_sha:
-                print('document_sha: {}'.format(document_sha))
                 columns = ['d:label_obj']
                 doc_data = self.hbase_obj.get_one_data_from_hbase('ss_document', document_sha, columns)
-                print(doc_data)
                 if doc_data:
                     # 获取全文主键
                     fulltext_sha = json.loads(doc_data.get('d:label_obj', '{}')).get('全部', '[]')[0].get('sha', '')
-                    print('fulltext_sha: {}'.format(fulltext_sha))
                     if fulltext_sha:
                         columns = ['o:content_type', 'o:length', 'm:content']
                         fulltext_data = self.hbase_obj.get_one_data_from_hbase('media:document', fulltext_sha, columns)
+                        if fulltext_data:
+                            content_type = fulltext_data.get('o:content_type', '')
+                            fulltext = fulltext_data.get('m:content', '')
 
-                        content_type = fulltext_data.get('o:content_type', '')
-                        fulltext = fulltext_data.get('m:content', '')
+                            b_fulltext = base64.b64decode(fulltext)
+                            # 检测PDF文件
+                            is_value = self.is_valid_pdf_bytes(b_fulltext)
+                            if is_value is None:
+                                logger.error('fulltext | 检测PDF文件出错 | use time: {} | sha: {}'.
+                                             format(self.pdf_timer.use_time(), fulltext_sha))
+                                entity_data['has_fulltext'] = 'None'
 
-                        b_fulltext = base64.b64decode(fulltext)
-                        print(len(b_fulltext))
-                        print(fulltext_data.get('o:length', ''))
-                        # 检测PDF文件
-                        is_value = self.is_valid_pdf_bytes(b_fulltext, fulltext_sha)
-                        if is_value is None:
-                            logger.error('document | 检测PDF文件出错 sha: {}'.format(fulltext_sha))
-                            return
+                            if not is_value:
+                                # 更新种子错误信息
+                                logger.error('fulltext | not PDF | use time: {} | sha: {}'.
+                                             format(self.pdf_timer.use_time(), fulltext_sha))
+                                entity_data['has_fulltext'] = 'None'
 
-                        if not is_value:
-                            # 更新种子错误信息
-                            logger.error('document | not PDF, sha: {}'.format(fulltext_sha))
-                            return
+                            # 全文数据增加content_type字段
+                            con_type = 'application/pdf'
+                            self.dao.save_content_type_to_hbase(sha=sha, type='document', contype=con_type)
+                            if not content_type:
+                                entity_data['has_fulltext'] = 'PDF'
+
+                        else:
+                            logger.error('fulltext | 无全文 | use time: {} | none | sha: {}'.
+                                         format(self.pdf_timer.use_time(), sha))
+                            entity_data['has_fulltext'] = 'None'
+                    else:
+                        logger.error('fulltext | 无关联全文 | use time: {} | none | sha: {}'.
+                                     format(self.pdf_timer.use_time(), sha))
+                        entity_data['has_fulltext'] = 'None'
+                else:
+                    logger.error('fulltext | 无文档实体 | use time: {} | none | sha: {}'.
+                                 format(self.pdf_timer.use_time(), sha))
+                    entity_data['has_fulltext'] = 'None'
+            else:
+                logger.error('fulltext | 无关联文档 | use time: {} | none | sha: {}'.
+                             format(self.pdf_timer.use_time(), sha))
+                entity_data['has_fulltext'] = 'None'
 
             # ====================================公共字段
             # 生成sha

@@ -374,7 +374,7 @@ class Dao(object):
 
     def save_media_to_hbase(self, media_url, content, item, type, length=None, contype=None):
         self.timer.start()
-        self.logging.info('storage start | 开始存储附件 {}'.format(type))
+        self.logging.debug('storage start | 开始存储附件 {}'.format(type))
         ret = self.__save_media_to_hbase(media_url, content, item, type, length, contype)
         if ret:
             self.logging.info('storage end | 存储附件成功 {} | use time: {}'.format(type, self.timer.use_time()))
@@ -454,6 +454,46 @@ class Dao(object):
             self.logging.error(
                 'storage | Save media to Hbase | use time: {} | status: NO | sha: {} | length: {} | memo: {}'.format(
                     media_start.use_time(), sha, data_dict.get('length', ''), e))
+            return False
+
+    # 保存流媒体到hbase
+    def save_content_type_to_hbase(self, sha, type, contype):
+        url = settings.SAVE_HBASE_MEDIA_URL
+        data_dict = {
+            'pk': sha,
+            'content_type': contype,
+            'metadata_version': 'V1.2'
+        }
+
+        form_data = {
+            'ip': self.local_ip,
+            'type': type,
+            'wid': '100',
+            'ref': '',
+            'item': json.dumps(data_dict, ensure_ascii=False)
+        }
+        # 开始存储多媒体数据
+        media_start = timers.Timer()
+        media_start.start()
+        try:
+            resp = self.s.post(url=url, data=form_data, timeout=(5, 10)).content.decode('utf-8')
+            respon = json.loads(resp)
+            if respon['resultCode'] == 0:
+                self.logging.info(
+                    'storage | Save media to Hbase | use time: {} | status: OK | sha: {} | memo: {}'.format(
+                        media_start.use_time(), sha, resp))
+                return True
+
+            else:
+                self.logging.error(
+                    'storage | Save media to Hbase | use time: {} | status: NO | sha: {} | memo: {}'.format(
+                        media_start.use_time(), sha, resp))
+                return False
+
+        except Exception as e:
+            self.logging.error(
+                'storage | Save media to Hbase | use time: {} | status: NO | sha: {} | memo: {}'.format(
+                    media_start.use_time(), sha, e))
             return False
 
     # 读取Hbase实体数据
