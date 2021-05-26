@@ -31,9 +31,9 @@ class HBasePool(object):
         self.logging.debug('hbase | 开始获取数据')
         res = self._get_one_data_from_hbase(table, row_key, columns=columns)
         if res is not None:
-            self.logging.info('hbase | 数据获取成功 | use time: {}'.format(self.timer.use_time()))
+            self.logging.info('hbase | row获取数据成功 | use time: {}'.format(self.timer.use_time()))
         else:
-            self.logging.info('hbase | 数据获取失败 | use time: {}'.format(self.timer.use_time()))
+            self.logging.info('hbase | row获取数据失败 | use time: {}'.format(self.timer.use_time()))
         self.logging.debug('hbase | 结束获取数据')
 
         return res
@@ -62,9 +62,9 @@ class HBasePool(object):
         self.logging.debug('hbase | 开始获取数据')
         res = self._get_datas_from_hbase(table, row_key_list)
         if res is not None:
-            self.logging.info('hbase | {} 条数据获取成功 | use time: {}'.format(len(res), self.timer.use_time()))
+            self.logging.info('hbase | rows获取数据成功 | use time: {} | count: {}'.format(self.timer.use_time(), len(res)))
         else:
-            self.logging.info('hbase | {} 条数据获取失败 | use time: {}'.format(len(row_key_list), self.timer.use_time()))
+            self.logging.info('hbase | rows获取数据失败 | use time: {} | count: {}'.format(self.timer.use_time(), len(row_key_list)))
         self.logging.debug('hbase | 结束获取数据')
 
         return res
@@ -119,7 +119,7 @@ class HBasePool(object):
 
                     data_list.append((row.decode("utf-8"), res))
 
-                self.logging.info('hbase | scan取据成功 | use time: {} | count: {}'.format(self.timer.use_time(), len(data_list)))
+                self.logging.info('hbase | scan获取数据成功 | use time: {} | count: {}'.format(self.timer.use_time(), len(data_list)))
                 return data_list
 
         except Exception as e:

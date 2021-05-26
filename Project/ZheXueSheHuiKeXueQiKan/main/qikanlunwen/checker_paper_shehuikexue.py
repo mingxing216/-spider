@@ -62,8 +62,8 @@ class CheckerMain(BaseChecher):
         return b_valid
 
     def handle(self, task_list, data_list):
+        self.timer.start()
         for task in task_list:
-            self.timer.start()
             sha = task[0]
             task_obj = json.loads(task[1], encoding='utf-8')
             title = task_obj.get('d:title', '')
@@ -108,7 +108,6 @@ class CheckerMain(BaseChecher):
                         fulltext_data = self.hbase_obj.get_one_data_from_hbase('media:document', fulltext_sha, columns)
                         if fulltext_data:
                             content_type = fulltext_data.get('o:content_type', '')
-                            print(content_type)
                             fulltext = fulltext_data.get('m:content', '')
                             b_fulltext = base64.b64decode(fulltext)
                             # 检测PDF文件
