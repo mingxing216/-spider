@@ -76,6 +76,9 @@ class CheckerMain(BaseChecher):
 
         columns = ['d:label_obj']
         doc_data_list = self.hbase_obj.get_datas_from_hbase('ss_document', doc_sha_list, columns)
+        if not doc_data_list:
+            return
+
         for doc_data in doc_data_list:
             doc_entity_dict[doc_data[0]] = doc_data[1]
 

@@ -33,7 +33,7 @@ class HBasePool(object):
         if res is not None:
             self.logging.info('hbase | row获取数据成功 | use time: {}'.format(self.timer.use_time()))
         else:
-            self.logging.info('hbase | row获取数据失败 | use time: {}'.format(self.timer.use_time()))
+            self.logging.error('hbase | row获取数据失败 | use time: {}'.format(self.timer.use_time()))
         self.logging.debug('hbase | 结束获取数据')
 
         return res
@@ -54,7 +54,7 @@ class HBasePool(object):
                 return data
 
         except Exception as e:
-            self.logging.error('{} {}'.format(str(e), row_key))
+            self.logging.error('hbase | msg: {} | key: {}'.format(e, row_key))
             return
 
     def get_datas_from_hbase(self, table, row_key_list, columns=None):
@@ -64,7 +64,7 @@ class HBasePool(object):
         if res is not None:
             self.logging.info('hbase | rows获取数据成功 | use time: {} | count: {}'.format(self.timer.use_time(), len(res)))
         else:
-            self.logging.info('hbase | rows获取数据失败 | use time: {} | count: {}'.format(self.timer.use_time(), len(row_key_list)))
+            self.logging.error('hbase | rows获取数据失败 | use time: {} | count: {}'.format(self.timer.use_time(), len(row_key_list)))
         self.logging.debug('hbase | 结束获取数据')
 
         return res
@@ -83,31 +83,29 @@ class HBasePool(object):
                     data = dict()
                     for key, value in datas.items():
                         data[key.decode("utf-8")] = value.decode('utf-8')
-
                     data_list.append((row.decode("utf-8"), data))
 
                 return data_list
 
         except Exception as e:
-            self.logging.error('{} {}'.format(str(e), row_key_list))
+            self.logging.error('hbase | msg: {} | key: {}'.format(e, row_key_list))
             return
 
     # 删除hbase数据
-    def delete_one_data_from_hbase(self, row_key):
+    def delete_one_data_from_hbase(self, table, row_key):
         self.timer.start()
         self.logging.debug('hbase | 开始删除数据')
         try:
             with self.pool.connection() as connection:
                 # print(connection.tables())
-                table = happybase.Table('media:document', connection)
+                tab = happybase.Table(table, connection)
                 # 删除一整行数据
-                table.delete(row_key)
+                tab.delete(row_key)
                 self.logging.info('hbase | 数据删除成功 | use time: {}'.format(self.timer.use_time()))
                 return True
 
         except Exception as e:
-            self.logging.error('{} {}'.format(str(e), row_key))
-            self.logging.error('hbase | 数据删除失败 | use time: {}'.format(self.timer.use_time()))
+            self.logging.error('hbase | 数据删除失败 | use time: {} | msg: {} | key: {}'.format(self.timer.use_time(), e, row_key))
             return False
 
     # hbase scan 批量扫描数据
@@ -123,14 +121,13 @@ class HBasePool(object):
                     data = dict()
                     for key, value in datas.items():
                         data[key.decode("utf-8")] = value.decode('utf-8')
-
                     data_list.append((row.decode("utf-8"), data))
 
                 self.logging.info('hbase | scan获取数据成功 | use time: {} | count: {}'.format(self.timer.use_time(), len(data_list)))
                 return data_list
 
         except Exception as e:
-            self.logging.error("hbase | {} | {}".format(row_start, e))
+            self.logging.error("hbase | scan获取数据失败 | use time: {} | key: {} | msg: {}".format(self.timer.use_time(), row_start, e))
             return
 
 
