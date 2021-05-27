@@ -336,7 +336,7 @@ class Dao(object):
         data_start = timers.Timer()
         data_start.start()
         try:
-            resp = self.s.post(url=url, data=form_data, timeout=(5, 10)).content.decode('utf-8')
+            resp = self.s.post(url=url, data=form_data, timeout=(10, 20)).content.decode('utf-8')
             respon = json.loads(resp)
             if isinstance(entity_data, list):
                 if respon['resultCode'] == 0:
@@ -476,7 +476,7 @@ class Dao(object):
         media_start = timers.Timer()
         media_start.start()
         try:
-            resp = self.s.post(url=url, data=form_data, timeout=(5, 10)).content.decode('utf-8')
+            resp = self.s.post(url=url, data=form_data, timeout=(10, 20)).content.decode('utf-8')
             respon = json.loads(resp)
             if respon['resultCode'] == 0:
                 self.logging.info(
