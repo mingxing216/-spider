@@ -214,7 +214,7 @@ class CheckerMain(BaseChecher):
             task_timer.start()
 
             task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=first_key, row_stop=row_stop,
-                                                       query=query, columns=columns, limit=500)
+                                                       query=query, columns=columns, limit=100)
             if task_list:
                 total_count += len(task_list)
                 first_key = task_list[0][0]
