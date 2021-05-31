@@ -10,6 +10,7 @@ import os
 import sys
 import json
 import base64
+import time
 import traceback
 from io import BytesIO
 from fitz import fitz
@@ -74,8 +75,8 @@ class CheckerMain(BaseChecher):
             if doc_sha:
                 doc_sha_list.append(doc_sha)
 
-        columns = ['d:label_obj']
-        doc_data_list = self.hbase_obj.get_datas_from_hbase('ss_document', doc_sha_list, columns)
+        doc_columns = ['d:label_obj']
+        doc_data_list = self.hbase_obj.get_datas_from_hbase('ss_document', doc_sha_list, doc_columns)
         if not doc_data_list:
             return
 
@@ -87,8 +88,8 @@ class CheckerMain(BaseChecher):
             task_obj = task[1]
             title = task_obj.get('d:title', '')
             author = task_obj.get('d:author', '')
-            keyword = json.loads(task_obj.get('d:keyword', '{}')).get('text', '')
-            abstract = json.loads(task_obj.get('d:abstract', '{}')).get('text', '')
+            keyword = json.loads(task_obj.get('d:keyword', '[]'))
+            abstract = json.loads(task_obj.get('d:abstract', '[]'))
             total_page = json.loads(task_obj.get('d:journal_information', '{}')).get('total_page', '')
             if total_page:
                 total_page = int(total_page)
@@ -136,37 +137,38 @@ class CheckerMain(BaseChecher):
                                      format(self.pdf_timer.use_time(), sha))
                         entity_data['has_fulltext'] = 'None'
                     else:
-                        columns = ['o:content_type', 'o:length', 'm:content']
-                        fulltext_data = self.hbase_obj.get_one_data_from_hbase('media:document', fulltext_sha, columns)
+                        fulltext_columns = ['o:content_type', 'o:length', 'm:content']
+                        fulltext_data = self.hbase_obj.get_one_data_from_hbase('media:document', fulltext_sha, fulltext_columns)
                         if not fulltext_data:
                             logger.error('fulltext | 无全文 | use time: {} | none | sha: {}'.
                                          format(self.pdf_timer.use_time(), sha))
                             entity_data['has_fulltext'] = 'None'
                         else:
                             content_type = fulltext_data.get('o:content_type', '')
-                            fulltext = fulltext_data.get('m:content', '')
-                            b_fulltext = base64.b64decode(fulltext)
-                            # 检测PDF文件
-                            is_value = self.is_valid_pdf_bytes(b_fulltext)
-                            if is_value is None:
-                                logger.error('fulltext | 检测PDF文件出错 | use time: {} | sha: {}'.
-                                             format(self.pdf_timer.use_time(), fulltext_sha))
-                                entity_data['has_fulltext'] = 'None'
-                            elif not is_value:
-                                # 更新种子错误信息
-                                logger.error('fulltext | not PDF | use time: {} | sha: {}'.
-                                             format(self.pdf_timer.use_time(), fulltext_sha))
-                                entity_data['has_fulltext'] = 'None'
-                            else:
-                                # # 全文数据增加content_type字段
-                                # con_type = 'application/pdf'
-                                # self.dao.save_content_type_to_hbase(sha=fulltext_sha, type='document', contype=con_type)
-                                if 'pdf' in content_type:
-                                    entity_data['has_fulltext'] = 'PDF'
-                                elif 'text' in content_type:
-                                    entity_data['has_fulltext'] = 'HTML'
+                            if 'pdf' in content_type:
+                                fulltext = fulltext_data.get('m:content', '')
+                                b_fulltext = base64.b64decode(fulltext)
+                                # 检测PDF文件
+                                is_value = self.is_valid_pdf_bytes(b_fulltext)
+                                if is_value is None:
+                                    logger.error('fulltext | 检测PDF文件出错 | use time: {} | sha: {}'.
+                                                 format(self.pdf_timer.use_time(), fulltext_sha))
+                                    entity_data['has_fulltext'] = 'None'
+                                elif not is_value:
+                                    # 更新种子错误信息
+                                    logger.error('fulltext | not PDF | use time: {} | sha: {}'.
+                                                 format(self.pdf_timer.use_time(), fulltext_sha))
+                                    entity_data['has_fulltext'] = 'None'
                                 else:
-                                    entity_data['has_fulltext'] = content_type
+                                    # # 全文数据增加content_type字段
+                                    # con_type = 'application/pdf'
+                                    # self.dao.save_content_type_to_hbase(sha=fulltext_sha, type='document', contype=con_type)
+                                    entity_data['has_fulltext'] = 'PDF'
+
+                            elif 'text' in content_type:
+                                entity_data['has_fulltext'] = 'HTML'
+                            else:
+                                entity_data['has_fulltext'] = content_type
 
             # ====================================公共字段
             # 生成sha
@@ -215,7 +217,16 @@ class CheckerMain(BaseChecher):
 
             task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=first_key, row_stop=row_stop,
                                                        query=query, columns=columns, limit=100)
-            if task_list:
+            if task_list is None:
+                logger.error('task | hbase库scan任务失败')
+                time.sleep(30)
+                continue
+
+            elif not task_list:
+                logger.info('task | hbase库中已无任务')
+                break
+
+            else:
                 total_count += len(task_list)
                 first_key = task_list[0][0]
                 # 将起始行键和处理总量存入redis中
@@ -255,9 +266,6 @@ class CheckerMain(BaseChecher):
                 logger.info(
                     'task end | task success | use time: {} | count: {}'.
                         format(task_timer.use_time(), len(task_list), first_key))
-            else:
-                logger.info('task | hbase库中已无任务')
-                break
 
 
 def start(row_start, row_stop, hostname):
