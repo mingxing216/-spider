@@ -112,6 +112,10 @@ class CheckerMain(BaseChecher):
                 entity_data['quality_score'] = '80'
             elif title and author and (total_page > 1) and (ref_detail or cit_detail):
                 entity_data['quality_score'] = '60'
+            elif title and author and keyword and abstract:
+                entity_data['quality_score'] = '40'
+            elif title and author and keyword:
+                entity_data['quality_score'] = '20'
             else:
                 entity_data['quality_score'] = '0'
 
