@@ -92,7 +92,11 @@ class CheckerMain(BaseChecher):
             abstract = json.loads(task_obj.get('d:abstract', '[]'))
             total_page = json.loads(task_obj.get('d:journal_information', '{}')).get('total_page', '')
             if total_page:
-                total_page = int(total_page)
+                try:
+                    total_page = int(total_page)
+                except Exception:
+                    logger.error('checker | 页码错误, 设置为0, {}'.format(total_page))
+                    total_page = 0
             else:
                 total_page = 0
             classification_code = json.loads(task_obj.get('d:classification_code', '{}')).get('code', '')
