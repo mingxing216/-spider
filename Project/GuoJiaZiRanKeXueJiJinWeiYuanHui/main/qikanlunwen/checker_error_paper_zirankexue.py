@@ -79,7 +79,7 @@ class CheckerMain(BaseChecher):
                                  format(full_timer.use_time(), fulltext_sha))
                     continue
                 else:
-                    paper_sha = json.loads(fulltext_data.get('o:rel_esse', '{}')).get('sha', '')
+                    paper_sha = eval(fulltext_data.get('o:rel_esse', '{}')).get('sha', '')
                     if not paper_sha:
                         logger.error('fulltext | 获取论文主键错误 | use time: {} | sha: {}'.
                                      format(full_timer.use_time(), fulltext_sha))
@@ -169,7 +169,7 @@ class CheckerMain(BaseChecher):
 
                 data_list.append(entity_data)
 
-            logger.info('handle | check | use time: {} | count: {}'.format(self.timer.use_time(), len(task_list)))
+            logger.info('handle | check | use time: {} | count: {}'.format(self.timer.use_time(), len(key_list)))
 
     def run(self):
         logger.debug('thread start')
