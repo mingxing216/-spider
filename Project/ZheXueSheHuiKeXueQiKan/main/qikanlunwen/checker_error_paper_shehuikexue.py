@@ -62,10 +62,9 @@ class CheckerMain(BaseChecher):
 
         return b_valid
 
-    def handle(self, task, data_dict):
+    def handle(self, sha, task, data_dict):
         self.timer.start()
-        sha = task[0]
-        task_obj = task[1]
+        task_obj = task
         title = task_obj.get('d:title', '')
         author = task_obj.get('d:author', '')
         keyword = json.loads(task_obj.get('d:keyword', '{}')).get('text', '')
@@ -197,7 +196,7 @@ class CheckerMain(BaseChecher):
 
                     try:
                         # 获取字段值存入字典并返回sha
-                        self.handle(task=task, data_dict=data_dict)
+                        self.handle(sha=first_key, task=task, data_dict=data_dict)
                         # 保存数据到Hbase
                         if not data_dict:
                             logger.error(
