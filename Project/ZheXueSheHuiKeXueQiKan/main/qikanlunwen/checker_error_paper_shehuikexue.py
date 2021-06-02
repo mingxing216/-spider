@@ -221,7 +221,7 @@ class CheckerMain(BaseChecher):
                                 format(task_timer.use_time(), len(task), first_key, e))
 
                     logger.info(
-                        'task end | task success | use time: {} | count: {}'.
+                        'task end | task success | use time: {} | count: {} | key: {}'.
                             format(task_timer.use_time(), len(task), first_key))
 
 
