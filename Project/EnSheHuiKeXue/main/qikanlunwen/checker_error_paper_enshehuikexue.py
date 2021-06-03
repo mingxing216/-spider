@@ -16,14 +16,14 @@ from io import BytesIO
 from fitz import fitz
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
-from Project.ZheXueSheHuiKeXueQiKan.service import service
-from Project.ZheXueSheHuiKeXueQiKan.dao import dao
-from Project.ZheXueSheHuiKeXueQiKan import config
+from Project.EnSheHuiKeXue.service import service
+from Project.EnSheHuiKeXue.dao import dao
+from Project.EnSheHuiKeXue import config
 from Log import logging
 from Utils import timers, hbase_pool, redis_pool
 from settings import SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
 
-LOG_FILE_DIR = 'SheHuiKeXue'  # LOG日志存放路径
+LOG_FILE_DIR = 'EnSheHuiKeXue'  # LOG日志存放路径
 LOG_NAME = '论文_check'  # LOG名
 logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 
@@ -43,7 +43,7 @@ class CheckerMain(BaseChecher):
         self.timer = timers.Timer()
         self.pdf_timer = timers.Timer()
         # redis对象
-        self.redis_obj = redis_pool.RedisPoolUtils(10, 2)
+        self.redis_obj = redis_pool.RedisPoolUtils(10, 3)
         # hbase对象
         self.hbase_obj = hbase_pool.HBasePool(host=hostname, logging=logger)
 
@@ -67,11 +67,15 @@ class CheckerMain(BaseChecher):
         task_obj = task
         title = task_obj.get('d:title', '')
         author = task_obj.get('d:author', '')
-        keyword = json.loads(task_obj.get('d:keyword', '{}')).get('text', '')
-        abstract = json.loads(task_obj.get('d:abstract', '{}')).get('text', '')
+        keyword = json.loads(task_obj.get('d:keyword', '[]'))
+        abstract = json.loads(task_obj.get('d:abstract', '[]'))
         total_page = json.loads(task_obj.get('d:journal_information', '{}')).get('total_page', '')
         if total_page:
-            total_page = int(total_page)
+            try:
+                total_page = int(total_page)
+            except Exception:
+                logger.error('checker | 页码错误, 设置为0, {}'.format(total_page))
+                total_page = 0
         else:
             total_page = 0
         classification_code = json.loads(task_obj.get('d:classification_code', '{}')).get('code', '')
@@ -86,6 +90,10 @@ class CheckerMain(BaseChecher):
             data_dict['quality_score'] = '80'
         elif title and author and (total_page > 1) and (ref_detail or cit_detail):
             data_dict['quality_score'] = '60'
+        elif title and author and keyword and abstract:
+            data_dict['quality_score'] = '40'
+        elif title and author and keyword:
+            data_dict['quality_score'] = '20'
         else:
             data_dict['quality_score'] = '0'
 
@@ -94,6 +102,7 @@ class CheckerMain(BaseChecher):
 
         self.pdf_timer.start()
         # 获取关联文档实体中的全文主键
+        # document_sha = json.loads(task_obj.get('d:rela_document', '{}')).get('sha', '')
         doc_sha = json.loads(task_obj.get('d:rela_document', '{}')).get('sha', '')
         if not doc_sha:
             logger.error('fulltext | 无关联文档 | use time: {} | none | sha: {}'.
@@ -138,32 +147,32 @@ class CheckerMain(BaseChecher):
                                              format(self.pdf_timer.use_time(), fulltext_sha))
                                 data_dict['has_fulltext'] = 'None'
                             else:
-                                # 全文数据增加content_type字段
                                 data_dict['has_fulltext'] = 'PDF'
+
                         elif 'text' in content_type:
                             data_dict['has_fulltext'] = 'HTML'
                         else:
                             data_dict['has_fulltext'] = content_type
 
-            # ====================================公共字段
-            # 生成sha
-            data_dict['sha'] = sha
-            # 生成ss ——实体
-            data_dict['ss'] = '论文'
-            # 生成clazz ——层级关系
-            data_dict['clazz'] = task_obj.get('s:clazz', '')
-            # 生成ws ——目标网站
-            data_dict['ws'] = task_obj.get('s:ws', '')
-            # 生成biz ——项目
-            data_dict['biz'] = '文献大数据_论文'
-            # 更新责任人
-            data_dict['modified_by'] = '张明星'
-            # 元数据版本号
-            data_dict['metadata_version'] = 'V1.1.1'
-            # 采集脚本版本号
-            data_dict['script_version'] = 'V1.3.1'
+        # ====================================公共字段
+        # 生成sha
+        data_dict['sha'] = sha
+        # 生成ss ——实体
+        data_dict['ss'] = '论文'
+        # 生成clazz ——层级关系
+        data_dict['clazz'] = task_obj.get('s:clazz', '')
+        # 生成ws ——目标网站
+        data_dict['ws'] = task_obj.get('s:ws', '')
+        # 生成biz ——项目
+        data_dict['biz'] = '文献大数据_论文'
+        # 更新责任人
+        data_dict['modified_by'] = '张明星'
+        # 元数据版本号
+        data_dict['metadata_version'] = 'V1.1.1'
+        # 采集脚本版本号
+        data_dict['script_version'] = 'V1.3.1'
 
-            logger.info('handle | check | use time: {}'.format(self.timer.use_time()))
+        logger.info('handle | check | use time: {}'.format(self.timer.use_time()))
 
     def run(self):
         logger.debug('thread start')
@@ -172,7 +181,7 @@ class CheckerMain(BaseChecher):
         columns = ['s:ws', 's:es', 's:clazz', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
                    'd:keyword', 'd:journal_information', 'd:classification_code', 'd:rela_document', 'd:references', 'd:cited_literature', 'd:url']
 
-        with open('/opt/Log/Temp/sheke_error_sha.log', 'r') as f:
+        with open('/opt/Log/Temp/ensheke_error_sha.log', 'r') as f:
             first_key_list = f.readlines()
             for first_key in first_key_list:
                 first_key = first_key.replace('\n', '')
@@ -223,7 +232,6 @@ class CheckerMain(BaseChecher):
                     logger.info(
                         'task end | task success | use time: {} | count: {} | key: {}'.
                             format(task_timer.use_time(), len(task), first_key))
-
 
 def start(hostname):
     try:
