@@ -132,6 +132,16 @@ class HBasePool(object):
 
 
 if __name__ == '__main__':
-    hb = HBasePool('mm-node5')
+    hb = HBasePool('localhost')
     hb.get_one_data_from_hbase('ef4c10c09147242b65750a77c2b8d28d8a579147')
-    hb.scan_from_hbase('ss:paper')
+    query = "SingleColumnValueFilter('s', 'ws', =, 'substring:中国知网') AND SingleColumnValueFilter('s', 'es', =, 'substring:期刊论文') AND SingleColumnValueFilter('d', 'metadata_version', =, 'substring:V1', true, true)"
+    data_list = hb.scan_from_hbase(table='ss_paper', row_start='978f699b266058247419843f5fce5036e1521e56', limit=2, query=query)
+    for data in data_list:
+        print(data[1].get('d:keyword', '[]'))
+        print(data[1].get('d:keyword', '[]').replace('\\', ''))
+        keyword = json.loads(data[1].get('d:keyword', '[]').replace('\\', ''))
+        print(keyword)
+        print(data[1].get('d:abstract', '[]'))
+        print(data[1].get('d:abstract', '[]').replace('\\', ''))
+        abstract = json.loads(data[1].get('d:abstract', '[]'))
+        print(abstract)
