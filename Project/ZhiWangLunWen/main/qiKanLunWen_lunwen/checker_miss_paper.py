@@ -9,6 +9,7 @@ import os
 # from gevent import monkey
 # monkey.patch_all()
 import sys
+import time
 import traceback
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
@@ -56,21 +57,16 @@ class CheckerMain(BaseChecher):
                 total_page = int(total_page)
             else:
                 total_page = 0
-            references = task_obj.get('d:references', '')
-            cited_literature = task_obj.get('d:cited_literature', '')
-            ref_detail = ''
-            cit_detail = ''
-            if references:
-                ref_detail = json.loads(references).get('detail', '')
-            if cited_literature:
-                cit_detail = json.loads(cited_literature).get('detail', '')
+            classification_code = json.loads(task_obj.get('d:classification_code', '[]'))
+            ref_detail = json.loads(task_obj.get('d:references', '{}')).get('detail', '')
+            cit_detail = json.loads(task_obj.get('d:cited_literature', '{}')).get('detail', '')
 
             # ======================== 期刊论文实体数据 ===========================
             entity_data = dict()
 
-            if title and author and keyword and abstract:
+            if title and author and keyword and abstract and classification_code:
                 entity_data['quality_score'] = '100'
-            elif title and author and keyword:
+            elif title and author and keyword and classification_code:
                 entity_data['quality_score'] = '80'
             elif title and author and (total_page > 1) and (ref_detail or cit_detail):
                 entity_data['quality_score'] = '60'
@@ -104,12 +100,12 @@ class CheckerMain(BaseChecher):
     def run(self):
         logger.debug('thread start')
         task_timer = timers.Timer()
-        total_count = 0
 
         query = "SingleColumnValueFilter('s', 'ws', =, 'substring:中国知网') AND SingleColumnValueFilter('s', 'es', =, 'substring:期刊论文') AND SingleColumnValueFilter('d', 'metadata_version', =, 'substring:V1', true, true)"
-        columns = ['s:ws', 's:es', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
-                   'd:keyword', 'd:total_page', 'd:references', 'd:cited_literature', 'd:url']
-        with open('/opt/Log/Temp/error_sha.log', 'r') as f:
+        columns = ['s:ws', 's:es', 's:clazz', 'd:script_version', 'd:metadata_version', 'd:title', 'd:author', 'd:abstract',
+                   'd:keyword', 'd:total_page', 'd:classification_code', 'd:references', 'd:cited_literature', 'd:url']
+
+        with open('/opt/Log/Temp/cnki_miss_sha.log', 'r') as f:
             first_key_list = f.readlines()
             for first_key in first_key_list:
                 first_key = first_key.replace('\n', '')
@@ -119,8 +115,16 @@ class CheckerMain(BaseChecher):
                 task_timer.start()
                 task_list = self.hbase_obj.scan_from_hbase(table='ss_paper', row_start=first_key,
                                                            query=query, columns=columns, limit=500)
-                if task_list:
-                    total_count += len(task_list)
+                if task_list is None:
+                    logger.error('task | hbase库scan任务失败, 等待30s重新获取')
+                    time.sleep(30)
+                    continue
+
+                elif not task_list:
+                    logger.info('task | hbase库中已无任务')
+                    break
+
+                else:
                     first_key = task_list[0][0]
                     # 创建数据存储列表
                     data_list = []
@@ -150,18 +154,8 @@ class CheckerMain(BaseChecher):
                             'task end | task failed | use time: {} | count: {} | key: {} | {}'.
                                 format(task_timer.use_time(), len(task_list), first_key, e))
 
-                    row_start = task_list[-1][0]
-                    first_key = row_start[:39] + chr(ord(row_start[39:]) + 1)
                     logger.info(
-                        'task end | task success | use time: {} | count: {}'.
-                            format(task_timer.use_time(), len(task_list), first_key))
-                else:
-                    logger.info('task | hbase库获取失败')
-                    continue
-
-            else:
-                logger.info('task | 已无任务')
-                return
+                        'task end | task success | use time: {} | count: {}'.format(task_timer.use_time(), len(task_list)))
 
 
 def start(hostname):
