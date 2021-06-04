@@ -3,12 +3,13 @@
 """
 
 """
-import json
-import os
 # import gevent
 # from gevent import monkey
 # monkey.patch_all()
+import os
 import sys
+import re
+import json
 import time
 import traceback
 
@@ -50,11 +51,14 @@ class CheckerMain(BaseChecher):
             task_obj = task[1]
             title = task_obj.get('d:title', '')
             author = task_obj.get('d:author', '')
-            keyword = json.loads(task_obj.get('d:keyword', '[]'))
+            keyword = json.loads(task_obj.get('d:keyword', '[]').replace('\\', ''))
             abstract = json.loads(task_obj.get('d:abstract', '[]'))
             total_page = task_obj.get('d:total_page', '')
             if total_page:
-                total_page = int(total_page)
+                try:
+                    total_page = int(total_page)
+                except:
+                    total_page = int(re.findall(r"\d+", total_page)[0])
             else:
                 total_page = 0
             classification_code = json.loads(task_obj.get('d:classification_code', '[]'))
