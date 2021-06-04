@@ -51,13 +51,13 @@ class CheckerMain(BaseChecher):
             task_obj = task[1]
             title = task_obj.get('d:title', '')
             author = task_obj.get('d:author', '')
-            keyword = json.loads(task_obj.get('d:keyword', '[]').replace('\\', ''))
+            keyword = json.loads(task_obj.get('d:keyword', '[]'))
             abstract = json.loads(task_obj.get('d:abstract', '[]'))
             total_page = task_obj.get('d:total_page', '')
             if total_page:
                 try:
                     total_page = int(total_page)
-                except:
+                except Exception:
                     total_page = int(re.findall(r"\d+", total_page)[0])
             else:
                 total_page = 0
