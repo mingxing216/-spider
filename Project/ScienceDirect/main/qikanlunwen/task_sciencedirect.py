@@ -59,7 +59,7 @@ class SpiderMain(BaseSpiderMain):
         # 计数
         self.num = 0
 
-    def get_profile(self, url_list, task):
+    def get_profile(self, url_list):
         """论文详情种子存入mysql数据库"""
         for paper_url in url_list:
             # 保存url
@@ -69,16 +69,6 @@ class SpiderMain(BaseSpiderMain):
             mysql_paper = 'job_paper_{}'.format(paper_sha[0])
             # 存入数据库
             self.sto_dao.save_task_to_mysql(table=mysql_paper, memo=paper_url, ws='sciencedirect', es='期刊论文')
-
-        # 更新mysql期刊信息表中年期状态
-        year = task.get('year')
-        vol = task.get('vol')
-        issue = task.get('issue')
-        self.sto_dao.update_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
-                                                  ws='sciencedirect',
-                                                  journal_id=vol,
-                                                  year=year,
-                                                  issue=issue)
 
     def get_paper_catalog(self, task):
         """论文列表页翻页"""
@@ -107,7 +97,19 @@ class SpiderMain(BaseSpiderMain):
         paper_url_list = self.server.get_paper_list(paper_catalog_text, task)
         # 详情种子存储
         if paper_url_list:
-            self.get_profile(paper_url_list, task)
+            self.get_profile(paper_url_list)
+
+            # 更新mysql期刊信息表状态
+            year = task.get('year')
+            vol = task.get('vol')
+            issue = task.get('issue')
+            self.sto_dao.update_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
+                                                      ws='sciencedirect',
+                                                      journal_id=vol,
+                                                      year=year,
+                                                      issue=issue)
+            # 删除临时队列中该种子
+            self.spi_dao.remove_one_task_from_redis(key=config.REDIS_PAPER_TEMP, data=task)
 
     def run(self):
         self.timer.start()
