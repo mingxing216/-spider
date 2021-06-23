@@ -151,7 +151,7 @@ class SpiderMain(BaseSpiderMain):
                                 if not year_issue_list:
                                     self.sto_dao.record_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
                                                                               data=issues_list,
-                                                                              para = journal_info)
+                                                                              para=journal_info)
                                 else:
                                     issues_list = self.remove_duplicate(year_issue_list, issues_list)
                                     if issues_list:
@@ -214,7 +214,7 @@ class SpiderMain(BaseSpiderMain):
                                             self.sto_dao.save_task_to_mysql(table=mysql_paper, memo=paper_url, ws='中国知网',
                                                                             es='期刊论文')
 
-                                        # 更新mysql存储表中年期状态
+                                        # 更新mysql期刊信息表中年期状态
                                         self.sto_dao.update_journal_info_to_mysql(table=config.MYSQL_JOURNAL_INFO,
                                                                                   ws='中国知网',
                                                                                   journal_id=pykm,

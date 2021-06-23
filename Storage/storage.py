@@ -66,7 +66,7 @@ class Dao(object):
 
     def save_task_to_mysql(self, table, memo, ws, es, msg='NULL'):
         self.timer.start()
-        self.logging.info('mysql start | 开始存储种子')
+        self.logging.debug('mysql start | 开始存储种子')
         ret = self.__save_task_to_mysql(table, memo, ws, es, msg)
         if ret:
             self.logging.info('mysql end | 种子存储成功 | use time: {}'.format(self.timer.use_time()))
@@ -309,7 +309,7 @@ class Dao(object):
 
     def save_data_to_hbase(self, data):
         self.timer.start()
-        self.logging.info('storage start | 开始存储实体')
+        self.logging.debug('storage start | 开始存储实体')
         ret = self.__save_data_to_hbase(data)
         if ret:
             self.logging.info('storage end | 存储实体成功 | use time: {}'.format(self.timer.use_time()))
@@ -341,7 +341,7 @@ class Dao(object):
             if isinstance(entity_data, list):
                 if respon['resultCode'] == 0:
                     for data in entity_data:
-                        self.logging.debug(
+                        self.logging.info(
                             'storage | Save data to Hbase | use time: {} | status: OK | sha: {} | ss: {} | memo: {}'.format(
                                 data_start.use_time(), data.get('sha'), data.get('ss'), resp))
                     return True
@@ -392,7 +392,7 @@ class Dao(object):
             'pk': sha,
             'type': type,
             'url': media_url,
-            'biz_title': item.get('title'),
+            'biz_title': item.get('biz_title'),
             'rel_esse': json.dumps(item.get('rel_esse'), ensure_ascii=False),
             'rel_pics': json.dumps(item.get('rel_pics'), ensure_ascii=False),
             'content_type': contype,

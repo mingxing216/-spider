@@ -3,7 +3,7 @@
 # 公共配置
 # ----------------------------
 
-PROXY_ENABLED = False  # 是否使用代理
+PROXY_ENABLED = True  # 是否使用代理
 STREAM = False  # 是否要流式下载
 TIMEOUT = (10, 30)  # 请求超时(连接超时、读取超时)
 MYSQL_POOL_NUMBER = 10  # Mysql连接池数量
@@ -29,6 +29,10 @@ MYSQL_MAGAZINE = 'job_magazine'  # Mysql期刊任务表
 REDIS_SCIENCEDIRECT_MAGAZINE = 'sciencedirect_magazine'  # Redis期刊任务表
 REDIS_SCIENCEDIRECT_MAGAZINE_LOCK = 'sciencedirect_magazine_lock'  # Redis期刊分布式锁名
 
+REDIS_MAGAZINE_TEMP = 'sciencedirect_magazine_temp'  # Redis期刊临时任务表
+REDIS_PAPER_TEMP = 'sciencedirect_paper_temp'  # Redis期刊临时任务表
+MYSQL_JOURNAL_INFO = 'journal_info'  # 期刊年卷期
+
 MYSQL_PAPER = 'job_paper'  # Mysql论文任务表
 REDIS_SCIENCEDIRECT_PAPER = 'sciencedirect_paper'  # Redis论文任务表
 REDIS_SCIENCEDIRECT_PAPER_LOCK = 'sciencedirect_paper_lock'  # Redis论文分布式锁名
@@ -44,5 +48,5 @@ REDIS_SCIENCEDIRECT_TEST_LOCK = 'sciencedirect_paper_test_lock'  # Redis论文�
 # ----------------------------
 # 进程数配置
 # ----------------------------
-PROCESS_NUM = 1  # 数据爬虫进程数
-THREAD_NUM = 1  # 数据爬虫线程数
+PROCESS_NUM = 8  # 数据爬虫进程数
+THREAD_NUM = 8  # 数据爬虫线程数

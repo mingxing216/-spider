@@ -72,6 +72,7 @@ class Server(object):
             for a in a_list:
                 journal_dict = {}
                 journal_dict['url'] = 'https://www.sciencedirect.com' + a
+                journal_dict['id'] = a.split('/')[-1]
                 journal_data_list.append(journal_dict)
 
         except Exception:
@@ -92,9 +93,8 @@ class Server(object):
                 for result in result_list:
                     year = result.get('year')
                     if year:
-                        issues_catalog_url = 'https://www.sciencedirect.com/journal/{}/year/{}/issues'.format(issn,
-                                                                                                              year)
-                        issues_catalog_list.append(issues_catalog_url)
+                        issues_catalog_url = 'https://www.sciencedirect.com/journal/{}/year/{}/issues'.format(issn, year)
+                        issues_catalog_list.append((issues_catalog_url, year))
 
         except Exception:
             return issues_catalog_list
@@ -102,73 +102,57 @@ class Server(object):
         return issues_catalog_list
 
     # 获取论文详情及全文种子
-    def get_paper_list(self, text, journal_url):
+    def get_paper_list(self, text, task):
         paper_data_list = []
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            div_list = selector.xpath("//div[a[@class='btnnoimg']]")
-            for a in div_list:
-                paper_dict = {}
-                if a.xpath("./a[@class='btnnoimg']"):
-                    paper_dict['url'] = 'http://103.247.176.188/' + a.xpath(
-                        "./a[@class='btnnoimg']/@href").extract_first()
+            li_list = selector.xpath("//ol[contains(@class, 'js-article-list')]/li")
+            for li in li_list:
+                if li.xpath("./h2"):
+                    journal_column = li.xpath("./h2/text()").extract_first()
                 else:
-                    continue
-                if a.xpath("./a[@class='btnnoimg2']"):
-                    paper_dict['pdfUrl'] = 'http://103.247.176.188/' + a.xpath(
-                        "./a[@class='btnnoimg2']/@href").extract_first()
-                else:
-                    paper_dict['pdfUrl'] = ''
-                paper_dict['journalUrl'] = journal_url
-                paper_data_list.append(paper_dict)
+                    journal_column = ''
+
+                dl_list = li.xpath(".//dl")
+                for dl in dl_list:
+                    paper_dict = {}
+                    if dl.xpath("./dt/h3/a"):
+                        paper_dict['url'] = 'https://www.sciencedirect.com' + dl.xpath("./dt/h3/a/@href").extract_first()
+                    else:
+                        continue
+                    if dl.xpath("./dd/a[span[contains(text(), 'Download')]]"):
+                        paper_dict['pdfUrl'] = 'https://www.sciencedirect.com' + dl.xpath("./dd/a[span[contains(text(), 'Download')]]/@href").extract_first()
+                    else:
+                        paper_dict['pdfUrl'] = ''
+
+                    if dl.xpath("./dd[contains(@class, 'article-info')]/span[contains(@class, 'js-article-subtype')]"):
+                        paper_dict['type'] = dl.xpath("./dd[contains(@class, 'article-info')]/span[contains(@class, 'js-article-subtype')]/text()").extract_first()
+                    else:
+                        paper_dict['type'] = ''
+
+                    if dl.xpath("./dd[contains(@class, 'article-info')]/span[contains(@class, 'js-open-access')]"):
+                        paper_dict['rights'] = dl.xpath("./dd[contains(@class, 'article-info')]/span[contains(@class, 'js-open-access')]/text()").extract_first()
+                    else:
+                        paper_dict['rights'] = ''
+
+                    paper_dict['journalColumn'] = journal_column
+                    paper_dict['journalUrl'] = task.get('journalUrl', '')
+                    paper_dict['journalId'] = task.get('journalId', '')
+                    paper_dict['year'] = task.get('year', '')
+                    paper_dict['vol'] = task.get('vol', '')
+                    paper_dict['issue'] = task.get('issue', '')
+                    paper_data_list.append(paper_dict)
 
         except Exception:
             return paper_data_list
 
         return paper_data_list
 
-    # 获取下一页
-    def get_next_page(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            next_a = selector.xpath("//div[contains(@class, 'pages')]/a[text()='下一页']/@href").extract_first()
-            next_url = 'http://103.247.176.188/' + next_a
-
-        except Exception:
-            next_url = None
-
-        return next_url
-
-    # 获取验证码参数
-    def get_captcha(self, text):
-        captcha_data = {}
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            captcha_data['__VIEWSTATE'] = selector.xpath("//input[@id='__VIEWSTATE']/@value").extract_first()
-            captcha_data['__EVENTVALIDATION'] = selector.xpath("//*[@id='__EVENTVALIDATION']/@value").extract_first()
-            captcha_data['btnOk'] = selector.xpath("//*[@id='btnOk']/@value").extract_first()
-
-        except Exception:
-            return captcha_data
-
-        return captcha_data
-
-    # 获取图片url
-    def get_img_url(self, text):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            img_url = 'http://103.247.176.188/' + selector.xpath("//img[@id='imgCode1']/@src").extract_first()
-
-        except Exception:
-            return ''
-
-        return img_url
-
     # ---------------------
     # data script
     # ---------------------
 
-    # ====== 期刊、论文、文档实体
+    # ====== 期刊、论文、文档、人物实体
     # 是否包含中文（判断语种）
     def hasChinese(self, data):
         for ch in data:
@@ -182,6 +166,7 @@ class Server(object):
     def get_lang(text):
         return langid.classify(text)[0]
 
+    # =================== 期刊实体 ======================
     # 标题
     def get_journal_title(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
@@ -327,12 +312,13 @@ class Server(object):
 
         return website
 
-    # ====== 论文实体
+    # =============== 论文实体 ====================
     # 标题
     def get_paper_title(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            title = selector.xpath("//h1/text()").extract_first().strip()
+            title_text = selector.xpath("string(//h1/span)").extract_first()
+            title = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", title_text)).strip()
 
         except Exception:
             title = ""
@@ -353,28 +339,39 @@ class Server(object):
         return affiliation
 
     # =========== 文档实体 =============
-    # 获取文档
-    def getDocs(self, pdfData, size):
-        labelObj = {}
-        return_docs = []
+    # 获取真正全文链接
+    def get_real_pdf_url(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            if pdfData:
-                if pdfData['url']:
-                    picObj = {
-                        'url': pdfData['url'],
-                        'title': pdfData['bizTitle'],
-                        'desc': "",
-                        'sha': hashlib.sha1(pdfData['url'].encode('utf-8')).hexdigest(),
-                        'format': 'PDF',
-                        'size': size,
-                        'ss': 'document'
-                    }
-                    return_docs.append(picObj)
-                labelObj['全部'] = return_docs
-        except Exception:
-            labelObj['全部'] = []
+            real_pdf_url = selector.xpath("//div[@id='redirect-message']/p/a/@href").extract_first()
 
-        return labelObj
+        except Exception:
+            real_pdf_url = ''
+
+        return real_pdf_url
+
+    # 获取文档
+    def get_media(self, media_data, media_key, ss, format='', size=''):
+        label_obj = {}
+        media_list = []
+        try:
+            if media_data:
+                if media_data['url']:
+                    media_obj = {
+                        'url': media_data.get('url'),
+                        'title': media_data.get('biz_title', ''),
+                        'desc': '',
+                        'sha': hashlib.sha1(media_data.get('url').encode('utf-8')).hexdigest(),
+                        'ss': ss,
+                        'format': format,
+                        'size': size
+                    }
+                    media_list.append(media_obj)
+                label_obj[media_key] = media_list
+        except Exception:
+            return label_obj
+
+        return label_obj
 
     # 文本格式全文
     def is_fulltext_page(self, resp):
@@ -394,123 +391,15 @@ class Server(object):
 
         return full_text
 
-    # 关联期刊
-    def rela_journal(self, url, key, sha):
+    # 关联关系
+    def rela_entity(self, url, key, sha, ss):
         e = {}
         try:
             e['url'] = url
             e['key'] = key
             e['sha'] = sha
-            e['ss'] = '期刊'
+            e['ss'] = ss
         except Exception:
             return e
 
         return e
-
-    # 关联文档
-    def rela_document(self, url, key, sha):
-        e = {}
-        try:
-            e['url'] = url
-            e['key'] = key
-            e['sha'] = sha
-            e['ss'] = '文档'
-        except Exception:
-            return e
-
-        return e
-
-    # 关联论文
-    def rela_paper(self, url, key, sha):
-        e = {}
-        try:
-            e['url'] = url
-            e['key'] = key
-            e['sha'] = sha
-            e['ss'] = '论文'
-        except Exception:
-            return e
-
-        return e
-
-
-class CaptchaProcessor(object):
-    def __init__(self, server, downloader, session, logger):
-        self.server = server
-        self.downloader = downloader
-        self.session = session
-        self.logger = logger
-        self.recognize_code = RecognizeCode(self.logger)
-        # self.verfication_code = VerificationCode('mingxing123', 'qazwsx123', self.logger)
-        self.captcha_timer = timers.Timer()
-        self.total_timer = timers.Timer()
-        self.request_timer = timers.Timer()
-
-    def is_captcha_page(self, resp):
-        if len(resp.content) > 2048:
-            return False
-        if '验证码' in resp.text:
-            return True
-        return False
-
-    def process_first_request(self, url, method, s, ranges=None):
-        self.logger.info('process start | 请求开始 | url: {}'.format(url))
-        self.total_timer.start()
-        self.request_timer.start()
-        resp = self.downloader.get_resp(url=url, method=method, s=s, ranges=ranges)
-        self.logger.info('process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), url))
-        return resp
-
-    def process(self, resp):
-        retry_count = 10
-        captcha_page = self.is_captcha_page(resp)
-        for i in range(retry_count):
-            if captcha_page:
-                try:
-                    self.logger.info('process | 出现验证码')
-                    self.captcha_timer.start()
-                    # 获取验证码及相关参数
-                    form_data = self.server.get_captcha(resp.text)
-                    image_url = self.server.get_img_url(resp.text)
-                    img_content = self.downloader.get_resp(url=image_url, method='GET', s=self.session).content
-                    # data_dict = self.verfication_code.get_code_from_img_content(img_content)
-                    # code = data_dict['result']
-                    code = self.recognize_code.image_data(img_content, show=False, length=4,
-                                                          invalid_charset="^0-9^A-Z^a-z")
-                    form_data['iCode'] = code
-                    self.logger.info('process | 一次验证码处理完成 | use time: {}'.format(self.captcha_timer.use_time()))
-                    # 带验证码访问
-                    self.request_timer.start()
-                    real_url = resp.url
-                    resp = self.downloader.get_resp(url=real_url, method='POST', data=form_data, s=self.session)
-                    if resp is None:
-                        self.logger.error(
-                            'process end | 验证码识别失败总时间 | use time: {} | url: {} | count: {}'.format(
-                                self.total_timer.use_time(),
-                                real_url, i+1))
-                        return
-                    # 判断是否还有验证码
-                    captcha_page = self.is_captcha_page(resp)
-                    # if captcha_page:
-                    #     self.logger.info('captcha | 验证码错误')
-                        # self.verfication_code.report_error(data_dict['id'])
-                    self.recognize_code.report(img_content, code, not captcha_page)
-                    self.logger.info(
-                        'process | 一次请求完成时间 | use time: {} | url: {}'.format(self.request_timer.use_time(), resp.url))
-                except Exception:
-                    self.logger.error(
-                        'process end | 验证码识别失败总时间 | use time: {} | url: {} | count: {}'.format(
-                            self.total_timer.use_time(),
-                            resp.url, i+1))
-                    return
-            else:
-                self.logger.info(
-                    'process end | 请求成功总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(),
-                                                                                        resp.url, i))
-                return resp
-
-        self.logger.error(
-            'process end | 验证码识别失败总时间 | use time: {} | url: {} | count: {}'.format(self.total_timer.use_time(),
-                                                                                   resp.url, retry_count))
-
-        return

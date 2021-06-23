@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 # import gevent
 # from gevent import monkey
@@ -17,6 +18,7 @@ from io import BytesIO
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from PyPDF4 import PdfFileReader
 from fitz import fitz
+from scrapy import Selector
 
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 
@@ -28,6 +30,7 @@ from Project.ScienceDirect import config
 from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
 from Utils import user_pool, timers
 from Project.ScienceDirect.service.service import CaptchaProcessor
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY, LANG_API, SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
 
 LOG_FILE_DIR = 'ScienceDirect'  # LOG日志存放路径
 LOG_NAME = '英文期刊论文_data'  # LOG名
@@ -42,8 +45,8 @@ class BaseSpiderMain(object):
                                                        stream=config.STREAM,
                                                        timeout=config.TIMEOUT)
         self.server = service.Server(logging=logger)
-        # 存储
         self.dao = dao.Dao(logging=logger,
+                           host=SPI_HOST, port=SPI_PORT, user=SPI_USER, pwd=SPI_PASS, db=SPI_NAME,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
 
@@ -54,7 +57,6 @@ class SpiderMain(BaseSpiderMain):
         self.lang_api = 'http://localhost:9008/detect'
         self.timer = timers.Timer()
         self.s = requests.Session()
-        self.captcha_processor = CaptchaProcessor(self.server, self.download, self.s, logger)
 
     # 检测PDF文件正确性
     # @staticmethod
@@ -77,59 +79,40 @@ class SpiderMain(BaseSpiderMain):
 
         return b_valid
 
-    # # @staticmethod
-    # def is_valid_pdf_bytes_io(self, content, url, parent_url):
-    #     b_valid = True
-    #     try:
-    #         reader = PdfFileReader(BytesIO(content), strict=False)
-    #         if reader.getNumPages() < 1:  # 进一步通过页数判断。
-    #             b_valid = False
-    #     except:
-    #         msg = '检测PDF文件出错, url: {}'.format(url)
-    #         logger.error('document | {}'.format(msg))
-    #         data_dict = {'url': parent_url}
-    #         self.dao.save_task_to_mysql(table=config.MYSQL_PAPER, memo=data_dict, ws='英文哲学社会科学', es='期刊论文', msg=msg)
-    #         return
-    #
-    #     return b_valid
-
-    # # @staticmethod
-    # def is_valid_pdf_bytes(bytes):
-    #     """
-    #     直接用文件内容判断头尾，
-    #     参数为pdf文件二进制内容
-    #     """
-    #     content = bytes
-    #     part_begin = content[0:20]
-    #     if part_begin.find(rb'%PDF-1.') < 0:
-    #         print('Error: not find %PDF-1.')
-    #         return False
-    #
-    #     idx = content.rfind(rb'%%EOF')
-    #     if idx < 0:
-    #         print('Error: not find %%EOF')
-    #         return False
-    #
-    #     part_end = content[(0 if idx - 100 < 0 else idx - 100): idx + 5]
-    #     if not re.search(rb'startxref\s+\d+\s+%%EOF$', part_end):
-    #         print('Error: not find startxref')
-    #         return False
-    #
-    #     return True
-
     # 获取文档实体字段
-    def document(self, pdf_dict):
+    def document(self):
         logger.debug('document | 开始获取内容')
         self.timer.start()
-        pdf_url = pdf_dict['url']
+        page_pdf_url = 'https://www.sciencedirect.com/science/article/pii/S2590018821000022/pdfft?md5=d9ba060c7e636974ddb55eee8502a32f&pid=1-s2.0-S2590018821000022-main.pdf'
         # 获取页面响应
-        pdf_resp = self.captcha_processor.process_first_request(url=pdf_url, method='GET', s=self.s)
-        if pdf_resp is None:
+        # first page
+        page_pdf_resp = self.download.get_resp(url=page_pdf_url, method='GET')
+        if page_pdf_resp is None:
+            logger.error('downloader | 论文全文跳转页响应失败, url: {}'.format(page_pdf_url))
             return
-        # 处理验证码
-        pdf_resp = self.captcha_processor.process(pdf_resp)
-        if pdf_resp is None:
+        if not page_pdf_resp['data']:
+            logger.error('downloader | 论文全文跳转页响应失败, url: {}'.format(page_pdf_url))
             return
+        page_pdf_text = page_pdf_resp['data'].text
+        selector = Selector(text=page_pdf_text)
+        try:
+            real_pdf_url = selector.xpath("//div[@id='redirect-message']/p/a/@href").extract_first()
+
+        except Exception:
+            real_pdf_url = ''
+
+        if real_pdf_url:
+            pdf_resp = self.download.get_resp(url=real_pdf_url, method='GET')
+            if pdf_resp is None:
+                logger.error('downloader | 论文全文页响应失败, url: {}'.format(real_pdf_url))
+                return
+            if not pdf_resp['data']:
+                logger.error('downloader | 论文全文页响应失败, url: {}'.format(real_pdf_url))
+                return
+            pdf_content = pdf_resp['data'].content
+            with open ('catalog.pdf', 'wb') as f:
+                f.write(pdf_content)
+
 
         if 'text' in pdf_resp.headers.get('Content-Type') or 'html' in pdf_resp.headers.get('Content-Type'):
             if not self.server.is_fulltext_page(pdf_resp):
@@ -238,7 +221,7 @@ class SpiderMain(BaseSpiderMain):
         # 文档内容
         size = pdf_length
         # size = len(pdf_content)
-        doc_data['label_obj'] = self.server.getDocs(pdf_dict, size)
+        doc_data['label_obj'] = self.server.get_docs(pdf_dict, size)
         # 获取来源网站
         doc_data['source_website'] = ""
         # 关联论文
@@ -294,7 +277,7 @@ class SpiderMain(BaseSpiderMain):
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
 
         # 获取详情页
-        profile_resp = self.captcha_processor.process_first_request(url=url, method='GET', s=self.s)
+        profile_resp = self.request(url=url, method='GET', s=self.s)
         if profile_resp is None:
             return
         # 处理验证码
@@ -475,11 +458,13 @@ class SpiderMain(BaseSpiderMain):
             # 获取任务
             logger.info('task start')
             task_timer.start()
-            # task_list = self.dao.getTask(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER, count=1,
-            #                              lockname=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER_LOCK)
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_PAPER)
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_SCIENCEDIRECT_PAPER)
             # task = '{"url": "http://103.247.176.188/View.aspx?id=81378664", "pdfUrl": "http://103.247.176.188/Direct.aspx?dwn=1&id=81378664", "journalUrl": "http://103.247.176.188/ViewJ.aspx?id=23677", "sha": "121f7ce3d5b82baa6b51a1276854971163af399d"}'
-            if task:
+            if not task:
+                logger.info('task | 队列中已无任务')
+                return
+
+            else:
                 try:
                     # 创建数据存储字典
                     save_data = dict()
@@ -518,17 +503,14 @@ class SpiderMain(BaseSpiderMain):
                 except:
                     logger.exception(str(traceback.format_exc()))
                     logger.error('task end | task failed | use time: {}'.format(task_timer.use_time()))
-            else:
-                logger.info('task | 队列中已无任务')
-                logger.info(self.captcha_processor.recognize_code.show_report())
 
-                return
 
 
 def start():
-    main = SpiderMain()
     try:
-        main.run()
+        main = SpiderMain()
+        # main.run()
+        main.document()
     except:
         logger.exception(str(traceback.format_exc()))
 
@@ -554,7 +536,8 @@ def process_start():
 
 if __name__ == '__main__':
     logger.info('====== The Start! ======')
-    begin_time = time.time()
+    total_timer = timers.Timer()
+    total_timer.start()
     # process_start()
     # 创建进程池
     ppool = ProcessPoolExecutor(max_workers=config.PROCESS_NUM)
@@ -563,4 +546,4 @@ if __name__ == '__main__':
     ppool.shutdown(wait=True)
     end_time = time.time()
     logger.info('====== The End! ======')
-    logger.info('====== Time consuming is %.3fs ======' % (end_time - begin_time))
+    logger.info('====== Time consuming is {} ======'.format(total_timer.use_time()))
