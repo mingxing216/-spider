@@ -134,8 +134,6 @@ class SpiderMain(BaseSpiderMain):
 def start():
     try:
         main = SpiderMain()
-        # main.get_journal_profile()
-        # main.paper_catalog_page()
         main.run()
     except Exception:
         logger.error(str(traceback.format_exc()))
