@@ -129,14 +129,14 @@ class SpiderMain(BaseSpiderMain):
                     # 重新加载到队列
                     self.spi_dao.queue_one_task_to_redis(key=config.REDIS_SCIENCEDIRECT_MAGAZINE, data=task)
                     logger.error('downloader | 期列表页响应失败, url: {}'.format(issue_catalog_url))
-                    return
+                    continue
                 if not issue_catalog_resp['data']:
                     # 删除临时队列中该种子
                     self.spi_dao.remove_one_task_from_redis(key=config.REDIS_MAGAZINE_TEMP, data=task)
                     # 重新加载到队列
                     self.spi_dao.queue_one_task_to_redis(key=config.REDIS_SCIENCEDIRECT_MAGAZINE, data=task)
                     logger.error('downloader | 期列表页响应失败, url: {}'.format(issue_catalog_url))
-                    return
+                    continue
                 issue_catalog_text = issue_catalog_resp['data'].text
 
                 # 获取年列表页
@@ -152,15 +152,16 @@ class SpiderMain(BaseSpiderMain):
                             self.spi_dao.remove_one_task_from_redis(key=config.REDIS_MAGAZINE_TEMP, data=task)
                             # 重新加载到队列
                             self.spi_dao.queue_one_task_to_redis(key=config.REDIS_SCIENCEDIRECT_MAGAZINE, data=task)
-                            logger.error('downloader | 论文列表页响应失败, url: {}'.format(year_info))
-                            return
+                            logger.error('downloader | 论文列表页响应失败, url: {}'.format(year_url))
+                            break
                         if not paper_year_resp['data']:
                             # 删除临时队列中该种子
                             self.spi_dao.remove_one_task_from_redis(key=config.REDIS_MAGAZINE_TEMP, data=task)
-                            # 队列一条任务
+                            # 重新加载到队列
                             self.spi_dao.queue_one_task_to_redis(key=config.REDIS_SCIENCEDIRECT_MAGAZINE, data=task)
-                            logger.error('downloader | 论文列表页响应失败, url: {}'.format(year_info))
-                            return
+                            logger.error('downloader | 论文列表页响应失败, url: {}'.format(year_url))
+                            break
+
                         try:
                             paper_year_json = paper_year_resp['data'].json()
                         except Exception:
@@ -169,7 +170,7 @@ class SpiderMain(BaseSpiderMain):
                             # 队列一条任务
                             self.spi_dao.queue_one_task_to_redis(key=config.REDIS_SCIENCEDIRECT_MAGAZINE, data=task)
                             logger.info('downloader | 论文列表获取json数据失败')
-                            return
+                            break
 
                         paper_list = paper_year_json.get('data')
                         if not paper_list:
