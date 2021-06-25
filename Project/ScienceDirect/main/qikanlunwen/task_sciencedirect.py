@@ -150,8 +150,8 @@ def process_start():
     # self.run()
 
     # 创建线程池
-    threadpool = ThreadPool(processes=1)
-    for j in range(1):
+    threadpool = ThreadPool(processes=4)
+    for j in range(4):
         threadpool.apply_async(func=start)
 
     threadpool.close()
@@ -162,8 +162,8 @@ if __name__ == '__main__':
     logger.info('======The Start!======')
     begin_time = time.time()
     # process_start()
-    po = Pool(processes=1)
-    for i in range(1):
+    po = Pool(processes=2)
+    for i in range(2):
         po.apply_async(func=process_start)
     po.close()
     po.join()
