@@ -171,148 +171,194 @@ class Server(object):
     def get_journal_title(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            title = selector.xpath("//h1/text()").extract_first().strip()
+            title_text = selector.xpath("string(//h1)").extract_first()
+            title = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", title_text)).strip()
+
+        except Exception:
+            title = ''
+
+        return title
+
+    # 图片
+    def get_journal_cover(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            img = selector.xpath("//span[@class='anchor-text']/img/@src").extract_first()
+
+        except Exception:
+            img = ''
+
+        return img
+
+    # 影响因子
+    def get_impact_factor(self, text):
+        data_list = []
+        data_dict = {}
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            if selector.xpath("//div[contains(@class, 'js-cite-score')]"):
+                data_dict['cite_score'] = selector.xpath(
+                    "//div[contains(@class, 'js-cite-score')]//span[contains(@class, 'text-l')]/text()").extract_first().strip()
+
+            if selector.xpath("//div[contains(@class, 'js-impact-factor')]"):
+                data_dict['impact_factor'] = selector.xpath(
+                    "//div[contains(@class, 'js-impact-factor')]//span[contains(@class, 'text-l')]/text()").extract_first().strip()
+            else:
+                return data_list
+
+            data_list.append(data_dict)
+
+        except Exception:
+            return data_list
+
+        return data_list
+
+    # 图片
+    def get_issn(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            issn = selector.xpath("//div[contains(@class, 'js-issn')]/text()").extract_first().strip()
+
+        except Exception:
+            issn = ''
+
+        return issn
+
+    # 权限
+    def get_rights(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            rights_text = selector.xpath("string(//div[contains(@class, 'open-statement')])").extract_first()
+            rights = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", rights_text)).strip()
+
+        except Exception:
+            rights = ''
+
+        return rights
+
+    # 摘要
+    def get_abstract(self, text, url, downloader, s):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            if not selector.xpath("//div[h2[contains(@class, 'js-journal-info-heading')]]"):
+                return
+
+            if selector.xpath("//div[contains(@class, 'branded')]/a"):
+                # 获取摘要所在页面
+                abstract_url = url + '/about/aims-and-scope'
+                abstract_resp = downloader.get_resp(url=abstract_url, method='GET', s=s)
+                if abstract_resp is None:
+                    self.logger.error('downloader | 摘要所在页响应失败, url: {}'.format(abstract_url))
+                    return
+
+                if not abstract_resp['data']:
+                    self.logger.error('downloader | 摘要所在页响应失败, url: {}'.format(abstract_url))
+                    return
+
+                abstract_text = abstract_resp['data'].text
+                selector = self.dom_holder.get(mode='Selector', text=abstract_text)
+                abstract_html = selector.xpath("//div[contains(@class, 'js-aims-and-scope')]").extract_first()
+            else:
+                abstract_html = selector.xpath("//div[h2[contains(@class, 'js-journal-info-heading')]]/div/div").extract_first()
+
+            abstract = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", abstract_html)).strip()
+
+        except Exception:
+            abstract = ''
+
+        return abstract
+
+    # 主编
+    def get_chief_editor(self, url, downloader, s):
+        # 获取主编
+        editorial_url = url + '/about/editorial-board'
+        editorial_resp = downloader.get_resp(url=editorial_url, method='GET', s=s)
+        if editorial_resp is None:
+            self.logger.error('downloader | 主编所在页响应失败, url: {}'.format(editorial_url))
+            return ''
+
+        if not editorial_resp['data']:
+            self.logger.error('downloader | 主编所在页响应失败, url: {}'.format(editorial_url))
+            return ''
+
+        editorial_text = editorial_resp['data'].text
+        selector = self.dom_holder.get(mode='Selector', text=editorial_text)
+        try:
+            if selector.xpath("//div[h3[contains(text(), 'in-Chief') or contains(text(), 'in-chief')]]"):
+                chief_editor = ''.join(selector.xpath("//div[h3[contains(text(), 'in-Chief') or contains(text(), 'in-chief')]]/div").extract())
+            else:
+                chief_editor = ''
+
+        except Exception:
+            chief_editor = ''
+
+        return chief_editor
+
+    # 编辑
+    def get_editors(self, url, downloader, s):
+        # 获取主编
+        editorial_url = url + '/about/editorial-board'
+        editorial_resp = downloader.get_resp(url=editorial_url, method='GET', s=s)
+        if editorial_resp is None:
+            self.logger.error('downloader | 主编所在页响应失败, url: {}'.format(editorial_url))
+            return ''
+
+        if not editorial_resp['data']:
+            self.logger.error('downloader | 主编所在页响应失败, url: {}'.format(editorial_url))
+            return ''
+
+        editorial_text = editorial_resp['data'].text
+        selector = self.dom_holder.get(mode='Selector', text=editorial_text)
+        try:
+            if selector.xpath("//div[contains(@class, 'u-margin-xl-top')]"):
+                editors = selector.xpath("//div[contains(@class, 'u-margin-xl-top')]").extract_first()
+            else:
+                editors = ''
+
+        except Exception:
+            editors = ''
+
+        return editors
+
+    # 期刊荣誉
+    def get_honors(self, url, downloader, s):
+        # 获取荣誉
+        honors_url = url + '/about/abstracting-and-indexing'
+        honors_resp = downloader.get_resp(url=honors_url, method='GET', s=s)
+        if honors_resp is None:
+            self.logger.error('downloader | 期刊荣誉所在页响应失败, url: {}'.format(honors_url))
+            return ''
+
+        if not honors_resp['data']:
+            self.logger.error('downloader | 期刊荣誉所在页响应失败, url: {}'.format(honors_url))
+            return ''
+
+        honors_text = honors_resp['data'].text
+        selector = self.dom_holder.get(mode='Selector', text=honors_text)
+        try:
+            if selector.xpath("//div[contains(@class, 'abstracting-and-indexing')]"):
+                honors = selector.xpath("//div[contains(@class, 'abstracting-and-indexing')]").extract_first()
+            else:
+                honors = ''
+
+        except Exception:
+            honors = ''
+
+        return honors
+
+    # =============== 论文实体 ====================
+    # 标题
+    def get_paper_title(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            title_text = selector.xpath("string(//h1/span)").extract_first()
+            title = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", title_text)).strip()
 
         except Exception:
             title = ""
 
         return title
 
-    # 字段值通用获取
-    def get_normal_value(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(
-                para)).extract_first().strip()
-
-        except Exception:
-            field_value = ""
-
-        return field_value
-
-    # 摘要获取（区分摘要、英文摘要）
-    def get_abstract_value(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            field_value = selector.xpath(
-                "//tr/td[span[contains(text(), '{}') and not(contains(text(), '英文'))]]/following-sibling::td[1]/text()".format(
-                    para)).extract_first().strip()
-
-        except Exception:
-            field_value = ""
-
-        return field_value
-
-    # 字段多值获取
-    def get_multi_value(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(
-                para)).extract_first().strip()
-            multi_avlue = re.sub(r"\s*[,，]\s*", "|", field_value)
-
-        except Exception:
-            multi_avlue = ""
-
-        return multi_avlue
-
-    # 字段多值获取
-    def get_more_value(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            field_value = selector.xpath(
-                "//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/text()".format(para)).extract()
-            multi_avlue = '|'.join(field_value)
-
-        except Exception:
-            multi_avlue = ""
-
-        return multi_avlue
-
-    # 关键词多值获取（关键词）
-    def get_keyword_value(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            keyword = re.sub(r"[\.。;；]$", "", selector.xpath(
-                "//tr/td[span[contains(text(), '{}') and not(contains(text(), '英文'))]]/following-sibling::td[1]/text()".format(
-                    para)).extract_first().strip())
-            if ';' in keyword or '；' in keyword:
-                keywords = re.sub(r"\s*[;；]\s*", "|", keyword).strip()
-            elif '.' in keyword:
-                keywords = re.sub(r"\s*\.\s*", "|", keyword).strip()
-            else:
-                return keyword
-
-        except Exception:
-            keywords = ""
-
-        return keywords
-
-    # 关键词多值获取（英文关键词）
-    def get_en_keyword_value(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            keyword = re.sub(r"[\.。;；]$", "", selector.xpath(
-                "//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(
-                    para)).extract_first().strip())
-            if ';' in keyword or '；' in keyword:
-                keywords = re.sub(r"\s*[;；]\s*", "|", keyword).strip()
-            elif '.' in keyword:
-                keywords = re.sub(r"\s*\.\s*", "|", keyword).strip()
-            else:
-                return keyword
-
-        except Exception:
-            keywords = ""
-
-        return keywords
-
-    # 全文链接
-    def get_full_link(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            link = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/@href".format(
-                para)).extract_first().strip()
-
-        except Exception:
-            link = ""
-
-        return link
-
-    # 中图分类
-    def get_classification_value(self, text, para):
-        classi_list = []
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            field_value = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(
-                para)).extract_first().strip()
-            value_list = re.split(r"[,，]", field_value)
-            for value in value_list:
-                classi_dict = {
-                    'name': re.split(r"[:：]", value)[1].strip(),
-                    'code': re.split(r"[:：]", value)[0].strip(),
-                    'type': '中图分类'
-                }
-                classi_list.append(classi_dict)
-
-        except Exception:
-            return classi_list
-
-        return classi_list
-
-    # 期刊网址
-    def get_journal_website(self, text, para):
-        selector = self.dom_holder.get(mode='Selector', text=text)
-        try:
-            website = selector.xpath("//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/a/@href".format(
-                para)).extract_first().strip()
-
-        except Exception:
-            website = ""
-
-        return website
-
-    # =============== 论文实体 ====================
     # 标题
     def get_paper_title(self, text):
         selector = self.dom_holder.get(mode='Selector', text=text)

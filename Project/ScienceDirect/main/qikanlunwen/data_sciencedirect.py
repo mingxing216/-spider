@@ -254,8 +254,11 @@ class SpiderMain(BaseSpiderMain):
         paper_entity = dict()
         # 获取标题
         paper_entity['title'] = self.server.get_paper_title(profile_text)
-        # # 获取作者
-        # paper_entity['author'] = self.server.get_more_value(profile_text, '作者')
+        if not paper_entity['title']:
+            logger.error('service | 无标题')
+            return
+        # 获取作者
+        paper_entity['author'] = self.server.get_author(profile_text, '作者')
         # # ISSN
         # paper_entity['issn'] = self.server.get_normal_value(profile_text, '印刷版ISSN')
         # paper_entity['e_issn'] = self.server.get_normal_value(profile_text, '电子版ISSN')
@@ -423,9 +426,10 @@ class SpiderMain(BaseSpiderMain):
             logger.info('task start')
             task_timer.start()
             # task = self.dao.get_one_task_from_redis(key=config.REDIS_SCIENCEDIRECT_PAPER)
-            task = '{"url": "https://www.sciencedirect.com/science/article/pii/S0016787805800549", "pdfUrl": "https://www.sciencedirect.com/science/article/pii/S0016787805800549/pdfft?md5=5dbd49b134566eba897ec19c82129553&pid=1-s2.0-S0016787805800549-main.pdf", "type": "", "rights": "Full text access", "journalColumn": "", "journalUrl": "https://www.sciencedirect.com/journal/proceedings-of-the-geologists-association", "journalId": "proceedings-of-the-geologists-association", "year": "2005", "vol": "116", "issue": "3", "sha": "27dd9c73dd282956355b076da34512d37d8cac56"}'
+            task = '{"url": "https://www.sciencedirect.com/science/article/abs/pii/S000145752100244X", "pdfUrl": "", "type": "Editorial", "rights": "No access", "journalColumn": "Editorials", "journalUrl": "https://www.sciencedirect.com/journal/leukemia-research", "journalId": "leukemia-research", "year": "2014", "vol": "38", "issue": "9", "sha": "0000e4c66af9dbf3a26448b32f3d2a3b2593d22d"}'
             if not task:
                 logger.info('task | 队列中已无任务')
+                time.sleep(1)
 
             else:
                 # 创建数据存储列表

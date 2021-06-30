@@ -23,7 +23,7 @@ class Downloader(downloader.BaseDownloader):
     def __init__(self, logging, stream, timeout, proxy_enabled, cookie_obj=None):
         super(Downloader, self).__init__(logging=logging, stream=stream, timeout=timeout)
         self.proxy_enabled = proxy_enabled
-        self.proxy_obj = proxy_client.ProxyPoolClient(logger=logging)
+        self.proxy_obj = proxy_client.ProxyPoolClient(logger=logging, local=False)
         self.cookie_obj = cookie_obj
         self.downloader_timer = timers.Timer()
 
@@ -90,7 +90,7 @@ class Downloader(downloader.BaseDownloader):
                                    cookies=cookies)
 
             # 释放代理
-            self.proxy_obj.release_proxy(ip, down_data['code'] == 0 or down_data['code'] == 1)
+            # self.proxy_obj.release_proxy(ip, down_data['code'] == 0 or down_data['code'] == 1)
 
             # 判断
             if down_data is None:

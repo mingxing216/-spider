@@ -10,10 +10,9 @@ import traceback
 from multiprocessing.pool import Pool, ThreadPool
 
 # sys.path.append(os.path.dirname(__file__) + os.sep + "../../../../")
-from Utils import timers
-
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../..")))
 
+from Utils import timers
 from Log import logging
 from Project.ScienceDirect.middleware import download_middleware
 from Project.ScienceDirect.service import service

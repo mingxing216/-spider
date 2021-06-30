@@ -9,6 +9,7 @@ import hashlib
 import json
 import random
 import re
+import requests
 import time
 import traceback
 from multiprocessing.pool import Pool, ThreadPool
@@ -21,7 +22,7 @@ from Project.ScienceDirect.dao import dao
 from Project.ScienceDirect.middleware import download_middleware
 from Project.ScienceDirect.service import service
 from Utils import timeutils, timers
-from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY
+from settings import DOWNLOAD_MIN_DELAY, DOWNLOAD_MAX_DELAY, SPI_HOST, SPI_PORT, SPI_USER, SPI_PASS, SPI_NAME
 
 LOG_FILE_DIR = 'ScienceDirect'  # LOG日志存放路径
 LOG_NAME = '英文期刊_data'  # LOG名
@@ -30,12 +31,14 @@ logger = logging.Logger(LOG_FILE_DIR, LOG_NAME)
 
 class BaseSpiderMain(object):
     def __init__(self):
+        # 下载中间件
         self.download = download_middleware.Downloader(logging=logger,
                                                        proxy_enabled=config.PROXY_ENABLED,
                                                        stream=config.STREAM,
                                                        timeout=config.TIMEOUT)
         self.server = service.Server(logging=logger)
         self.dao = dao.Dao(logging=logger,
+                           host=SPI_HOST, port=SPI_PORT, user=SPI_USER, pwd=SPI_PASS, db=SPI_NAME,
                            mysqlpool_number=config.MYSQL_POOL_NUMBER,
                            redispool_number=config.REDIS_POOL_NUMBER)
 
@@ -44,61 +47,57 @@ class SpiderMain(BaseSpiderMain):
     def __init__(self):
         super().__init__()
         self.timer = timers.Timer()
+        self.s = requests.Session()
 
     def handle(self, task_data, save_data):
         # print(task_data)
         url = task_data.get('url')
-        _id = re.findall(r"id=(\w+)$", url)[0]
+        _id = task_data.get('id')
         # print(id)
-        key = '哲学社会科学外文OA资源数据库|' + _id
+        key = 'sciencedirect|' + _id
         sha = hashlib.sha1(key.encode('utf-8')).hexdigest()
 
         # 获取期刊详情页
-        profile_resp = self.download.get_resp(url=url, method='GET')
-        if not profile_resp:
+        profile_resp = self.download.get_resp(url=url, method='GET', s=self.s)
+        if profile_resp is None:
             logger.error('downloader | 详情页响应失败, url: {}'.format(url))
             return
 
-        profile_text = profile_resp.text
+        if not profile_resp['data']:
+            logger.error('downloader | 详情页响应失败, url: {}'.format(url))
+            return
+
+        profile_text = profile_resp['data'].text
+        # with open('profile.html', 'w') as f:
+        #     f.write(profile_text)
 
         # ========================== 获取期刊实体 ============================
-        # 获取标题
+        # 标题
         save_data['title'] = self.server.get_journal_title(profile_text)
-        # 获取简介
-        save_data['abstract'] = []
-        en_abstract_text = self.server.get_normal_value(profile_text, '期刊简介')
-        if en_abstract_text:
-            en_abstract = {}
-            en_abstract['text'] = en_abstract_text
-            en_abstract['lang'] = self.server.get_lang(en_abstract['text'])
-            save_data['abstract'].append(en_abstract)
-        zh_abstract_text = self.server.get_normal_value(profile_text, '中文简介')
-        if zh_abstract_text:
-            zh_abstract = {}
-            zh_abstract['text'] = zh_abstract_text
-            zh_abstract['lang'] = self.server.get_lang(zh_abstract['text'])
-            save_data['abstract'].append(zh_abstract)
-        # ISSN
-        save_data['issn'] = self.server.get_normal_value(profile_text, 'ISSN(Print)')
-        save_data['e_issn'] = self.server.get_normal_value(profile_text, 'ISSN(Electronic)')
-        # 出版社
-        save_data['publisher'] = self.server.get_multi_value(profile_text, '出版社')
-        # 主编
-        save_data['chief_editor'] = self.server.get_normal_value(profile_text, '主编')
-        # 出版国
-        save_data['country_of_publication'] = self.server.get_normal_value(profile_text, '出版国')
+        # 图片
+        save_data['cover'] = self.server.get_journal_cover(profile_text)
+        # 影响因子（引用分数、综合影响因子）
+        save_data['impact_factor'] = self.server.get_impact_factor(profile_text)
+        # issn
+        save_data['issn'] = self.server.get_issn(profile_text)
+        # 权限
+        save_data['rights'] = self.server.get_rights(profile_text)
         # 语种
-        save_data['language'] = self.server.get_multi_value(profile_text, '语种')
-        # 出版频率
-        save_data['period'] = self.server.get_normal_value(profile_text, '出版频率')
-        # 创刊年
-        save_data['start_year_of_publication'] = self.server.get_normal_value(profile_text, '创刊年')
-        # 停刊年
-        save_data['stop_year_of_publication'] = self.server.get_normal_value(profile_text, '停刊年')
-        # 中图分类
-        save_data['classification_code'] = self.server.get_classification_value(profile_text, '中图分类')
-        # 期刊网址
-        save_data['journal_website'] = self.server.get_journal_website(profile_text, '期刊网址')
+        save_data['language'] = 'en'
+        # 摘要
+        save_data['abstract'] = []
+        abstract = self.server.get_abstract(profile_text, url, self.download, self.s)
+        if abstract:
+            ab_dict = {}
+            ab_dict['text'] = abstract
+            ab_dict['lang'] = 'en'
+            save_data['abstract'].append(ab_dict)
+        # 主编
+        save_data['chief_editor'] = self.server.get_chief_editor(url, self.download, self.s)
+        # 编辑
+        save_data['editors'] = self.server.get_editors(url, self.download, self.s)
+        # 期刊荣誉
+        save_data['journal_honors'] = self.server.get_honors(url, self.download, self.s)
 
         # ======================公共字段
         # url
@@ -110,9 +109,9 @@ class SpiderMain(BaseSpiderMain):
         # 生成ss ——实体
         save_data['ss'] = '期刊'
         # 生成es ——栏目名称
-        save_data['es'] = '英文期刊'
+        save_data['es'] = '期刊'
         # 生成ws ——目标网站
-        save_data['ws'] = '哲学社会科学外文OA资源数据库'
+        save_data['ws'] = 'sciencedirect'
         # 生成clazz ——层级关系
         save_data['clazz'] = '期刊_学术期刊'
         # 生成biz ——项目
@@ -126,7 +125,7 @@ class SpiderMain(BaseSpiderMain):
         # 采集服务器集群
         save_data['cluster'] = 'crawler'
         # 元数据版本号
-        save_data['metadata_version'] = 'V1.1'
+        save_data['metadata_version'] = 'V1.3'
         # 采集脚本版本号
         save_data['script_version'] = 'V1.3'
 
@@ -142,9 +141,13 @@ class SpiderMain(BaseSpiderMain):
             # 获取任务
             logger.info('task start')
             task_timer.start()
-            task = self.dao.get_one_task_from_redis(key=config.REDIS_ZHEXUESHEHUIKEXUE_MAGAZINE)
-            # task = '{"url": "http://103.247.176.188/ViewJ.aspx?id=81767", "sha": "38feb69bbe48bf5d66f505310fa452d8eb184b65"}'
-            if task:
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_SCIENCEDIRECT_MAGAZINE)
+            # task = '{"url": "https://www.sciencedirect.com/journal/accident-analysis-and-prevention", "id": "accident-analysis-and-prevention", "sha": "000e5da724e5cb7d9bf0cf315f954e35f4b96971"}'
+            if not task:
+                logger.info('task | 队列中已无任务')
+                time.sleep(1)
+
+            else:
                 try:
                     # 创建数据存储字典
                     save_data = {}
@@ -167,7 +170,7 @@ class SpiderMain(BaseSpiderMain):
                             'task end | task failed | use time: {} | Data Incomplete.'.format(task_timer.use_time()))
                         continue
                     # 存储数据
-                    success = self.dao.save_data_to_hbase(data=save_data, ss_type=save_data['ss'], sha=save_data['sha'], url=save_data['url'])
+                    success = self.dao.save_data_to_hbase(data=save_data)
 
                     if success:
                         # 已完成任务
@@ -184,14 +187,11 @@ class SpiderMain(BaseSpiderMain):
                 except:
                     logger.exception(str(traceback.format_exc()))
                     logger.error('task end | task failed | use time: {}'.format(task_timer.use_time()))
-            else:
-                time.sleep(1)
-                continue
 
 
 def start():
-    main = SpiderMain()
     try:
+        main = SpiderMain()
         main.run()
     except:
         logger.exception(str(traceback.format_exc()))
