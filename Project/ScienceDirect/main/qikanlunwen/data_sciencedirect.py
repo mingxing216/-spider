@@ -51,6 +51,9 @@ class BaseSpiderMain(object):
 class SpiderMain(BaseSpiderMain):
     def __init__(self):
         super().__init__()
+        self.toc_url = 'https://www.sciencedirect.com/sdfe/arp/pii/{}/toc'
+        self.refer_url = 'https://www.sciencedirect.com/sdfe/arp/pii/{}/references?entitledToken={}'
+        self.cited_url = 'https://www.sciencedirect.com/sdfe/arp/pii/{}/citingArticles?creditCardPurchaseAllowed=true&preventTransactionalAccess=false&preventDocumentDelivery=true'
         self.lang_api = 'http://localhost:9008/detect'
         self.timer = timers.Timer()
         self.s = requests.Session()
@@ -82,6 +85,8 @@ class SpiderMain(BaseSpiderMain):
         if page_pdf_resp is None:
             logger.error('downloader | 论文全文跳转页响应失败, url: {}'.format(page_pdf_url))
             return
+        if page_pdf_resp['status'] == 404:
+            return True
         if not page_pdf_resp['data']:
             logger.error('downloader | 论文全文跳转页响应失败, url: {}'.format(page_pdf_url))
             return
@@ -225,6 +230,28 @@ class SpiderMain(BaseSpiderMain):
 
             return True
 
+    def img_download(self, img_dict):
+        # 获取图片响应
+        media_resp = self.download.get_resp(url=img_dict['url'], method='GET', s=self.s)
+        if media_resp is None:
+            return
+        if media_resp['status'] == 404:
+            return True
+        if not media_resp['data']:
+            logger.error('downloader | 图片响应失败, url: {}'.format(img_dict['url']))
+            return
+
+        # media_resp.encoding = media_resp.apparent_encoding
+        img_content = media_resp['data'].content
+        # 存储图片
+        content_type = 'image/jpeg'
+        succ = self.dao.save_media_to_hbase(media_url=img_dict['url'], content=img_content, item=img_dict,
+                                            type='image', contype=content_type)
+        if not succ:
+            return
+        else:
+            return True
+
     def handle(self, task_data, data_list):
         # print(task_data)
         url = task_data.get('url')
@@ -258,110 +285,162 @@ class SpiderMain(BaseSpiderMain):
             logger.error('service | 无标题')
             return
         # 获取作者
-        paper_entity['author'] = self.server.get_author(profile_text, '作者')
-        # # ISSN
-        # paper_entity['issn'] = self.server.get_normal_value(profile_text, '印刷版ISSN')
-        # paper_entity['e_issn'] = self.server.get_normal_value(profile_text, '电子版ISSN')
-        # # DOI
-        # paper_entity['doi'] = {}
-        # doi = self.server.get_normal_value(profile_text, 'DOI')
-        # doi_url = self.server.get_full_link(profile_text, '全文链接')
-        # if doi:
-        #     save_data['doi']['doi'] = doi
-        #     save_data['doi']['doi_url'] = doi_url
-        #     save_data['source_url'] = ""
-        # else:
-        #     # 全文链接
-        #     save_data['source_url'] = doi_url
-        # # 获取期刊信息
-        # paper_entity['journal_information'] = {}
-        # paper_entity['journal_information']['name'] = self.server.get_normal_value(profile_text, '期刊名称')
-        # paper_entity['journal_information']['year'] = self.server.get_normal_value(profile_text, '出版年度')
-        # paper_entity['journal_information']['volume'] = self.server.get_normal_value(profile_text, '卷号')
-        # paper_entity['journal_information']['issue'] = self.server.get_normal_value(profile_text, '期号')
-        # pages = self.server.get_normal_value(profile_text, '页码')
-        # if pages:
-        #     if '-' in pages:
-        #         paper_entity['journal_information']['start_page'] = re.findall(r"(.*)-", pages)[0]
-        #         paper_entity['journal_information']['end_page'] = re.findall(r"-(.*)", pages)[0]
-        #         paper_entity['journal_information']['total_page'] = ""
-        #     else:
-        #         paper_entity['journal_information']['start_page'] = ""
-        #         paper_entity['journal_information']['end_page'] = ""
-        #         paper_entity['journal_information']['total_page'] = pages
-        # else:
-        #     paper_entity['journal_information']['start_page'] = ""
-        #     paper_entity['journal_information']['end_page'] = ""
-        #     paper_entity['journal_information']['total_page'] = ""
-        # # 语种
-        # paper_entity['language'] = self.server.get_normal_value(profile_text, '语种')
-        # # 出版社
-        # paper_entity['publisher'] = self.server.get_normal_value(profile_text, '出版社')
-        # # 获取摘要
-        # paper_entity['abstract'] = []
-        # abstract_text = self.server.get_abstract_value(profile_text, '摘要')
-        # if abstract_text:
-        #     abstract = {}
-        #     abstract['text'] = abstract_text
-        #     form_data = {'q': abstract['text']}
-        #     try:
-        #         lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
-        #         lang = lang_resp.json().get('responseData').get('language')
-        #     except:
-        #         return
-        #     abstract['lang'] = lang
-        #     paper_entity['abstract'].append(abstract)
-        # en_abstract_text = self.server.get_normal_value(profile_text, '英文摘要')
-        # if en_abstract_text:
-        #     en_abstract = {}
-        #     en_abstract['text'] = en_abstract_text
-        #     form_data = {'q': en_abstract['text']}
-        #     try:
-        #         lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
-        #         lang = lang_resp.json().get('responseData').get('language')
-        #     except:
-        #         return
-        #     en_abstract['lang'] = lang
-        #     paper_entity['abstract'].append(en_abstract)
-        # # 获取关键词
-        # paper_entity['keyword'] = []
-        # keyword_text = self.server.get_keyword_value(profile_text, '关键词')
-        # if keyword_text:
-        #     keyword = {}
-        #     keyword['text'] = keyword_text
-        #     form_data = {'q': keyword['text']}
-        #     try:
-        #         lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
-        #         lang = lang_resp.json().get('responseData').get('language')
-        #     except:
-        #         return
-        #     keyword['lang'] = lang
-        #     paper_entity['keyword'].append(keyword)
-        # en_keyword_text = self.server.get_en_keyword_value(profile_text, '英文关键词')
-        # if en_keyword_text:
-        #     en_keyword = {}
-        #     en_keyword['text'] = en_keyword_text
-        #     form_data = {'q': en_keyword['text']}
-        #     try:
-        #         lang_resp = requests.post(url=self.lang_api, data=form_data, timeout=(5,10))
-        #         lang = lang_resp.json().get('responseData').get('language')
-        #     except:
-        #         return
-        #     en_keyword['lang'] = lang
-        #     paper_entity['keyword'].append(en_keyword)
-        # # 获取作者单位
-        # paper_entity['author_affiliation'] = self.server.get_author_affiliation(profile_text, '作者单位')
-        # # 关联期刊
-        # qikan_url = task_data.get('journalUrl')
-        # qikan_id = re.findall(r"id=(\w+)$", qikan_url)[0]
-        # qikan_key = '哲学社会科学外文OA资源数据库|' + qikan_id
-        # qikan_sha = hashlib.sha1(qikan_key.encode('utf-8')).hexdigest()
-        # paper_entity['rela_journal'] = self.server.rela_journal(qikan_url, qikan_key, qikan_sha)
+        paper_entity['author'] = self.server.get_author(profile_text)
+        # 获取作者单位
+        paper_entity['author_affiliation'] = self.server.get_affiliation(profile_text)
+        # 数字对象标识符
+        paper_entity['doi'] = {}
+        doi_url = self.server.get_doi(profile_text)
+        if doi_url:
+            paper_entity['doi']['doi_url'] = doi_url
+            paper_entity['doi']['doi'] = doi_url.replace('https://doi.org/', '')
+        # 获取摘要
+        paper_entity['abstract'] = []
+        abstract = self.server.get_paper_abstract(profile_text)
+        if abstract:
+            ab_dict = {}
+            ab_dict['text'] = abstract
+            ab_dict['lang'] = 'en'
+            paper_entity['abstract'].append(ab_dict)
+        # 获取关键词
+        paper_entity['keyword'] = []
+        keywords = self.server.get_paper_keyword(profile_text)
+        if keywords:
+            kw_dict = {}
+            kw_dict['text'] = keywords
+            kw_dict['lang'] = 'en'
+            paper_entity['keyword'].append(kw_dict)
+        # 获取语种
+        paper_entity['language'] = 'en'
+        # 期刊名称
+        paper_entity['journal_name'] = self.server.get_journal_name(profile_text)
+        # 所属期刊栏目
+        paper_entity['journal_column'] = task_data.get('journalColumn', '')
+        # 论文类型
+        paper_entity['type'] = []
+        type_text =  task_data.get('type', '')
+        if type_text:
+            type_dict = {}
+            type_dict['text'] = type_text
+            type_dict['lang'] = 'en'
+            type_dict['type'] = 'sciencedirect'
+            paper_entity['type'].append(type_dict)
+        # 权限
+        paper_entity['rights'] = task_data.get('rights', '')
+        journal_info = self.server.get_journal_info(profile_text)
+        # 年
+        paper_entity['year'] = journal_info.get('year', '')
+        # 卷号
+        paper_entity['volume'] = journal_info.get('vol', '')
+        # 期号
+        paper_entity['issue'] = journal_info.get('issue', '')
+        # 获取所在页码
+        pages = journal_info.get('pages', '')
+        if not pages:
+            paper_entity['start_page'] = ''
+            paper_entity['end_page'] = ''
+        else:
+            if '-' in pages:
+                page_list = pages.split('-')
+                paper_entity['start_page'] = page_list[0]
+                paper_entity['end_page'] = page_list[1]
+            else:
+                paper_entity['start_page'] = pages
+                paper_entity['end_page'] = ''
+        # 日期
+        paper_entity['date'] = journal_info.get('date', '')
+        # 参考文献
+        paper_entity['references'] = self.server.get_refer(profile_text, self.refer_url, _id, self.download, self.s)
+        # 引证文献
+        paper_entity['cited_literature'] = self.server.get_cited(self.cited_url, _id, self.download, self.s)
+        # 关联期刊
+        qikan_url = task_data.get('journalUrl')
+        qikan_id = task_data.get('journalId')
+        qikan_key = 'sciencedirect|' + qikan_id
+        qikan_sha = hashlib.sha1(qikan_key.encode('utf-8')).hexdigest()
+        paper_entity['rela_journal'] = self.server.rela_entity(qikan_url, qikan_key, qikan_sha, '期刊')
+        # 获取目录、组图
+        toc_url = self.toc_url.format(_id)
+        toc_resp = self.download.get_resp(url=toc_url, method='GET', s=self.s)
+        if toc_resp is None:
+            logger.error('downloader | 论文json页响应失败, url: {}'.format(toc_url))
+            return
+        if not toc_resp['data']:
+            logger.error('downloader | 论文json页响应失败, url: {}'.format(toc_url))
+            return
+
+        toc_text = toc_resp['data'].json()
+
+        # 目录
+        paper_entity['catalog'] = []
+        catalog = self.server.get_catalog(toc_text)
+        if catalog:
+            catalog_dict = {}
+            catalog_dict['text'] = catalog
+            catalog_dict['lang'] = 'en'
+            paper_entity['catalog'].append(catalog_dict)
+        # 关联组图
+        pic_datas = self.server.get_pic_url(toc_text, paper_entity['title'])
+        if not pic_datas:
+            paper_entity['rela_pics'] = {}
+        else:
+            paper_entity['rela_pics'] = self.server.rela_entity(url, key, sha, '组图')
+            # 组图实体
+            pics = {}
+            # 标题
+            pics['title'] = paper_entity['title']
+            # 组图内容
+            pics['label_obj'] = self.server.get_pics(pic_datas, 'picture', 'image')
+            # 关联论文
+            pics['rela_paper'] = self.server.rela_entity(url, key, sha, '论文')
+            # url
+            pics['url'] = url
+            # 生成key
+            pics['key'] = key
+            # 生成sha
+            pics['sha'] = sha
+            # 生成ss ——实体
+            pics['ss'] = '组图'
+            # es ——栏目名称
+            pics['es'] = '期刊论文'
+            # 生成ws ——目标网站
+            pics['ws'] = 'sciencedirect'
+            # 生成clazz ——层级关系
+            pics['clazz'] = '组图_实体'
+            # 生成biz ——项目
+            pics['biz'] = '文献大数据_论文'
+            # 生成ref
+            pics['ref'] = ''
+            # 采集责任人
+            pics['creator'] = '张明星'
+            # 更新责任人
+            pics['modified_by'] = ''
+            # 采集服务器集群
+            pics['cluster'] = 'crawler'
+            # 元数据版本号
+            pics['metadata_version'] = 'V1.3'
+            # 采集脚本版本号
+            pics['script_version'] = 'V1.3'
+            # 组图实体存入列表
+            data_list.append(pics)
+
+            # 存储图片种子
+            for img in pic_datas:
+                img_dict = {}
+                img_dict['url'] = img['url']
+                img_dict['title'] = img['title']
+                img_dict['rel_esse'] = self.server.rela_entity(url, key, sha, '论文')
+                img_dict['rel_pics'] = self.server.rela_entity(url, key, sha, '组图')
+
+                suc = self.img_download(img_dict)
+                if not suc:
+                    return
+
         # 获取关联文档
         pdf_url = task_data.get('pdfUrl')
         if not pdf_url:
             paper_entity['rela_document'] = {}
-
+            paper_entity['has_fulltext'] = 'None'
         else:
             doc_key = key
             doc_sha = hashlib.sha1(doc_key.encode('utf-8')).hexdigest()
@@ -376,11 +455,27 @@ class SpiderMain(BaseSpiderMain):
             pdf_dict['rel_esse'] = self.server.rela_entity(url, key, sha, '论文')
             pdf_dict['rel_pics'] = paper_entity['rela_document']
 
-            # 存储文档实体及文档本身
+            # 存储文档实体全文
             suc = self.document(pdf_dict=pdf_dict, data_list=data_list)
             if not suc:
+                paper_entity['has_fulltext'] = 'None'
                 return
+            else:
+                paper_entity['has_fulltext'] = 'PDF'
 
+        # 判断是否为真正论文
+        if paper_entity['title'] and paper_entity['author'] and paper_entity['keyword'] and paper_entity['abstract'] and paper_entity.get('classification_code', ''):
+            paper_entity['quality_score'] = '100'
+        elif paper_entity['title'] and paper_entity['author'] and paper_entity['keyword']  and paper_entity.get('classification_code', ''):
+            paper_entity['quality_score'] = '80'
+        elif paper_entity['title'] and paper_entity['author'] and paper_entity['start_page'] and (paper_entity['references'] or paper_entity['cited_literature']):
+            paper_entity['quality_score'] = '60'
+        elif paper_entity['title'] and paper_entity['author'] and paper_entity['keyword'] and paper_entity['abstract']:
+            paper_entity['quality_score'] = '40'
+        elif paper_entity['title'] and paper_entity['author'] and paper_entity['keyword']:
+            paper_entity['quality_score'] = '20'
+        else:
+            paper_entity['quality_score'] = '0'
         # ======================公共字段
         # url
         paper_entity['url'] = url
@@ -425,8 +520,8 @@ class SpiderMain(BaseSpiderMain):
             # 获取任务
             logger.info('task start')
             task_timer.start()
-            # task = self.dao.get_one_task_from_redis(key=config.REDIS_SCIENCEDIRECT_PAPER)
-            task = '{"url": "https://www.sciencedirect.com/science/article/abs/pii/S000145752100244X", "pdfUrl": "", "type": "Editorial", "rights": "No access", "journalColumn": "Editorials", "journalUrl": "https://www.sciencedirect.com/journal/leukemia-research", "journalId": "leukemia-research", "year": "2014", "vol": "38", "issue": "9", "sha": "0000e4c66af9dbf3a26448b32f3d2a3b2593d22d"}'
+            task = self.dao.get_one_task_from_redis(key=config.REDIS_SCIENCEDIRECT_PAPER)
+            # task = '{"url": "https://www.sciencedirect.com/science/article/abs/pii/S0145212614001817", "pdfUrl": "", "type": "Editorial", "rights": "No access", "journalColumn": "Editorials", "journalUrl": "https://www.sciencedirect.com/journal/leukemia-research", "journalId": "leukemia-research", "year": "2014", "vol": "38", "issue": "9", "sha": "0000e4c66af9dbf3a26448b32f3d2a3b2593d22d"}'
             if not task:
                 logger.info('task | 队列中已无任务')
                 time.sleep(1)

@@ -331,65 +331,65 @@ class SpiderMain(BastSpiderMain):
         else:
             entity_data['rela_document'] = {}
 
-        # # 获取所有图片链接
-        # pic_datas = self.server.get_pic_url(href=url, down=self._get_resp)
-        # if pic_datas:
-        #     # 关联组图
-        #     entity_data['rela_pics'] = self.server.rela_pics(url, key, sha)
-        #     # 组图实体
-        #     pics = {}
-        #     # 标题
-        #     pics['title'] = entity_data['title']
-        #     # 组图内容
-        #     pics['label_obj'] = self.server.get_media(pic_datas, 'picture', 'image')
-        #     # 关联论文
-        #     pics['rela_paper'] = self.server.rela_paper(url, key, sha)
-        #     # url
-        #     pics['url'] = url
-        #     # 生成key
-        #     pics['key'] = key
-        #     # 生成sha
-        #     pics['sha'] = sha
-        #     # 生成ss ——实体
-        #     pics['ss'] = '组图'
-        #     # es ——栏目名称
-        #     pics['es'] = '期刊论文'
-        #     # 生成ws ——目标网站
-        #     pics['ws'] = '中国知网'
-        #     # 生成clazz ——层级关系
-        #     pics['clazz'] = '组图_实体'
-        #     # 生成biz ——项目
-        #     pics['biz'] = '文献大数据_论文'
-        #     # 生成ref
-        #     pics['ref'] = ''
-        #     # 采集责任人
-        #     pics['creator'] = '张明星'
-        #     # 更新责任人
-        #     pics['modified_by'] = ''
-        #     # 采集服务器集群
-        #     pics['cluster'] = 'crawler'
-        #     # 元数据版本号
-        #     pics['metadata_version'] = 'V1.2'
-        #     # 采集脚本版本号
-        #     pics['script_version'] = 'V1.4'
-        #     # 组图实体存入列表
-        #     data_list.append(pics)
-        #
-        #     # 存储图片种子
-        #     for img in pic_datas:
-        #         img_dict = {}
-        #         img_dict['url'] = img['url']
-        #         img_dict['title'] = img['title']
-        #         img_dict['rel_esse'] = self.server.rela_paper(url, key, sha)
-        #         img_dict['rel_pics'] = self.server.rela_pics(url, key, sha)
-        #
-        #         suc = self.img_download(img_dict)
-        #         if not suc:
-        #             logger.error('seed | 图片存储失败, url: {}'.format(img['url']))
-        #             return
-        # else:
-        #     # 关联组图
-        #     entity_data['rela_pics'] = {}
+        # 获取所有图片链接
+        pic_datas = self.server.get_pic_url(href=url, down=self._get_resp)
+        if pic_datas:
+            # 关联组图
+            entity_data['rela_pics'] = self.server.rela_pics(url, key, sha)
+            # 组图实体
+            pics = {}
+            # 标题
+            pics['title'] = entity_data['title']
+            # 组图内容
+            pics['label_obj'] = self.server.get_media(pic_datas, 'picture', 'image')
+            # 关联论文
+            pics['rela_paper'] = self.server.rela_paper(url, key, sha)
+            # url
+            pics['url'] = url
+            # 生成key
+            pics['key'] = key
+            # 生成sha
+            pics['sha'] = sha
+            # 生成ss ——实体
+            pics['ss'] = '组图'
+            # es ——栏目名称
+            pics['es'] = '期刊论文'
+            # 生成ws ——目标网站
+            pics['ws'] = '中国知网'
+            # 生成clazz ——层级关系
+            pics['clazz'] = '组图_实体'
+            # 生成biz ——项目
+            pics['biz'] = '文献大数据_论文'
+            # 生成ref
+            pics['ref'] = ''
+            # 采集责任人
+            pics['creator'] = '张明星'
+            # 更新责任人
+            pics['modified_by'] = ''
+            # 采集服务器集群
+            pics['cluster'] = 'crawler'
+            # 元数据版本号
+            pics['metadata_version'] = 'V1.2'
+            # 采集脚本版本号
+            pics['script_version'] = 'V1.4'
+            # 组图实体存入列表
+            data_list.append(pics)
+
+            # 存储图片种子
+            for img in pic_datas:
+                img_dict = {}
+                img_dict['url'] = img['url']
+                img_dict['title'] = img['title']
+                img_dict['rel_esse'] = self.server.rela_paper(url, key, sha)
+                img_dict['rel_pics'] = self.server.rela_pics(url, key, sha)
+
+                suc = self.img_download(img_dict)
+                if not suc:
+                    logger.error('seed | 图片存储失败, url: {}'.format(img['url']))
+                    return
+        else:
+            # 关联组图
+            entity_data['rela_pics'] = {}
 
         # ====================================公共字段
         # url

@@ -359,30 +359,357 @@ class Server(object):
 
         return title
 
-    # 标题
-    def get_paper_title(self, text):
+    # 作者
+    def get_author(self, text):
+        author_list = []
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            title_text = selector.xpath("string(//h1/span)").extract_first()
-            title = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", title_text)).strip()
+            a_list = selector.xpath("//div[@class='author-group']/a")
+            if a_list:
+                for a in a_list:
+                    span_list = a.xpath("./span/span[contains(@class, 'text')]/text()").extract()
+                    span_text = ' '.join(span_list)
+                    author_list.append(span_text)
+
+                author = '|'.join(author_list)
+            else:
+                author = ''
 
         except Exception:
-            title = ""
+            author = ''
 
-        return title
+        return author
 
     # 作者单位
-    def get_author_affiliation(self, text, para):
+    def get_affiliation(self, text):
+        author_affiliation_list = []
         selector = self.dom_holder.get(mode='Selector', text=text)
         try:
-            affiliation_list = selector.xpath(
-                "//tr/td[span[contains(text(), '{}')]]/following-sibling::td[1]/text()".format(para)).extract()
-            affiliation = '|'.join(affiliation_list).strip()
+            content = selector.xpath("//script[@type='application/json']/text()").extract_first()
+            content_dict = json.loads(content)
+            author_info_list = content_dict['authors']['content'][0]['$$']
+            if author_info_list:
+                for author_info in author_info_list:
+                    if author_info['#name'] == 'affiliation':
+                        affiliation_list = author_info['$$']
+                        for affiliation in affiliation_list:
+                            if affiliation['#name'] == 'textfn':
+                                author_affiliation_list.append(affiliation['_'])
+
+                author_affiliation = '|'.join(author_affiliation_list)
+            else:
+                author_affiliation = ''
 
         except Exception:
-            affiliation = ""
+            author_affiliation = ''
 
-        return affiliation
+        return author_affiliation
+
+    # doi
+    def get_doi(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            doi_url = selector.xpath("//a[@class='doi']/@href").extract_first()
+
+        except Exception:
+            doi_url = ''
+
+        return doi_url
+
+    # 摘要
+    def get_paper_abstract(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            abstract_list = selector.xpath("//div[h2[text()='Abstract']]/div").extract()
+            abstract = ''.join(abstract_list)
+
+        except Exception:
+            abstract = ''
+
+        return abstract
+
+    # 关键词
+    def get_paper_keyword(self, text):
+        keyword_list = []
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            div_list = selector.xpath("//div[h2[text()='Keywords']]/div")
+            for div in div_list:
+                text = div.xpath("string(.)").extract_first()
+                kw = re.sub(r"\s+", " ", re.sub(r"(\r|\n|\t)", " ", text)).strip()
+                keyword_list.append(kw)
+
+            keyword = '|'.join(keyword_list)
+
+        except Exception:
+            keyword = ''
+
+        return keyword
+
+    # 期刊名称
+    def get_journal_name(self, text):
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            journal_name = selector.xpath("//h2[contains(@class, 'publication-title')]//text()").extract_first().strip()
+
+        except Exception:
+            journal_name = ''
+
+        return journal_name
+
+    # 年卷期起止页
+    def get_journal_info(self, text):
+        journal_dict = {}
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            journal_info = selector.xpath("string(//div[@class='text-xs'])").extract_first()
+            journal_list = journal_info.split(',')
+            for journal in journal_list:
+                if 'Volume' in journal:
+                    journal_dict['vol'] = re.findall(r"Volume(.*)", journal)[0].strip()
+                if 'Issue' in journal:
+                    journal_dict['issue'] = re.findall(r"Issue(.*)", journal)[0].strip()
+                if re.findall(r"\s+\d{4}$", journal):
+                    journal_dict['date'] = journal.strip()
+                    journal_dict['year'] = re.findall(r"\d{4}", journal)[0].strip()
+                if 'Page' in journal:
+                    journal_dict['pages'] = re.findall(r"Pages?(.*)", journal)[0].strip()
+
+        except Exception:
+            return journal_dict
+
+        return journal_dict
+
+    # 参考文献
+    def get_refer(self, text, url, id, downloader, s):
+        reference_list = []
+        selector = self.dom_holder.get(mode='Selector', text=text)
+        try:
+            content = selector.xpath("//script[@type='application/json']/text()").extract_first()
+            content_dict = json.loads(content)
+            token = content_dict['article']['entitledToken']
+            if token:
+                refer_url = url.format(id, token)
+                refer_resp = downloader.get_resp(url=refer_url, method='GET', s=s)
+                if refer_resp is None:
+                    self.logger.error('downloader | 参考文献json页响应失败, url: {}'.format(refer_url))
+                    return reference_list
+                if refer_resp['status'] == 404:
+                    return reference_list
+                if not refer_resp['data']:
+                    self.logger.error('downloader | 参考文献json页响应失败, url: {}'.format(refer_url))
+                    return reference_list
+
+                refer_json = refer_resp['data'].json()
+
+                refer_list = refer_json['content'][0]['$$']
+                if refer_list:
+                    for refer in refer_list:
+                        if 'bibliography' in refer.get('#name', ''):
+                            fir_list = refer.get('$$', '')
+                            if fir_list:
+                                for fir in fir_list:
+                                    refer_dict = {}
+                                    sec_list = fir.get('$$', '')
+                                    if sec_list:
+                                        for sec in sec_list:
+                                            if 'reference' in sec.get('#name', ''):
+                                                third_list = sec.get('$$', '')
+                                                for third in third_list:
+                                                    if 'contribution' in third.get('#name', ''):
+                                                        cont_list = third.get('$$', '')
+                                                        for contribute in cont_list:
+                                                            if 'author' in contribute.get('#name', ''):
+                                                                author_list = contribute.get('$$', '')
+                                                                if author_list:
+                                                                    authors = []
+                                                                    for author in author_list:
+                                                                        auth = []
+                                                                        for au in author.get('$$', ''):
+                                                                            auth.append(au.get('_', ''))
+                                                                        authors.append(' '.join(auth))
+                                                                    refer_dict['author'] = '|'.join(authors)
+
+                                                            if 'title' in contribute.get('#name', ''):
+                                                                refer_dict['title'] = contribute.get('$$', '')[0].get('_', '')
+
+                                                    if 'host' in third.get('#name', ''):
+                                                        host_list = third.get('$$', '')
+                                                        for host in host_list:
+                                                            if 'edited-book' in host.get('#name', ''):
+                                                                edited_list = host.get('$$', '')
+                                                                if edited_list:
+                                                                    for edited in edited_list:
+                                                                        if 'title' in edited.get('#name', ''):
+                                                                            for series in edited.get('$$', ''):
+                                                                                if 'title' in series.get('#name', ''):
+                                                                                    refer_dict['journal_name'] = \
+                                                                                    series.get('$$', '')[0].get('_', '')
+                                                                                if 'volume' in series.get('#name', ''):
+                                                                                    refer_dict['vol'] = series.get('_', '')
+                                                                        if 'issue' in edited.get('#name', ''):
+                                                                            refer_dict['issue'] = edited.get('_', '')
+                                                                        if 'date' in edited.get('#name', ''):
+                                                                            refer_dict['year'] = edited.get('_', '')
+                                                                        if 'publisher' in edited.get('#name', ''):
+                                                                            pub_list = []
+                                                                            for pub in edited.get('$$', ''):
+                                                                                pub_list.append(pub.get('_', ''))
+                                                                            refer_dict['publisher'] = '|'.join(pub_list)
+
+                                                            if 'issue' in host.get('#name', ''):
+                                                                issue_list = host.get('$$', '')
+                                                                if issue_list:
+                                                                    for issue in issue_list:
+                                                                        if 'series' in issue.get('#name', ''):
+                                                                            for series in issue.get('$$', ''):
+                                                                                if 'title' in series.get('#name', ''):
+                                                                                    refer_dict['journal_name'] = series.get('$$', '')[0].get('_', '')
+                                                                                if 'volume' in series.get('#name', ''):
+                                                                                    refer_dict['vol'] = series.get('_', '')
+                                                                        if 'issue' in issue.get('#name', ''):
+                                                                            refer_dict['issue'] = issue.get('_', '')
+                                                                        if 'date' in issue.get('#name', ''):
+                                                                            refer_dict['year'] = issue.get('_', '')
+
+                                                            if 'page' in host.get('#name', ''):
+                                                                for page in host.get('$$', ''):
+                                                                    if 'first-page' in page.get('#name', ''):
+                                                                        refer_dict['start_page'] = page.get('_', '')
+                                                                    if 'last-page' in page.get('#name', ''):
+                                                                        refer_dict['end_page'] = page.get('_', '')
+
+                                                            if 'article-number' in host.get('#name', ''):
+                                                                refer_dict['article_number'] = host.get('_', '')
+
+                                            if 'source-text' in sec.get('#name', ''):
+                                                refer_dict['full_content'] = sec.get('_', '')
+
+                                    reference_list.append(refer_dict)
+
+        except Exception:
+            return reference_list
+
+        return reference_list
+
+    # 引证文献
+    def get_cited(self, url, id, downloader, s):
+        cited_list = []
+        cited_url = url.format(id)
+        cited_resp = downloader.get_resp(url=cited_url, method='GET', s=s)
+        if cited_resp is None:
+            self.logger.error('downloader | 引证文献json页响应失败, url: {}'.format(cited_url))
+            return cited_list
+        if cited_resp['status'] == 404:
+            return cited_list
+        if not cited_resp['data']:
+            self.logger.error('downloader | 引证文献json页响应失败, url: {}'.format(cited_url))
+            return cited_list
+
+        try:
+            cited_json = cited_resp['data'].json()
+
+            article_list = cited_json.get('articles', '')
+            if article_list:
+                for article in article_list:
+                    cited_dict = {}
+                    cited_dict['title'] = article.get('articleTitle', '')
+                    cited_dict['author'] = article.get('authors', '').replace(',', '|')
+                    cited_dict['doi'] = article.get('doi', '')
+                    if article.get('pii', ''):
+                        cited_dict['url'] = 'https://www.sciencedirect.com/science/article/abs/pii/' + article.get('pii', '')
+                    else:
+                        cited_dict['url'] = ''
+                    pages = article.get('page', '')
+                    if pages:
+                        if '-' in pages:
+                            page_list = pages.split('-')
+                            cited_dict['start_page'] = page_list[0]
+                            cited_dict['end_page'] = page_list[1]
+                        else:
+                            cited_dict['start_page'] = pages
+                            cited_dict['end_page'] = ''
+                    cited_dict['journal_name'] = article.get('publicationTitle', '')
+                    cited_dict['year'] = article.get('publicationYear', '')
+                    cited_dict['vol'] = re.findall(r"Volume(.*)", article.get('volume', ''), re.I)[0].strip()
+                    cited_list.append(cited_dict)
+
+        except Exception:
+            return cited_list
+
+        return cited_list
+
+    # 目录
+    def get_catalog(self, json_dict):
+        catalog_list = []
+        catalog_temp_list = []
+        try:
+            outline_list = json_dict.get('outline', '')
+            if outline_list:
+                for outline in outline_list:
+                    info_list = outline.get('$$', '')
+                    if info_list:
+                        fir_info = []
+                        extend_info = []
+                        for info in info_list:
+                            if info.get('#name', '') == 'label':
+                                fir_num = info.get('_', '')
+                                fir_info.append(fir_num)
+                            if info.get('#name', '') == 'title':
+                                fir_title = info.get('_', '')
+                                fir_info.append(fir_title)
+
+                            if info.get('#name', '') == 'entry':
+                                entry_list = info.get('$$', '')
+                                if entry_list:
+                                    sec_info = []
+                                    for entry in entry_list:
+                                        if entry.get('#name', '') == 'label':
+                                            sec_num = entry.get('_', '')
+                                            sec_info.append(sec_num)
+                                        if entry.get('#name', '') == 'title':
+                                            if not entry.get('$$', ''):
+                                                sec_title = entry.get('_', '')
+                                                sec_info.append(sec_title)
+                                            else:
+                                                third_list = []
+                                                for third in entry.get('$$', ''):
+                                                    third_list.append(third.get('_', ''))
+                                                sec_info.append(' '.join(third_list))
+
+                                    extend_info.append(' '.join(sec_info))
+                        catalog_temp_list.append(' '.join(fir_info))
+                        catalog_temp_list.extend(extend_info)
+
+                for cata in catalog_temp_list:
+                    catalog_list.append('<li>{}</li>'.format(cata))
+                catalog = '<ul>{}</ul>'.format(''.join(catalog_list))
+
+            else:
+                catalog = ''
+
+        except Exception:
+            catalog = ''
+
+        return catalog
+
+    # 组图图片
+    def get_pic_url(self, json_dict, title):
+        url_list = []
+        try:
+            attachments_list = json_dict.get('attachments', '')
+            if attachments_list:
+                for attachments in attachments_list:
+                    if 'lrg.jpg' in attachments.get('attachment-eid', ''):
+                        url_dict = {'url': 'https://ars.els-cdn.com/content/image/' + attachments.get('attachment-eid', ''),
+                                    'size': attachments.get('filesize', ''),
+                                    'title': title}
+                        url_list.append(url_dict)
+
+        except Exception:
+            url_list = ''
+
+        return url_list
 
     # =========== 文档实体 =============
     # 获取真正全文链接
@@ -413,6 +740,30 @@ class Server(object):
                         'size': size
                     }
                     media_list.append(media_obj)
+                label_obj[media_key] = media_list
+        except Exception:
+            return label_obj
+
+        return label_obj
+
+    # 获取组图
+    def get_pics(self, media_data, media_key, ss, format=''):
+        label_obj = {}
+        media_list = []
+        try:
+            if media_data:
+                for media in media_data:
+                    if media['url']:
+                        media_obj = {
+                            'url': media['url'],
+                            'title': media.get('title', ''),
+                            'desc': '',
+                            'sha': hashlib.sha1(media['url'].encode('utf-8')).hexdigest(),
+                            'ss': ss,
+                            'format': format,
+                            'size': media.get('size', '')
+                        }
+                        media_list.append(media_obj)
                 label_obj[media_key] = media_list
         except Exception:
             return label_obj
